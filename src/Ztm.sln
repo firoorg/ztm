@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ztm.WebApi", "Ztm.WebApi\Ztm.WebApi.csproj", "{8D9442DB-A3DA-4811-BDC3-F39FFB19CD7F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ztm.Zcoin.Rpc", "Ztm.Zcoin.Rpc\Ztm.Zcoin.Rpc.csproj", "{7B5EFC2B-5CF5-4666-91CA-E1B13209CBBD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,17 @@ Global
 		{8D9442DB-A3DA-4811-BDC3-F39FFB19CD7F}.Release|x64.Build.0 = Release|Any CPU
 		{8D9442DB-A3DA-4811-BDC3-F39FFB19CD7F}.Release|x86.ActiveCfg = Release|Any CPU
 		{8D9442DB-A3DA-4811-BDC3-F39FFB19CD7F}.Release|x86.Build.0 = Release|Any CPU
+		{7B5EFC2B-5CF5-4666-91CA-E1B13209CBBD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B5EFC2B-5CF5-4666-91CA-E1B13209CBBD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B5EFC2B-5CF5-4666-91CA-E1B13209CBBD}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7B5EFC2B-5CF5-4666-91CA-E1B13209CBBD}.Debug|x64.Build.0 = Debug|Any CPU
+		{7B5EFC2B-5CF5-4666-91CA-E1B13209CBBD}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7B5EFC2B-5CF5-4666-91CA-E1B13209CBBD}.Debug|x86.Build.0 = Debug|Any CPU
+		{7B5EFC2B-5CF5-4666-91CA-E1B13209CBBD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B5EFC2B-5CF5-4666-91CA-E1B13209CBBD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B5EFC2B-5CF5-4666-91CA-E1B13209CBBD}.Release|x64.ActiveCfg = Release|Any CPU
+		{7B5EFC2B-5CF5-4666-91CA-E1B13209CBBD}.Release|x64.Build.0 = Release|Any CPU
+		{7B5EFC2B-5CF5-4666-91CA-E1B13209CBBD}.Release|x86.ActiveCfg = Release|Any CPU
+		{7B5EFC2B-5CF5-4666-91CA-E1B13209CBBD}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
