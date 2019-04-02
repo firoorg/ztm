@@ -7,6 +7,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ztm.WebApi", "Ztm.WebApi\Zt
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ztm.Zcoin.Rpc", "Ztm.Zcoin.Rpc\Ztm.Zcoin.Rpc.csproj", "{7B5EFC2B-5CF5-4666-91CA-E1B13209CBBD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ztm.Zcoin.NBitcoin", "Ztm.Zcoin.NBitcoin\Ztm.Zcoin.NBitcoin.csproj", "{DD945027-2128-402A-A41E-D29A3F245584}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ztm.Zcoin.NBitcoin.Tests", "Ztm.Zcoin.NBitcoin.Tests\Ztm.Zcoin.NBitcoin.Tests.csproj", "{D4009BC1-2C40-4C75-A32F-152E0178111C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -44,5 +48,29 @@ Global
 		{7B5EFC2B-5CF5-4666-91CA-E1B13209CBBD}.Release|x64.Build.0 = Release|Any CPU
 		{7B5EFC2B-5CF5-4666-91CA-E1B13209CBBD}.Release|x86.ActiveCfg = Release|Any CPU
 		{7B5EFC2B-5CF5-4666-91CA-E1B13209CBBD}.Release|x86.Build.0 = Release|Any CPU
+		{DD945027-2128-402A-A41E-D29A3F245584}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DD945027-2128-402A-A41E-D29A3F245584}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DD945027-2128-402A-A41E-D29A3F245584}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{DD945027-2128-402A-A41E-D29A3F245584}.Debug|x64.Build.0 = Debug|Any CPU
+		{DD945027-2128-402A-A41E-D29A3F245584}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{DD945027-2128-402A-A41E-D29A3F245584}.Debug|x86.Build.0 = Debug|Any CPU
+		{DD945027-2128-402A-A41E-D29A3F245584}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DD945027-2128-402A-A41E-D29A3F245584}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DD945027-2128-402A-A41E-D29A3F245584}.Release|x64.ActiveCfg = Release|Any CPU
+		{DD945027-2128-402A-A41E-D29A3F245584}.Release|x64.Build.0 = Release|Any CPU
+		{DD945027-2128-402A-A41E-D29A3F245584}.Release|x86.ActiveCfg = Release|Any CPU
+		{DD945027-2128-402A-A41E-D29A3F245584}.Release|x86.Build.0 = Release|Any CPU
+		{D4009BC1-2C40-4C75-A32F-152E0178111C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4009BC1-2C40-4C75-A32F-152E0178111C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4009BC1-2C40-4C75-A32F-152E0178111C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D4009BC1-2C40-4C75-A32F-152E0178111C}.Debug|x64.Build.0 = Debug|Any CPU
+		{D4009BC1-2C40-4C75-A32F-152E0178111C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D4009BC1-2C40-4C75-A32F-152E0178111C}.Debug|x86.Build.0 = Debug|Any CPU
+		{D4009BC1-2C40-4C75-A32F-152E0178111C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4009BC1-2C40-4C75-A32F-152E0178111C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D4009BC1-2C40-4C75-A32F-152E0178111C}.Release|x64.ActiveCfg = Release|Any CPU
+		{D4009BC1-2C40-4C75-A32F-152E0178111C}.Release|x64.Build.0 = Release|Any CPU
+		{D4009BC1-2C40-4C75-A32F-152E0178111C}.Release|x86.ActiveCfg = Release|Any CPU
+		{D4009BC1-2C40-4C75-A32F-152E0178111C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
