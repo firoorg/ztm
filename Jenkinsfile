@@ -17,10 +17,12 @@ pipeline {
         }
 
         stage('Test') {
-            script {
-                def projects = findFiles(glob: 'src/*.Tests')
-                for (int i = 0; i < projects.size(); i++) {
-                    sh "dotnet test ${projects[i]}"
+            steps {
+                script {
+                    def projects = findFiles(glob: 'src/*.Tests')
+                    for (int i = 0; i < projects.size(); i++) {
+                        sh "dotnet test ${projects[i]}"
+                    }
                 }
             }
         }
