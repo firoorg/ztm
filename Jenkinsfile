@@ -18,7 +18,7 @@ pipeline {
 
         stage('Test') {
             steps {
-                sh 'for p in src/*.Tests; do echo "Running tests for $p" && echo && dotnet test $p && echo; done;'
+                sh 'for p in src/*.Tests; do dotnet test $p; done;'
             }
         }
     }
