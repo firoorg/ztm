@@ -18,12 +18,7 @@ pipeline {
 
         stage('Test') {
             steps {
-                script {
-                    def projects = findFiles(glob: 'src/*.Tests')
-                    for (int i = 0; i < projects.size(); i++) {
-                        sh "dotnet test ${projects[i]}"
-                    }
-                }
+                sh 'for p in src/*.Tests; do echo "Running tests for $p" && echo && dotnet test $p && echo; done;'
             }
         }
     }
