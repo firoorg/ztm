@@ -11,6 +11,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ztm.Zcoin.NBitcoin", "Ztm.Z
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ztm.Zcoin.NBitcoin.Tests", "Ztm.Zcoin.NBitcoin.Tests\Ztm.Zcoin.NBitcoin.Tests.csproj", "{D4009BC1-2C40-4C75-A32F-152E0178111C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ztm.Zcoin.Rpc.Tests", "Ztm.Zcoin.Rpc.Tests\Ztm.Zcoin.Rpc.Tests.csproj", "{65F697CD-2E1E-4568-BEF2-4A26DC1A43C9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ztm.Zcoin.Testing", "Ztm.Zcoin.Testing\Ztm.Zcoin.Testing.csproj", "{01AC451A-6C38-4C8F-B0AF-992E9613B362}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -72,5 +76,29 @@ Global
 		{D4009BC1-2C40-4C75-A32F-152E0178111C}.Release|x64.Build.0 = Release|Any CPU
 		{D4009BC1-2C40-4C75-A32F-152E0178111C}.Release|x86.ActiveCfg = Release|Any CPU
 		{D4009BC1-2C40-4C75-A32F-152E0178111C}.Release|x86.Build.0 = Release|Any CPU
+		{65F697CD-2E1E-4568-BEF2-4A26DC1A43C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{65F697CD-2E1E-4568-BEF2-4A26DC1A43C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{65F697CD-2E1E-4568-BEF2-4A26DC1A43C9}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{65F697CD-2E1E-4568-BEF2-4A26DC1A43C9}.Debug|x64.Build.0 = Debug|Any CPU
+		{65F697CD-2E1E-4568-BEF2-4A26DC1A43C9}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{65F697CD-2E1E-4568-BEF2-4A26DC1A43C9}.Debug|x86.Build.0 = Debug|Any CPU
+		{65F697CD-2E1E-4568-BEF2-4A26DC1A43C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{65F697CD-2E1E-4568-BEF2-4A26DC1A43C9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{65F697CD-2E1E-4568-BEF2-4A26DC1A43C9}.Release|x64.ActiveCfg = Release|Any CPU
+		{65F697CD-2E1E-4568-BEF2-4A26DC1A43C9}.Release|x64.Build.0 = Release|Any CPU
+		{65F697CD-2E1E-4568-BEF2-4A26DC1A43C9}.Release|x86.ActiveCfg = Release|Any CPU
+		{65F697CD-2E1E-4568-BEF2-4A26DC1A43C9}.Release|x86.Build.0 = Release|Any CPU
+		{01AC451A-6C38-4C8F-B0AF-992E9613B362}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{01AC451A-6C38-4C8F-B0AF-992E9613B362}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{01AC451A-6C38-4C8F-B0AF-992E9613B362}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{01AC451A-6C38-4C8F-B0AF-992E9613B362}.Debug|x64.Build.0 = Debug|Any CPU
+		{01AC451A-6C38-4C8F-B0AF-992E9613B362}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{01AC451A-6C38-4C8F-B0AF-992E9613B362}.Debug|x86.Build.0 = Debug|Any CPU
+		{01AC451A-6C38-4C8F-B0AF-992E9613B362}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{01AC451A-6C38-4C8F-B0AF-992E9613B362}.Release|Any CPU.Build.0 = Release|Any CPU
+		{01AC451A-6C38-4C8F-B0AF-992E9613B362}.Release|x64.ActiveCfg = Release|Any CPU
+		{01AC451A-6C38-4C8F-B0AF-992E9613B362}.Release|x64.Build.0 = Release|Any CPU
+		{01AC451A-6C38-4C8F-B0AF-992E9613B362}.Release|x86.ActiveCfg = Release|Any CPU
+		{01AC451A-6C38-4C8F-B0AF-992E9613B362}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

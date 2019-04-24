@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NBitcoin" Version="4.1.2.7" />
+    <PackageReference Include="NBitcoin.TestFramework" Version="1.7.3" />
   </ItemGroup>
 
   <ItemGroup>

@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using NBitcoin.RPC;
 using NBitcoin.Tests;
 using Xunit;
+using Ztm.Zcoin.Testing;
 
 namespace Ztm.Zcoin.NBitcoin.Tests
 {
