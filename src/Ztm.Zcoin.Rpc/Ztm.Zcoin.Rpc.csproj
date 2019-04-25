@@ -5,11 +5,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NBitcoin" Version="4.1.2.7" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Ztm.Zcoin.NBitcoin\Ztm.Zcoin.NBitcoin.csproj" />
+    <ProjectReference Include="..\NBitcoin\NBitcoin\NBitcoin.csproj" />
   </ItemGroup>
 
 </Project>
