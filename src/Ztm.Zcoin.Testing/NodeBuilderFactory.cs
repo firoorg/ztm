@@ -1,10 +1,10 @@
 using System.Runtime.CompilerServices;
-using NBitcoin;
 using NBitcoin.Tests;
+using Ztm.Zcoin.NBitcoin;
 
-namespace Ztm.Zcoin.NBitcoin.Tests
+namespace Ztm.Zcoin.Testing
 {
-    static class NodeBuilderFactory
+    public static class NodeBuilderFactory
     {
         public static NodeBuilder CreateNodeBuilder([CallerMemberName] string directoryName = null)
         {

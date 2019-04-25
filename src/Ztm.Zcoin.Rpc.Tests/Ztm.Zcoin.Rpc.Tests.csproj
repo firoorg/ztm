@@ -8,12 +8,14 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
+    <PackageReference Include="NBitcoin" Version="4.1.2.7" />
     <PackageReference Include="NBitcoin.TestFramework" Version="1.7.3" />
     <PackageReference Include="xunit" Version="2.4.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Ztm.Zcoin.Rpc\Ztm.Zcoin.Rpc.csproj" />
     <ProjectReference Include="..\Ztm.Zcoin.Testing\Ztm.Zcoin.Testing.csproj" />
   </ItemGroup>
 
