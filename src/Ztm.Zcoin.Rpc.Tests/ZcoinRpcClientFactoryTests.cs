@@ -36,9 +36,31 @@ namespace Ztm.Zcoin.Rpc.Tests
                 var node = nodeBuilder.CreateNode(true);
                 var cred = RPCCredentialString.Parse(node.GetRPCAuth());
                 var factory = new ZcoinRpcClientFactory(node.RPCUri, node.Network.NetworkType, cred);
-                var client = await factory.CreateRpcClientAsync(CancellationToken.None);
 
-                client.Dispose();
+                node.Generate(3);
+
+                using (var client = await factory.CreateRpcClientAsync(CancellationToken.None))
+                {
+                    var info = await client.GetBlockchainInfoAsync(CancellationToken.None);
+
+                    Assert.Equal(NetworkType.Regtest, info.Chain.NetworkType);
+                    Assert.Equal(3UL, info.Blocks);
+                    Assert.Equal(3UL, info.Headers);
+                    Assert.NotEqual(uint256.Zero, info.BestBlockHash);
+                    Assert.NotEqual(0UL, info.MedianTime);
+                    Assert.False(info.InitialBlockDownload);
+                    Assert.NotEqual(uint256.Zero, info.ChainWork);
+                    Assert.NotEmpty(info.SoftForks);
+                    Assert.NotEmpty(info.Bip9SoftForks);
+
+                    Assert.NotEmpty(info.SoftForks[0].Bip);
+                    Assert.NotEqual(0, info.SoftForks[0].Version);
+
+                    Assert.NotEmpty(info.Bip9SoftForks[0].Name);
+                    Assert.NotEmpty(info.Bip9SoftForks[0].Status);
+                    Assert.NotEqual(default(DateTimeOffset), info.Bip9SoftForks[0].StartTime);
+                    Assert.NotEqual(default(DateTimeOffset), info.Bip9SoftForks[0].Timeout);
+                }
             }
         }
     }
