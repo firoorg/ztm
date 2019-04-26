@@ -48,9 +48,9 @@ namespace Ztm.Zcoin.Rpc.Tests
                     Assert.Equal(3UL, info.Headers);
                     Assert.NotEqual(uint256.Zero, info.BestBlockHash);
                     Assert.NotEqual(0UL, info.MedianTime);
-                    Assert.Null(info.InitialBlockDownload);
+                    Assert.False(info.InitialBlockDownload);
                     Assert.NotEqual(uint256.Zero, info.ChainWork);
-                    Assert.Null(info.SizeOnDisk);
+                    Assert.Equal(0UL, info.SizeOnDisk);
                     Assert.NotEmpty(info.SoftForks);
                     Assert.NotEmpty(info.Bip9SoftForks);
 
@@ -61,7 +61,7 @@ namespace Ztm.Zcoin.Rpc.Tests
                     Assert.NotEmpty(info.Bip9SoftForks[0].Status);
                     Assert.NotEqual(default(DateTimeOffset), info.Bip9SoftForks[0].StartTime);
                     Assert.NotEqual(default(DateTimeOffset), info.Bip9SoftForks[0].Timeout);
-                    Assert.Null(info.Bip9SoftForks[0].SinceHeight);
+                    Assert.Equal(0UL, info.Bip9SoftForks[0].SinceHeight);
                 }
             }
         }
