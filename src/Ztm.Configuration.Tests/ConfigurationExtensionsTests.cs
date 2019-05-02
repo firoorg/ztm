@@ -15,12 +15,23 @@ namespace Ztm.Configuration.Tests
 
             builder.AddInMemoryCollection(new Dictionary<string, string>()
             {
+                {"Database:Main:ConnectionString", "Host=127.0.0.1;Database=ztm;Username=ztm;Password=1234"},
                 {"Zcoin:Rpc:Address", "http://127.0.0.1:8888"},
                 {"Zcoin:Rpc:UserName", "root"},
                 {"Zcoin:Rpc:Password", "abc"}
             });
 
             this.config = builder.Build();
+        }
+
+        [Fact]
+        public void GetDatabaseSection_WithCorrectConfiguration_ShouldSuccess()
+        {
+            var parsed = this.config.GetDatabaseSection();
+
+            Assert.NotNull(parsed);
+            Assert.NotNull(parsed.Main);
+            Assert.Equal("Host=127.0.0.1;Database=ztm;Username=ztm;Password=1234", parsed.Main.ConnectionString);
         }
 
         [Fact]
