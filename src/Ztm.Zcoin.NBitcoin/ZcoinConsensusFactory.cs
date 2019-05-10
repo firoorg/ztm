@@ -9,5 +9,15 @@ namespace Ztm.Zcoin.NBitcoin
         }
 
         public static ZcoinConsensusFactory Instance { get; } = new ZcoinConsensusFactory();
+
+        public override Block CreateBlock()
+        {
+            return new ZcoinBlock(new ZcoinBlockHeader());
+        }
+
+        public override BlockHeader CreateBlockHeader()
+        {
+            return new ZcoinBlockHeader();
+        }
     }
 }

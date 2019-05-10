@@ -7,5 +7,10 @@ namespace Ztm.Zcoin.NBitcoin
         public ZcoinBlock(ZcoinBlockHeader header) : base(header)
         {
         }
+
+        public override ConsensusFactory GetConsensusFactory()
+        {
+            return ZcoinConsensusFactory.Instance;
+        }
     }
 }
