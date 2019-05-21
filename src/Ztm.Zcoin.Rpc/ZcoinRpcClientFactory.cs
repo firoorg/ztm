@@ -33,7 +33,7 @@ namespace Ztm.Zcoin.Rpc
         public async Task<IZcoinRpcClient> CreateRpcClientAsync(CancellationToken cancellationToken)
         {
             var network = ZcoinNetworks.Instance.GetNetwork(this.networkType);
-            var client = new RPCClient(this.credential, this.serverUri, network);
+            var client = new Ztm.Zcoin.NBitcoin.RPC.ZcoinRPCClient(this.credential, this.serverUri, network);
 
             await client.ScanRPCCapabilitiesAsync();
 
