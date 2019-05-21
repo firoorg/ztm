@@ -5,12 +5,8 @@ namespace Ztm.Data.Entity.Contexts
 {
     public class MainDatabase : DbContext
     {
-        readonly NamingConvention naming;
-
-        public MainDatabase(DbContextOptions<MainDatabase> options, NamingConvention naming = NamingConvention.Pascal)
-            : base(options)
+        public MainDatabase(DbContextOptions<MainDatabase> options) : base(options)
         {
-            this.naming = naming;
         }
 
         public DbSet<Block> Blocks { get; set; }
@@ -115,18 +111,6 @@ namespace Ztm.Data.Entity.Contexts
 
                 b.HasKey(e => e.Id);
                 b.HasIndex(e => e.TransactionId);
-
-                switch (this.naming)
-                {
-                    case NamingConvention.Snake:
-                        b.Property(e => e.Id).HasColumnName("id");
-                        b.Property(e => e.RequestIp).HasColumnName("request_ip");
-                        b.Property(e => e.RequestTime).HasColumnName("request_time");
-                        b.Property(e => e.TransactionId).HasColumnName("transaction_id");
-                        b.Property(e => e.Url).HasColumnName("url");
-                        b.ToTable("webapi_callback");
-                        break;
-                }
             });
         }
 
