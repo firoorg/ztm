@@ -23,7 +23,7 @@ namespace Ztm.Data.Entity.Contexts
         {
             modelBuilder.Entity<Block>(b =>
             {
-                b.Property(e => e.Height).IsRequired();
+                b.Property(e => e.Height).IsRequired().ValueGeneratedNever();
                 b.Property(e => e.Hash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
                 b.Property(e => e.Version).IsRequired();
                 b.Property(e => e.Bits).IsRequired().HasConversion(Converters.TargetToInt64);
