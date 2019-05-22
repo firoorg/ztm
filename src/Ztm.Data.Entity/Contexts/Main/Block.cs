@@ -1,10 +1,10 @@
 using System;
-using System.Collections.ObjectModel;
+using System.Collections.Generic;
 using NBitcoin;
 
 namespace Ztm.Data.Entity.Contexts.Main
 {
-    public class Block
+    public class Block : IComparable<Block>
     {
         public int Height { get; set; }
         public uint256 Hash { get; set; }
@@ -14,6 +14,16 @@ namespace Ztm.Data.Entity.Contexts.Main
         public DateTime Time { get; set; }
         public uint256 MerkleRoot { get; set; }
 
-        public Collection<Transaction> Transactions { get; set; }
+        public SortedSet<BlockTransaction> Transactions { get; set; }
+
+        public int CompareTo(Block other)
+        {
+            if (other == null)
+            {
+                return 1;
+            }
+
+            return Height - other.Height;
+        }
     }
 }

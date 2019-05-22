@@ -11,6 +11,8 @@ namespace Ztm.Data.Entity.Contexts
 
         public DbSet<Block> Blocks { get; set; }
 
+        public DbSet<BlockTransaction> BlockTransactions { get; set; }
+
         public DbSet<Input> Inputs { get; set; }
 
         public DbSet<Output> Outputs { get; set; }
@@ -33,6 +35,29 @@ namespace Ztm.Data.Entity.Contexts
 
                 b.HasKey(e => e.Height);
                 b.HasAlternateKey(e => e.Hash);
+            });
+        }
+
+        protected virtual void ConfigureBlockTransaction(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<BlockTransaction>(b =>
+            {
+                b.Property(e => e.BlockHash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
+                b.Property(e => e.TransactionHash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
+                b.Property(e => e.Index).IsRequired();
+
+                b.HasKey(e => new { e.BlockHash, e.TransactionHash, e.Index });
+                b.HasIndex(e => e.TransactionHash);
+                b.HasOne(e => e.Block)
+                 .WithMany(e => e.Transactions)
+                 .HasForeignKey(e => e.BlockHash)
+                 .HasPrincipalKey(e => e.Hash)
+                 .OnDelete(DeleteBehavior.Cascade);
+                b.HasOne(e => e.Transaction)
+                 .WithMany(e => e.Blocks)
+                 .HasForeignKey(e => e.TransactionHash)
+                 .HasPrincipalKey(e => e.Hash)
+                 .OnDelete(DeleteBehavior.Cascade);
             });
         }
 
@@ -85,17 +110,10 @@ namespace Ztm.Data.Entity.Contexts
             modelBuilder.Entity<Transaction>(b =>
             {
                 b.Property(e => e.Hash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
-                b.Property(e => e.BlockHash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
                 b.Property(e => e.Version).IsRequired();
                 b.Property(e => e.LockTime).IsRequired();
 
-                b.HasKey(e => new { e.Hash, e.BlockHash });
-                b.HasIndex(e => e.BlockHash);
-                b.HasOne(e => e.Block)
-                 .WithMany(e => e.Transactions)
-                 .HasForeignKey(e => e.BlockHash)
-                 .HasPrincipalKey(e => e.Hash)
-                 .OnDelete(DeleteBehavior.Cascade);
+                b.HasKey(e => e.Hash);
             });
         }
 
@@ -117,6 +135,7 @@ namespace Ztm.Data.Entity.Contexts
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             ConfigureBlock(modelBuilder);
+            ConfigureBlockTransaction(modelBuilder);
             ConfigureInput(modelBuilder);
             ConfigureOutput(modelBuilder);
             ConfigureTransaction(modelBuilder);
