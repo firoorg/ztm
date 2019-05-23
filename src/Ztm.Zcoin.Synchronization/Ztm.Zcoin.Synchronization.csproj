@@ -6,9 +6,11 @@
     <ProjectReference Include="..\Ztm.Zcoin.NBitcoin\Ztm.Zcoin.NBitcoin.csproj" />
     <ProjectReference Include="..\NBitcoin\NBitcoin\NBitcoin.csproj" />
     <ProjectReference Include="..\Ztm.Zcoin.Rpc\Ztm.Zcoin.Rpc.csproj" />
+    <ProjectReference Include="..\Ztm.Data.Entity\Ztm.Data.Entity.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.2.4" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="2.2.0" />
     <PackageReference Include="NetMQ" Version="4.0.0.1" />
   </ItemGroup>

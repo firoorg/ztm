@@ -9,4 +9,8 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="2.2.4" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\NBitcoin\NBitcoin\NBitcoin.csproj" />
+  </ItemGroup>
+
 </Project>
