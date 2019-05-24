@@ -16,6 +16,13 @@ namespace Ztm.Data.Entity.Tests.Contexts.Main
         }
 
         [Fact]
+        public void Constructor_WhenSuccess_ShouldInitTransactionsWithEmpty()
+        {
+            Assert.NotNull(this.subject.Transactions);
+            Assert.Empty(this.subject.Transactions);
+        }
+
+        [Fact]
         public void CompareTo_OtherIsNull_ShouldGreater()
         {
             var result = this.subject.CompareTo(null);

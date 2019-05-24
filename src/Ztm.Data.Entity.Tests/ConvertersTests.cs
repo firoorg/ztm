@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 using NBitcoin;
 using Xunit;
 
@@ -6,6 +7,22 @@ namespace Ztm.Data.Entity.Tests
 {
     public class ConvertersTests
     {
+        [Fact]
+        public void IPAddressToStringConverter_ToProviderWithCorrectInput_ShouldSuccess()
+        {
+            var converted = (string)Converters.IPAddressToStringConverter.ConvertToProvider(IPAddress.IPv6Loopback);
+
+            Assert.Equal(IPAddress.IPv6Loopback.ToString(), converted);
+        }
+
+        [Fact]
+        public void IPAddressToStringConverter_FromProviderWithCorrectInput_ShouldSuccess()
+        {
+            var converted = (IPAddress)Converters.IPAddressToStringConverter.ConvertFromProvider("127.0.0.1");
+
+            Assert.Equal(IPAddress.Loopback, converted);
+        }
+
         [Fact]
         public void ScriptToBytesConverter_ToProviderWithCorrectInput_ShouldSuccess()
         {
