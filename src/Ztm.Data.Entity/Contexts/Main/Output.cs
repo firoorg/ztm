@@ -1,5 +1,4 @@
 using System;
-using System.Collections.ObjectModel;
 using NBitcoin;
 
 namespace Ztm.Data.Entity.Contexts.Main
@@ -12,8 +11,6 @@ namespace Ztm.Data.Entity.Contexts.Main
         public Script Script { get; set; }
 
         public Transaction Transaction { get; set; }
-
-        public Collection<Input> Inputs { get; set; }
 
         public int CompareTo(Output other)
         {

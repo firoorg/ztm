@@ -6,6 +6,11 @@ namespace Ztm.Data.Entity.Contexts.Main
 {
     public class Block : IComparable<Block>
     {
+        public Block()
+        {
+            Transactions = new SortedSet<BlockTransaction>();
+        }
+
         public int Height { get; set; }
         public uint256 Hash { get; set; }
         public int Version { get; set; }

@@ -50,79 +50,7 @@ namespace Ztm.Zcoin.Synchronization
 
             using (var db = this.db.CreateDbContext())
             {
-                // Block.
-                await db.Blocks.AddAsync(new Ztm.Data.Entity.Contexts.Main.Block()
-                {
-                    Height = height,
-                    Hash = block.GetHash(),
-                    Version = block.Header.Version,
-                    Bits = block.Header.Bits,
-                    Nonce = block.Header.Nonce,
-                    Time = block.Header.BlockTime.UtcDateTime,
-                    MerkleRoot = block.Header.HashMerkleRoot
-                }, cancellationToken);
-
-                // Transactions.
-                var transactions = new List<Ztm.Data.Entity.Contexts.Main.Transaction>(block.Transactions.Count);
-                var blockTransactions = new List<Ztm.Data.Entity.Contexts.Main.BlockTransaction>(block.Transactions.Count);
-
-                for (int i = 0; i < block.Transactions.Count; i++)
-                {
-                    var tx = block.Transactions[i];
-
-                    tx.PrecomputeHash(invalidateExisting: true, lazily: false);
-
-                    transactions.Add(new Ztm.Data.Entity.Contexts.Main.Transaction()
-                    {
-                        Hash = tx.GetHash(),
-                        Version = tx.Version,
-                        LockTime = tx.LockTime
-                    });
-
-                    blockTransactions.Add(new Ztm.Data.Entity.Contexts.Main.BlockTransaction()
-                    {
-                        BlockHash = block.GetHash(),
-                        TransactionHash = tx.GetHash(),
-                        Index = i
-                    });
-                }
-
-                await db.Transactions.AddRangeAsync(transactions, cancellationToken);
-                await db.BlockTransactions.AddRangeAsync(blockTransactions, cancellationToken);
-
-                // Transaction outputs.
-                var outputs = (
-                    from tx in block.Transactions
-                    from output in tx.Outputs.Select((vout, i) => new Ztm.Data.Entity.Contexts.Main.Output()
-                    {
-                        TransactionHash = tx.GetHash(),
-                        Index = i,
-                        Value = vout.Value,
-                        Script = vout.ScriptPubKey
-                    })
-                    select output
-                ).ToArray();
-
-                await db.Outputs.AddRangeAsync(outputs, cancellationToken);
-
-                // Inputs.
-                var inputs = (
-                    from tx in block.Transactions
-                    from input in tx.Inputs.Select((vin, i) => new Ztm.Data.Entity.Contexts.Main.Input()
-                    {
-                        TransactionHash = tx.GetHash(),
-                        Index = i,
-                        OutputHash = vin.PrevOut.Hash,
-                        OutputIndex = vin.PrevOut.N,
-                        Script = vin.ScriptSig,
-                        Sequence = vin.Sequence
-                    })
-                    select input
-                ).ToArray();
-
-                await db.Inputs.AddRangeAsync(inputs, cancellationToken);
-
-                // Commit.
+                await db.Blocks.AddAsync(ToEntity(block, height), cancellationToken);
                 await db.SaveChangesAsync(cancellationToken);
             }
         }
@@ -291,6 +219,96 @@ namespace Ztm.Zcoin.Synchronization
             }).Cast<Transaction>().ToList();
 
             return block;
+        }
+
+        Ztm.Data.Entity.Contexts.Main.Block ToEntity(ZcoinBlock block, int height)
+        {
+            var entity = new Ztm.Data.Entity.Contexts.Main.Block()
+            {
+                Height = height,
+                Hash = block.GetHash(),
+                Version = block.Header.Version,
+                Bits = block.Header.Bits,
+                Nonce = block.Header.Nonce,
+                Time = block.Header.BlockTime.UtcDateTime,
+                MerkleRoot = block.Header.HashMerkleRoot
+            };
+
+            // Transactions.
+            var transactions = new Dictionary<uint256, Ztm.Data.Entity.Contexts.Main.Transaction>();
+
+            for (int i = 0; i < block.Transactions.Count; i++)
+            {
+                Ztm.Data.Entity.Contexts.Main.Transaction tx;
+                Ztm.Data.Entity.Contexts.Main.BlockTransaction blockTx;
+
+                block.Transactions[i].PrecomputeHash(invalidateExisting: true, lazily: false);
+                var hash = block.Transactions[i].GetHash();
+
+                if (!transactions.TryGetValue(hash, out tx))
+                {
+                    tx = ToEntity((ZcoinTransaction)block.Transactions[i]);
+                    transactions.Add(hash, tx);
+                }
+
+                blockTx = new Ztm.Data.Entity.Contexts.Main.BlockTransaction()
+                {
+                    BlockHash = block.GetHash(),
+                    TransactionHash = tx.Hash,
+                    Index = i,
+                    Block = entity,
+                    Transaction = tx
+                };
+
+                tx.Blocks.Add(blockTx);
+                entity.Transactions.Add(blockTx);
+            }
+
+            return entity;
+        }
+
+        Ztm.Data.Entity.Contexts.Main.Transaction ToEntity(ZcoinTransaction tx)
+        {
+            var entity = new Ztm.Data.Entity.Contexts.Main.Transaction()
+            {
+                Hash = tx.GetHash(),
+                Version = tx.Version,
+                LockTime = tx.LockTime
+            };
+
+            // Outputs.
+            for (int i = 0; i < tx.Outputs.Count; i++)
+            {
+                var output = new Ztm.Data.Entity.Contexts.Main.Output()
+                {
+                    TransactionHash = entity.Hash,
+                    Index = i,
+                    Value = tx.Outputs[i].Value,
+                    Script = tx.Outputs[i].ScriptPubKey,
+                    Transaction = entity
+                };
+
+                entity.Outputs.Add(output);
+            }
+
+            // Inputs.
+            for (int i = 0; i < tx.Inputs.Count; i++)
+            {
+                var input = new Ztm.Data.Entity.Contexts.Main.Input()
+                {
+                    TransactionHash = entity.Hash,
+                    Index = i,
+                    OutputHash = tx.Inputs[i].PrevOut.Hash,
+                    OutputIndex = tx.Inputs[i].PrevOut.N,
+                    Script = tx.Inputs[i].ScriptSig,
+                    Sequence = tx.Inputs[i].Sequence,
+                    Transaction = entity
+                };
+
+                entity.Inputs.Add(input);
+            }
+
+            return entity;
         }
     }
 }

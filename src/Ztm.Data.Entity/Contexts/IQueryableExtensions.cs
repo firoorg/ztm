@@ -11,11 +11,9 @@ namespace Ztm.Data.Entity.Contexts
             return query.Include(e => e.Transactions)
                 .ThenInclude(e => e.Transaction)
                 .ThenInclude(e => e.Outputs)
-                .ThenInclude(e => e.Inputs)
                 .Include(e => e.Transactions)
                 .ThenInclude(e => e.Transaction)
-                .ThenInclude(e => e.Inputs)
-                .ThenInclude(e => e.Output);
+                .ThenInclude(e => e.Inputs);
         }
     }
 }

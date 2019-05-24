@@ -12,7 +12,6 @@ namespace Ztm.Data.Entity.Contexts.Main
         public Script Script { get; set; }
         public long Sequence { get; set; }
 
-        public Output Output { get; set; }
         public Transaction Transaction { get; set; }
 
         public int CompareTo(Input other)

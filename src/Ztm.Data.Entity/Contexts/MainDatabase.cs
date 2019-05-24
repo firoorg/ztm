@@ -99,11 +99,6 @@ namespace Ztm.Data.Entity.Contexts
                  .HasForeignKey(e => e.TransactionHash)
                  .HasPrincipalKey(e => e.Hash)
                  .OnDelete(DeleteBehavior.Cascade);
-                b.HasOne(e => e.Output)
-                 .WithMany(e => e.Inputs)
-                 .HasForeignKey(e => new { e.OutputHash, e.OutputIndex })
-                 .HasPrincipalKey(e => new { e.TransactionHash, e.Index })
-                 .OnDelete(DeleteBehavior.Restrict);
             });
         }
 

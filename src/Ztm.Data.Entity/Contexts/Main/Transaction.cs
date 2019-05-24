@@ -5,6 +5,13 @@ namespace Ztm.Data.Entity.Contexts.Main
 {
     public class Transaction
     {
+        public Transaction()
+        {
+            Blocks = new SortedSet<BlockTransaction>();
+            Inputs = new SortedSet<Input>();
+            Outputs = new SortedSet<Output>();
+        }
+
         public uint256 Hash { get; set; }
         public long Version { get; set; }
         public long LockTime { get; set; }
