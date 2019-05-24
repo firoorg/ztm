@@ -176,7 +176,7 @@ namespace Ztm.Zcoin.Synchronization
             // Block properties.
             block.Header.Version = data.Version;
             block.Header.HashMerkleRoot = data.MerkleRoot;
-            block.Header.BlockTime = data.Time;
+            block.Header.BlockTime = DateTime.SpecifyKind(data.Time, DateTimeKind.Utc);
             block.Header.Bits = data.Bits;
             block.Header.Nonce = (uint)data.Nonce;
 
