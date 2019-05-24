@@ -15,6 +15,11 @@ namespace Ztm.Zcoin.NBitcoin
             return (ZcoinBlock)CreateBlock(network.Consensus.ConsensusFactory);
         }
 
+        public static new ZcoinBlock Parse(string hex, Network network)
+        {
+            return (ZcoinBlock)Parse(hex, network.Consensus.ConsensusFactory);
+        }
+
         public override ConsensusFactory GetConsensusFactory()
         {
             return ZcoinConsensusFactory.Instance;

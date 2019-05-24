@@ -16,6 +16,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Ztm.Zcoin.Synchronization\Ztm.Zcoin.Synchronization.csproj" />
     <ProjectReference Include="..\Ztm.Zcoin.Rpc\Ztm.Zcoin.Rpc.csproj" />
+    <ProjectReference Include="..\Ztm.Data.Entity.Testing\Ztm.Data.Entity.Testing.csproj" />
+    <ProjectReference Include="..\Ztm.Data.Entity\Ztm.Data.Entity.csproj" />
   </ItemGroup>
 
 </Project>
