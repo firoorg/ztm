@@ -1,11 +1,12 @@
 using Microsoft.EntityFrameworkCore;
+using Ztm.Data.Entity.Contexts;
 using Ztm.Data.Entity.Contexts.Main;
 
-namespace Ztm.Data.Entity.Postgres
+namespace Ztm.Data.Entity.Testing
 {
-    public class MainDatabase : Ztm.Data.Entity.Contexts.MainDatabase
+    public class TestMainDatabase : MainDatabase
     {
-        public MainDatabase(DbContextOptions<Ztm.Data.Entity.Contexts.MainDatabase> options) : base(options)
+        public TestMainDatabase(DbContextOptions<MainDatabase> options) : base(options)
         {
         }
 
@@ -15,6 +16,7 @@ namespace Ztm.Data.Entity.Postgres
 
             modelBuilder.Entity<WebApiCallback>(b =>
             {
+                b.Property(e => e.RequestIp).HasConversion(Converters.IPAddressToStringConverter);
                 b.Property(e => e.Url).HasConversion(Converters.UriToStringConverter);
             });
         }

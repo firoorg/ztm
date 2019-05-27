@@ -3,6 +3,7 @@ using System;
 using System.Net;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Ztm.Data.Entity.Postgres;
@@ -10,9 +11,10 @@ using Ztm.Data.Entity.Postgres;
 namespace Ztm.Data.Entity.Postgres.Migrations
 {
     [DbContext(typeof(MainDatabase))]
-    partial class MainDatabaseModelSnapshot : ModelSnapshot
+    [Migration("20190522115316_InitializeBlockAndTransaction")]
+    partial class InitializeBlockAndTransaction
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -151,7 +153,7 @@ namespace Ztm.Data.Entity.Postgres.Migrations
                     b.HasOne("Ztm.Data.Entity.Contexts.Main.Transaction", "Transaction")
                         .WithMany("Blocks")
                         .HasForeignKey("TransactionHash")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.Input", b =>
@@ -160,6 +162,11 @@ namespace Ztm.Data.Entity.Postgres.Migrations
                         .WithMany("Inputs")
                         .HasForeignKey("TransactionHash")
                         .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Ztm.Data.Entity.Contexts.Main.Output", "Output")
+                        .WithMany("Inputs")
+                        .HasForeignKey("OutputHash", "OutputIndex")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.Output", b =>
