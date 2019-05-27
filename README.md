@@ -20,6 +20,22 @@ git submodule update --recursive
 dotnet build src/Ztm.sln
 ```
 
+## Start Required Services
+
+You need to install [Docker Compose](https://docs.docker.com/compose/) first then run:
+
+```sh
+docker-compose up -d
+```
+
+## Migrate Database Schemas
+
+Change directory to `src/Ztm.Data.Entity.Postgres` then run:
+
+```sh
+ZTM_MAIN_DATABASE="Host=127.0.0.1;Database=ztm;Username=ztm" dotnet ef database update
+```
+
 ## Start Web API
 
 ```sh
