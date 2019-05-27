@@ -14,15 +14,16 @@ namespace Ztm.Data.Entity.Contexts.Main
 
         public int CompareTo(BlockTransaction other)
         {
+            int result;
+
             if (other == null)
             {
                 return 1;
             }
 
-            switch (Block.CompareTo(other.Block))
+            if ((result = BlockHash.CompareTo(other.BlockHash)) != 0)
             {
-                case var result when result != 0:
-                    return result;
+                return result;
             }
 
             return Index - other.Index;

@@ -49,15 +49,34 @@ namespace Ztm.Zcoin.Synchronization
             block.Header.PrecomputeHash(invalidateExisting: true, lazily: false);
 
             using (var db = this.db.CreateDbContext())
+            using (var dbtx = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken))
             {
-                await db.Blocks.AddAsync(ToEntity(block, height), cancellationToken);
+                var entity = ToEntity(block, height);
+
+                // Do not insert transactions that already exists.
+                var transactions = entity.Transactions.Select(t => t.TransactionHash).ToArray();
+                var existed = await db.Transactions
+                    .Where(t => transactions.Contains(t.Hash))
+                    .ToDictionaryAsync(t => t.Hash, cancellationToken);
+
+                foreach (var tx in entity.Transactions)
+                {
+                    if (existed.ContainsKey(tx.TransactionHash))
+                    {
+                        tx.Transaction = null;
+                    }
+                }
+
+                // Add block.
+                await db.Blocks.AddAsync(entity, cancellationToken);
                 await db.SaveChangesAsync(cancellationToken);
+                dbtx.Commit();
             }
         }
 
         public async Task<ZcoinBlock> GetAsync(uint256 hash, CancellationToken cancellationToken)
         {
-            Ztm.Data.Entity.Contexts.Main.Block data, previous = null;
+            Ztm.Data.Entity.Contexts.Main.Block data, previous;
 
             if (hash == null)
             {
@@ -65,13 +84,22 @@ namespace Ztm.Zcoin.Synchronization
             }
 
             using (var db = this.db.CreateDbContext())
-            using (var tx = await db.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken))
+            using (await db.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken))
             {
-                data = await db.Blocks.IncludeAll().SingleAsync(e => e.Hash == hash, cancellationToken);
+                data = await db.Blocks.IncludeAll().SingleOrDefaultAsync(b => b.Hash == hash, cancellationToken);
 
-                if (data.Height != 0)
+                if (data == null)
                 {
-                    previous = await db.Blocks.SingleAsync(e => e.Height == data.Height - 1, cancellationToken);
+                    return null;
+                }
+
+                if (data.Height == 0)
+                {
+                    previous = null;
+                }
+                else
+                {
+                    previous = await db.Blocks.SingleAsync(b => b.Height == data.Height - 1, cancellationToken);
                 }
             }
 
@@ -80,7 +108,7 @@ namespace Ztm.Zcoin.Synchronization
 
         public async Task<ZcoinBlock> GetAsync(int height, CancellationToken cancellationToken)
         {
-            Ztm.Data.Entity.Contexts.Main.Block data, previous = null;
+            Ztm.Data.Entity.Contexts.Main.Block data, previous;
 
             if (height < 0)
             {
@@ -88,14 +116,19 @@ namespace Ztm.Zcoin.Synchronization
             }
 
             using (var db = this.db.CreateDbContext())
-            using (var tx = await db.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken))
             {
-                data = await db.Blocks.IncludeAll().SingleAsync(e => e.Height == height, cancellationToken);
+                var rows = await db.Blocks
+                    .IncludeAll()
+                    .Where(b => b.Height == height || b.Height == height - 1)
+                    .ToArrayAsync(cancellationToken);
 
-                if (height != 0)
+                if (rows.Length == 0 || rows[0].Height != height)
                 {
-                    previous = await db.Blocks.SingleAsync(e => e.Height == height - 1, cancellationToken);
+                    return null;
                 }
+
+                data = rows[0];
+                previous = (rows.Length > 1) ? rows[1] : null;
             }
 
             return ToDomain(data, previous);
@@ -107,7 +140,12 @@ namespace Ztm.Zcoin.Synchronization
 
             using (var db = this.db.CreateDbContext())
             {
-                data = await db.Blocks.IncludeAll().SingleAsync(e => e.Height == 0, cancellationToken);
+                data = await db.Blocks.IncludeAll().SingleOrDefaultAsync(e => e.Height == 0, cancellationToken);
+
+                if (data == null)
+                {
+                    return null;
+                }
             }
 
             return ToDomain(data);
@@ -115,57 +153,62 @@ namespace Ztm.Zcoin.Synchronization
 
         public async Task<ZcoinBlock> GetLastAsync(CancellationToken cancellationToken)
         {
-            Ztm.Data.Entity.Contexts.Main.Block data, previous = null;
+            Ztm.Data.Entity.Contexts.Main.Block data, previous;
 
             using (var db = this.db.CreateDbContext())
-            using (var tx = await db.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken))
             {
-                data = await db.Blocks
+                var rows = await db.Blocks
                     .IncludeAll()
                     .OrderByDescending(e => e.Height)
-                    .Take(1)
-                    .SingleAsync(cancellationToken);
+                    .Take(2)
+                    .ToArrayAsync(cancellationToken);
 
-                if (data.Height != 0)
+                if (rows.Length == 0)
                 {
-                    previous = await db.Blocks.SingleAsync(e => e.Height == data.Height - 1, cancellationToken);
+                    return null;
                 }
+
+                data = rows[0];
+                previous = (rows.Length > 1) ? rows[1] : null;
             }
 
             return ToDomain(data, previous);
         }
 
-        public async Task RemoveAsync(uint256 hash, CancellationToken cancellationToken)
+        public async Task RemoveLastAsync(CancellationToken cancellationToken)
         {
-            if (hash == null)
-            {
-                throw new ArgumentNullException(nameof(hash));
-            }
-
             using (var db = this.db.CreateDbContext())
+            using (var dbtx = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken))
             {
-                var block = await db.Blocks.IncludeAll().SingleAsync(e => e.Hash == hash, cancellationToken);
+                // Remove block.
+                var block = await db.Blocks
+                    .Include(b => b.Transactions)
+                    .ThenInclude(t => t.Transaction)
+                    .ThenInclude(t => t.Blocks)
+                    .OrderByDescending(b => b.Height)
+                    .Take(1)
+                    .SingleOrDefaultAsync(cancellationToken);
 
-                db.RemoveBlock(block);
+                if (block == null)
+                {
+                    return;
+                }
+
+                db.Blocks.Remove(block);
+
+                // Remove referenced transactions if no other blocks referenced it.
+                foreach (var transaction in block.Transactions.Select(t => t.Transaction))
+                {
+                    if (transaction.Blocks.Select(t => t.BlockHash).Distinct().Count() > 1)
+                    {
+                        continue;
+                    }
+
+                    db.Transactions.Remove(transaction);
+                }
 
                 await db.SaveChangesAsync(cancellationToken);
-            }
-        }
-
-        public async Task RemoveAsync(int height, CancellationToken cancellationToken)
-        {
-            if (height < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(height), "The value is negative.");
-            }
-
-            using (var db = this.db.CreateDbContext())
-            {
-                var block = await db.Blocks.IncludeAll().SingleAsync(e => e.Height == height, cancellationToken);
-
-                db.RemoveBlock(block);
-
-                await db.SaveChangesAsync(cancellationToken);
+                dbtx.Commit();
             }
         }
 
@@ -240,27 +283,27 @@ namespace Ztm.Zcoin.Synchronization
             for (int i = 0; i < block.Transactions.Count; i++)
             {
                 Ztm.Data.Entity.Contexts.Main.Transaction tx;
-                Ztm.Data.Entity.Contexts.Main.BlockTransaction blockTx;
 
                 block.Transactions[i].PrecomputeHash(invalidateExisting: true, lazily: false);
+
                 var hash = block.Transactions[i].GetHash();
+                var blockTx = new Ztm.Data.Entity.Contexts.Main.BlockTransaction()
+                {
+                    BlockHash = block.GetHash(),
+                    TransactionHash = hash,
+                    Index = i,
+                    Block = entity
+                };
 
                 if (!transactions.TryGetValue(hash, out tx))
                 {
                     tx = ToEntity((ZcoinTransaction)block.Transactions[i]);
                     transactions.Add(hash, tx);
+
+                    blockTx.Transaction = tx;
+                    tx.Blocks.Add(blockTx);
                 }
 
-                blockTx = new Ztm.Data.Entity.Contexts.Main.BlockTransaction()
-                {
-                    BlockHash = block.GetHash(),
-                    TransactionHash = tx.Hash,
-                    Index = i,
-                    Block = entity,
-                    Transaction = tx
-                };
-
-                tx.Blocks.Add(blockTx);
                 entity.Transactions.Add(blockTx);
             }
 

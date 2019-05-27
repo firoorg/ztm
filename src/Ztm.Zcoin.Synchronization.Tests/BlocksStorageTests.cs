@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using NBitcoin;
 using Xunit;
 using Ztm.Data.Entity.Testing;
 using Ztm.Zcoin.NBitcoin;
@@ -241,6 +243,33 @@ namespace Ztm.Zcoin.Synchronization.Tests
         }
 
         [Fact]
+        public async Task GetAsync_WithEmptyTable_ShouldReturnNull()
+        {
+            // Act.
+            var byHash = await this.subject.GetAsync(ZcoinNetworks.Instance.Regtest.GetGenesis().GetHash(), CancellationToken.None);
+            var byHeight = await this.subject.GetAsync(0, CancellationToken.None);
+
+            // Assert.
+            Assert.Null(byHash);
+            Assert.Null(byHeight);
+        }
+
+        [Fact]
+        public async Task GetAsync_WithInvalidHash_ShouldReturnNull()
+        {
+            // Arrange.
+            var block = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
+
+            await this.subject.AddAsync(block, 0, CancellationToken.None);
+
+            // Act.
+            var saved = await this.subject.GetAsync(uint256.One, CancellationToken.None);
+
+            // Assert.
+            Assert.Null(saved);
+        }
+
+        [Fact]
         public async Task GetAsync_WithValidHeight_ShouldSuccess()
         {
             // Arrange.
@@ -256,6 +285,16 @@ namespace Ztm.Zcoin.Synchronization.Tests
         }
 
         [Fact]
+        public async Task GetFirstAsync_WithEmptyTable_ShouldReturnNull()
+        {
+            // Act.
+            var saved = await this.subject.GetFirstAsync(CancellationToken.None);
+
+            // Assert.
+            Assert.Null(saved);
+        }
+
+        [Fact]
         public async Task GetFirstAsync_HadGenesisBlock_ShouldSuccess()
         {
             // Arrange.
@@ -268,6 +307,16 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             // Assert.
             Assert.Equal(block.GetHash(), saved.GetHash());
+        }
+
+        [Fact]
+        public async Task GetLastAsync_WithEmptyTable_ShouldReturnNull()
+        {
+            // Act.
+            var saved = await this.subject.GetLastAsync(CancellationToken.None);
+
+            // Assert.
+            Assert.Null(saved);
         }
 
         [Fact]
@@ -288,6 +337,98 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             // Assert.
             Assert.Equal(block1.GetHash(), saved.GetHash());
+        }
+
+        [Fact]
+        public async Task RemoveLastAsync_WithEmptyTable_ShouldNotThrow()
+        {
+            // Act.
+            await this.subject.RemoveLastAsync(CancellationToken.None);
+        }
+
+        [Fact]
+        public async Task RemoveLastAsync_WithNonEmptyTable_ShouldRemoveLastBlockAndAnyAssociatedData()
+        {
+            // Arrange.
+            var network = ZcoinNetworks.Instance.Regtest;
+            var sign = new byte[30];
+
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(sign);
+            }
+
+            // Genesis.
+            var genesis = (ZcoinBlock)network.GetGenesis();
+
+            await this.subject.AddAsync(genesis, 0, CancellationToken.None);
+
+            // Block 1.
+            var block1 = genesis.CreateNextBlockWithCoinbase(BitcoinAddress.Create("TQmbucVmyc8YWrxA8YcirCdJwcFLYK9PPH", network), 1);
+
+            await this.subject.AddAsync(block1, 1, CancellationToken.None);
+
+            // Block 2.
+            var block2 = block1.CreateNextBlockWithCoinbase(BitcoinAddress.Create("TQmbucVmyc8YWrxA8YcirCdJwcFLYK9PPH", network), 2);
+            var tx1 = new ZcoinTransaction();
+
+            tx1.Inputs.Add(new ZcoinTxIn()
+            {
+                ScriptSig = new Script(Op.GetPushOp(sign)),
+                PrevOut = new OutPoint(block1.Transactions[0].GetHash(), 0)
+            });
+
+            tx1.Outputs.Add(new ZcoinTxOut()
+            {
+                ScriptPubKey = BitcoinAddress.Create("THMdcCZXJvUGMHo4BVumsPvPQbzr87Wah7", network).ScriptPubKey,
+                Value = Money.Coins(10)
+            });
+
+            block2.AddTransaction(tx1);
+
+            await this.subject.AddAsync(block2, 2, CancellationToken.None);
+
+            // Block 3.
+            var block3 = block2.CreateNextBlockWithCoinbase(BitcoinAddress.Create("TQmbucVmyc8YWrxA8YcirCdJwcFLYK9PPH", network), 3);
+            var tx2 = new ZcoinTransaction();
+
+            tx2.Inputs.Add(new ZcoinTxIn()
+            {
+                ScriptSig = new Script(Op.GetPushOp(sign)),
+                PrevOut = new OutPoint(block2.Transactions[0].GetHash(), 0)
+            });
+
+            tx2.Outputs.Add(new ZcoinTxOut()
+            {
+                ScriptPubKey = BitcoinAddress.Create("THMdcCZXJvUGMHo4BVumsPvPQbzr87Wah7", network).ScriptPubKey,
+                Value = Money.Coins(5)
+            });
+
+            block3.AddTransaction(tx1); // For testing duplicate TX bug in separated block.
+            block3.AddTransaction(tx2);
+            block3.AddTransaction(tx2); // For testing duplicate TX bug in the same block.
+
+            await this.subject.AddAsync(block3, 3, CancellationToken.None);
+
+            // Act.
+            await this.subject.RemoveLastAsync(CancellationToken.None);
+
+            // Assert.
+            block3 = await this.subject.GetAsync(block3.GetHash(), CancellationToken.None);
+            Assert.Null(block3);
+
+            block3 = await this.subject.GetAsync(3, CancellationToken.None);
+            Assert.Null(block3);
+
+            block2 = await this.subject.GetAsync(block2.GetHash(), CancellationToken.None);
+            Assert.NotNull(block2);
+            Assert.Equal(tx1.GetHash(), block2.Transactions[1].GetHash());
+
+            var first = await this.subject.GetFirstAsync(CancellationToken.None);
+            var last = await this.subject.GetLastAsync(CancellationToken.None);
+
+            Assert.Equal(genesis.GetHash(), first.GetHash());
+            Assert.Equal(block2.GetHash(), last.GetHash());
         }
     }
 }

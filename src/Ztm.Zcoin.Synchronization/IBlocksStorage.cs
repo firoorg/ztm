@@ -17,8 +17,6 @@ namespace Ztm.Zcoin.Synchronization
 
         Task<ZcoinBlock> GetLastAsync(CancellationToken cancellationToken);
 
-        Task RemoveAsync(uint256 hash, CancellationToken cancellationToken);
-
-        Task RemoveAsync(int height, CancellationToken cancellationToken);
+        Task RemoveLastAsync(CancellationToken cancellationToken);
     }
 }
