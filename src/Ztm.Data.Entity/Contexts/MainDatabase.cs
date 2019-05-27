@@ -77,7 +77,7 @@ namespace Ztm.Data.Entity.Contexts
                  .WithMany(e => e.Blocks)
                  .HasForeignKey(e => e.TransactionHash)
                  .HasPrincipalKey(e => e.Hash)
-                 .OnDelete(DeleteBehavior.Cascade);
+                 .OnDelete(DeleteBehavior.Restrict);
             });
         }
 
