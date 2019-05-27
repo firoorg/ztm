@@ -1,3 +1,4 @@
+using NBitcoin;
 using Xunit;
 using Ztm.Data.Entity.Contexts.Main;
 
@@ -11,10 +12,7 @@ namespace Ztm.Data.Entity.Tests.Contexts.Main
         {
             this.subject = new BlockTransaction()
             {
-                Block = new Block()
-                {
-                    Height = 1
-                },
+                BlockHash = uint256.One,
                 Index = 1
             };
         }
@@ -32,10 +30,7 @@ namespace Ztm.Data.Entity.Tests.Contexts.Main
         {
             var result = this.subject.CompareTo(new BlockTransaction()
             {
-                Block = new Block()
-                {
-                    Height = 2
-                }
+                BlockHash = new uint256(2)
             });
 
             Assert.True(result < 0);
@@ -46,10 +41,7 @@ namespace Ztm.Data.Entity.Tests.Contexts.Main
         {
             var result = this.subject.CompareTo(new BlockTransaction()
             {
-                Block = new Block()
-                {
-                    Height = 0
-                }
+                BlockHash = uint256.Zero
             });
 
             Assert.True(result > 0);
@@ -60,10 +52,7 @@ namespace Ztm.Data.Entity.Tests.Contexts.Main
         {
             var result = this.subject.CompareTo(new BlockTransaction()
             {
-                Block = new Block()
-                {
-                    Height = 1
-                },
+                BlockHash = uint256.One,
                 Index = 2
             });
 
@@ -75,10 +64,7 @@ namespace Ztm.Data.Entity.Tests.Contexts.Main
         {
             var result = this.subject.CompareTo(new BlockTransaction()
             {
-                Block = new Block()
-                {
-                    Height = 1
-                },
+                BlockHash = uint256.One,
                 Index = 0
             });
 
@@ -90,10 +76,7 @@ namespace Ztm.Data.Entity.Tests.Contexts.Main
         {
             var result = this.subject.CompareTo(new BlockTransaction()
             {
-                Block = new Block()
-                {
-                    Height = 1
-                },
+                BlockHash = uint256.One,
                 Index = 1
             });
 
