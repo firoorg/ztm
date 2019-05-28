@@ -1,5 +1,3 @@
-using System;
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Ztm.Data.Entity.Contexts.Main;
 
@@ -22,24 +20,6 @@ namespace Ztm.Data.Entity.Contexts
         public DbSet<Transaction> Transactions { get; set; }
 
         public DbSet<WebApiCallback> WebApiCallbacks { get; set; }
-
-        public void RemoveBlock(Block block)
-        {
-            if (block == null)
-            {
-                throw new ArgumentNullException(nameof(block));
-            }
-
-            foreach (var tx in block.Transactions)
-            {
-                Inputs.RemoveRange(tx.Transaction.Inputs);
-                Outputs.RemoveRange(tx.Transaction.Outputs);
-            }
-
-            BlockTransactions.RemoveRange(block.Transactions);
-            Transactions.RemoveRange(block.Transactions.Select(tx => tx.Transaction).ToArray());
-            Blocks.Remove(block);
-        }
 
         protected virtual void ConfigureBlock(ModelBuilder modelBuilder)
         {
