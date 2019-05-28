@@ -12,17 +12,29 @@ namespace Ztm.Zcoin.Synchronization.Tests
         {
             Assert.Throws<ArgumentNullException>(
                 "block",
-                () => new BlockEventArgs(null, CancellationToken.None)
+                () => new BlockEventArgs(null, 0, CancellationToken.None)
             );
         }
 
         [Fact]
-        public void Constructor_PassNonNullForBlock_ShouldAssignToBlock()
+        public void Constructor_PassNegativeForHeight_ShouldThrow()
         {
             var block = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
-            var subject = new BlockEventArgs(block, CancellationToken.None);
+
+            Assert.Throws<ArgumentOutOfRangeException>(
+                "height",
+                () => new BlockEventArgs(block, -1, CancellationToken.None)
+            );
+        }
+
+        [Fact]
+        public void Constructor_PassValidParameters_ShouldInitProperties()
+        {
+            var block = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
+            var subject = new BlockEventArgs(block, 1, CancellationToken.None);
 
             Assert.Same(block, subject.Block);
+            Assert.Equal(1, subject.Height);
         }
     }
 }
