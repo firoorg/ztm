@@ -74,7 +74,7 @@ namespace Ztm.Zcoin.Synchronization
             }
         }
 
-        public async Task<ZcoinBlock> GetAsync(uint256 hash, CancellationToken cancellationToken)
+        public async Task<(ZcoinBlock block, int height)> GetAsync(uint256 hash, CancellationToken cancellationToken)
         {
             Ztm.Data.Entity.Contexts.Main.Block data, previous;
 
@@ -90,7 +90,7 @@ namespace Ztm.Zcoin.Synchronization
 
                 if (data == null)
                 {
-                    return null;
+                    return (block: null, height: 0);
                 }
 
                 if (data.Height == 0)
@@ -103,7 +103,7 @@ namespace Ztm.Zcoin.Synchronization
                 }
             }
 
-            return ToDomain(data, previous);
+            return (block: ToDomain(data, previous), height: data.Height);
         }
 
         public async Task<ZcoinBlock> GetAsync(int height, CancellationToken cancellationToken)
@@ -151,7 +151,7 @@ namespace Ztm.Zcoin.Synchronization
             return ToDomain(data);
         }
 
-        public async Task<ZcoinBlock> GetLastAsync(CancellationToken cancellationToken)
+        public async Task<(ZcoinBlock block, int height)> GetLastAsync(CancellationToken cancellationToken)
         {
             Ztm.Data.Entity.Contexts.Main.Block data, previous;
 
@@ -165,14 +165,14 @@ namespace Ztm.Zcoin.Synchronization
 
                 if (rows.Length == 0)
                 {
-                    return null;
+                    return (block: null, height: 0);
                 }
 
                 data = rows[0];
                 previous = (rows.Length > 1) ? rows[1] : null;
             }
 
-            return ToDomain(data, previous);
+            return (block: ToDomain(data, previous), height: data.Height);
         }
 
         public async Task RemoveLastAsync(CancellationToken cancellationToken)

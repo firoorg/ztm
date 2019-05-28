@@ -82,9 +82,10 @@ namespace Ztm.Zcoin.Synchronization.Tests
             await this.subject.AddAsync(block, 0, CancellationToken.None);
 
             // Assert.
-            var saved = await this.subject.GetAsync(block.GetHash(), CancellationToken.None);
+            var (saved, height) = await this.subject.GetAsync(block.GetHash(), CancellationToken.None);
 
             Assert.Equal(block.GetHash(), saved.GetHash());
+            Assert.Equal(0, height);
         }
 
         [Fact]
@@ -219,9 +220,10 @@ namespace Ztm.Zcoin.Synchronization.Tests
             await this.subject.AddAsync(block103, 103, CancellationToken.None);
 
             // Assert.
-            var saved = await this.subject.GetAsync(block103.GetHash(), CancellationToken.None);
+            var (saved, height) = await this.subject.GetAsync(block103.GetHash(), CancellationToken.None);
 
             Assert.Equal(block103.GetHash(), saved.GetHash());
+            Assert.Equal(103, height);
         }
 
         [Fact]
@@ -246,11 +248,12 @@ namespace Ztm.Zcoin.Synchronization.Tests
         public async Task GetAsync_WithEmptyTable_ShouldReturnNull()
         {
             // Act.
-            var byHash = await this.subject.GetAsync(ZcoinNetworks.Instance.Regtest.GetGenesis().GetHash(), CancellationToken.None);
+            var (byHash, height) = await this.subject.GetAsync(ZcoinNetworks.Instance.Regtest.GetGenesis().GetHash(), CancellationToken.None);
             var byHeight = await this.subject.GetAsync(0, CancellationToken.None);
 
             // Assert.
             Assert.Null(byHash);
+            Assert.Equal(0, height);
             Assert.Null(byHeight);
         }
 
@@ -263,10 +266,11 @@ namespace Ztm.Zcoin.Synchronization.Tests
             await this.subject.AddAsync(block, 0, CancellationToken.None);
 
             // Act.
-            var saved = await this.subject.GetAsync(uint256.One, CancellationToken.None);
+            var (saved, height) = await this.subject.GetAsync(uint256.One, CancellationToken.None);
 
             // Assert.
             Assert.Null(saved);
+            Assert.Equal(0, height);
         }
 
         [Fact]
@@ -313,10 +317,11 @@ namespace Ztm.Zcoin.Synchronization.Tests
         public async Task GetLastAsync_WithEmptyTable_ShouldReturnNull()
         {
             // Act.
-            var saved = await this.subject.GetLastAsync(CancellationToken.None);
+            var (saved, height) = await this.subject.GetLastAsync(CancellationToken.None);
 
             // Assert.
             Assert.Null(saved);
+            Assert.Equal(0, height);
         }
 
         [Fact]
@@ -333,10 +338,11 @@ namespace Ztm.Zcoin.Synchronization.Tests
             await this.subject.AddAsync(block1, 1, CancellationToken.None);
 
             // Act.
-            var saved = await this.subject.GetLastAsync(CancellationToken.None);
+            var (saved, height) = await this.subject.GetLastAsync(CancellationToken.None);
 
             // Assert.
             Assert.Equal(block1.GetHash(), saved.GetHash());
+            Assert.Equal(1, height);
         }
 
         [Fact]
@@ -414,21 +420,30 @@ namespace Ztm.Zcoin.Synchronization.Tests
             await this.subject.RemoveLastAsync(CancellationToken.None);
 
             // Assert.
-            block3 = await this.subject.GetAsync(block3.GetHash(), CancellationToken.None);
+            int height;
+            uint256 hash;
+            ZcoinBlock first, last;
+
+            (block3, height) = await this.subject.GetAsync(block3.GetHash(), CancellationToken.None);
             Assert.Null(block3);
+            Assert.Equal(0, height);
 
             block3 = await this.subject.GetAsync(3, CancellationToken.None);
             Assert.Null(block3);
 
-            block2 = await this.subject.GetAsync(block2.GetHash(), CancellationToken.None);
+            hash = block2.GetHash();
+            (block2, height) = await this.subject.GetAsync(hash, CancellationToken.None);
             Assert.NotNull(block2);
+            Assert.Equal(hash, block2.GetHash());
+            Assert.Equal(2, height);
             Assert.Equal(tx1.GetHash(), block2.Transactions[1].GetHash());
 
-            var first = await this.subject.GetFirstAsync(CancellationToken.None);
-            var last = await this.subject.GetLastAsync(CancellationToken.None);
+            first = await this.subject.GetFirstAsync(CancellationToken.None);
+            (last, height) = await this.subject.GetLastAsync(CancellationToken.None);
 
             Assert.Equal(genesis.GetHash(), first.GetHash());
             Assert.Equal(block2.GetHash(), last.GetHash());
+            Assert.Equal(2, height);
         }
     }
 }

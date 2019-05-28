@@ -9,13 +9,13 @@ namespace Ztm.Zcoin.Synchronization
     {
         Task AddAsync(ZcoinBlock block, int height, CancellationToken cancellationToken);
 
-        Task<ZcoinBlock> GetAsync(uint256 hash, CancellationToken cancellationToken);
+        Task<(ZcoinBlock block, int height)> GetAsync(uint256 hash, CancellationToken cancellationToken);
 
         Task<ZcoinBlock> GetAsync(int height, CancellationToken cancellationToken);
 
         Task<ZcoinBlock> GetFirstAsync(CancellationToken cancellationToken);
 
-        Task<ZcoinBlock> GetLastAsync(CancellationToken cancellationToken);
+        Task<(ZcoinBlock block, int height)> GetLastAsync(CancellationToken cancellationToken);
 
         Task RemoveLastAsync(CancellationToken cancellationToken);
     }
