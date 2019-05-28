@@ -85,26 +85,25 @@ namespace Ztm.Zcoin.Synchronization.Tests
         [Fact]
         public async Task Dispose_WhenRunning_ShouldStop()
         {
-            var hash = uint256.One;
             var block = ZcoinBlock.CreateBlock(ZcoinNetworks.Instance.Regtest);
 
             // Arrange.
             this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns(call =>
             {
                 call.ArgAt<CancellationToken>(0).ThrowIfCancellationRequested();
-                return hash;
+                return 0;
             });
 
-            this.rpc.GetBlockAsync(hash, Arg.Any<CancellationToken>()).Returns(call =>
+            this.rpc.GetBlockAsync(0, Arg.Any<CancellationToken>()).Returns(call =>
             {
                 call.ArgAt<CancellationToken>(1).ThrowIfCancellationRequested();
                 return block;
             });
 
-            this.handler.ProcessBlockAsync(hash, block, Arg.Any<CancellationToken>()).Returns(call =>
+            this.handler.ProcessBlockAsync(block, 0, Arg.Any<CancellationToken>()).Returns(call =>
             {
                 call.ArgAt<CancellationToken>(2).ThrowIfCancellationRequested();
-                return hash;
+                return 0;
             });
 
             Assert.False(this.blocksRetriever.IsRunning);
@@ -123,26 +122,25 @@ namespace Ztm.Zcoin.Synchronization.Tests
         [Fact]
         public async Task Dispose_AlreadyStoppedWithCancel_ShouldSuccess()
         {
-            var hash = uint256.One;
             var block = ZcoinBlock.CreateBlock(ZcoinNetworks.Instance.Regtest);
 
             // Arrange.
             this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns(call =>
             {
                 call.ArgAt<CancellationToken>(0).ThrowIfCancellationRequested();
-                return hash;
+                return 0;
             });
 
-            this.rpc.GetBlockAsync(hash, Arg.Any<CancellationToken>()).Returns(call =>
+            this.rpc.GetBlockAsync(0, Arg.Any<CancellationToken>()).Returns(call =>
             {
                 call.ArgAt<CancellationToken>(1).ThrowIfCancellationRequested();
                 return block;
             });
 
-            this.handler.ProcessBlockAsync(hash, block, Arg.Any<CancellationToken>()).Returns(call =>
+            this.handler.ProcessBlockAsync(block, 0, Arg.Any<CancellationToken>()).Returns(call =>
             {
                 call.ArgAt<CancellationToken>(2).ThrowIfCancellationRequested();
-                return hash;
+                return 0;
             });
 
             Assert.False(this.blocksRetriever.IsRunning);
@@ -182,26 +180,25 @@ namespace Ztm.Zcoin.Synchronization.Tests
         [Fact]
         public async Task StartAsync_WhenAlreadyStarted_ShouldThrow()
         {
-            var hash = uint256.One;
             var block = ZcoinBlock.CreateBlock(ZcoinNetworks.Instance.Regtest);
 
             // Arrange.
             this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns(call =>
             {
                 call.ArgAt<CancellationToken>(0).ThrowIfCancellationRequested();
-                return hash;
+                return 0;
             });
 
-            this.rpc.GetBlockAsync(hash, Arg.Any<CancellationToken>()).Returns(call =>
+            this.rpc.GetBlockAsync(0, Arg.Any<CancellationToken>()).Returns(call =>
             {
                 call.ArgAt<CancellationToken>(1).ThrowIfCancellationRequested();
                 return block;
             });
 
-            this.handler.ProcessBlockAsync(hash, block, Arg.Any<CancellationToken>()).Returns(call =>
+            this.handler.ProcessBlockAsync(block, 0, Arg.Any<CancellationToken>()).Returns(call =>
             {
                 call.ArgAt<CancellationToken>(2).ThrowIfCancellationRequested();
-                return hash;
+                return 0;
             });
 
             Assert.False(this.blocksRetriever.IsRunning);
@@ -249,20 +246,19 @@ namespace Ztm.Zcoin.Synchronization.Tests
         [Fact]
         public async Task StartAsync_BackgroundTaskSuccess_CallToStopShouldSuccess()
         {
-            var hash = uint256.One;
             var block = ZcoinBlock.CreateBlock(ZcoinNetworks.Instance.Regtest);
 
             // Arrange.
             using (var stoppedEvent = new ManualResetEventSlim())
             {
                 this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>())
-                    .Returns(hash);
+                    .Returns(0);
 
-                this.rpc.GetBlockAsync(hash, Arg.Any<CancellationToken>())
+                this.rpc.GetBlockAsync(0, Arg.Any<CancellationToken>())
                     .Returns(block);
 
-                this.handler.ProcessBlockAsync(hash, block, Arg.Any<CancellationToken>())
-                    .Returns((uint256)null);
+                this.handler.ProcessBlockAsync(block, 0, Arg.Any<CancellationToken>())
+                    .Returns(-1);
 
                 this.handler.StopAsync(Arg.Any<Exception>(), Arg.Any<CancellationToken>())
                     .Returns(Task.CompletedTask)
@@ -284,151 +280,78 @@ namespace Ztm.Zcoin.Synchronization.Tests
         }
 
         [Fact]
-        public async Task StartAsync_GetBlockHintAsyncReturnNull_ShouldRetrieveGenesisBlock()
+        public async Task StartAsync_GetBlockHintAsyncReturnNegative_ShouldStopBackgroundTask()
         {
-            var block = ZcoinBlock.CreateBlock(ZcoinNetworks.Instance.Regtest);
-
-            using (var blockProcessedEvent = new ManualResetEventSlim())
-            {
-                // Arrange.
-                this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns((uint256)null);
-                this.rpc.GetBlockAsync(0, Arg.Any<CancellationToken>()).Returns(block);
-
-                this.handler.ProcessBlockAsync(null, block, Arg.Any<CancellationToken>())
-                    .Returns((uint256)null)
-                    .AndDoes(_ => blockProcessedEvent.Set());
-
-                // Act.
-                await this.blocksRetriever.StartAsync(this.handler, CancellationToken.None);
-
-                blockProcessedEvent.Wait();
-            }
-
-            // Assert.
-            _ = this.rpc.Received(1).GetBlockAsync(0, Arg.Any<CancellationToken>());
-        }
-
-        [Fact]
-        public async Task StartAsync_GetBlockHintAsyncReturnZero_ShouldWaitForNewBlockNotification()
-        {
-            var block = ZcoinBlock.CreateBlock(ZcoinNetworks.Instance.Regtest);
-
-            // Arrange.
-            this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns(uint256.Zero);
-
-            // Act.
-            await this.blocksRetriever.StartAsync(this.handler, CancellationToken.None);
-            await Task.Delay(2000); // 2 seconds should be sufficient for background tasks to enter waiting.
-
-            _ = this.handler.Received(1).GetBlockHintAsync(Arg.Any<CancellationToken>());
-            this.handler.ClearReceivedCalls();
-
-            using (var stoppedEvent = new ManualResetEventSlim())
-            {
-                this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns(uint256.One);
-                this.rpc.GetBlockAsync(uint256.One, Arg.Any<CancellationToken>()).Returns(block);
-                this.handler.ProcessBlockAsync(uint256.One, block, Arg.Any<CancellationToken>()).Returns((uint256)null);
-                this.handler.StopAsync(Arg.Any<Exception>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask).AndDoes(_ =>
-                {
-                    stoppedEvent.Set();
-                });
-
-                this.publisher.SendMoreFrame("hashblock").SendFrame(uint256.One.ToString());
-
-                stoppedEvent.Wait();
-            }
-
-            // Assert.
-            _ = this.handler.Received(1).GetBlockHintAsync(Arg.Any<CancellationToken>());
-            _ = this.rpc.Received(1).GetBlockAsync(uint256.One, Arg.Any<CancellationToken>());
-            _ = this.handler.Received(1).ProcessBlockAsync(uint256.One, block, Arg.Any<CancellationToken>());
-        }
-
-        [Fact]
-        public async Task StartAsync_GetBlockHintAsyncReturnZeroAfterNotification_ShouldWaitForNewBlockNotification()
-        {
-            var block = ZcoinBlock.CreateBlock(ZcoinNetworks.Instance.Regtest);
-
-            // Arrange.
-            this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns(uint256.Zero);
-
-            // Act.
-            await this.blocksRetriever.StartAsync(this.handler, CancellationToken.None);
-            await Task.Delay(2000); // 2 seconds should be sufficient for background tasks to enter waiting.
-
-            this.publisher.SendMoreFrame("hashblock").SendFrame(uint256.One.ToString());
-            await Task.Delay(2000); // 2 seconds should be sufficient for background tasks to enter waiting again.
-
-            _ = this.handler.Received(2).GetBlockHintAsync(Arg.Any<CancellationToken>());
-            this.handler.ClearReceivedCalls();
-
-            using (var stoppedEvent = new ManualResetEventSlim())
-            {
-                this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns(uint256.One);
-                this.rpc.GetBlockAsync(uint256.One, Arg.Any<CancellationToken>()).Returns(block);
-                this.handler.ProcessBlockAsync(uint256.One, block, Arg.Any<CancellationToken>()).Returns((uint256)null);
-                this.handler.StopAsync(Arg.Any<Exception>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask).AndDoes(_ =>
-                {
-                    stoppedEvent.Set();
-                });
-
-                this.publisher.SendMoreFrame("hashblock").SendFrame(uint256.One.ToString());
-
-                stoppedEvent.Wait();
-            }
-
-            // Assert.
-            _ = this.handler.Received(1).GetBlockHintAsync(Arg.Any<CancellationToken>());
-            _ = this.rpc.Received(1).GetBlockAsync(uint256.One, Arg.Any<CancellationToken>());
-            _ = this.handler.Received(1).ProcessBlockAsync(uint256.One, block, Arg.Any<CancellationToken>());
-        }
-
-        [Fact]
-        public async Task StartAsync_GetBlockHintAsyncReturnValidBlockHash_ShouldRetrieveThatBlock()
-        {
-            var hash = uint256.One;
             var block = ZcoinBlock.CreateBlock(ZcoinNetworks.Instance.Regtest);
 
             using (var stoppedEvent = new ManualResetEventSlim())
             {
                 // Arrange.
-                this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns(hash);
-                this.rpc.GetBlockAsync(hash, Arg.Any<CancellationToken>()).Returns(block);
-                this.handler.ProcessBlockAsync(hash, block, Arg.Any<CancellationToken>()).Returns((uint256)null);
-                this.handler.StopAsync(Arg.Any<Exception>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask).AndDoes(_ =>
-                {
-                    stoppedEvent.Set();
-                });
+                this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>())
+                    .Returns(-1);
+                this.handler.StopAsync(Arg.Any<Exception>(), Arg.Any<CancellationToken>())
+                    .Returns(Task.CompletedTask)
+                    .AndDoes(_ => stoppedEvent.Set());
 
                 // Act.
                 await this.blocksRetriever.StartAsync(this.handler, CancellationToken.None);
-
                 stoppedEvent.Wait();
             }
 
             // Assert.
-            _ = this.handler.Received(1).GetBlockHintAsync(Arg.Any<CancellationToken>());
-            _ = this.rpc.Received(1).GetBlockAsync(hash, Arg.Any<CancellationToken>());
-            _ = this.handler.Received(1).ProcessBlockAsync(hash, block, Arg.Any<CancellationToken>());
+            _ = this.handler.Received(0).ProcessBlockAsync(Arg.Any<ZcoinBlock>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
             _ = this.handler.Received(1).StopAsync(null, Arg.Any<CancellationToken>());
         }
 
         [Fact]
-        public async Task StartAsync_GetBlockHintAsyncReturnInvalidBlockHash_ShouldRetrieveNullBlock()
+        public async Task StartAsync_GetBlockHintAsyncReturnTooHeight_ShouldWaitForNewBlockNotification()
         {
-            var hash = uint256.One;
+            var block = ZcoinBlock.CreateBlock(ZcoinNetworks.Instance.Regtest);
+
+            // Arrange.
+            this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns(1);
+            this.rpc.GetBlockAsync(1, Arg.Any<CancellationToken>()).Returns(Task.FromException<ZcoinBlock>(new RPCException(
+                RPCErrorCode.RPC_INVALID_PARAMETER,
+                "Block height out of range",
+                null
+            )));
+
+            // Act.
+            await this.blocksRetriever.StartAsync(this.handler, CancellationToken.None);
+            await Task.Delay(2000); // 2 seconds should be sufficient for background tasks to enter waiting.
+
+            using (var stoppedEvent = new ManualResetEventSlim())
+            {
+                this.rpc.GetBlockAsync(1, Arg.Any<CancellationToken>()).Returns(block);
+                this.handler.ProcessBlockAsync(block, 1, Arg.Any<CancellationToken>()).Returns(-1);
+                this.handler.StopAsync(Arg.Any<Exception>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask).AndDoes(_ =>
+                {
+                    stoppedEvent.Set();
+                });
+
+                this.publisher.SendMoreFrame("hashblock").SendFrame(uint256.One.ToString());
+
+                stoppedEvent.Wait();
+            }
+
+            // Assert.
+            _ = this.handler.Received(1).GetBlockHintAsync(Arg.Any<CancellationToken>());
+            _ = this.rpc.Received(2).GetBlockAsync(1, Arg.Any<CancellationToken>());
+            _ = this.handler.Received(1).ProcessBlockAsync(block, 1, Arg.Any<CancellationToken>());
+            _ = this.handler.Received(1).StopAsync(null, Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task StartAsync_GetBlockHintAsyncReturnValidHeight_ShouldRetrieveThatBlock()
+        {
+            var block = ZcoinBlock.CreateBlock(ZcoinNetworks.Instance.Regtest);
 
             using (var stoppedEvent = new ManualResetEventSlim())
             {
                 // Arrange.
-                this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns(hash);
-                this.rpc.When(rpc => rpc.GetBlockAsync(hash, Arg.Any<CancellationToken>())).Do(_ => throw new RPCException(
-                    RPCErrorCode.RPC_INVALID_ADDRESS_OR_KEY,
-                    "Block not found",
-                    null
-                ));
-
-                this.handler.ProcessBlockAsync(hash, null, Arg.Any<CancellationToken>()).Returns((uint256)null);
+                this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns(0);
+                this.rpc.GetBlockAsync(0, Arg.Any<CancellationToken>()).Returns(block);
+                this.handler.ProcessBlockAsync(block, 0, Arg.Any<CancellationToken>()).Returns(-1);
                 this.handler.StopAsync(Arg.Any<Exception>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask).AndDoes(_ =>
                 {
                     stoppedEvent.Set();
@@ -442,24 +365,23 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             // Assert.
             _ = this.handler.Received(1).GetBlockHintAsync(Arg.Any<CancellationToken>());
-            _ = this.rpc.Received(1).GetBlockAsync(hash, Arg.Any<CancellationToken>());
-            _ = this.handler.Received(1).ProcessBlockAsync(hash, null, Arg.Any<CancellationToken>());
+            _ = this.rpc.Received(1).GetBlockAsync(0, Arg.Any<CancellationToken>());
+            _ = this.handler.Received(1).ProcessBlockAsync(block, 0, Arg.Any<CancellationToken>());
             _ = this.handler.Received(1).StopAsync(null, Arg.Any<CancellationToken>());
         }
 
         [Fact]
         public async Task StartAsync_ProcessBlockAsyncThrow_ShouldCallProcessErrorAsync()
         {
-            var hash = uint256.One;
             var block = ZcoinBlock.CreateBlock(ZcoinNetworks.Instance.Regtest);
             var error = new Exception();
 
             using (var stoppedEvent = new ManualResetEventSlim())
             {
                 // Arrange.
-                this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns(hash);
-                this.rpc.GetBlockAsync(hash, Arg.Any<CancellationToken>()).Returns(block);
-                this.handler.When(h => h.ProcessBlockAsync(hash, block, Arg.Any<CancellationToken>())).Do(_ => throw error);
+                this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns(0);
+                this.rpc.GetBlockAsync(0, Arg.Any<CancellationToken>()).Returns(block);
+                this.handler.When(h => h.ProcessBlockAsync(block, 0, Arg.Any<CancellationToken>())).Do(_ => throw error);
                 this.handler.StopAsync(Arg.Any<Exception>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask).AndDoes(_ =>
                 {
                     stoppedEvent.Set();
@@ -473,14 +395,14 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             // Assert.
             _ = this.handler.Received(1).GetBlockHintAsync(Arg.Any<CancellationToken>());
-            _ = this.rpc.Received(1).GetBlockAsync(hash, Arg.Any<CancellationToken>());
-            _ = this.handler.Received(1).ProcessBlockAsync(hash, block, Arg.Any<CancellationToken>());
+            _ = this.rpc.Received(1).GetBlockAsync(0, Arg.Any<CancellationToken>());
+            _ = this.handler.Received(1).ProcessBlockAsync(block, 0, Arg.Any<CancellationToken>());
             _ = this.handler.Received(1).StopAsync(error, Arg.Any<CancellationToken>());
             _ = this.handler.Received(0).StopAsync(null, Arg.Any<CancellationToken>());
         }
 
         [Fact]
-        public async Task StartAsync_ProcessBlockAsyncReturnZero_ShouldWaitForNewBlockNotification()
+        public async Task StartAsync_ProcessBlockAsyncReturnTooHeight_ShouldWaitForNewBlockNotification()
         {
             // Arrange.
             var block1 = ZcoinBlock.CreateBlock(ZcoinNetworks.Instance.Regtest);
@@ -491,9 +413,14 @@ namespace Ztm.Zcoin.Synchronization.Tests
             block2.Header.Nonce = 2;
             block2.Header.PrecomputeHash(invalidateExisting: true, lazily: false);
 
-            this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns(block1.GetHash());
-            this.rpc.GetBlockAsync(block1.GetHash(), Arg.Any<CancellationToken>()).Returns(block1);
-            this.handler.ProcessBlockAsync(block1.GetHash(), block1, Arg.Any<CancellationToken>()).Returns(uint256.Zero);
+            this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns(0);
+            this.rpc.GetBlockAsync(0, Arg.Any<CancellationToken>()).Returns(block1);
+            this.handler.ProcessBlockAsync(block1, 0, Arg.Any<CancellationToken>()).Returns(1);
+            this.rpc.GetBlockAsync(1, Arg.Any<CancellationToken>()).Returns(Task.FromException<ZcoinBlock>(new RPCException(
+                RPCErrorCode.RPC_INVALID_PARAMETER,
+                "Block height out of range",
+                null
+            )));
 
             // Act.
             await this.blocksRetriever.StartAsync(this.handler, CancellationToken.None);
@@ -501,9 +428,8 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             using (var stoppedEvent = new ManualResetEventSlim())
             {
-                this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns(block2.GetHash());
-                this.rpc.GetBlockAsync(block2.GetHash(), Arg.Any<CancellationToken>()).Returns(block2);
-                this.handler.ProcessBlockAsync(block2.GetHash(), block2, Arg.Any<CancellationToken>()).Returns((uint256)null);
+                this.rpc.GetBlockAsync(1, Arg.Any<CancellationToken>()).Returns(block2);
+                this.handler.ProcessBlockAsync(block2, 1, Arg.Any<CancellationToken>()).Returns(-1);
                 this.handler.StopAsync(Arg.Any<Exception>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask).AndDoes(_ =>
                 {
                     stoppedEvent.Set();
@@ -515,16 +441,17 @@ namespace Ztm.Zcoin.Synchronization.Tests
             }
 
             // Assert.
-            _ = this.handler.Received(2).GetBlockHintAsync(Arg.Any<CancellationToken>());
-            _ = this.rpc.Received(1).GetBlockAsync(block1.GetHash(), Arg.Any<CancellationToken>());
-            _ = this.rpc.Received(1).GetBlockAsync(block2.GetHash(), Arg.Any<CancellationToken>());
-            _ = this.handler.Received(1).ProcessBlockAsync(block1.GetHash(), block1, Arg.Any<CancellationToken>());
-            _ = this.handler.Received(1).ProcessBlockAsync(block2.GetHash(), block2, Arg.Any<CancellationToken>());
+            _ = this.handler.Received(1).GetBlockHintAsync(Arg.Any<CancellationToken>());
+            _ = this.rpc.Received(1).GetBlockAsync(0, Arg.Any<CancellationToken>());
+            _ = this.handler.Received(1).ProcessBlockAsync(block1, 0, Arg.Any<CancellationToken>());
+            _ = this.rpc.Received(2).GetBlockAsync(1, Arg.Any<CancellationToken>());
+            _ = this.handler.Received(1).ProcessBlockAsync(block2, 1, Arg.Any<CancellationToken>());
             _ = this.handler.Received(1).StopAsync(null, Arg.Any<CancellationToken>());
+            _ = this.handler.Received(0).StopAsync(Arg.Is<Exception>(ex => ex != null), Arg.Any<CancellationToken>());
         }
 
         [Fact]
-        public async Task StartAsync_ProcessBlockAsyncReturnValidBlockHash_ShouldRetrieveThatBlock()
+        public async Task StartAsync_ProcessBlockAsyncReturnValidHeight_ShouldRetrieveThatBlock()
         {
             var block1 = ZcoinBlock.CreateBlock(ZcoinNetworks.Instance.Regtest);
             block1.Header.Nonce = 1;
@@ -537,11 +464,11 @@ namespace Ztm.Zcoin.Synchronization.Tests
             using (var stoppedEvent = new ManualResetEventSlim())
             {
                 // Arrange.
-                this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns(block1.GetHash());
-                this.rpc.GetBlockAsync(block1.GetHash(), Arg.Any<CancellationToken>()).Returns(block1);
-                this.handler.ProcessBlockAsync(block1.GetHash(), block1, Arg.Any<CancellationToken>()).Returns(block2.GetHash());
-                this.rpc.GetBlockAsync(block2.GetHash(), Arg.Any<CancellationToken>()).Returns(block2);
-                this.handler.ProcessBlockAsync(block2.GetHash(), block2, Arg.Any<CancellationToken>()).Returns((uint256)null);
+                this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns(0);
+                this.rpc.GetBlockAsync(0, Arg.Any<CancellationToken>()).Returns(block1);
+                this.handler.ProcessBlockAsync(block1, 0, Arg.Any<CancellationToken>()).Returns(1);
+                this.rpc.GetBlockAsync(1, Arg.Any<CancellationToken>()).Returns(block2);
+                this.handler.ProcessBlockAsync(block2, 1, Arg.Any<CancellationToken>()).Returns(-1);
 
                 this.handler.StopAsync(Arg.Any<Exception>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask).AndDoes(_ =>
                 {
@@ -556,15 +483,16 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             // Assert.
             _ = this.handler.Received(1).GetBlockHintAsync(Arg.Any<CancellationToken>());
-            _ = this.rpc.Received(1).GetBlockAsync(block1.GetHash(), Arg.Any<CancellationToken>());
-            _ = this.rpc.Received(1).GetBlockAsync(block2.GetHash(), Arg.Any<CancellationToken>());
-            _ = this.handler.Received(1).ProcessBlockAsync(block1.GetHash(), block1, Arg.Any<CancellationToken>());
-            _ = this.handler.Received(1).ProcessBlockAsync(block2.GetHash(), block2, Arg.Any<CancellationToken>());
+            _ = this.rpc.Received(1).GetBlockAsync(0, Arg.Any<CancellationToken>());
+            _ = this.handler.Received(1).ProcessBlockAsync(block1, 0, Arg.Any<CancellationToken>());
+            _ = this.rpc.Received(1).GetBlockAsync(1, Arg.Any<CancellationToken>());
+            _ = this.handler.Received(1).ProcessBlockAsync(block2, 1, Arg.Any<CancellationToken>());
             _ = this.handler.Received(1).StopAsync(null, Arg.Any<CancellationToken>());
+            _ = this.handler.Received(0).StopAsync(Arg.Is<Exception>(ex => ex != null), Arg.Any<CancellationToken>());
         }
 
         [Fact]
-        public async Task StartAsync_ProcessBlockAsyncReturnInvalidBlockHash_ShouldRetrieveNullBlock()
+        public async Task StartAsync_ProcessBlockAsyncReturnNegative_ShouldStopBackgroundTask()
         {
             var block1 = ZcoinBlock.CreateBlock(ZcoinNetworks.Instance.Regtest);
             block1.Header.Nonce = 1;
@@ -573,18 +501,9 @@ namespace Ztm.Zcoin.Synchronization.Tests
             using (var stoppedEvent = new ManualResetEventSlim())
             {
                 // Arrange.
-                this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns(block1.GetHash());
-                this.rpc.GetBlockAsync(block1.GetHash(), Arg.Any<CancellationToken>()).Returns(block1);
-                this.handler.ProcessBlockAsync(block1.GetHash(), block1, Arg.Any<CancellationToken>()).Returns(uint256.One);
-
-                this.rpc.When(rpc => rpc.GetBlockAsync(uint256.One, Arg.Any<CancellationToken>())).Do(_ => new RPCException(
-                    RPCErrorCode.RPC_INVALID_ADDRESS_OR_KEY,
-                    "Block not found",
-                    null
-                ));
-
-                this.handler.ProcessBlockAsync(uint256.One, null, Arg.Any<CancellationToken>()).Returns((uint256)null);
-
+                this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns(0);
+                this.rpc.GetBlockAsync(0, Arg.Any<CancellationToken>()).Returns(block1);
+                this.handler.ProcessBlockAsync(block1, 0, Arg.Any<CancellationToken>()).Returns(-1);
                 this.handler.StopAsync(Arg.Any<Exception>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask).AndDoes(_ =>
                 {
                     stoppedEvent.Set();
@@ -598,36 +517,34 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             // Assert.
             _ = this.handler.Received(1).GetBlockHintAsync(Arg.Any<CancellationToken>());
-            _ = this.rpc.Received(1).GetBlockAsync(block1.GetHash(), Arg.Any<CancellationToken>());
-            _ = this.rpc.Received(1).GetBlockAsync(uint256.One, Arg.Any<CancellationToken>());
-            _ = this.handler.Received(1).ProcessBlockAsync(block1.GetHash(), block1, Arg.Any<CancellationToken>());
-            _ = this.handler.Received(1).ProcessBlockAsync(uint256.One, null, Arg.Any<CancellationToken>());
+            _ = this.rpc.Received(1).GetBlockAsync(0, Arg.Any<CancellationToken>());
+            _ = this.handler.Received(1).ProcessBlockAsync(block1, 0, Arg.Any<CancellationToken>());
             _ = this.handler.Received(1).StopAsync(null, Arg.Any<CancellationToken>());
+            _ = this.handler.Received(0).StopAsync(Arg.Is<Exception>(ex => ex != null), Arg.Any<CancellationToken>());
         }
 
         [Fact]
         public async Task StopAsync_WhenSuccess_BackgroundTaskShouldStop()
         {
-            var hash = uint256.One;
             var block = ZcoinBlock.CreateBlock(ZcoinNetworks.Instance.Regtest);
 
             // Arrange.
             this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns(call =>
             {
                 call.ArgAt<CancellationToken>(0).ThrowIfCancellationRequested();
-                return hash;
+                return 0;
             });
 
-            this.rpc.GetBlockAsync(hash, Arg.Any<CancellationToken>()).Returns(call =>
+            this.rpc.GetBlockAsync(0, Arg.Any<CancellationToken>()).Returns(call =>
             {
                 call.ArgAt<CancellationToken>(1).ThrowIfCancellationRequested();
                 return block;
             });
 
-            this.handler.ProcessBlockAsync(hash, block, Arg.Any<CancellationToken>()).Returns(call =>
+            this.handler.ProcessBlockAsync(block, 0, Arg.Any<CancellationToken>()).Returns(call =>
             {
                 call.ArgAt<CancellationToken>(2).ThrowIfCancellationRequested();
-                return hash;
+                return 0;
             });
 
             Assert.False(this.blocksRetriever.IsRunning);
@@ -639,6 +556,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             // Assert.
             _ = this.handler.Received(1).StopAsync(null, Arg.Any<CancellationToken>());
+            _ = this.handler.Received(0).StopAsync(Arg.Is<Exception>(ex => ex != null), Arg.Any<CancellationToken>());
 
             Assert.False(this.blocksRetriever.IsRunning);
         }
@@ -683,9 +601,9 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             // Assert.
             _ = this.handler.Received(1).GetBlockHintAsync(Arg.Any<CancellationToken>());
-            _ = this.rpcFactory.DidNotReceive().CreateRpcClientAsync(Arg.Any<CancellationToken>());
-            _ = this.handler.DidNotReceive().ProcessBlockAsync(Arg.Any<uint256>(), Arg.Any<ZcoinBlock>(), Arg.Any<CancellationToken>());
-            _ = this.handler.DidNotReceive().StopAsync(Arg.Is<Exception>(ex => ex != null), Arg.Any<CancellationToken>());
+            _ = this.rpcFactory.Received(0).CreateRpcClientAsync(Arg.Any<CancellationToken>());
+            _ = this.handler.Received(0).ProcessBlockAsync(Arg.Any<ZcoinBlock>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
+            _ = this.handler.Received(0).StopAsync(Arg.Is<Exception>(ex => ex != null), Arg.Any<CancellationToken>());
             _ = this.handler.Received(1).StopAsync(null, Arg.Any<CancellationToken>());
 
             Assert.False(this.blocksRetriever.IsRunning);
@@ -695,7 +613,12 @@ namespace Ztm.Zcoin.Synchronization.Tests
         public async Task StopAsync_AlreadyRunning_ShouldCancelWaitForNewBlock()
         {
             // Arrange.
-            this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns(uint256.Zero);
+            this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns(1);
+            this.rpc.When(rpc => rpc.GetBlockAsync(1, Arg.Any<CancellationToken>())).Do(_ => throw new RPCException(
+                RPCErrorCode.RPC_INVALID_PARAMETER,
+                "Block height out of range",
+                null
+            ));
 
             await this.blocksRetriever.StartAsync(this.handler, CancellationToken.None);
 
@@ -704,9 +627,9 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             // Assert.
             _ = this.handler.Received(1).GetBlockHintAsync(Arg.Any<CancellationToken>());
-            _ = this.rpcFactory.DidNotReceive().CreateRpcClientAsync(Arg.Any<CancellationToken>());
-            _ = this.handler.DidNotReceive().ProcessBlockAsync(Arg.Any<uint256>(), Arg.Any<ZcoinBlock>(), Arg.Any<CancellationToken>());
-            _ = this.handler.DidNotReceive().StopAsync(Arg.Is<Exception>(ex => ex != null), Arg.Any<CancellationToken>());
+            _ = this.rpc.Received(1).GetBlockAsync(1, Arg.Any<CancellationToken>());
+            _ = this.handler.Received(0).ProcessBlockAsync(Arg.Any<ZcoinBlock>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
+            _ = this.handler.Received(0).StopAsync(Arg.Is<Exception>(ex => ex != null), Arg.Any<CancellationToken>());
             _ = this.handler.Received(1).StopAsync(null, Arg.Any<CancellationToken>());
 
             Assert.False(this.blocksRetriever.IsRunning);
@@ -716,7 +639,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
         public async Task StopAsync_AlreadyRunning_ShouldCancelCreateRpcClientAsync()
         {
             // Arrange.
-            this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns(uint256.One);
+            this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns(0);
             this.rpcFactory.When(f => f.CreateRpcClientAsync(Arg.Any<CancellationToken>())).Do(call =>
             {
                 var token = call.ArgAt<CancellationToken>(0);
@@ -733,18 +656,18 @@ namespace Ztm.Zcoin.Synchronization.Tests
             // Assert.
             _ = this.handler.Received(1).GetBlockHintAsync(Arg.Any<CancellationToken>());
             _ = this.rpcFactory.Received(1).CreateRpcClientAsync(Arg.Any<CancellationToken>());
-            _ = this.handler.DidNotReceive().ProcessBlockAsync(Arg.Any<uint256>(), Arg.Any<ZcoinBlock>(), Arg.Any<CancellationToken>());
-            _ = this.handler.DidNotReceive().StopAsync(Arg.Is<Exception>(ex => ex != null), Arg.Any<CancellationToken>());
+            _ = this.handler.Received(0).ProcessBlockAsync(Arg.Any<ZcoinBlock>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
+            _ = this.handler.Received(0).StopAsync(Arg.Is<Exception>(ex => ex != null), Arg.Any<CancellationToken>());
             _ = this.handler.Received(1).StopAsync(null, Arg.Any<CancellationToken>());
 
             Assert.False(this.blocksRetriever.IsRunning);
         }
 
         [Fact]
-        public async Task StopAsync_AlreadyRunning_ShouldCancelGenesisGetBlockAsync()
+        public async Task StopAsync_AlreadyRunning_ShouldCancelGetBlockAsync()
         {
             // Arrange.
-            this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns((uint256)null);
+            this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns(0);
             this.rpc.When(rpc => rpc.GetBlockAsync(0, Arg.Any<CancellationToken>())).Do(call =>
             {
                 var token = call.ArgAt<CancellationToken>(1);
@@ -761,36 +684,8 @@ namespace Ztm.Zcoin.Synchronization.Tests
             // Assert.
             _ = this.handler.Received(1).GetBlockHintAsync(Arg.Any<CancellationToken>());
             _ = this.rpc.Received(1).GetBlockAsync(0, Arg.Any<CancellationToken>());
-            _ = this.handler.DidNotReceive().ProcessBlockAsync(Arg.Any<uint256>(), Arg.Any<ZcoinBlock>(), Arg.Any<CancellationToken>());
-            _ = this.handler.DidNotReceive().StopAsync(Arg.Is<Exception>(ex => ex != null), Arg.Any<CancellationToken>());
-            _ = this.handler.Received(1).StopAsync(null, Arg.Any<CancellationToken>());
-
-            Assert.False(this.blocksRetriever.IsRunning);
-        }
-
-        [Fact]
-        public async Task StopAsync_AlreadyRunning_ShouldCancelNonGenesisGetBlockAsync()
-        {
-            // Arrange.
-            this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns(uint256.One);
-            this.rpc.When(rpc => rpc.GetBlockAsync(uint256.One, Arg.Any<CancellationToken>())).Do(call =>
-            {
-                var token = call.ArgAt<CancellationToken>(1);
-
-                token.WaitHandle.WaitOne();
-                token.ThrowIfCancellationRequested();
-            });
-
-            await this.blocksRetriever.StartAsync(this.handler, CancellationToken.None);
-
-            // Act.
-            await this.blocksRetriever.StopAsync(CancellationToken.None);
-
-            // Assert.
-            _ = this.handler.Received(1).GetBlockHintAsync(Arg.Any<CancellationToken>());
-            _ = this.rpc.Received(1).GetBlockAsync(uint256.One, Arg.Any<CancellationToken>());
-            _ = this.handler.DidNotReceive().ProcessBlockAsync(Arg.Any<uint256>(), Arg.Any<ZcoinBlock>(), Arg.Any<CancellationToken>());
-            _ = this.handler.DidNotReceive().StopAsync(Arg.Is<Exception>(ex => ex != null), Arg.Any<CancellationToken>());
+            _ = this.handler.Received(0).ProcessBlockAsync(Arg.Any<ZcoinBlock>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
+            _ = this.handler.Received(0).StopAsync(Arg.Is<Exception>(ex => ex != null), Arg.Any<CancellationToken>());
             _ = this.handler.Received(1).StopAsync(null, Arg.Any<CancellationToken>());
 
             Assert.False(this.blocksRetriever.IsRunning);
@@ -799,15 +694,14 @@ namespace Ztm.Zcoin.Synchronization.Tests
         [Fact]
         public async Task StopAsync_AlreadyRunning_ShouldCancelProcessBlockAsync()
         {
-            var hash = uint256.One;
             var block = ZcoinBlock.CreateBlock(ZcoinNetworks.Instance.Regtest);
 
             // Arrange.
             using (var stoppedEvent = new ManualResetEventSlim())
             {
-                this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns(uint256.One);
-                this.rpc.GetBlockAsync(uint256.One, Arg.Any<CancellationToken>()).Returns(block);
-                this.handler.When(h => h.ProcessBlockAsync(uint256.One, block, Arg.Any<CancellationToken>())).Do(call =>
+                this.handler.GetBlockHintAsync(Arg.Any<CancellationToken>()).Returns(0);
+                this.rpc.GetBlockAsync(0, Arg.Any<CancellationToken>()).Returns(block);
+                this.handler.When(h => h.ProcessBlockAsync(block, 0, Arg.Any<CancellationToken>())).Do(call =>
                 {
                     var token = call.ArgAt<CancellationToken>(2);
 
@@ -823,9 +717,9 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             // Assert.
             _ = this.handler.Received(1).GetBlockHintAsync(Arg.Any<CancellationToken>());
-            _ = this.rpc.Received(1).GetBlockAsync(uint256.One, Arg.Any<CancellationToken>());
-            _ = this.handler.Received(1).ProcessBlockAsync(uint256.One, block, Arg.Any<CancellationToken>());
-            _ = this.handler.DidNotReceive().StopAsync(Arg.Is<Exception>(ex => ex != null), Arg.Any<CancellationToken>());
+            _ = this.rpc.Received(1).GetBlockAsync(0, Arg.Any<CancellationToken>());
+            _ = this.handler.Received(1).ProcessBlockAsync(block, 0, Arg.Any<CancellationToken>());
+            _ = this.handler.Received(0).StopAsync(Arg.Is<Exception>(ex => ex != null), Arg.Any<CancellationToken>());
             _ = this.handler.Received(1).StopAsync(null, Arg.Any<CancellationToken>());
 
             Assert.False(this.blocksRetriever.IsRunning);

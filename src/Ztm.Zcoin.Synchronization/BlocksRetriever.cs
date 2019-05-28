@@ -161,29 +161,13 @@ namespace Ztm.Zcoin.Synchronization
 
             try
             {
-                var next = await handler.GetBlockHintAsync(cancellationToken);
+                var height = await handler.GetBlockHintAsync(cancellationToken);
 
                 while (true)
                 {
-                    while (next == uint256.Zero)
+                    if (height < 0)
                     {
-                        // Wait till next block arrived.
-                        this.newBlockNotification = new SemaphoreSlim(initialCount: 0);
-
-                        try
-                        {
-                            await this.newBlockNotification.WaitAsync(cancellationToken);
-                        }
-                        finally
-                        {
-                            lock (this.newBlockNotification)
-                            {
-                                this.newBlockNotification.Dispose();
-                            }
-                            this.newBlockNotification = null;
-                        }
-
-                        next = await handler.GetBlockHintAsync(cancellationToken);
+                        break;
                     }
 
                     // Get block.
@@ -191,31 +175,20 @@ namespace Ztm.Zcoin.Synchronization
 
                     using (var rpc = await this.rpc.CreateRpcClientAsync(cancellationToken))
                     {
-                        if (next != null)
+                        try
                         {
-                            try
-                            {
-                                block = await rpc.GetBlockAsync(next, cancellationToken);
-                            }
-                            catch (RPCException ex) when (ex.RPCCode == RPCErrorCode.RPC_INVALID_ADDRESS_OR_KEY)
-                            {
-                                // Block not found.
-                                block = null;
-                            }
+                            block = await rpc.GetBlockAsync(height, cancellationToken);
                         }
-                        else
+                        catch (RPCException ex) when (ex.RPCCode == RPCErrorCode.RPC_INVALID_PARAMETER)
                         {
-                            block = await rpc.GetBlockAsync(0, cancellationToken);
+                            // Invalid block height.
+                            await WaitNewBlockAsync(cancellationToken);
+                            continue;
                         }
                     }
 
                     // Execute handler.
-                    next = await handler.ProcessBlockAsync(next, block, cancellationToken);
-
-                    if (next == null)
-                    {
-                        break;
-                    }
+                    height = await handler.ProcessBlockAsync(block, height, cancellationToken);
                 }
             }
             catch (Exception ex)
@@ -255,6 +228,24 @@ namespace Ztm.Zcoin.Synchronization
                 {
                     // Ignore.
                 }
+            }
+        }
+
+        async Task WaitNewBlockAsync(CancellationToken cancellationToken)
+        {
+            this.newBlockNotification = new SemaphoreSlim(initialCount: 0);
+
+            try
+            {
+                await this.newBlockNotification.WaitAsync(cancellationToken);
+            }
+            finally
+            {
+                lock (this.newBlockNotification)
+                {
+                    this.newBlockNotification.Dispose();
+                }
+                this.newBlockNotification = null;
             }
         }
 
