@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
+using NBitcoin;
 using Xunit;
 
 namespace Ztm.Configuration.Tests
@@ -16,6 +17,7 @@ namespace Ztm.Configuration.Tests
             builder.AddInMemoryCollection(new Dictionary<string, string>()
             {
                 {"Database:Main:ConnectionString", "Host=127.0.0.1;Database=ztm;Username=ztm;Password=1234"},
+                {"Zcoin:Network:Type", "Testnet"},
                 {"Zcoin:Rpc:Address", "http://127.0.0.1:8888"},
                 {"Zcoin:Rpc:UserName", "root"},
                 {"Zcoin:Rpc:Password", "abc"}
@@ -40,7 +42,9 @@ namespace Ztm.Configuration.Tests
             var parsed = this.config.GetZcoinSection();
 
             Assert.NotNull(parsed);
+            Assert.NotNull(parsed.Network);
             Assert.NotNull(parsed.Rpc);
+            Assert.Equal(NetworkType.Testnet, parsed.Network.Type);
             Assert.Equal(new Uri("http://127.0.0.1:8888"), parsed.Rpc.Address);
             Assert.Equal("root", parsed.Rpc.UserName);
             Assert.Equal("abc", parsed.Rpc.Password);
