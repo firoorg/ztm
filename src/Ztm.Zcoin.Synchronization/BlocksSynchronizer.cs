@@ -107,7 +107,7 @@ namespace Ztm.Zcoin.Synchronization
                     // Our latest block is not what expected (e.g. chain already switched)
                     // so we need to reload it.
                     await this.storage.RemoveLastAsync(cancellationToken);
-                    await BlockRemoved?.InvokeAsync(
+                    await BlockRemoved.InvokeAsync(
                         this,
                         new BlockEventArgs(localBlock, localHeight, cancellationToken)
                     );
@@ -117,7 +117,7 @@ namespace Ztm.Zcoin.Synchronization
 
             // Store block.
             await this.storage.AddAsync(block, height, cancellationToken);
-            await BlockAdded?.InvokeAsync(
+            await BlockAdded.InvokeAsync(
                 this,
                 new BlockEventArgs(block, height, cancellationToken)
             );
