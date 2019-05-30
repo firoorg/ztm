@@ -37,6 +37,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ztm.ObjectModel.Tests", "Zt
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ztm.Data.Entity.Testing", "Ztm.Data.Entity.Testing\Ztm.Data.Entity.Testing.csproj", "{0C9B4573-E7CB-446B-A029-F0222D513C5F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ztm.ServiceModel.Tests", "Ztm.ServiceModel.Tests\Ztm.ServiceModel.Tests.csproj", "{221B7FA8-B6BF-4F5A-95E9-63A8741CD057}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -254,5 +256,17 @@ Global
 		{0C9B4573-E7CB-446B-A029-F0222D513C5F}.Release|x64.Build.0 = Release|Any CPU
 		{0C9B4573-E7CB-446B-A029-F0222D513C5F}.Release|x86.ActiveCfg = Release|Any CPU
 		{0C9B4573-E7CB-446B-A029-F0222D513C5F}.Release|x86.Build.0 = Release|Any CPU
+		{221B7FA8-B6BF-4F5A-95E9-63A8741CD057}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{221B7FA8-B6BF-4F5A-95E9-63A8741CD057}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{221B7FA8-B6BF-4F5A-95E9-63A8741CD057}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{221B7FA8-B6BF-4F5A-95E9-63A8741CD057}.Debug|x64.Build.0 = Debug|Any CPU
+		{221B7FA8-B6BF-4F5A-95E9-63A8741CD057}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{221B7FA8-B6BF-4F5A-95E9-63A8741CD057}.Debug|x86.Build.0 = Debug|Any CPU
+		{221B7FA8-B6BF-4F5A-95E9-63A8741CD057}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{221B7FA8-B6BF-4F5A-95E9-63A8741CD057}.Release|Any CPU.Build.0 = Release|Any CPU
+		{221B7FA8-B6BF-4F5A-95E9-63A8741CD057}.Release|x64.ActiveCfg = Release|Any CPU
+		{221B7FA8-B6BF-4F5A-95E9-63A8741CD057}.Release|x64.Build.0 = Release|Any CPU
+		{221B7FA8-B6BF-4F5A-95E9-63A8741CD057}.Release|x86.ActiveCfg = Release|Any CPU
+		{221B7FA8-B6BF-4F5A-95E9-63A8741CD057}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

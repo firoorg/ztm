@@ -247,5 +247,50 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             Assert.Equal(2, height);
         }
+
+        [Fact]
+        public async Task StopAsync_WhenInvoke_ShouldCallStopAsync()
+        {
+            // Arrange.
+            var subject = this.subject as IBlocksRetrieverHandler;
+
+            this.retriever.StartAsync(this.subject, Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+            this.retriever.StopAsync(Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+
+            await this.subject.StartAsync(CancellationToken.None);
+
+            // Act.
+            await subject.StopAsync(null, CancellationToken.None);
+            await Task.Delay(1000); // 1 second should be enough for StopAsync to complete.
+
+            // Assert.
+            Assert.False(this.subject.IsRunning);
+            Assert.Null(this.subject.Exception);
+
+            _ = this.retriever.Received(1).StopAsync(Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task StopAsync_PassNonNullForException_ShouldAssignToException()
+        {
+            // Arrange.
+            var subject = this.subject as IBlocksRetrieverHandler;
+            var error = new Exception();
+
+            this.retriever.StartAsync(this.subject, Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+            this.retriever.StopAsync(Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+
+            await this.subject.StartAsync(CancellationToken.None);
+
+            // Act.
+            await subject.StopAsync(error, CancellationToken.None);
+            await Task.Delay(1000);
+
+            // Assert.
+            Assert.False(this.subject.IsRunning);
+            Assert.Same(error, this.subject.Exception);
+
+            _ = this.retriever.Received(1).StopAsync(Arg.Any<CancellationToken>());
+        }
     }
 }
