@@ -11,6 +11,11 @@ namespace Ztm.ServiceModel.Tests
 
         public int OnStopAsyncCount { get; set; }
 
+        public new void BeginStop()
+        {
+            base.BeginStop();
+        }
+
         protected override Task OnStartAsync(CancellationToken cancellationToken)
         {
             OnStartAsyncCount++;

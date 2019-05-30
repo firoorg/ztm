@@ -133,7 +133,7 @@ namespace Ztm.Zcoin.Synchronization
         {
             Exception = ex;
 
-            Task.Run(() => StopAsync(CancellationToken.None));
+            BeginStop();
 
             return Task.CompletedTask;
         }

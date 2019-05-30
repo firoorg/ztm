@@ -55,6 +55,25 @@ namespace Ztm.ServiceModel
             }
         }
 
+        protected void BeginStop()
+        {
+            Task.Run(async () =>
+            {
+                try
+                {
+                    await StopAsync(CancellationToken.None);
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Ignore.
+                }
+                catch (InvalidOperationException)
+                {
+                    // Ignore.
+                }
+            });
+        }
+
         protected override void Dispose(bool disposing)
         {
             if (!this.disposed)
