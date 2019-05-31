@@ -5,11 +5,12 @@ using Microsoft.Extensions.Configuration;
 using NBitcoin;
 using Ztm.Configuration;
 using Ztm.ObjectModel;
+using Ztm.ServiceModel;
 using Ztm.Zcoin.NBitcoin;
 
 namespace Ztm.Zcoin.Synchronization
 {
-    public sealed class BlocksSynchronizer : IBlocksRetrieverHandler, IBlocksSynchronizer, IDisposable
+    public class BlocksSynchronizer : BackgroundService, IBlocksRetrieverHandler, IBlocksSynchronizer
     {
         readonly IBlocksRetriever retriever;
         readonly IBlocksStorage storage;
@@ -38,30 +39,33 @@ namespace Ztm.Zcoin.Synchronization
             this.activeNetwork = ZcoinNetworks.Instance.GetNetwork(config.GetZcoinSection().Network.Type);
         }
 
-        public string Name => "Blocks Synchronizer";
+        public override string Name => "Blocks Synchronizer";
 
         public event EventHandler<BlockEventArgs> BlockAdded;
 
         public event EventHandler<BlockEventArgs> BlockRemoved;
 
-        public void Dispose()
+        protected override void Dispose(bool disposing)
         {
-            if (this.disposed)
+            if (!this.disposed)
             {
-                return;
+                if (disposing)
+                {
+                    this.retriever.Dispose();
+                }
+
+                this.disposed = true;
             }
 
-            this.retriever.Dispose();
-
-            this.disposed = true;
+            base.Dispose(disposing);
         }
 
-        public Task StartAsync(CancellationToken cancellationToken)
+        protected override Task OnStartAsync(CancellationToken cancellationToken)
         {
             return this.retriever.StartAsync(this, cancellationToken);
         }
 
-        public Task StopAsync(CancellationToken cancellationToken)
+        protected override Task OnStopAsync(CancellationToken cancellationToken)
         {
             return this.retriever.StopAsync(cancellationToken);
         }
@@ -107,7 +111,7 @@ namespace Ztm.Zcoin.Synchronization
                     // Our latest block is not what expected (e.g. chain already switched)
                     // so we need to reload it.
                     await this.storage.RemoveLastAsync(cancellationToken);
-                    await BlockRemoved?.InvokeAsync(
+                    await BlockRemoved.InvokeAsync(
                         this,
                         new BlockEventArgs(localBlock, localHeight, cancellationToken)
                     );
@@ -117,7 +121,7 @@ namespace Ztm.Zcoin.Synchronization
 
             // Store block.
             await this.storage.AddAsync(block, height, cancellationToken);
-            await BlockAdded?.InvokeAsync(
+            await BlockAdded.InvokeAsync(
                 this,
                 new BlockEventArgs(block, height, cancellationToken)
             );
@@ -127,6 +131,10 @@ namespace Ztm.Zcoin.Synchronization
 
         Task IBlocksRetrieverHandler.StopAsync(Exception ex, CancellationToken cancellationToken)
         {
+            Exception = ex;
+
+            BeginStop();
+
             return Task.CompletedTask;
         }
     }

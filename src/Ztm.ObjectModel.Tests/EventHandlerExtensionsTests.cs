@@ -11,6 +11,14 @@ namespace Ztm.ObjectModel.Tests
         event EventHandler<DerivedEventArgs> DerivedEvent;
 
         [Fact]
+        public void InvokeAsync_BaseEventArgsWithNoSubscribers_ShouldReturnCompletedTask()
+        {
+            var task = BaseEvent.InvokeAsync(this, new AsyncEventArgs(CancellationToken.None));
+
+            Assert.Same(Task.CompletedTask, task);
+        }
+
+        [Fact]
         public async Task InvokeAsync_BaseEventArgsWithNonBackgroundTasks_ShouldCompleteSucceeded()
         {
             // Arrange.
@@ -90,6 +98,14 @@ namespace Ztm.ObjectModel.Tests
                 // Assert.
                 Assert.Equal(error, thrown);
             }
+        }
+
+        [Fact]
+        public void InvokeAsync_DerivedEventArgsWithNoSubscribers_ShouldReturnCompletedTask()
+        {
+            var task = DerivedEvent.InvokeAsync(this, new DerivedEventArgs(CancellationToken.None));
+
+            Assert.Same(Task.CompletedTask, task);
         }
 
         [Fact]
