@@ -1,8 +1,12 @@
-using Microsoft.Extensions.Hosting;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Ztm.ServiceModel
 {
-    public interface IBackgroundService : IHostedService, IService
+    public interface IBackgroundService : IService
     {
+        Task StartAsync(CancellationToken cancellationToken);
+
+        Task StopAsync(CancellationToken cancellationToken);
     }
 }
