@@ -145,7 +145,7 @@ namespace Ztm.Zcoin.Synchronization
             }
 
             // Store block.
-            this.logger.LogInformation("Adding block {Height:Hash}", height, block.GetHash());
+            this.logger.LogInformation("Adding block {Height}:{Hash}", height, block.GetHash());
 
             await this.storage.AddAsync(block, height, cancellationToken);
             await BlockAdded.InvokeAsync(
