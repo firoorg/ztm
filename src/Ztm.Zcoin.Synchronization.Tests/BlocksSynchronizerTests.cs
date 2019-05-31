@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NSubstitute;
 using Xunit;
@@ -13,6 +14,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
     public sealed class BlocksSynchronizerTests : IDisposable
     {
         readonly IConfiguration config;
+        readonly ILogger<BlocksSynchronizer> logger;
         readonly IBlocksRetriever retriever;
         readonly IBlocksStorage storage;
         readonly BlocksSynchronizer subject;
@@ -27,9 +29,10 @@ namespace Ztm.Zcoin.Synchronization.Tests
             });
 
             this.config = builder.Build();
+            this.logger = Substitute.For<ILogger<BlocksSynchronizer>>();
             this.retriever = Substitute.For<IBlocksRetriever>();
             this.storage = Substitute.For<IBlocksStorage>();
-            this.subject = new BlocksSynchronizer(this.config, this.retriever, this.storage);
+            this.subject = new BlocksSynchronizer(this.config, this.logger, this.retriever, this.storage);
         }
 
         public void Dispose()
@@ -42,7 +45,16 @@ namespace Ztm.Zcoin.Synchronization.Tests
         {
             Assert.Throws<ArgumentNullException>(
                 "config",
-                () => new BlocksSynchronizer(null, this.retriever, this.storage)
+                () => new BlocksSynchronizer(null, this.logger, this.retriever, this.storage)
+            );
+        }
+
+        [Fact]
+        public void Constructor_PassNullForLogger_ShouldThrow()
+        {
+            Assert.Throws<ArgumentNullException>(
+                "logger",
+                () => new BlocksSynchronizer(this.config, null, this.retriever, this.storage)
             );
         }
 
@@ -51,7 +63,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
         {
             Assert.Throws<ArgumentNullException>(
                 "retriever",
-                () => new BlocksSynchronizer(this.config, null, this.storage)
+                () => new BlocksSynchronizer(this.config, this.logger, null, this.storage)
             );
         }
 
@@ -60,7 +72,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
         {
             Assert.Throws<ArgumentNullException>(
                 "storage",
-                () => new BlocksSynchronizer(this.config, this.retriever, null)
+                () => new BlocksSynchronizer(this.config, this.logger, this.retriever, null)
             );
         }
 
