@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Ztm.Configuration;
 using Ztm.ObjectModel;
@@ -12,16 +13,26 @@ namespace Ztm.Zcoin.Synchronization
 {
     public class BlocksSynchronizer : BackgroundService, IBlocksRetrieverHandler, IBlocksSynchronizer
     {
+        readonly ILogger logger;
         readonly IBlocksRetriever retriever;
         readonly IBlocksStorage storage;
         readonly Network activeNetwork;
         bool disposed;
 
-        public BlocksSynchronizer(IConfiguration config, IBlocksRetriever retriever, IBlocksStorage storage)
+        public BlocksSynchronizer(
+            IConfiguration config,
+            ILogger<BlocksSynchronizer> logger,
+            IBlocksRetriever retriever,
+            IBlocksStorage storage)
         {
             if (config == null)
             {
                 throw new ArgumentNullException(nameof(config));
+            }
+
+            if (logger == null)
+            {
+                throw new ArgumentNullException(nameof(logger));
             }
 
             if (retriever == null)
@@ -34,6 +45,7 @@ namespace Ztm.Zcoin.Synchronization
                 throw new ArgumentNullException(nameof(storage));
             }
 
+            this.logger = logger;
             this.retriever = retriever;
             this.storage = storage;
             this.activeNetwork = ZcoinNetworks.Instance.GetNetwork(config.GetZcoinSection().Network.Type);
@@ -86,6 +98,8 @@ namespace Ztm.Zcoin.Synchronization
         {
             var (localBlock, localHeight) = await this.storage.GetLastAsync(cancellationToken);
 
+            block.Header.PrecomputeHash(invalidateExisting: false, lazily: false);
+
             // Make sure passed block is expected one.
             if (localBlock == null)
             {
@@ -106,20 +120,33 @@ namespace Ztm.Zcoin.Synchronization
                     return localHeight + 1;
                 }
 
+                localBlock.Header.PrecomputeHash(invalidateExisting: false, lazily: false);
+
                 if (block.Header.HashPrevBlock != localBlock.GetHash())
                 {
                     // Our latest block is not what expected (e.g. chain already switched)
                     // so we need to reload it.
+                    this.logger.LogInformation(
+                        "Block {DaemonHeight}:{DaemonHash} from daemon is not on our chain, discarding our last block ({LocalHeight}:{LocalHash})",
+                        height,
+                        block.GetHash(),
+                        localHeight,
+                        localBlock.GetHash()
+                    );
+
                     await this.storage.RemoveLastAsync(cancellationToken);
                     await BlockRemoved.InvokeAsync(
                         this,
                         new BlockEventArgs(localBlock, localHeight, cancellationToken)
                     );
+
                     return localHeight;
                 }
             }
 
             // Store block.
+            this.logger.LogInformation("Adding block {Height}:{Hash}", height, block.GetHash());
+
             await this.storage.AddAsync(block, height, cancellationToken);
             await BlockAdded.InvokeAsync(
                 this,
