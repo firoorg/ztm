@@ -3,23 +3,18 @@ using NBitcoin;
 
 namespace Ztm.Zcoin.NBitcoin
 {
-    sealed class ZcoinConsensusFactory : ConsensusFactory
+    public abstract class ZcoinConsensusFactory : ConsensusFactory
     {
-        private ZcoinConsensusFactory()
+        protected ZcoinConsensusFactory()
         {
         }
-
-        public static ZcoinConsensusFactory Instance { get; } = new ZcoinConsensusFactory();
 
         public override Block CreateBlock()
         {
-            return new ZcoinBlock(new ZcoinBlockHeader());
+            return new ZcoinBlock(this, (ZcoinBlockHeader)CreateBlockHeader());
         }
 
-        public override BlockHeader CreateBlockHeader()
-        {
-            return new ZcoinBlockHeader();
-        }
+        public override abstract BlockHeader CreateBlockHeader();
 
         public override Transaction CreateTransaction()
         {

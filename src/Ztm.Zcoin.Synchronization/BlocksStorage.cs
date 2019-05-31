@@ -223,6 +223,30 @@ namespace Ztm.Zcoin.Synchronization
             block.Header.Bits = data.Bits;
             block.Header.Nonce = (uint)data.Nonce;
 
+            if (data.MtpVersion != null)
+            {
+                if (!block.Header.IsMtp)
+                {
+                    throw new ArgumentException(
+                        "The data is MTP-enabled but the consensus not activated for this data.",
+                        nameof(data)
+                    );
+                }
+
+                if (data.MtpHashValue == null || data.Reserved1 == null || data.Reserved2 == null)
+                {
+                    throw new ArgumentException(
+                        "The data has MtpVersion but some other required properties is null.",
+                        nameof(data)
+                    );
+                }
+
+                block.Header.MtpVersion = data.MtpVersion.Value;
+                block.Header.MtpHashValue = data.MtpHashValue;
+                block.Header.Reserved1 = data.Reserved1;
+                block.Header.Reserved2 = data.Reserved2;
+            }
+
             if (previous != null)
             {
                 block.Header.HashPrevBlock = previous.Hash;
@@ -266,16 +290,34 @@ namespace Ztm.Zcoin.Synchronization
 
         Ztm.Data.Entity.Contexts.Main.Block ToEntity(ZcoinBlock block, int height)
         {
+            var header = block.Header;
+
             var entity = new Ztm.Data.Entity.Contexts.Main.Block()
             {
                 Height = height,
                 Hash = block.GetHash(),
-                Version = block.Header.Version,
-                Bits = block.Header.Bits,
-                Nonce = block.Header.Nonce,
-                Time = block.Header.BlockTime.UtcDateTime,
-                MerkleRoot = block.Header.HashMerkleRoot
+                Version = header.Version,
+                Bits = header.Bits,
+                Nonce = header.Nonce,
+                Time = header.BlockTime.UtcDateTime,
+                MerkleRoot = header.HashMerkleRoot
             };
+
+            if (header.IsMtp)
+            {
+                if (header.MtpHashValue == null || header.Reserved1 == null || header.Reserved2 == null)
+                {
+                    throw new ArgumentException(
+                        "Block is MTP-enabled but some required fields is null.",
+                        nameof(block)
+                    );
+                }
+
+                entity.MtpVersion = header.MtpVersion;
+                entity.MtpHashValue = header.MtpHashValue;
+                entity.Reserved1 = header.Reserved1;
+                entity.Reserved2 = header.Reserved2;
+            }
 
             // Transactions.
             var transactions = new Dictionary<uint256, Ztm.Data.Entity.Contexts.Main.Transaction>();
