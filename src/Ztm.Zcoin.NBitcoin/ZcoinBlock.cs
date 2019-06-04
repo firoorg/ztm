@@ -5,11 +5,24 @@ namespace Ztm.Zcoin.NBitcoin
 {
     public class ZcoinBlock : Block
     {
+        readonly ZcoinConsensusFactory consensusFactory;
+
         #pragma warning disable CS0618
-        public ZcoinBlock(ZcoinBlockHeader header) : base(header)
+        public ZcoinBlock(ZcoinConsensusFactory consensusFactory, ZcoinBlockHeader header) : base(header)
         {
+            if (consensusFactory == null)
+            {
+                throw new ArgumentNullException(nameof(consensusFactory));
+            }
+
+            this.consensusFactory = consensusFactory;
         }
         #pragma warning restore CS0618
+
+        public new ZcoinBlockHeader Header
+        {
+            get { return (ZcoinBlockHeader)base.Header; }
+        }
 
         public static new ZcoinBlock CreateBlock(Network network)
         {
@@ -33,7 +46,7 @@ namespace Ztm.Zcoin.NBitcoin
 
         public override ConsensusFactory GetConsensusFactory()
         {
-            return ZcoinConsensusFactory.Instance;
+            return this.consensusFactory;
         }
     }
 }

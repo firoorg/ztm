@@ -227,6 +227,46 @@ namespace Ztm.Zcoin.Synchronization.Tests
         }
 
         [Fact]
+        public async Task AddAsync_WithValidMtpBlock_ShouldSuccess()
+        {
+            // Arrange.
+            var builder = new ConfigurationBuilder();
+
+            builder.AddInMemoryCollection(new Dictionary<string, string>()
+            {
+                {"Zcoin:Network:Type", "Mainnet"} // We cannot use Regtest since MTP is never activated.
+            });
+
+            var config = builder.Build();
+            var subject = new BlocksStorage(config, this.dbFactory);
+            var block = ZcoinBlock.CreateBlock(ZcoinNetworks.Instance.Mainnet);
+
+            block.Header.BlockTime = new DateTimeOffset(
+                year: 2019,
+                month: 5,
+                day: 31,
+                hour: 21,
+                minute: 38,
+                second: 5,
+                offset: TimeSpan.Zero
+            );
+
+            block.Header.MtpVersion = 99;
+            block.Header.MtpHashValue = new uint256(1);
+            block.Header.Reserved1 = new uint256(2);
+            block.Header.Reserved2 = new uint256(3);
+
+            // Act.
+            await subject.AddAsync(block, 0, CancellationToken.None);
+
+            // Assert.
+            var (saved, _) = await subject.GetAsync(block.GetHash(), CancellationToken.None);
+
+            Assert.NotNull(saved);
+            Assert.Equal(block.GetHash(), saved.GetHash());
+        }
+
+        [Fact]
         public async Task GetAsync_PassNullForHash_ShouldThrow()
         {
             await Assert.ThrowsAsync<ArgumentNullException>(

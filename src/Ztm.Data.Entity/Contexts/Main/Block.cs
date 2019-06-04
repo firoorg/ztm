@@ -18,6 +18,10 @@ namespace Ztm.Data.Entity.Contexts.Main
         public long Nonce { get; set; }
         public DateTime Time { get; set; }
         public uint256 MerkleRoot { get; set; }
+        public int? MtpVersion { get; set; }
+        public uint256 MtpHashValue { get; set; }
+        public uint256 Reserved1 { get; set; }
+        public uint256 Reserved2 { get; set; }
 
         public SortedSet<BlockTransaction> Transactions { get; set; }
 

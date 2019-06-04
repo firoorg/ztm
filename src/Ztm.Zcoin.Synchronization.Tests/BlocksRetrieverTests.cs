@@ -329,7 +329,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
                     stoppedEvent.Set();
                 });
 
-                this.publisher.SendMoreFrame("hashblock").SendFrame(uint256.One.ToString());
+                this.publisher.SendMoreFrame("hashblock").SendMoreFrame(uint256.One.ToBytes()).SendFrame(BitConverter.GetBytes(0));
 
                 stoppedEvent.Wait();
             }
@@ -435,7 +435,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
                     stoppedEvent.Set();
                 });
 
-                this.publisher.SendMoreFrame("hashblock").SendFrame(block2.GetHash().ToString());
+                this.publisher.SendMoreFrame("hashblock").SendMoreFrame(block2.GetHash().ToBytes()).SendFrame(BitConverter.GetBytes(0));
 
                 stoppedEvent.Wait();
             }

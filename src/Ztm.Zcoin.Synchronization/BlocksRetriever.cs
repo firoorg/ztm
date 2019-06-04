@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
-using NBitcoin;
 using NBitcoin.RPC;
 using NetMQ;
 using NetMQ.Sockets;
@@ -207,7 +206,9 @@ namespace Ztm.Zcoin.Synchronization
         {
             // Read received message to remove it from buffer.
             var topic = this.subscriber.ReceiveFrameString();
-            this.subscriber.ReceiveFrameString();
+
+            this.subscriber.ReceiveFrameBytes(); // Block hash.
+            this.subscriber.ReceiveFrameBytes(); // Sequence.
 
             Debug.Assert(topic == "hashblock");
 

@@ -32,6 +32,10 @@ namespace Ztm.Data.Entity.Contexts
                 b.Property(e => e.Nonce).IsRequired();
                 b.Property(e => e.Time).IsRequired();
                 b.Property(e => e.MerkleRoot).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
+                b.Property(e => e.MtpVersion);
+                b.Property(e => e.MtpHashValue).HasConversion(Converters.UInt256ToBytesConverter);
+                b.Property(e => e.Reserved1).HasConversion(Converters.UInt256ToBytesConverter);
+                b.Property(e => e.Reserved2).HasConversion(Converters.UInt256ToBytesConverter);
 
                 b.HasKey(e => e.Height);
                 b.HasAlternateKey(e => e.Hash);
