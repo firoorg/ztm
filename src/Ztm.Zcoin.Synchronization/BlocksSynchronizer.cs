@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
@@ -16,6 +18,7 @@ namespace Ztm.Zcoin.Synchronization
         readonly ILogger logger;
         readonly IBlocksRetriever retriever;
         readonly IBlocksStorage storage;
+        readonly IEnumerable<IBlockListener> listeners;
         readonly Network activeNetwork;
         bool disposed;
 
@@ -23,7 +26,8 @@ namespace Ztm.Zcoin.Synchronization
             IConfiguration config,
             ILogger<BlocksSynchronizer> logger,
             IBlocksRetriever retriever,
-            IBlocksStorage storage)
+            IBlocksStorage storage,
+            params IBlockListener[] listeners)
         {
             if (config == null)
             {
@@ -45,9 +49,15 @@ namespace Ztm.Zcoin.Synchronization
                 throw new ArgumentNullException(nameof(storage));
             }
 
+            if (listeners == null)
+            {
+                throw new ArgumentNullException(nameof(listeners));
+            }
+
             this.logger = logger;
             this.retriever = retriever;
             this.storage = storage;
+            this.listeners = listeners;
             this.activeNetwork = ZcoinNetworks.Instance.GetNetwork(config.GetZcoinSection().Network.Type);
         }
 
@@ -135,6 +145,12 @@ namespace Ztm.Zcoin.Synchronization
                     );
 
                     await this.storage.RemoveLastAsync(cancellationToken);
+
+                    // Raise event.
+                    await Task.WhenAll(
+                        this.listeners.Select(l => l.BlockRemovedAsync(localBlock, localHeight, cancellationToken)).ToArray()
+                    );
+
                     await BlockRemoved.InvokeAsync(
                         this,
                         new BlockEventArgs(localBlock, localHeight, cancellationToken)
@@ -148,6 +164,12 @@ namespace Ztm.Zcoin.Synchronization
             this.logger.LogInformation("Adding block {Height}:{Hash}", height, block.GetHash());
 
             await this.storage.AddAsync(block, height, cancellationToken);
+
+            // Raise event.
+            await Task.WhenAll(
+                this.listeners.Select(l => l.BlockAddedAsync(block, height, cancellationToken)).ToArray()
+            );
+
             await BlockAdded.InvokeAsync(
                 this,
                 new BlockEventArgs(block, height, cancellationToken)

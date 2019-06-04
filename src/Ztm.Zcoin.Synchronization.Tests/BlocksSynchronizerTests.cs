@@ -17,6 +17,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
         readonly ILogger<BlocksSynchronizer> logger;
         readonly IBlocksRetriever retriever;
         readonly IBlocksStorage storage;
+        readonly IBlockListener listener1, listener2;
         readonly BlocksSynchronizer subject;
 
         public BlocksSynchronizerTests()
@@ -32,7 +33,16 @@ namespace Ztm.Zcoin.Synchronization.Tests
             this.logger = Substitute.For<ILogger<BlocksSynchronizer>>();
             this.retriever = Substitute.For<IBlocksRetriever>();
             this.storage = Substitute.For<IBlocksStorage>();
-            this.subject = new BlocksSynchronizer(this.config, this.logger, this.retriever, this.storage);
+            this.listener1 = Substitute.For<IBlockListener>();
+            this.listener2 = Substitute.For<IBlockListener>();
+            this.subject = new BlocksSynchronizer(
+                this.config,
+                this.logger,
+                this.retriever,
+                this.storage,
+                this.listener1,
+                this.listener2
+            );
         }
 
         public void Dispose()
@@ -73,6 +83,15 @@ namespace Ztm.Zcoin.Synchronization.Tests
             Assert.Throws<ArgumentNullException>(
                 "storage",
                 () => new BlocksSynchronizer(this.config, this.logger, this.retriever, null)
+            );
+        }
+
+        [Fact]
+        public void Constructor_PassNullForListeners_ShouldThrow()
+        {
+            Assert.Throws<ArgumentNullException>(
+                "listeners",
+                () => new BlocksSynchronizer(this.config, this.logger, this.retriever, this.storage, null)
             );
         }
 
@@ -173,6 +192,8 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             // Assert.
             _ = this.storage.Received(1).AddAsync(block, 0, Arg.Any<CancellationToken>());
+            _ = this.listener1.Received(1).BlockAddedAsync(block, 0, Arg.Any<CancellationToken>());
+            _ = this.listener2.Received(1).BlockAddedAsync(block, 0, Arg.Any<CancellationToken>());
             blockAdded.Received(1).Invoke(this.subject, Arg.Is<BlockEventArgs>(e => e.Block == block && e.Height == 0));
 
             Assert.Equal(1, height);
@@ -228,6 +249,8 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             // Assert.
             _ = this.storage.Received(1).RemoveLastAsync(Arg.Any<CancellationToken>());
+            _ = this.listener1.Received(1).BlockRemovedAsync(genesis, 0, Arg.Any<CancellationToken>());
+            _ = this.listener2.Received(1).BlockRemovedAsync(genesis, 0, Arg.Any<CancellationToken>());
             blockRemoved.Received(1).Invoke(this.subject, Arg.Is<BlockEventArgs>(e => e.Block == genesis && e.Height == 0));
 
             Assert.Equal(0, height);
@@ -255,6 +278,8 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             // Assert.
             _ = this.storage.Received(1).AddAsync(block1, 1, Arg.Any<CancellationToken>());
+            _ = this.listener1.Received(1).BlockAddedAsync(block1, 1, Arg.Any<CancellationToken>());
+            _ = this.listener2.Received(1).BlockAddedAsync(block1, 1, Arg.Any<CancellationToken>());
             blockAdded.Received(1).Invoke(this.subject, Arg.Is<BlockEventArgs>(e => e.Block == block1 && e.Height == 1));
 
             Assert.Equal(2, height);
