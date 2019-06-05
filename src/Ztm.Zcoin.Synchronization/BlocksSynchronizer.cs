@@ -147,13 +147,14 @@ namespace Ztm.Zcoin.Synchronization
                     await this.storage.RemoveLastAsync(cancellationToken);
 
                     // Raise event.
-                    await Task.WhenAll(
-                        this.listeners.Select(l => l.BlockRemovedAsync(localBlock, localHeight, cancellationToken)).ToArray()
-                    );
+                    foreach (var listener in this.listeners)
+                    {
+                        await listener.BlockRemovedAsync(localBlock, localHeight);
+                    }
 
                     await BlockRemoved.InvokeAsync(
                         this,
-                        new BlockEventArgs(localBlock, localHeight, cancellationToken)
+                        new BlockEventArgs(localBlock, localHeight, CancellationToken.None)
                     );
 
                     return localHeight;
@@ -166,13 +167,14 @@ namespace Ztm.Zcoin.Synchronization
             await this.storage.AddAsync(block, height, cancellationToken);
 
             // Raise event.
-            await Task.WhenAll(
-                this.listeners.Select(l => l.BlockAddedAsync(block, height, cancellationToken)).ToArray()
-            );
+            foreach (var listener in this.listeners)
+            {
+                await listener.BlockAddedAsync(block, height);
+            }
 
             await BlockAdded.InvokeAsync(
                 this,
-                new BlockEventArgs(block, height, cancellationToken)
+                new BlockEventArgs(block, height, CancellationToken.None)
             );
 
             return height + 1;

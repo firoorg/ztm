@@ -192,8 +192,8 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             // Assert.
             _ = this.storage.Received(1).AddAsync(block, 0, Arg.Any<CancellationToken>());
-            _ = this.listener1.Received(1).BlockAddedAsync(block, 0, Arg.Any<CancellationToken>());
-            _ = this.listener2.Received(1).BlockAddedAsync(block, 0, Arg.Any<CancellationToken>());
+            _ = this.listener1.Received(1).BlockAddedAsync(block, 0);
+            _ = this.listener2.Received(1).BlockAddedAsync(block, 0);
             blockAdded.Received(1).Invoke(this.subject, Arg.Is<BlockEventArgs>(e => e.Block == block && e.Height == 0));
 
             Assert.Equal(1, height);
@@ -249,8 +249,8 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             // Assert.
             _ = this.storage.Received(1).RemoveLastAsync(Arg.Any<CancellationToken>());
-            _ = this.listener1.Received(1).BlockRemovedAsync(genesis, 0, Arg.Any<CancellationToken>());
-            _ = this.listener2.Received(1).BlockRemovedAsync(genesis, 0, Arg.Any<CancellationToken>());
+            _ = this.listener1.Received(1).BlockRemovedAsync(genesis, 0);
+            _ = this.listener2.Received(1).BlockRemovedAsync(genesis, 0);
             blockRemoved.Received(1).Invoke(this.subject, Arg.Is<BlockEventArgs>(e => e.Block == genesis && e.Height == 0));
 
             Assert.Equal(0, height);
@@ -278,8 +278,8 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             // Assert.
             _ = this.storage.Received(1).AddAsync(block1, 1, Arg.Any<CancellationToken>());
-            _ = this.listener1.Received(1).BlockAddedAsync(block1, 1, Arg.Any<CancellationToken>());
-            _ = this.listener2.Received(1).BlockAddedAsync(block1, 1, Arg.Any<CancellationToken>());
+            _ = this.listener1.Received(1).BlockAddedAsync(block1, 1);
+            _ = this.listener2.Received(1).BlockAddedAsync(block1, 1);
             blockAdded.Received(1).Invoke(this.subject, Arg.Is<BlockEventArgs>(e => e.Block == block1 && e.Height == 1));
 
             Assert.Equal(2, height);

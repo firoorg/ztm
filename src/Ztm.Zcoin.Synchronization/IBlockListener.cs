@@ -6,8 +6,8 @@ namespace Ztm.Zcoin.Synchronization
 {
     public interface IBlockListener
     {
-        Task BlockAddedAsync(ZcoinBlock block, int height, CancellationToken cancellationToken);
+        Task BlockAddedAsync(ZcoinBlock block, int height);
 
-        Task BlockRemovedAsync(ZcoinBlock block, int height, CancellationToken cancellationToken);
+        Task BlockRemovedAsync(ZcoinBlock block, int height);
     }
 }
