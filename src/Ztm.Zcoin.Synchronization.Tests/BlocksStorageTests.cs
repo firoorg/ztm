@@ -386,6 +386,41 @@ namespace Ztm.Zcoin.Synchronization.Tests
         }
 
         [Fact]
+        public async Task GetTransactionAsync_PassNullForHash_ShouldThrow()
+        {
+            await Assert.ThrowsAsync<ArgumentNullException>(
+                "hash",
+                () => this.subject.GetTransactionAsync(null, CancellationToken.None)
+            );
+        }
+
+        [Fact]
+        public async Task GetTransactionAsync_WithNonExistent_ShouldReturnNull()
+        {
+            // Act.
+            var tx = await this.subject.GetTransactionAsync(uint256.One, CancellationToken.None);
+
+            // Assert.
+            Assert.Null(tx);
+        }
+
+        [Fact]
+        public async Task GetTransactionAsync_WithExistent_ShouldReturnNonNull()
+        {
+            // Arrange.
+            var block0 = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
+
+            await this.subject.AddAsync(block0, 0, CancellationToken.None);
+
+            // Act.
+            var tx = await this.subject.GetTransactionAsync(block0.Transactions[0].GetHash(), CancellationToken.None);
+
+            // Assert.
+            Assert.NotNull(tx);
+            Assert.Equal(block0.Transactions[0].GetHash(), tx.GetHash());
+        }
+
+        [Fact]
         public async Task RemoveLastAsync_WithEmptyTable_ShouldNotThrow()
         {
             // Act.
