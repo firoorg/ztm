@@ -77,7 +77,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
             IBlockConfirmationListener subject = new TransactionConfirmationWatcher(this.db);
 
             // Act.
-            var enable = await subject.StartListenAsync(block, 0, CancellationToken.None);
+            var enable = await subject.StartListenAsync(block, 0);
 
             // Assert.
             Assert.False(enable);
@@ -97,7 +97,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
             var block = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
 
             // Act.
-            var enable = await this.subject.StartListenAsync(block, 0, CancellationToken.None);
+            var enable = await this.subject.StartListenAsync(block, 0);
 
             // Assert.
             Assert.False(enable);
@@ -116,10 +116,10 @@ namespace Ztm.Zcoin.Synchronization.Tests
             // Arrange.
             var block = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
 
-            this.listener2.StartListenAsync((ZcoinTransaction)block.Transactions[0], Arg.Any<CancellationToken>()).Returns(true);
+            this.listener2.StartListenAsync((ZcoinTransaction)block.Transactions[0]).Returns(true);
 
             // Act.
-            var enable = await this.subject.StartListenAsync(block, 0, CancellationToken.None);
+            var enable = await this.subject.StartListenAsync(block, 0);
 
             // Assert.
             Assert.True(enable);
@@ -141,10 +141,10 @@ namespace Ztm.Zcoin.Synchronization.Tests
             var block = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
             var transaction = (ZcoinTransaction)block.Transactions[0];
 
-            this.listener1.StartListenAsync(transaction, Arg.Any<CancellationToken>()).Returns(true);
-            this.listener2.StartListenAsync(transaction, Arg.Any<CancellationToken>()).Returns(true);
+            this.listener1.StartListenAsync(transaction).Returns(true);
+            this.listener2.StartListenAsync(transaction).Returns(true);
 
-            await this.subject.StartListenAsync(block, 0, CancellationToken.None);
+            await this.subject.StartListenAsync(block, 0);
 
             // Act.
             var keep = await this.subject.BlockConfirmedAsync(block, 1);
@@ -170,11 +170,11 @@ namespace Ztm.Zcoin.Synchronization.Tests
             var block = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
             var transaction = (ZcoinTransaction)block.Transactions[0];
 
-            this.listener1.StartListenAsync(transaction, Arg.Any<CancellationToken>()).Returns(true);
+            this.listener1.StartListenAsync(transaction).Returns(true);
             this.listener1.TransactionConfirmedAsync(transaction, 1).Returns(true);
-            this.listener2.StartListenAsync(transaction, Arg.Any<CancellationToken>()).Returns(true);
+            this.listener2.StartListenAsync(transaction).Returns(true);
 
-            await this.subject.StartListenAsync(block, 0, CancellationToken.None);
+            await this.subject.StartListenAsync(block, 0);
 
             // Act.
             var keep = await this.subject.BlockConfirmedAsync(block, 1);
@@ -202,12 +202,12 @@ namespace Ztm.Zcoin.Synchronization.Tests
             var block = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
             var transaction = (ZcoinTransaction)block.Transactions[0];
 
-            this.listener1.StartListenAsync(transaction, Arg.Any<CancellationToken>()).Returns(true);
+            this.listener1.StartListenAsync(transaction).Returns(true);
             this.listener1.TransactionUnconfirmedAsync(Arg.Any<ZcoinTransaction>(), Arg.Any<int>()).Returns(true);
-            this.listener2.StartListenAsync(transaction, Arg.Any<CancellationToken>()).Returns(true);
+            this.listener2.StartListenAsync(transaction).Returns(true);
             this.listener2.TransactionUnconfirmedAsync(Arg.Any<ZcoinTransaction>(), Arg.Any<int>()).Returns(true);
 
-            await this.subject.StartListenAsync(block, 0, CancellationToken.None);
+            await this.subject.StartListenAsync(block, 0);
 
             // Act.
             var keep = await this.subject.BlockUnconfirmedAsync(block, 0);
@@ -239,15 +239,15 @@ namespace Ztm.Zcoin.Synchronization.Tests
             var transaction0 = (ZcoinTransaction)block0.Transactions[0];
             var transaction1 = (ZcoinTransaction)block1.Transactions[0];
 
-            this.listener1.StartListenAsync(transaction0, Arg.Any<CancellationToken>()).Returns(true);
-            this.listener1.StartListenAsync(transaction1, Arg.Any<CancellationToken>()).Returns(true);
-            this.listener2.StartListenAsync(transaction1, Arg.Any<CancellationToken>()).Returns(true);
+            this.listener1.StartListenAsync(transaction0).Returns(true);
+            this.listener1.StartListenAsync(transaction1).Returns(true);
+            this.listener2.StartListenAsync(transaction1).Returns(true);
 
             this.listener1.TransactionUnconfirmedAsync(Arg.Any<ZcoinTransaction>(), Arg.Any<int>()).Returns(true);
             this.listener2.TransactionUnconfirmedAsync(Arg.Any<ZcoinTransaction>(), Arg.Any<int>()).Returns(true);
 
-            await this.subject.StartListenAsync(block0, 0, CancellationToken.None);
-            await this.subject.StartListenAsync(block1, 1, CancellationToken.None);
+            await this.subject.StartListenAsync(block0, 0);
+            await this.subject.StartListenAsync(block1, 1);
 
             // Act.
             Assert.False(await this.subject.BlockUnconfirmedAsync(block1, 0));

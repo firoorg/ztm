@@ -1,5 +1,4 @@
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 using Ztm.Zcoin.NBitcoin;
 
@@ -13,6 +12,6 @@ namespace Ztm.Zcoin.Synchronization
 
         Task<bool> BlockUnconfirmedAsync(ZcoinBlock block, int confirmation);
 
-        Task<bool> StartListenAsync(ZcoinBlock block, int height, CancellationToken cancellationToken);
+        Task<bool> StartListenAsync(ZcoinBlock block, int height);
     }
 }

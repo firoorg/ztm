@@ -114,10 +114,7 @@ namespace Ztm.Zcoin.Synchronization
             return InvokeListenersAsync(block, confirmation, ConfirmationType.Unconfirmed);
         }
 
-        async Task<bool> IBlockConfirmationListener.StartListenAsync(
-            ZcoinBlock block,
-            int height,
-            CancellationToken cancellationToken)
+        async Task<bool> IBlockConfirmationListener.StartListenAsync(ZcoinBlock block, int height)
         {
             // Determine if we need to watch some transaction in this block.
             var watches = new Collection<WatchingTransaction>();
@@ -128,7 +125,7 @@ namespace Ztm.Zcoin.Synchronization
 
                 foreach (var listener in this.listeners)
                 {
-                    var enable = await listener.Value.StartListenAsync(transaction, cancellationToken);
+                    var enable = await listener.Value.StartListenAsync(transaction);
 
                     if (enable)
                     {
@@ -148,7 +145,7 @@ namespace Ztm.Zcoin.Synchronization
                 using (var db = this.db.CreateDbContext())
                 {
                     await db.WatchingTransactions.AddRangeAsync(watches);
-                    await db.SaveChangesAsync(cancellationToken);
+                    await db.SaveChangesAsync(CancellationToken.None);
                 }
 
                 return true;

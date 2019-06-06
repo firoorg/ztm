@@ -86,10 +86,10 @@ namespace Ztm.Zcoin.Synchronization.Tests
             // Arrange.
             var block = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
 
-            this.listener1.StartListenAsync(block, 0, Arg.Any<CancellationToken>()).Returns(false);
+            this.listener1.StartListenAsync(block, 0).Returns(false);
             this.listener1.BlockConfirmedAsync(Arg.Any<ZcoinBlock>(), Arg.Any<int>()).Returns(Task.FromResult(false));
 
-            this.listener2.StartListenAsync(block, 0, Arg.Any<CancellationToken>()).Returns(true);
+            this.listener2.StartListenAsync(block, 0).Returns(true);
             this.listener2.BlockConfirmedAsync(Arg.Any<ZcoinBlock>(), Arg.Any<int>()).Returns(Task.FromResult(true));
 
             // Act.
@@ -119,12 +119,12 @@ namespace Ztm.Zcoin.Synchronization.Tests
             this.storage.GetAsync(block0.GetHash(), Arg.Any<CancellationToken>()).Returns((block: block0, height: 0));
             this.storage.GetAsync(block1.GetHash(), Arg.Any<CancellationToken>()).Returns((block: block1, height: 1));
 
-            this.listener1.StartListenAsync(block0, 0, Arg.Any<CancellationToken>()).Returns(true);
-            this.listener1.StartListenAsync(block1, 1, Arg.Any<CancellationToken>()).Returns(false);
+            this.listener1.StartListenAsync(block0, 0).Returns(true);
+            this.listener1.StartListenAsync(block1, 1).Returns(false);
             this.listener1.BlockConfirmedAsync(Arg.Any<ZcoinBlock>(), Arg.Any<int>()).Returns(Task.FromResult(true));
 
-            this.listener2.StartListenAsync(block0, 0, Arg.Any<CancellationToken>()).Returns(false);
-            this.listener2.StartListenAsync(block1, 1, Arg.Any<CancellationToken>()).Returns(true);
+            this.listener2.StartListenAsync(block0, 0).Returns(false);
+            this.listener2.StartListenAsync(block1, 1).Returns(true);
             this.listener2.BlockConfirmedAsync(Arg.Any<ZcoinBlock>(), Arg.Any<int>()).Returns(Task.FromResult(true));
 
             await this.subject.BlockAddedAsync(block0, 0);
@@ -161,13 +161,13 @@ namespace Ztm.Zcoin.Synchronization.Tests
             this.storage.GetAsync(block0.GetHash(), Arg.Any<CancellationToken>()).Returns((block: block0, height: 0));
             this.storage.GetAsync(block1.GetHash(), Arg.Any<CancellationToken>()).Returns((block: block1, height: 1));
 
-            this.listener1.StartListenAsync(block0, 0, Arg.Any<CancellationToken>()).Returns(true);
-            this.listener1.StartListenAsync(block1, 1, Arg.Any<CancellationToken>()).Returns(false);
+            this.listener1.StartListenAsync(block0, 0).Returns(true);
+            this.listener1.StartListenAsync(block1, 1).Returns(false);
             this.listener1.BlockConfirmedAsync(block0, 1).Returns(Task.FromResult(true));
             this.listener1.BlockConfirmedAsync(block0, 2).Returns(Task.FromResult(false));
 
-            this.listener2.StartListenAsync(block0, 0, Arg.Any<CancellationToken>()).Returns(false);
-            this.listener2.StartListenAsync(block1, 1, Arg.Any<CancellationToken>()).Returns(true);
+            this.listener2.StartListenAsync(block0, 0).Returns(false);
+            this.listener2.StartListenAsync(block1, 1).Returns(true);
             this.listener2.BlockConfirmedAsync(block1, 1).Returns(Task.FromResult(false));
 
             await this.subject.BlockAddedAsync(block0, 0);
@@ -212,13 +212,13 @@ namespace Ztm.Zcoin.Synchronization.Tests
             this.storage.GetAsync(block0.GetHash(), Arg.Any<CancellationToken>()).Returns((block: block0, height: 0));
             this.storage.GetAsync(block1.GetHash(), Arg.Any<CancellationToken>()).Returns((block: block1, height: 1));
 
-            this.listener1.StartListenAsync(block0, 0, Arg.Any<CancellationToken>()).Returns(true);
-            this.listener1.StartListenAsync(block1, 1, Arg.Any<CancellationToken>()).Returns(true);
+            this.listener1.StartListenAsync(block0, 0).Returns(true);
+            this.listener1.StartListenAsync(block1, 1).Returns(true);
             this.listener1.BlockConfirmedAsync(Arg.Any<ZcoinBlock>(), Arg.Any<int>()).Returns(Task.FromResult(true));
             this.listener1.BlockUnconfirmedAsync(Arg.Any<ZcoinBlock>(), Arg.Any<int>()).Returns(Task.FromResult(true));
 
-            this.listener2.StartListenAsync(block0, 0, Arg.Any<CancellationToken>()).Returns(true);
-            this.listener2.StartListenAsync(block1, 1, Arg.Any<CancellationToken>()).Returns(true);
+            this.listener2.StartListenAsync(block0, 0).Returns(true);
+            this.listener2.StartListenAsync(block1, 1).Returns(true);
             this.listener2.BlockConfirmedAsync(Arg.Any<ZcoinBlock>(), Arg.Any<int>()).Returns(Task.FromResult(true));
             this.listener2.BlockUnconfirmedAsync(block0, 1).Returns(false);
             this.listener2.BlockUnconfirmedAsync(block1, 0).Returns(true);
@@ -255,13 +255,13 @@ namespace Ztm.Zcoin.Synchronization.Tests
             this.storage.GetAsync(block0.GetHash(), Arg.Any<CancellationToken>()).Returns((block: block0, height: 0));
             this.storage.GetAsync(block1.GetHash(), Arg.Any<CancellationToken>()).Returns((block: block1, height: 1));
 
-            this.listener1.StartListenAsync(block0, 0, Arg.Any<CancellationToken>()).Returns(true);
-            this.listener1.StartListenAsync(block1, 1, Arg.Any<CancellationToken>()).Returns(true);
+            this.listener1.StartListenAsync(block0, 0).Returns(true);
+            this.listener1.StartListenAsync(block1, 1).Returns(true);
             this.listener1.BlockConfirmedAsync(Arg.Any<ZcoinBlock>(), Arg.Any<int>()).Returns(Task.FromResult(true));
             this.listener1.BlockUnconfirmedAsync(Arg.Any<ZcoinBlock>(), Arg.Any<int>()).Returns(Task.FromResult(true));
 
-            this.listener2.StartListenAsync(block0, 0, Arg.Any<CancellationToken>()).Returns(true);
-            this.listener2.StartListenAsync(block1, 1, Arg.Any<CancellationToken>()).Returns(true);
+            this.listener2.StartListenAsync(block0, 0).Returns(true);
+            this.listener2.StartListenAsync(block1, 1).Returns(true);
             this.listener2.BlockConfirmedAsync(Arg.Any<ZcoinBlock>(), Arg.Any<int>()).Returns(Task.FromResult(true));
             this.listener2.BlockUnconfirmedAsync(Arg.Any<ZcoinBlock>(), Arg.Any<int>()).Returns(Task.FromResult(true));
 

@@ -1,5 +1,4 @@
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 using Ztm.Zcoin.NBitcoin;
 
@@ -9,7 +8,7 @@ namespace Ztm.Zcoin.Synchronization
     {
         Guid Id { get; }
 
-        Task<bool> StartListenAsync(ZcoinTransaction transaction, CancellationToken cancellationToken);
+        Task<bool> StartListenAsync(ZcoinTransaction transaction);
 
         Task<bool> TransactionConfirmedAsync(ZcoinTransaction transaction, int confirmation);
 

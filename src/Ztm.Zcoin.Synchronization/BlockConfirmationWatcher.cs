@@ -133,7 +133,7 @@ namespace Ztm.Zcoin.Synchronization
 
             foreach (var listener in this.listeners)
             {
-                var enable = await listener.Value.StartListenAsync(block, height, CancellationToken.None);
+                var enable = await listener.Value.StartListenAsync(block, height);
 
                 if (enable)
                 {
