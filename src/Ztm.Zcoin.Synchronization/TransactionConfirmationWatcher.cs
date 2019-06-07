@@ -36,7 +36,26 @@ namespace Ztm.Zcoin.Synchronization
             this.listeners = listeners.ToDictionary(l => l.Id);
         }
 
-        async Task<bool> InvokeListenersAsync(ZcoinBlock block, int confirmation, ConfirmationType type)
+        async Task RemoveWatchesAsync(IEnumerable<WatchingTransaction> watches, CancellationToken cancellationToken)
+        {
+            if (!watches.Any())
+            {
+                return;
+            }
+
+            using (var db = this.db.CreateDbContext())
+            {
+                db.WatchingTransactions.RemoveRange(watches);
+                await db.SaveChangesAsync(cancellationToken);
+            }
+        }
+
+        Guid IBlockConfirmationListener.Id => GetType().GUID;
+
+        async Task<bool> IBlockConfirmationListener.BlockConfirmAsync(
+            ZcoinBlock block,
+            ConfirmationType type,
+            int confirmation)
         {
             // Load watches.
             var transactions = block.Transactions.Cast<ZcoinTransaction>().ToDictionary(t => t.GetHash());
@@ -63,55 +82,22 @@ namespace Ztm.Zcoin.Synchronization
             {
                 var listener = this.listeners[watch.Listener];
                 var transaction = transactions[watch.Hash];
-                bool keep;
 
-                switch (type)
-                {
-                    case ConfirmationType.Confirmed:
-                        keep = await listener.TransactionConfirmedAsync(transaction, confirmation);
-                        break;
-                    case ConfirmationType.Unconfirmed:
-                        keep = await listener.TransactionUnconfirmedAsync(transaction, confirmation);
-                        break;
-                    default:
-                        throw new ArgumentException($"Confirmation type {type} is not supported.", nameof(type));
-                }
+                var keep = await listener.TransactionConfirmAsync(transaction, type, confirmation);
 
-                if (!keep || confirmation == 0)
+                if (!keep)
                 {
                     watchesToRemove.Add(watch);
+                }
+                else if (type == ConfirmationType.Unconfirming && confirmation == 1)
+                {
+                    throw new InvalidOperationException($"{listener.GetType()} want to continue watching transaction {transaction.GetHash()} but it is going to be removed now.");
                 }
             }
 
             await RemoveWatchesAsync(watchesToRemove, CancellationToken.None);
 
             return watches.Length > watchesToRemove.Count;
-        }
-
-        async Task RemoveWatchesAsync(IEnumerable<WatchingTransaction> watches, CancellationToken cancellationToken)
-        {
-            if (!watches.Any())
-            {
-                return;
-            }
-
-            using (var db = this.db.CreateDbContext())
-            {
-                db.WatchingTransactions.RemoveRange(watches);
-                await db.SaveChangesAsync(cancellationToken);
-            }
-        }
-
-        Guid IBlockConfirmationListener.Id => GetType().GUID;
-
-        Task<bool> IBlockConfirmationListener.BlockConfirmedAsync(ZcoinBlock block, int confirmation)
-        {
-            return InvokeListenersAsync(block, confirmation, ConfirmationType.Confirmed);
-        }
-
-        Task<bool> IBlockConfirmationListener.BlockUnconfirmedAsync(ZcoinBlock block, int confirmation)
-        {
-            return InvokeListenersAsync(block, confirmation, ConfirmationType.Unconfirmed);
         }
 
         async Task<bool> IBlockConfirmationListener.StartListenAsync(ZcoinBlock block, int height)
@@ -152,12 +138,6 @@ namespace Ztm.Zcoin.Synchronization
             }
 
             return false;
-        }
-
-        enum ConfirmationType
-        {
-            Confirmed,
-            Unconfirmed
         }
     }
 }

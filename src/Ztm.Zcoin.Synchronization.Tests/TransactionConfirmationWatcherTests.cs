@@ -147,13 +147,13 @@ namespace Ztm.Zcoin.Synchronization.Tests
             await this.subject.StartListenAsync(block, 0);
 
             // Act.
-            var keep = await this.subject.BlockConfirmedAsync(block, 1);
+            var keep = await this.subject.BlockConfirmAsync(block, ConfirmationType.Confirmed, 1);
 
             // Assert.
             Assert.False(keep);
 
-            _ = this.listener1.Received(1).TransactionConfirmedAsync(transaction, 1);
-            _ = this.listener2.Received(1).TransactionConfirmedAsync(transaction, 1);
+            _ = this.listener1.Received(1).TransactionConfirmAsync(transaction, ConfirmationType.Confirmed, 1);
+            _ = this.listener2.Received(1).TransactionConfirmAsync(transaction, ConfirmationType.Confirmed, 1);
 
             using (var db = this.db.CreateDbContext())
             {
@@ -171,19 +171,19 @@ namespace Ztm.Zcoin.Synchronization.Tests
             var transaction = (ZcoinTransaction)block.Transactions[0];
 
             this.listener1.StartListenAsync(transaction).Returns(true);
-            this.listener1.TransactionConfirmedAsync(transaction, 1).Returns(true);
+            this.listener1.TransactionConfirmAsync(transaction, ConfirmationType.Confirmed, 1).Returns(true);
             this.listener2.StartListenAsync(transaction).Returns(true);
 
             await this.subject.StartListenAsync(block, 0);
 
             // Act.
-            var keep = await this.subject.BlockConfirmedAsync(block, 1);
+            var keep = await this.subject.BlockConfirmAsync(block, ConfirmationType.Confirmed, 1);
 
             // Assert.
             Assert.True(keep);
 
-            _ = this.listener1.Received(1).TransactionConfirmedAsync(transaction, 1);
-            _ = this.listener2.Received(1).TransactionConfirmedAsync(transaction, 1);
+            _ = this.listener1.Received(1).TransactionConfirmAsync(transaction, ConfirmationType.Confirmed, 1);
+            _ = this.listener2.Received(1).TransactionConfirmAsync(transaction, ConfirmationType.Confirmed, 1);
 
             using (var db = this.db.CreateDbContext())
             {
@@ -203,20 +203,20 @@ namespace Ztm.Zcoin.Synchronization.Tests
             var transaction = (ZcoinTransaction)block.Transactions[0];
 
             this.listener1.StartListenAsync(transaction).Returns(true);
-            this.listener1.TransactionUnconfirmedAsync(Arg.Any<ZcoinTransaction>(), Arg.Any<int>()).Returns(true);
+            this.listener1.TransactionConfirmAsync(Arg.Any<ZcoinTransaction>(), ConfirmationType.Unconfirming, Arg.Any<int>()).Returns(false);
             this.listener2.StartListenAsync(transaction).Returns(true);
-            this.listener2.TransactionUnconfirmedAsync(Arg.Any<ZcoinTransaction>(), Arg.Any<int>()).Returns(true);
+            this.listener2.TransactionConfirmAsync(Arg.Any<ZcoinTransaction>(), ConfirmationType.Unconfirming, Arg.Any<int>()).Returns(false);
 
             await this.subject.StartListenAsync(block, 0);
 
             // Act.
-            var keep = await this.subject.BlockUnconfirmedAsync(block, 0);
+            var keep = await this.subject.BlockConfirmAsync(block, ConfirmationType.Unconfirming, 1);
 
             // Assert.
             Assert.False(keep);
 
-            _ = this.listener1.Received(1).TransactionUnconfirmedAsync(transaction, 0);
-            _ = this.listener2.Received(1).TransactionUnconfirmedAsync(transaction, 0);
+            _ = this.listener1.Received(1).TransactionConfirmAsync(transaction, ConfirmationType.Unconfirming, 1);
+            _ = this.listener2.Received(1).TransactionConfirmAsync(transaction, ConfirmationType.Unconfirming, 1);
 
             using (var db = this.db.CreateDbContext())
             {
@@ -243,20 +243,21 @@ namespace Ztm.Zcoin.Synchronization.Tests
             this.listener1.StartListenAsync(transaction1).Returns(true);
             this.listener2.StartListenAsync(transaction1).Returns(true);
 
-            this.listener1.TransactionUnconfirmedAsync(Arg.Any<ZcoinTransaction>(), Arg.Any<int>()).Returns(true);
-            this.listener2.TransactionUnconfirmedAsync(Arg.Any<ZcoinTransaction>(), Arg.Any<int>()).Returns(true);
+            this.listener1.TransactionConfirmAsync(transaction0, ConfirmationType.Unconfirming, 2).Returns(true);
+            this.listener1.TransactionConfirmAsync(transaction1, ConfirmationType.Unconfirming, 1).Returns(false);
+            this.listener2.TransactionConfirmAsync(transaction1, ConfirmationType.Unconfirming, 1).Returns(false);
 
             await this.subject.StartListenAsync(block0, 0);
             await this.subject.StartListenAsync(block1, 1);
 
             // Act.
-            Assert.False(await this.subject.BlockUnconfirmedAsync(block1, 0));
-            Assert.True(await this.subject.BlockUnconfirmedAsync(block0, 1));
+            Assert.False(await this.subject.BlockConfirmAsync(block1, ConfirmationType.Unconfirming, 1));
+            Assert.True(await this.subject.BlockConfirmAsync(block0, ConfirmationType.Unconfirming, 2));
 
             // Assert.
-            _ = this.listener1.Received(1).TransactionUnconfirmedAsync(transaction0, 1);
-            _ = this.listener1.Received(1).TransactionUnconfirmedAsync(transaction1, 0);
-            _ = this.listener2.Received(1).TransactionUnconfirmedAsync(transaction1, 0);
+            _ = this.listener1.Received(1).TransactionConfirmAsync(transaction0, ConfirmationType.Unconfirming, 2);
+            _ = this.listener1.Received(1).TransactionConfirmAsync(transaction1, ConfirmationType.Unconfirming, 1);
+            _ = this.listener2.Received(1).TransactionConfirmAsync(transaction1, ConfirmationType.Unconfirming, 1);
 
             using (var db = this.db.CreateDbContext())
             {
@@ -266,6 +267,26 @@ namespace Ztm.Zcoin.Synchronization.Tests
                 Assert.Equal(transaction0.GetHash(), watches[0].Hash);
                 Assert.Equal(this.listener1.Id, watches[0].Listener);
             }
+        }
+
+        [Fact]
+        public async Task BlockUnconfirmedAsync_ListenersWantToContinueWatchingButItLastConfirmation_ShouldThrow()
+        {
+            // Arrange.
+            var block = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
+            var transaction = (ZcoinTransaction)block.Transactions[0];
+
+            this.listener1.StartListenAsync(transaction).Returns(true);
+            this.listener1.TransactionConfirmAsync(Arg.Any<ZcoinTransaction>(), ConfirmationType.Unconfirming, Arg.Any<int>()).Returns(true);
+            this.listener2.StartListenAsync(transaction).Returns(true);
+            this.listener2.TransactionConfirmAsync(Arg.Any<ZcoinTransaction>(), ConfirmationType.Unconfirming, Arg.Any<int>()).Returns(true);
+
+            await this.subject.StartListenAsync(block, 0);
+
+            // Act.
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => this.subject.BlockConfirmAsync(block, ConfirmationType.Unconfirming, 1)
+            );
         }
     }
 }

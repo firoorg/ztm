@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
@@ -65,7 +64,7 @@ namespace Ztm.Zcoin.Synchronization
 
         public event EventHandler<BlockEventArgs> BlockAdded;
 
-        public event EventHandler<BlockEventArgs> BlockRemoved;
+        public event EventHandler<BlockEventArgs> BlockRemoving;
 
         protected override void Dispose(bool disposing)
         {
@@ -144,18 +143,17 @@ namespace Ztm.Zcoin.Synchronization
                         localBlock.GetHash()
                     );
 
-                    await this.storage.RemoveLastAsync(cancellationToken);
-
-                    // Raise event.
                     foreach (var listener in this.listeners)
                     {
-                        await listener.BlockRemovedAsync(localBlock, localHeight);
+                        await listener.BlockRemovingAsync(localBlock, localHeight);
                     }
 
-                    await BlockRemoved.InvokeAsync(
+                    await BlockRemoving.InvokeAsync(
                         this,
                         new BlockEventArgs(localBlock, localHeight, CancellationToken.None)
                     );
+
+                    await this.storage.RemoveLastAsync(cancellationToken);
 
                     return localHeight;
                 }

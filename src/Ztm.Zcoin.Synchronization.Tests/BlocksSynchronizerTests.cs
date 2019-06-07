@@ -237,21 +237,21 @@ namespace Ztm.Zcoin.Synchronization.Tests
                 BitcoinAddress.Create("THMdcCZXJvUGMHo4BVumsPvPQbzr87Wah7", ZcoinNetworks.Instance.Regtest),
                 2
             );
-            var blockRemoved = Substitute.For<EventHandler<BlockEventArgs>>();
+            var blockRemoving = Substitute.For<EventHandler<BlockEventArgs>>();
 
             this.storage.GetLastAsync(Arg.Any<CancellationToken>()).Returns((genesis, 0));
             this.storage.RemoveLastAsync(Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
 
-            this.subject.BlockRemoved += blockRemoved;
+            this.subject.BlockRemoving += blockRemoving;
 
             // Act.
             var height = await subject.ProcessBlockAsync(block2, 1, CancellationToken.None);
 
             // Assert.
             _ = this.storage.Received(1).RemoveLastAsync(Arg.Any<CancellationToken>());
-            _ = this.listener1.Received(1).BlockRemovedAsync(genesis, 0);
-            _ = this.listener2.Received(1).BlockRemovedAsync(genesis, 0);
-            blockRemoved.Received(1).Invoke(this.subject, Arg.Is<BlockEventArgs>(e => e.Block == genesis && e.Height == 0));
+            _ = this.listener1.Received(1).BlockRemovingAsync(genesis, 0);
+            _ = this.listener2.Received(1).BlockRemovingAsync(genesis, 0);
+            blockRemoving.Received(1).Invoke(this.subject, Arg.Is<BlockEventArgs>(e => e.Block == genesis && e.Height == 0));
 
             Assert.Equal(0, height);
         }

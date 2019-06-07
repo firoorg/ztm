@@ -87,17 +87,17 @@ namespace Ztm.Zcoin.Synchronization.Tests
             var block = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
 
             this.listener1.StartListenAsync(block, 0).Returns(false);
-            this.listener1.BlockConfirmedAsync(Arg.Any<ZcoinBlock>(), Arg.Any<int>()).Returns(Task.FromResult(false));
+            this.listener1.BlockConfirmAsync(Arg.Any<ZcoinBlock>(), Arg.Any<ConfirmationType>(), Arg.Any<int>()).Returns(Task.FromResult(false));
 
             this.listener2.StartListenAsync(block, 0).Returns(true);
-            this.listener2.BlockConfirmedAsync(Arg.Any<ZcoinBlock>(), Arg.Any<int>()).Returns(Task.FromResult(true));
+            this.listener2.BlockConfirmAsync(Arg.Any<ZcoinBlock>(), Arg.Any<ConfirmationType>(), Arg.Any<int>()).Returns(Task.FromResult(true));
 
             // Act.
             await this.subject.BlockAddedAsync(block, 0);
 
             // Assert.
-            _ = this.listener1.Received(0).BlockConfirmedAsync(block, 1);
-            _ = this.listener2.Received(1).BlockConfirmedAsync(block, 1);
+            _ = this.listener1.Received(0).BlockConfirmAsync(block, ConfirmationType.Confirmed, 1);
+            _ = this.listener2.Received(1).BlockConfirmAsync(block, ConfirmationType.Confirmed, 1);
 
             using (var db = this.db.CreateDbContext())
             {
@@ -121,11 +121,11 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             this.listener1.StartListenAsync(block0, 0).Returns(true);
             this.listener1.StartListenAsync(block1, 1).Returns(false);
-            this.listener1.BlockConfirmedAsync(Arg.Any<ZcoinBlock>(), Arg.Any<int>()).Returns(Task.FromResult(true));
+            this.listener1.BlockConfirmAsync(Arg.Any<ZcoinBlock>(), Arg.Any<ConfirmationType>(), Arg.Any<int>()).Returns(Task.FromResult(true));
 
             this.listener2.StartListenAsync(block0, 0).Returns(false);
             this.listener2.StartListenAsync(block1, 1).Returns(true);
-            this.listener2.BlockConfirmedAsync(Arg.Any<ZcoinBlock>(), Arg.Any<int>()).Returns(Task.FromResult(true));
+            this.listener2.BlockConfirmAsync(Arg.Any<ZcoinBlock>(), Arg.Any<ConfirmationType>(), Arg.Any<int>()).Returns(Task.FromResult(true));
 
             await this.subject.BlockAddedAsync(block0, 0);
 
@@ -133,11 +133,11 @@ namespace Ztm.Zcoin.Synchronization.Tests
             await this.subject.BlockAddedAsync(block1, 1);
 
             // Assert.
-            _ = this.listener1.Received(1).BlockConfirmedAsync(block0, 1);
-            _ = this.listener1.Received(1).BlockConfirmedAsync(block0, 2);
-            _ = this.listener1.Received(0).BlockConfirmedAsync(block1, Arg.Any<int>());
-            _ = this.listener2.Received(0).BlockConfirmedAsync(block0, Arg.Any<int>());
-            _ = this.listener2.Received(1).BlockConfirmedAsync(block1, 1);
+            _ = this.listener1.Received(1).BlockConfirmAsync(block0, ConfirmationType.Confirmed, 1);
+            _ = this.listener1.Received(1).BlockConfirmAsync(block0, ConfirmationType.Confirmed, 2);
+            _ = this.listener1.Received(0).BlockConfirmAsync(block1, ConfirmationType.Confirmed, Arg.Any<int>());
+            _ = this.listener2.Received(0).BlockConfirmAsync(block0, ConfirmationType.Confirmed, Arg.Any<int>());
+            _ = this.listener2.Received(1).BlockConfirmAsync(block1, ConfirmationType.Confirmed, 1);
 
             using (var db = this.db.CreateDbContext())
             {
@@ -163,12 +163,12 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             this.listener1.StartListenAsync(block0, 0).Returns(true);
             this.listener1.StartListenAsync(block1, 1).Returns(false);
-            this.listener1.BlockConfirmedAsync(block0, 1).Returns(Task.FromResult(true));
-            this.listener1.BlockConfirmedAsync(block0, 2).Returns(Task.FromResult(false));
+            this.listener1.BlockConfirmAsync(block0, ConfirmationType.Confirmed, 1).Returns(Task.FromResult(true));
+            this.listener1.BlockConfirmAsync(block0, ConfirmationType.Confirmed, 2).Returns(Task.FromResult(false));
 
             this.listener2.StartListenAsync(block0, 0).Returns(false);
             this.listener2.StartListenAsync(block1, 1).Returns(true);
-            this.listener2.BlockConfirmedAsync(block1, 1).Returns(Task.FromResult(false));
+            this.listener2.BlockConfirmAsync(block1, ConfirmationType.Confirmed, 1).Returns(Task.FromResult(false));
 
             await this.subject.BlockAddedAsync(block0, 0);
 
@@ -176,11 +176,11 @@ namespace Ztm.Zcoin.Synchronization.Tests
             await this.subject.BlockAddedAsync(block1, 1);
 
             // Assert.
-            _ = this.listener1.Received(1).BlockConfirmedAsync(block0, 1);
-            _ = this.listener1.Received(1).BlockConfirmedAsync(block0, 2);
-            _ = this.listener1.Received(0).BlockConfirmedAsync(block1, Arg.Any<int>());
-            _ = this.listener2.Received(0).BlockConfirmedAsync(block0, Arg.Any<int>());
-            _ = this.listener2.Received(1).BlockConfirmedAsync(block1, 1);
+            _ = this.listener1.Received(1).BlockConfirmAsync(block0, ConfirmationType.Confirmed, 1);
+            _ = this.listener1.Received(1).BlockConfirmAsync(block0, ConfirmationType.Confirmed, 2);
+            _ = this.listener1.Received(0).BlockConfirmAsync(block1, ConfirmationType.Confirmed, Arg.Any<int>());
+            _ = this.listener2.Received(0).BlockConfirmAsync(block0, ConfirmationType.Confirmed, Arg.Any<int>());
+            _ = this.listener2.Received(1).BlockConfirmAsync(block1, ConfirmationType.Confirmed, 1);
 
             using (var db = this.db.CreateDbContext())
             {
@@ -199,7 +199,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
             await this.subject.BlockAddedAsync(block0, 0);
 
             // Act.
-            await this.subject.BlockRemovedAsync(block0, 0);
+            await this.subject.BlockRemovingAsync(block0, 0);
         }
 
         [Fact]
@@ -214,26 +214,27 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             this.listener1.StartListenAsync(block0, 0).Returns(true);
             this.listener1.StartListenAsync(block1, 1).Returns(true);
-            this.listener1.BlockConfirmedAsync(Arg.Any<ZcoinBlock>(), Arg.Any<int>()).Returns(Task.FromResult(true));
-            this.listener1.BlockUnconfirmedAsync(Arg.Any<ZcoinBlock>(), Arg.Any<int>()).Returns(Task.FromResult(true));
+            this.listener1.BlockConfirmAsync(Arg.Any<ZcoinBlock>(), ConfirmationType.Confirmed, Arg.Any<int>()).Returns(Task.FromResult(true));
+            this.listener1.BlockConfirmAsync(block0, ConfirmationType.Unconfirming, 2).Returns(true);
+            this.listener1.BlockConfirmAsync(block1, ConfirmationType.Unconfirming, 1).Returns(false);
 
             this.listener2.StartListenAsync(block0, 0).Returns(true);
             this.listener2.StartListenAsync(block1, 1).Returns(true);
-            this.listener2.BlockConfirmedAsync(Arg.Any<ZcoinBlock>(), Arg.Any<int>()).Returns(Task.FromResult(true));
-            this.listener2.BlockUnconfirmedAsync(block0, 1).Returns(false);
-            this.listener2.BlockUnconfirmedAsync(block1, 0).Returns(true);
+            this.listener2.BlockConfirmAsync(Arg.Any<ZcoinBlock>(), ConfirmationType.Confirmed, Arg.Any<int>()).Returns(Task.FromResult(true));
+            this.listener2.BlockConfirmAsync(block0, ConfirmationType.Unconfirming, 2).Returns(false);
+            this.listener2.BlockConfirmAsync(block1, ConfirmationType.Unconfirming, 1).Returns(false);
 
             await this.subject.BlockAddedAsync(block0, 0);
             await this.subject.BlockAddedAsync(block1, 1);
 
             // Act.
-            await this.subject.BlockRemovedAsync(block1, 1);
+            await this.subject.BlockRemovingAsync(block1, 1);
 
             // Assert.
-            _ = this.listener1.Received(1).BlockUnconfirmedAsync(block1, 0);
-            _ = this.listener1.Received(1).BlockUnconfirmedAsync(block0, 1);
-            _ = this.listener2.Received(1).BlockUnconfirmedAsync(block1, 0);
-            _ = this.listener2.Received(1).BlockUnconfirmedAsync(block0, 1);
+            _ = this.listener1.Received(1).BlockConfirmAsync(block1, ConfirmationType.Unconfirming, 1);
+            _ = this.listener1.Received(1).BlockConfirmAsync(block0, ConfirmationType.Unconfirming, 2);
+            _ = this.listener2.Received(1).BlockConfirmAsync(block1, ConfirmationType.Unconfirming, 1);
+            _ = this.listener2.Received(1).BlockConfirmAsync(block0, ConfirmationType.Unconfirming, 2);
 
             using (var db = this.db.CreateDbContext())
             {
@@ -246,7 +247,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
         }
 
         [Fact]
-        public async Task BlockRemovedAsync_BlockUnconfirmedAsyncReturnTrue_ShouldKeepNonZeroAndRemoveZeroConfirmation()
+        public async Task BlockRemovedAsync_ListenersWantToContinueWatchingButItLastConfirmation_ShouldThrow()
         {
             // Arrange.
             var block0 = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
@@ -257,36 +258,19 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             this.listener1.StartListenAsync(block0, 0).Returns(true);
             this.listener1.StartListenAsync(block1, 1).Returns(true);
-            this.listener1.BlockConfirmedAsync(Arg.Any<ZcoinBlock>(), Arg.Any<int>()).Returns(Task.FromResult(true));
-            this.listener1.BlockUnconfirmedAsync(Arg.Any<ZcoinBlock>(), Arg.Any<int>()).Returns(Task.FromResult(true));
+            this.listener1.BlockConfirmAsync(Arg.Any<ZcoinBlock>(), Arg.Any<ConfirmationType>(), Arg.Any<int>()).Returns(Task.FromResult(true));
 
             this.listener2.StartListenAsync(block0, 0).Returns(true);
             this.listener2.StartListenAsync(block1, 1).Returns(true);
-            this.listener2.BlockConfirmedAsync(Arg.Any<ZcoinBlock>(), Arg.Any<int>()).Returns(Task.FromResult(true));
-            this.listener2.BlockUnconfirmedAsync(Arg.Any<ZcoinBlock>(), Arg.Any<int>()).Returns(Task.FromResult(true));
+            this.listener2.BlockConfirmAsync(Arg.Any<ZcoinBlock>(), Arg.Any<ConfirmationType>(), Arg.Any<int>()).Returns(Task.FromResult(true));
 
             await this.subject.BlockAddedAsync(block0, 0);
             await this.subject.BlockAddedAsync(block1, 1);
 
             // Act.
-            await this.subject.BlockRemovedAsync(block1, 1);
-
-            // Assert.
-            _ = this.listener1.Received(1).BlockUnconfirmedAsync(block1, 0);
-            _ = this.listener1.Received(1).BlockUnconfirmedAsync(block0, 1);
-            _ = this.listener2.Received(1).BlockUnconfirmedAsync(block1, 0);
-            _ = this.listener2.Received(1).BlockUnconfirmedAsync(block0, 1);
-
-            using (var db = this.db.CreateDbContext())
-            {
-                var watches = await db.WatchingBlocks.ToArrayAsync(CancellationToken.None);
-
-                Assert.Equal(2, watches.Length);
-                Assert.Equal(block0.GetHash(), watches[0].Hash);
-                Assert.Equal(this.listener1.Id, watches[0].Listener);
-                Assert.Equal(block0.GetHash(), watches[1].Hash);
-                Assert.Equal(this.listener2.Id, watches[1].Listener);
-            }
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => this.subject.BlockRemovingAsync(block1, 1)
+            );
         }
     }
 }

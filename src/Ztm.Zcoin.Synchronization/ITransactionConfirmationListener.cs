@@ -10,8 +10,6 @@ namespace Ztm.Zcoin.Synchronization
 
         Task<bool> StartListenAsync(ZcoinTransaction transaction);
 
-        Task<bool> TransactionConfirmedAsync(ZcoinTransaction transaction, int confirmation);
-
-        Task<bool> TransactionUnconfirmedAsync(ZcoinTransaction transaction, int confirmation);
+        Task<bool> TransactionConfirmAsync(ZcoinTransaction transaction, ConfirmationType type, int confirmation);
     }
 }

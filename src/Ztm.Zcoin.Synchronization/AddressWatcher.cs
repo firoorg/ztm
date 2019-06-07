@@ -55,55 +55,6 @@ namespace Ztm.Zcoin.Synchronization
             this.zcoinNetwork = ZcoinNetworks.Instance.GetNetwork(config.GetZcoinSection().Network.Type);
         }
 
-        async Task<bool> InvokeListenersAsync(ZcoinTransaction transaction, int confirmation, ConfirmationType type)
-        {
-            // Extract all addresses from this transaction.
-            var debits = await GetTransactionDebitsAsync(transaction);
-            var credits = GetTransactionCredits(transaction);
-
-            if (debits.Count == 0 && credits.Count == 0)
-            {
-                throw new ArgumentException("Transaction was not watched.", nameof(transaction));
-            }
-
-            // Invoke listeners.
-            var watches = 0;
-            var stopped = 0;
-
-            if (debits.Count > 0)
-            {
-                var (total, removed) = await InvokeListenersAsync(
-                    debits,
-                    AddressWatchingType.Debit,
-                    confirmation,
-                    type
-                );
-
-                watches += total;
-                stopped += removed;
-            }
-
-            if (credits.Count > 0)
-            {
-                var (total, removed) = await InvokeListenersAsync(
-                    credits,
-                    AddressWatchingType.Credit,
-                    confirmation,
-                    type
-                );
-
-                watches += total;
-                stopped += removed;
-            }
-
-            if (watches == 0)
-            {
-                throw new ArgumentException("Transaction was not watched.", nameof(transaction));
-            }
-
-            return watches > stopped;
-        }
-
         async Task<(int total, int removed)> InvokeListenersAsync(
             IReadOnlyDictionary<BitcoinAddress, Money> amounts,
             AddressWatchingType watchingType,
@@ -133,19 +84,28 @@ namespace Ztm.Zcoin.Synchronization
             {
                 var listener = this.listeners[watch.Listener];
                 var address = BitcoinAddress.Create(watch.Address, this.zcoinNetwork);
+                var amount = amounts[address];
+                bool keep;
 
-                var keep = await InvokeListenerAsync(
-                    listener,
-                    watchingType,
-                    confirmationType,
-                    address,
-                    amounts[address],
-                    confirmation
-                );
+                switch (watchingType)
+                {
+                    case AddressWatchingType.Credit:
+                        keep = await listener.CreditConfirmAsync(address, amount, confirmationType, confirmation);
+                        break;
+                    case AddressWatchingType.Debit:
+                        keep = await listener.DebitConfirmAsync(address, amount, confirmationType, confirmation);
+                        break;
+                    default:
+                        throw new ArgumentException($"Value is not valid.", nameof(watchingType));
+                }
 
-                if (!keep || confirmation == 0)
+                if (!keep)
                 {
                     watchesToRemove.Add(watch);
+                }
+                else if (confirmationType == ConfirmationType.Unconfirming && confirmation == 1)
+                {
+                    throw new InvalidOperationException($"{listener.GetType()} want to continue watching address {address} but it transaction going to be removed now.");
                 }
             }
 
@@ -160,41 +120,6 @@ namespace Ztm.Zcoin.Synchronization
             }
 
             return (total: watches.Length, removed: watchesToRemove.Count);
-        }
-
-        Task<bool> InvokeListenerAsync(
-            IAddressListener listener,
-            AddressWatchingType watchingType,
-            ConfirmationType confirmationType,
-            BitcoinAddress address,
-            Money amount,
-            int confirmation)
-        {
-            switch (watchingType)
-            {
-                case AddressWatchingType.Credit:
-                    switch (confirmationType)
-                    {
-                        case ConfirmationType.Confirmed:
-                            return listener.CreditConfirmedAsync(address, amount, confirmation);
-                        case ConfirmationType.Unconfirmed:
-                            return listener.CreditUnconfirmedAsync(address, amount, confirmation);
-                        default:
-                            throw new ArgumentException("Value is not valid.", nameof(confirmationType));
-                    }
-                case AddressWatchingType.Debit:
-                    switch (confirmationType)
-                    {
-                        case ConfirmationType.Confirmed:
-                            return listener.DebitConfirmedAsync(address, amount, confirmation);
-                        case ConfirmationType.Unconfirmed:
-                            return listener.DebitUnconfirmedAsync(address, amount, confirmation);
-                        default:
-                            throw new ArgumentException("Value is not valid.", nameof(confirmationType));
-                    }
-                default:
-                    throw new ArgumentException($"Value is not valid.", nameof(watchingType));
-            }
         }
 
         async Task<IReadOnlyDictionary<BitcoinAddress, Money>> GetTransactionDebitsAsync(ZcoinTransaction transaction)
@@ -317,24 +242,56 @@ namespace Ztm.Zcoin.Synchronization
             return false;
         }
 
-        Task<bool> ITransactionConfirmationListener.TransactionConfirmedAsync(
+        async Task<bool> ITransactionConfirmationListener.TransactionConfirmAsync(
             ZcoinTransaction transaction,
+            ConfirmationType type,
             int confirmation)
         {
-            return InvokeListenersAsync(transaction, confirmation, ConfirmationType.Confirmed);
-        }
+            // Extract all addresses from this transaction.
+            var debits = await GetTransactionDebitsAsync(transaction);
+            var credits = GetTransactionCredits(transaction);
 
-        Task<bool> ITransactionConfirmationListener.TransactionUnconfirmedAsync(
-            ZcoinTransaction transaction,
-            int confirmation)
-        {
-            return InvokeListenersAsync(transaction, confirmation, ConfirmationType.Unconfirmed);
-        }
+            if (debits.Count == 0 && credits.Count == 0)
+            {
+                throw new ArgumentException("Transaction was not watched.", nameof(transaction));
+            }
 
-        enum ConfirmationType
-        {
-            Confirmed,
-            Unconfirmed
+            // Invoke listeners.
+            var watches = 0;
+            var stopped = 0;
+
+            if (debits.Count > 0)
+            {
+                var (total, removed) = await InvokeListenersAsync(
+                    debits,
+                    AddressWatchingType.Debit,
+                    confirmation,
+                    type
+                );
+
+                watches += total;
+                stopped += removed;
+            }
+
+            if (credits.Count > 0)
+            {
+                var (total, removed) = await InvokeListenersAsync(
+                    credits,
+                    AddressWatchingType.Credit,
+                    confirmation,
+                    type
+                );
+
+                watches += total;
+                stopped += removed;
+            }
+
+            if (watches == 0)
+            {
+                throw new ArgumentException("Transaction was not watched.", nameof(transaction));
+            }
+
+            return watches > stopped;
         }
     }
 }

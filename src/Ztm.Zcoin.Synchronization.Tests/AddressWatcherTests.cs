@@ -212,17 +212,17 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             await this.subject.StartListenAsync(tx);
 
-            this.listener1.CreditConfirmedAsync(credit, Money.Coins(3), 1).Returns(true);
-            this.listener2.DebitConfirmedAsync(debit, Money.Coins(40), 1).Returns(false);
+            this.listener1.CreditConfirmAsync(credit, Money.Coins(3), ConfirmationType.Confirmed, 1).Returns(true);
+            this.listener2.DebitConfirmAsync(debit, Money.Coins(40), ConfirmationType.Confirmed, 1).Returns(false);
 
             // Act.
-            var keep = await this.subject.TransactionConfirmedAsync(tx, 1);
+            var keep = await this.subject.TransactionConfirmAsync(tx, ConfirmationType.Confirmed, 1);
 
             // Assert.
             Assert.True(keep);
 
-            _ = this.listener1.Received(1).CreditConfirmedAsync(credit, Money.Coins(3), 1);
-            _ = this.listener2.Received(1).DebitConfirmedAsync(debit, Money.Coins(40), 1);
+            _ = this.listener1.Received(1).CreditConfirmAsync(credit, Money.Coins(3), ConfirmationType.Confirmed, 1);
+            _ = this.listener2.Received(1).DebitConfirmAsync(debit, Money.Coins(40), ConfirmationType.Confirmed, 1);
 
             using (var db = this.db.CreateDbContext())
             {
@@ -249,17 +249,17 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             await this.subject.StartListenAsync(tx);
 
-            this.listener1.CreditConfirmedAsync(credit, Money.Coins(3), 1).Returns(false);
-            this.listener2.DebitConfirmedAsync(debit, Money.Coins(40), 1).Returns(false);
+            this.listener1.CreditConfirmAsync(credit, Money.Coins(3), ConfirmationType.Confirmed, 1).Returns(false);
+            this.listener2.DebitConfirmAsync(debit, Money.Coins(40), ConfirmationType.Confirmed, 1).Returns(false);
 
             // Act.
-            var keep = await this.subject.TransactionConfirmedAsync(tx, 1);
+            var keep = await this.subject.TransactionConfirmAsync(tx, ConfirmationType.Confirmed, 1);
 
             // Assert.
             Assert.False(keep);
 
-            _ = this.listener1.Received(1).CreditConfirmedAsync(credit, Money.Coins(3), 1);
-            _ = this.listener2.Received(1).DebitConfirmedAsync(debit, Money.Coins(40), 1);
+            _ = this.listener1.Received(1).CreditConfirmAsync(credit, Money.Coins(3), ConfirmationType.Confirmed, 1);
+            _ = this.listener2.Received(1).DebitConfirmAsync(debit, Money.Coins(40), ConfirmationType.Confirmed, 1);
 
             using (var db = this.db.CreateDbContext())
             {
@@ -282,17 +282,17 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             await this.subject.StartListenAsync(tx);
 
-            this.listener1.CreditUnconfirmedAsync(credit, Money.Coins(3), 1).Returns(true);
-            this.listener2.DebitUnconfirmedAsync(debit, Money.Coins(40), 1).Returns(false);
+            this.listener1.CreditConfirmAsync(credit, Money.Coins(3), ConfirmationType.Unconfirming, 2).Returns(true);
+            this.listener2.DebitConfirmAsync(debit, Money.Coins(40), ConfirmationType.Unconfirming, 2).Returns(false);
 
             // Act.
-            var keep = await this.subject.TransactionUnconfirmedAsync(tx, 1);
+            var keep = await this.subject.TransactionConfirmAsync(tx, ConfirmationType.Unconfirming, 2);
 
             // Assert.
             Assert.True(keep);
 
-            _ = this.listener1.Received(1).CreditUnconfirmedAsync(credit, Money.Coins(3), 1);
-            _ = this.listener2.Received(1).DebitUnconfirmedAsync(debit, Money.Coins(40), 1);
+            _ = this.listener1.Received(1).CreditConfirmAsync(credit, Money.Coins(3), ConfirmationType.Unconfirming, 2);
+            _ = this.listener2.Received(1).DebitConfirmAsync(debit, Money.Coins(40), ConfirmationType.Unconfirming, 2);
 
             using (var db = this.db.CreateDbContext())
             {
@@ -319,17 +319,17 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             await this.subject.StartListenAsync(tx);
 
-            this.listener1.CreditUnconfirmedAsync(credit, Money.Coins(3), 0).Returns(true);
-            this.listener2.DebitUnconfirmedAsync(debit, Money.Coins(40), 0).Returns(true);
+            this.listener1.CreditConfirmAsync(credit, Money.Coins(3), ConfirmationType.Unconfirming, 1).Returns(false);
+            this.listener2.DebitConfirmAsync(debit, Money.Coins(40), ConfirmationType.Unconfirming, 1).Returns(false);
 
             // Act.
-            var keep = await this.subject.TransactionUnconfirmedAsync(tx, 0);
+            var keep = await this.subject.TransactionConfirmAsync(tx, ConfirmationType.Unconfirming, 1);
 
             // Assert.
             Assert.False(keep);
 
-            _ = this.listener1.Received(1).CreditUnconfirmedAsync(credit, Money.Coins(3), 0);
-            _ = this.listener2.Received(1).DebitUnconfirmedAsync(debit, Money.Coins(40), 0);
+            _ = this.listener1.Received(1).CreditConfirmAsync(credit, Money.Coins(3), ConfirmationType.Unconfirming, 1);
+            _ = this.listener2.Received(1).DebitConfirmAsync(debit, Money.Coins(40), ConfirmationType.Unconfirming, 1);
 
             using (var db = this.db.CreateDbContext())
             {
@@ -337,6 +337,28 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
                 Assert.Empty(watches);
             }
+        }
+
+        [Fact]
+        public async Task TransactionUnconfirmedAsync_ListenersWantToContinueWatchingButItLastConfirmation_ShouldThrow()
+        {
+            // Arrange.
+            var tx = MockTransaction();
+            var debit = BitcoinAddress.Create("TV4gZkmz3VVE8PXUU2gTcn2V1Rg4j2x7HS", ZcoinNetworks.Instance.Regtest);
+            var credit = BitcoinAddress.Create("TUt8vKwCj6UnWDB35eszaRGEAhtzoLZmaE", ZcoinNetworks.Instance.Regtest);
+
+            this.listener1.StartListenAsync(credit).Returns(AddressListeningType.Credit);
+            this.listener2.StartListenAsync(debit).Returns(AddressListeningType.Debit);
+
+            await this.subject.StartListenAsync(tx);
+
+            this.listener1.CreditConfirmAsync(credit, Money.Coins(3), ConfirmationType.Unconfirming, 1).Returns(true);
+            this.listener2.DebitConfirmAsync(debit, Money.Coins(40), ConfirmationType.Unconfirming, 1).Returns(true);
+
+            // Act.
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => this.subject.TransactionConfirmAsync(tx, ConfirmationType.Unconfirming, 1)
+            );
         }
 
         ZcoinTransaction MockTransaction()

@@ -8,13 +8,9 @@ namespace Ztm.Zcoin.Synchronization
     {
         Guid Id { get; }
 
-        Task<bool> CreditConfirmedAsync(BitcoinAddress address, Money amount, int confirmation);
+        Task<bool> CreditConfirmAsync(BitcoinAddress address, Money amount, ConfirmationType type, int confirmation);
 
-        Task<bool> CreditUnconfirmedAsync(BitcoinAddress address, Money amount, int confirmation);
-
-        Task<bool> DebitConfirmedAsync(BitcoinAddress address, Money amount, int confirmation);
-
-        Task<bool> DebitUnconfirmedAsync(BitcoinAddress address, Money amount, int confirmation);
+        Task<bool> DebitConfirmAsync(BitcoinAddress address, Money amount, ConfirmationType type, int confirmation);
 
         Task<AddressListeningType> StartListenAsync(BitcoinAddress address);
     }

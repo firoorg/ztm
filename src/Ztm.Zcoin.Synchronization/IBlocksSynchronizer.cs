@@ -7,6 +7,6 @@ namespace Ztm.Zcoin.Synchronization
     {
         event EventHandler<BlockEventArgs> BlockAdded;
 
-        event EventHandler<BlockEventArgs> BlockRemoved;
+        event EventHandler<BlockEventArgs> BlockRemoving;
     }
 }

@@ -104,24 +104,15 @@ namespace Ztm.Zcoin.Synchronization
             int height,
             ConfirmationType type)
         {
-            int confirmation;
-            bool continueWatching;
+            var confirmation = currentHeight - height + 1;
+            var continueWatching = await listener.BlockConfirmAsync(block, type, confirmation);
 
-            switch (type)
+            if (type == ConfirmationType.Unconfirming && continueWatching && confirmation == 1)
             {
-                case ConfirmationType.Confirmed:
-                    confirmation = currentHeight - height + 1;
-                    continueWatching = await listener.BlockConfirmedAsync(block, confirmation);
-                    break;
-                case ConfirmationType.Unconfirmed:
-                    confirmation = currentHeight - height;
-                    continueWatching = await listener.BlockUnconfirmedAsync(block, confirmation);
-                    break;
-                default:
-                    throw new NotImplementedException($"Confirmation type {type} was not implemented.");
+                throw new InvalidOperationException($"{listener.GetType()} want to continue watching block {height}:{block.GetHash()} but it is going to be removed now.");
             }
 
-            return continueWatching && confirmation > 0;
+            return continueWatching;
         }
 
         async Task IBlockListener.BlockAddedAsync(ZcoinBlock block, int height)
@@ -165,7 +156,7 @@ namespace Ztm.Zcoin.Synchronization
             await InvokeListenersAsync(watches, block, height, ConfirmationType.Confirmed);
         }
 
-        async Task IBlockListener.BlockRemovedAsync(ZcoinBlock block, int height)
+        async Task IBlockListener.BlockRemovingAsync(ZcoinBlock block, int height)
         {
             // Load current watches.
             IEnumerable<WatchingBlock> watches;
@@ -176,13 +167,7 @@ namespace Ztm.Zcoin.Synchronization
             }
 
             // Invoke listeners.
-            await InvokeListenersAsync(watches, block, height, ConfirmationType.Unconfirmed);
-        }
-
-        enum ConfirmationType
-        {
-            Confirmed,
-            Unconfirmed
+            await InvokeListenersAsync(watches, block, height, ConfirmationType.Unconfirming);
         }
     }
 }

@@ -8,9 +8,7 @@ namespace Ztm.Zcoin.Synchronization
     {
         Guid Id { get; }
 
-        Task<bool> BlockConfirmedAsync(ZcoinBlock block, int confirmation);
-
-        Task<bool> BlockUnconfirmedAsync(ZcoinBlock block, int confirmation);
+        Task<bool> BlockConfirmAsync(ZcoinBlock block, ConfirmationType type, int confirmation);
 
         Task<bool> StartListenAsync(ZcoinBlock block, int height);
     }
