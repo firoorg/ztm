@@ -34,7 +34,7 @@ docker-compose up -d
 Enter database shell:
 
 ```sh
-docker exec -it -u postgres ztm-main-db sh
+docker exec -it -u postgres ztm-db-main sh
 ```
 
 Create a new role to be the owner of database:
@@ -46,7 +46,7 @@ createuser ztm
 Then create a database:
 
 ```sh
-createdb -E UTF8 -l C -O ztm ztm
+createdb -O ztm ztm
 ```
 
 ## Migrate Database Schemas
