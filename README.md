@@ -63,7 +63,7 @@ Grab latest stable Zcoin binary from [here](https://github.com/zcoinofficial/zco
 then start Zcoin daemon:
 
 ```sh
-./zcoind -printtoconsole -rpcuser=zcoin -rpcpassword=zcoin
+./zcoind -testnet -printtoconsole -rpcuser=zcoin -rpcpassword=zcoin -zmqpubhashblock=tcp://127.0.0.1:28332
 ```
 
 ## Start Web API
