@@ -186,7 +186,10 @@ namespace Ztm.Zcoin.Synchronization
 
             using (var db = this.db.CreateDbContext())
             {
-                row = await db.Transactions.SingleOrDefaultAsync(t => t.Hash == hash, cancellationToken);
+                row = await db.Transactions
+                    .Include(t => t.Inputs)
+                    .Include(t => t.Outputs)
+                    .SingleOrDefaultAsync(t => t.Hash == hash, cancellationToken);
 
                 if (row == null)
                 {
