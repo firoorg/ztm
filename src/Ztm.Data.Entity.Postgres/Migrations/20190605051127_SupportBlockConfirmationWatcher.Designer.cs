@@ -3,6 +3,7 @@ using System;
 using System.Net;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Ztm.Data.Entity.Postgres;
@@ -10,9 +11,10 @@ using Ztm.Data.Entity.Postgres;
 namespace Ztm.Data.Entity.Postgres.Migrations
 {
     [DbContext(typeof(MainDatabase))]
-    partial class MainDatabaseModelSnapshot : ModelSnapshot
+    [Migration("20190605051127_SupportBlockConfirmationWatcher")]
+    partial class SupportBlockConfirmationWatcher
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -129,22 +131,6 @@ namespace Ztm.Data.Entity.Postgres.Migrations
                     b.ToTable("Transactions");
                 });
 
-            modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.WatchingAddress", b =>
-                {
-                    b.Property<string>("Address")
-                        .HasMaxLength(64);
-
-                    b.Property<byte>("Type");
-
-                    b.Property<Guid>("Listener");
-
-                    b.Property<DateTime>("StartTime");
-
-                    b.HasKey("Address", "Type", "Listener");
-
-                    b.ToTable("WatchingAddresses");
-                });
-
             modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.WatchingBlock", b =>
                 {
                     b.Property<byte[]>("Hash")
@@ -157,20 +143,6 @@ namespace Ztm.Data.Entity.Postgres.Migrations
                     b.HasKey("Hash", "Listener");
 
                     b.ToTable("WatchingBlocks");
-                });
-
-            modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.WatchingTransaction", b =>
-                {
-                    b.Property<byte[]>("Hash")
-                        .HasConversion(new ValueConverter<byte[], byte[]>(v => default(byte[]), v => default(byte[]), new ConverterMappingHints(size: 32)));
-
-                    b.Property<Guid>("Listener");
-
-                    b.Property<DateTime>("StartTime");
-
-                    b.HasKey("Hash", "Listener");
-
-                    b.ToTable("WatchingTransactions");
                 });
 
             modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.WebApiCallback", b =>

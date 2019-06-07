@@ -36,7 +36,10 @@ namespace Ztm.WebApi
             services.AddSingleton<IBlocksStorage, BlocksStorage>();
 
             // Background Services.
-            services.AddTransient<IBlocksSynchronizer, BlocksSynchronizer>();
+            services.AddSingleton<ITransactionConfirmationListener, AddressWatcher>();
+            services.AddSingleton<IBlockConfirmationListener, TransactionConfirmationWatcher>();
+            services.AddSingleton<IBlockListener, BlockConfirmationWatcher>();
+            services.AddSingleton<IBlocksSynchronizer, BlocksSynchronizer>();
             services.AddHostedService<ServiceManager>();
         }
 

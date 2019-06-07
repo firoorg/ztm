@@ -175,6 +175,31 @@ namespace Ztm.Zcoin.Synchronization
             return (block: ToDomain(data, previous), height: data.Height);
         }
 
+        public async Task<ZcoinTransaction> GetTransactionAsync(uint256 hash, CancellationToken cancellationToken)
+        {
+            Ztm.Data.Entity.Contexts.Main.Transaction row;
+
+            if (hash == null)
+            {
+                throw new ArgumentNullException(nameof(hash));
+            }
+
+            using (var db = this.db.CreateDbContext())
+            {
+                row = await db.Transactions
+                    .Include(t => t.Inputs)
+                    .Include(t => t.Outputs)
+                    .SingleOrDefaultAsync(t => t.Hash == hash, cancellationToken);
+
+                if (row == null)
+                {
+                    return null;
+                }
+            }
+
+            return ToDomain(row);
+        }
+
         public async Task RemoveLastAsync(CancellationToken cancellationToken)
         {
             using (var db = this.db.CreateDbContext())
@@ -252,40 +277,45 @@ namespace Ztm.Zcoin.Synchronization
                 block.Header.HashPrevBlock = previous.Hash;
             }
 
-            block.Transactions = data.Transactions.Select(e =>
-            {
-                // Transaction properties.
-                var tx = new ZcoinTransaction()
-                {
-                    Version = (uint)e.Transaction.Version,
-                    LockTime = (uint)e.Transaction.LockTime
-                };
-
-                // Transaction outputs.
-                foreach (var output in e.Transaction.Outputs)
-                {
-                    tx.Outputs.Add(new ZcoinTxOut()
-                    {
-                        ScriptPubKey = output.Script,
-                        Value = output.Value
-                    });
-                }
-
-                // Transaction inputs.
-                foreach (var input in e.Transaction.Inputs)
-                {
-                    tx.Inputs.Add(new ZcoinTxIn()
-                    {
-                        Sequence = (uint)input.Sequence,
-                        PrevOut = new OutPoint(input.OutputHash, (uint)input.OutputIndex),
-                        ScriptSig = input.Script
-                    });
-                }
-
-                return tx;
-            }).Cast<Transaction>().ToList();
+            block.Transactions = data.Transactions
+                .Select(e => ToDomain(e.Transaction))
+                .Cast<Transaction>()
+                .ToList();
 
             return block;
+        }
+
+        ZcoinTransaction ToDomain(Ztm.Data.Entity.Contexts.Main.Transaction entity)
+        {
+            // Common properties.
+            var domain = new ZcoinTransaction()
+            {
+                Version = (uint)entity.Version,
+                LockTime = (uint)entity.LockTime
+            };
+
+            // Outputs.
+            foreach (var output in entity.Outputs)
+            {
+                domain.Outputs.Add(new ZcoinTxOut()
+                {
+                    ScriptPubKey = output.Script,
+                    Value = output.Value
+                });
+            }
+
+            // Inputs.
+            foreach (var input in entity.Inputs)
+            {
+                domain.Inputs.Add(new ZcoinTxIn()
+                {
+                    Sequence = (uint)input.Sequence,
+                    PrevOut = new OutPoint(input.OutputHash, (uint)input.OutputIndex),
+                    ScriptSig = input.Script
+                });
+            }
+
+            return domain;
         }
 
         Ztm.Data.Entity.Contexts.Main.Block ToEntity(ZcoinBlock block, int height)

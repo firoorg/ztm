@@ -19,6 +19,12 @@ namespace Ztm.Data.Entity.Contexts
 
         public DbSet<Transaction> Transactions { get; set; }
 
+        public DbSet<WatchingAddress> WatchingAddresses { get; set; }
+
+        public DbSet<WatchingBlock> WatchingBlocks { get; set; }
+
+        public DbSet<WatchingTransaction> WatchingTransactions { get; set; }
+
         public DbSet<WebApiCallback> WebApiCallbacks { get; set; }
 
         protected virtual void ConfigureBlock(ModelBuilder modelBuilder)
@@ -116,6 +122,43 @@ namespace Ztm.Data.Entity.Contexts
             });
         }
 
+        protected virtual void ConfigureWatchingAddress(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<WatchingAddress>(b =>
+            {
+                b.Property(e => e.Address).IsRequired().HasMaxLength(64);
+                b.Property(e => e.Type).IsRequired();
+                b.Property(e => e.Listener).IsRequired();
+                b.Property(e => e.StartTime).IsRequired();
+
+                b.HasKey(e => new { e.Address, e.Type, e.Listener });
+            });
+        }
+
+        protected virtual void ConfigureWatchingBlock(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<WatchingBlock>(b =>
+            {
+                b.Property(e => e.Hash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
+                b.Property(e => e.Listener).IsRequired();
+                b.Property(e => e.StartTime).IsRequired();
+
+                b.HasKey(e => new { e.Hash, e.Listener });
+            });
+        }
+
+        protected virtual void ConfigureWatchingTransaction(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<WatchingTransaction>(b =>
+            {
+                b.Property(e => e.Hash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
+                b.Property(e => e.Listener).IsRequired();
+                b.Property(e => e.StartTime).IsRequired();
+
+                b.HasKey(e => new { e.Hash, e.Listener });
+            });
+        }
+
         protected virtual void ConfigureWebApiCallback(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<WebApiCallback>(b =>
@@ -138,6 +181,9 @@ namespace Ztm.Data.Entity.Contexts
             ConfigureInput(modelBuilder);
             ConfigureOutput(modelBuilder);
             ConfigureTransaction(modelBuilder);
+            ConfigureWatchingAddress(modelBuilder);
+            ConfigureWatchingBlock(modelBuilder);
+            ConfigureWatchingTransaction(modelBuilder);
             ConfigureWebApiCallback(modelBuilder);
         }
     }

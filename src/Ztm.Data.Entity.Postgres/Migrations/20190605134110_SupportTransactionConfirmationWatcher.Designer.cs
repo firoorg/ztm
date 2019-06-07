@@ -3,6 +3,7 @@ using System;
 using System.Net;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Ztm.Data.Entity.Postgres;
@@ -10,9 +11,10 @@ using Ztm.Data.Entity.Postgres;
 namespace Ztm.Data.Entity.Postgres.Migrations
 {
     [DbContext(typeof(MainDatabase))]
-    partial class MainDatabaseModelSnapshot : ModelSnapshot
+    [Migration("20190605134110_SupportTransactionConfirmationWatcher")]
+    partial class SupportTransactionConfirmationWatcher
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -127,22 +129,6 @@ namespace Ztm.Data.Entity.Postgres.Migrations
                     b.HasKey("Hash");
 
                     b.ToTable("Transactions");
-                });
-
-            modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.WatchingAddress", b =>
-                {
-                    b.Property<string>("Address")
-                        .HasMaxLength(64);
-
-                    b.Property<byte>("Type");
-
-                    b.Property<Guid>("Listener");
-
-                    b.Property<DateTime>("StartTime");
-
-                    b.HasKey("Address", "Type", "Listener");
-
-                    b.ToTable("WatchingAddresses");
                 });
 
             modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.WatchingBlock", b =>

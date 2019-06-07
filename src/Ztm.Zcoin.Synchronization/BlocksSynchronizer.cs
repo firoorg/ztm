@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
@@ -16,6 +17,7 @@ namespace Ztm.Zcoin.Synchronization
         readonly ILogger logger;
         readonly IBlocksRetriever retriever;
         readonly IBlocksStorage storage;
+        readonly IEnumerable<IBlockListener> listeners;
         readonly Network activeNetwork;
         bool disposed;
 
@@ -23,7 +25,8 @@ namespace Ztm.Zcoin.Synchronization
             IConfiguration config,
             ILogger<BlocksSynchronizer> logger,
             IBlocksRetriever retriever,
-            IBlocksStorage storage)
+            IBlocksStorage storage,
+            IEnumerable<IBlockListener> listeners)
         {
             if (config == null)
             {
@@ -45,9 +48,15 @@ namespace Ztm.Zcoin.Synchronization
                 throw new ArgumentNullException(nameof(storage));
             }
 
+            if (listeners == null)
+            {
+                throw new ArgumentNullException(nameof(listeners));
+            }
+
             this.logger = logger;
             this.retriever = retriever;
             this.storage = storage;
+            this.listeners = listeners;
             this.activeNetwork = ZcoinNetworks.Instance.GetNetwork(config.GetZcoinSection().Network.Type);
         }
 
@@ -55,7 +64,7 @@ namespace Ztm.Zcoin.Synchronization
 
         public event EventHandler<BlockEventArgs> BlockAdded;
 
-        public event EventHandler<BlockEventArgs> BlockRemoved;
+        public event EventHandler<BlockEventArgs> BlockRemoving;
 
         protected override void Dispose(bool disposing)
         {
@@ -134,11 +143,17 @@ namespace Ztm.Zcoin.Synchronization
                         localBlock.GetHash()
                     );
 
-                    await this.storage.RemoveLastAsync(cancellationToken);
-                    await BlockRemoved.InvokeAsync(
+                    foreach (var listener in this.listeners)
+                    {
+                        await listener.BlockRemovingAsync(localBlock, localHeight);
+                    }
+
+                    await BlockRemoving.InvokeAsync(
                         this,
-                        new BlockEventArgs(localBlock, localHeight, cancellationToken)
+                        new BlockEventArgs(localBlock, localHeight, CancellationToken.None)
                     );
+
+                    await this.storage.RemoveLastAsync(cancellationToken);
 
                     return localHeight;
                 }
@@ -148,9 +163,16 @@ namespace Ztm.Zcoin.Synchronization
             this.logger.LogInformation("Adding block {Height}:{Hash}", height, block.GetHash());
 
             await this.storage.AddAsync(block, height, cancellationToken);
+
+            // Raise event.
+            foreach (var listener in this.listeners)
+            {
+                await listener.BlockAddedAsync(block, height);
+            }
+
             await BlockAdded.InvokeAsync(
                 this,
-                new BlockEventArgs(block, height, cancellationToken)
+                new BlockEventArgs(block, height, CancellationToken.None)
             );
 
             return height + 1;
