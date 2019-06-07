@@ -26,7 +26,7 @@ namespace Ztm.Zcoin.Synchronization
             ILogger<BlocksSynchronizer> logger,
             IBlocksRetriever retriever,
             IBlocksStorage storage,
-            params IBlockListener[] listeners)
+            IEnumerable<IBlockListener> listeners)
         {
             if (config == null)
             {

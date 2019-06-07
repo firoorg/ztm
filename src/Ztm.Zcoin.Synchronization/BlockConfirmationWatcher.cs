@@ -21,7 +21,7 @@ namespace Ztm.Zcoin.Synchronization
         public BlockConfirmationWatcher(
             IMainDatabaseFactory db,
             IBlocksStorage blocks,
-            params IBlockConfirmationListener[] listeners)
+            IEnumerable<IBlockConfirmationListener> listeners)
         {
             if (db == null)
             {

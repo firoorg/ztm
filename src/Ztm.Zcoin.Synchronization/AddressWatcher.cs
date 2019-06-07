@@ -27,7 +27,7 @@ namespace Ztm.Zcoin.Synchronization
             IConfiguration config,
             IMainDatabaseFactory db,
             IBlocksStorage blocks,
-            params IAddressListener[] listeners)
+            IEnumerable<IAddressListener> listeners)
         {
             if (config == null)
             {

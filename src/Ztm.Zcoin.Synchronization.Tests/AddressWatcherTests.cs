@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -40,7 +41,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             try
             {
-                this.subject = new AddressWatcher(this.config, this.db, this.blocks, this.listener1, this.listener2);
+                this.subject = new AddressWatcher(this.config, this.db, this.blocks, new[] { this.listener1, this.listener2 });
 
                 Assert.Equal(Guid.Parse("9b790cf5-53f3-4cce-a1bb-a39ad0ab6c31"), this.subject.Id);
             }
@@ -61,7 +62,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
         {
             Assert.Throws<ArgumentNullException>(
                 "config",
-                () => new AddressWatcher(null, this.db, this.blocks)
+                () => new AddressWatcher(null, this.db, this.blocks, Enumerable.Empty<IAddressListener>())
             );
         }
 
@@ -70,7 +71,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
         {
             Assert.Throws<ArgumentNullException>(
                 "db",
-                () => new AddressWatcher(this.config, null, this.blocks)
+                () => new AddressWatcher(this.config, null, this.blocks, Enumerable.Empty<IAddressListener>())
             );
         }
 
@@ -79,7 +80,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
         {
             Assert.Throws<ArgumentNullException>(
                 "blocks",
-                () => new AddressWatcher(this.config, this.db, null)
+                () => new AddressWatcher(this.config, this.db, null, Enumerable.Empty<IAddressListener>())
             );
         }
 
@@ -96,7 +97,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
         public async Task StartListenAsync_WithEmptyListeners_ShouldNotWatch()
         {
             // Arrange.
-            var subject = new AddressWatcher(this.config, this.db, this.blocks) as ITransactionConfirmationListener;
+            var subject = new AddressWatcher(this.config, this.db, this.blocks, Enumerable.Empty<IAddressListener>()) as ITransactionConfirmationListener;
             var tx = MockTransaction();
 
             // Act.

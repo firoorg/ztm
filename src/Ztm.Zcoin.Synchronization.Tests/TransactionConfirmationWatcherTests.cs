@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -28,7 +29,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             try
             {
-                this.subject = new TransactionConfirmationWatcher(this.db, this.listener1, this.listener2);
+                this.subject = new TransactionConfirmationWatcher(this.db, new[] { this.listener1, this.listener2 });
             }
             catch
             {
@@ -47,7 +48,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
         {
             Assert.Throws<ArgumentNullException>(
                 "db",
-                () => new TransactionConfirmationWatcher(null)
+                () => new TransactionConfirmationWatcher(null, Enumerable.Empty<ITransactionConfirmationListener>())
             );
         }
 
@@ -63,7 +64,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
         [Fact]
         public void Id_FromDifferentInstance_ShouldSame()
         {
-            IBlockConfirmationListener subject = new TransactionConfirmationWatcher(this.db);
+            IBlockConfirmationListener subject = new TransactionConfirmationWatcher(this.db, Enumerable.Empty<ITransactionConfirmationListener>());
 
             Assert.Equal(Guid.Parse("a17fd06a-ff3b-4cf7-af66-0c56ea77bc94"), subject.Id);
             Assert.Equal(subject.Id, this.subject.Id);
@@ -74,7 +75,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
         {
             // Arrange.
             var block = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
-            IBlockConfirmationListener subject = new TransactionConfirmationWatcher(this.db);
+            IBlockConfirmationListener subject = new TransactionConfirmationWatcher(this.db, Enumerable.Empty<ITransactionConfirmationListener>());
 
             // Act.
             var enable = await subject.StartListenAsync(block, 0);

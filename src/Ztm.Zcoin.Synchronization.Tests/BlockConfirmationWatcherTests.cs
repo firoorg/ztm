@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -28,7 +29,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             try
             {
-                this.subject = new BlockConfirmationWatcher(this.db, this.storage, this.listener1, this.listener2);
+                this.subject = new BlockConfirmationWatcher(this.db, this.storage, new[] { this.listener1, this.listener2 });
             }
             catch
             {
@@ -47,7 +48,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
         {
             Assert.Throws<ArgumentNullException>(
                 "db",
-                () => new BlockConfirmationWatcher(null, this.storage)
+                () => new BlockConfirmationWatcher(null, this.storage, Enumerable.Empty<IBlockConfirmationListener>())
             );
         }
 
@@ -56,7 +57,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
         {
             Assert.Throws<ArgumentNullException>(
                 "blocks",
-                () => new BlockConfirmationWatcher(this.db, null)
+                () => new BlockConfirmationWatcher(this.db, null, Enumerable.Empty<IBlockConfirmationListener>())
             );
         }
 
@@ -73,7 +74,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
         public async Task BlockAddedAsync_WithEmptyListeners_ShouldSuccess()
         {
             // Arrange.
-            IBlockListener subject = new BlockConfirmationWatcher(this.db, this.storage);
+            IBlockListener subject = new BlockConfirmationWatcher(this.db, this.storage, Enumerable.Empty<IBlockConfirmationListener>());
             var block = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
 
             // Act.

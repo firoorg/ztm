@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
@@ -40,8 +41,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
                 this.logger,
                 this.retriever,
                 this.storage,
-                this.listener1,
-                this.listener2
+                new[] { this.listener1, this.listener2 }
             );
         }
 
@@ -55,7 +55,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
         {
             Assert.Throws<ArgumentNullException>(
                 "config",
-                () => new BlocksSynchronizer(null, this.logger, this.retriever, this.storage)
+                () => new BlocksSynchronizer(null, this.logger, this.retriever, this.storage, Enumerable.Empty<IBlockListener>())
             );
         }
 
@@ -64,7 +64,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
         {
             Assert.Throws<ArgumentNullException>(
                 "logger",
-                () => new BlocksSynchronizer(this.config, null, this.retriever, this.storage)
+                () => new BlocksSynchronizer(this.config, null, this.retriever, this.storage, Enumerable.Empty<IBlockListener>())
             );
         }
 
@@ -73,7 +73,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
         {
             Assert.Throws<ArgumentNullException>(
                 "retriever",
-                () => new BlocksSynchronizer(this.config, this.logger, null, this.storage)
+                () => new BlocksSynchronizer(this.config, this.logger, null, this.storage, Enumerable.Empty<IBlockListener>())
             );
         }
 
@@ -82,7 +82,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
         {
             Assert.Throws<ArgumentNullException>(
                 "storage",
-                () => new BlocksSynchronizer(this.config, this.logger, this.retriever, null)
+                () => new BlocksSynchronizer(this.config, this.logger, this.retriever, null, Enumerable.Empty<IBlockListener>())
             );
         }
 

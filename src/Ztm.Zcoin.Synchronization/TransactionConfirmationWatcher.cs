@@ -20,7 +20,7 @@ namespace Ztm.Zcoin.Synchronization
 
         public TransactionConfirmationWatcher(
             IMainDatabaseFactory db,
-            params ITransactionConfirmationListener[] listeners)
+            IEnumerable<ITransactionConfirmationListener> listeners)
         {
             if (db == null)
             {
