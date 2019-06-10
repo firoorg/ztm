@@ -14,8 +14,8 @@ namespace Ztm.Data.Entity
         );
 
         public static readonly ValueConverter<Script, byte[]> ScriptToBytesConverter = new ValueConverter<Script, byte[]>(
-            v => v.ToBytes(),
-            v => new Script(v)
+            v => v.ToBytes(true),
+            v => Script.FromBytesUnsafe(v)
         );
 
         public static readonly ValueConverter<Target, long> TargetToInt64 = new ValueConverter<Target, long>(
