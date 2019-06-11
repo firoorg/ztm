@@ -68,13 +68,13 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         [Fact]
         public void Divisible_WithNonFractional_ShouldSuccess()
         {
-            var amount = TokenAmount.Divisible(2);
+            var amount = TokenAmount.Divisible(10000);
 
             Assert.True(amount.IsDivisible);
             Assert.False(amount.IsIndivisible);
             Assert.True(amount.IsValid);
-            Assert.Equal(2, amount.Value);
-            Assert.Equal("2", amount.ToString());
+            Assert.Equal(10000, amount.Value);
+            Assert.Equal("10000.00000000", amount.ToString());
         }
 
         [Fact]
@@ -98,13 +98,78 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         [Fact]
         public void Indivisible_WithPositiveValue_ShouldSuccess()
         {
-            var amount = TokenAmount.Indivisible(9);
+            var amount = TokenAmount.Indivisible(90000);
 
             Assert.False(amount.IsDivisible);
             Assert.True(amount.IsIndivisible);
             Assert.True(amount.IsValid);
-            Assert.Equal(9, amount.Value);
-            Assert.Equal("9", amount.ToString());
+            Assert.Equal(90000, amount.Value);
+            Assert.Equal("90000", amount.ToString());
+        }
+
+        [Fact]
+        public void Parse_WithNull_ShouldThrow()
+        {
+            Assert.Throws<ArgumentNullException>(
+                "s",
+                () => TokenAmount.Parse(null)
+            );
+        }
+
+        [Fact]
+        public void Parse_WithNegative_ShouldThrow()
+        {
+            Assert.Throws<FormatException>(() => TokenAmount.Parse("-1"));
+        }
+
+        [Fact]
+        public void Parse_WithZero_ShouldReturnInvalid()
+        {
+            var amount = TokenAmount.Parse("0");
+
+            Assert.False(amount.IsValid);
+        }
+
+        [Fact]
+        public void Parse_WithDivisibleValueExceedLimit_ShouldThrow()
+        {
+            Assert.Throws<FormatException>(() => TokenAmount.Parse("92233720368.54775808"));
+        }
+
+        [Fact]
+        public void Parse_WithDivisibleValueTooMuchPrecision_ShouldThrow()
+        {
+            Assert.Throws<FormatException>(() => TokenAmount.Parse("0.000000001"));
+        }
+
+        [Fact]
+        public void Parse_WithValidDivisibleValue_ShouldSuccess()
+        {
+            var amount = TokenAmount.Parse("100000.1");
+
+            Assert.True(amount.IsDivisible);
+            Assert.False(amount.IsIndivisible);
+            Assert.True(amount.IsValid);
+            Assert.Equal(100000.1m, amount.Value);
+            Assert.Equal("100000.10000000", amount.ToString());
+        }
+
+        [Fact]
+        public void Parse_WithIndivisibleValueExceedLimit_ShouldThrow()
+        {
+            Assert.Throws<FormatException>(() => TokenAmount.Parse("9223372036854775808"));
+        }
+
+        [Fact]
+        public void Parse_WithValidIndivisibleValue_ShouldSuccess()
+        {
+            var amount = TokenAmount.Parse("10000");
+
+            Assert.False(amount.IsDivisible);
+            Assert.True(amount.IsIndivisible);
+            Assert.True(amount.IsValid);
+            Assert.Equal(10000, amount.Value);
+            Assert.Equal("10000", amount.ToString());
         }
 
         [Theory]
@@ -141,25 +206,25 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         [Fact]
         public void Satoshi_WithValidDivisibleValue_ShouldSuccess()
         {
-            var amount = TokenAmount.Satoshi(1, true);
+            var amount = TokenAmount.Satoshi(300000000000, true);
 
             Assert.True(amount.IsDivisible);
             Assert.False(amount.IsIndivisible);
             Assert.True(amount.IsValid);
-            Assert.Equal(0.00000001m, amount.Value);
-            Assert.Equal("0.00000001", amount.ToString());
+            Assert.Equal(3000.00000000m, amount.Value);
+            Assert.Equal("3000.00000000", amount.ToString());
         }
 
         [Fact]
         public void Satoshi_WithValidIndivisibleValue_ShouldSuccess()
         {
-            var amount = TokenAmount.Satoshi(300000000, false);
+            var amount = TokenAmount.Satoshi(300000000000, false);
 
             Assert.False(amount.IsDivisible);
             Assert.True(amount.IsIndivisible);
             Assert.True(amount.IsValid);
-            Assert.Equal(3, amount.Value);
-            Assert.Equal("3", amount.ToString());
+            Assert.Equal(3000, amount.Value);
+            Assert.Equal("3000", amount.ToString());
         }
 
         [Fact]
