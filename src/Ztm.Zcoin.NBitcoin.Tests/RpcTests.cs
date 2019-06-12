@@ -31,7 +31,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         {
             var caps = await this.rpc.ScanRPCCapabilitiesAsync();
 
-            Assert.Equal(130707, caps.Version);
+            Assert.Equal(130710, caps.Version);
             Assert.True(caps.SupportGetNetworkInfo);
             Assert.False(caps.SupportScanUTXOSet);
             Assert.False(caps.SupportSignRawTransactionWith);
