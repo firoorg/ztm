@@ -9,5 +9,10 @@ namespace Ztm.Zcoin.NBitcoin
         {
         }
         #pragma warning restore CS0618
+
+        public static new ZcoinTransaction Parse(string hex, Network network)
+        {
+            return (ZcoinTransaction)Transaction.Parse(hex, network);
+        }
     }
 }
