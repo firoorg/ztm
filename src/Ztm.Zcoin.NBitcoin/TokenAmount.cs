@@ -4,22 +4,18 @@ namespace Ztm.Zcoin.NBitcoin
 {
     public struct TokenAmount
     {
-        readonly decimal value; // Positive represent divisible, negative represents indivisible.
+        readonly long value;
+        readonly TokenType type;
 
-        private TokenAmount(decimal value)
+        private TokenAmount(long value, TokenType type)
         {
             this.value = value;
+            this.type = type;
         }
 
-        public bool IsDivisible => this.value > 0;
+        public bool IsValid => this.value > 0 && Enum.IsDefined(typeof(TokenType), this.type);
 
-        public bool IsIndivisible => this.value < 0;
-
-        public bool IsValid => this.value != 0;
-
-        public decimal Value => !IsValid
-            ? throw new InvalidOperationException("The amount is not valid.")
-            : IsDivisible ? this.value : -this.value;
+        public TokenType Type => IsValid ? this.type : throw new InvalidOperationException("The amount is not valid.");
 
         public static TokenAmount Divisible(decimal value)
         {
@@ -28,7 +24,9 @@ namespace Ztm.Zcoin.NBitcoin
                 throw new ArgumentOutOfRangeException(nameof(value), "The value is not valid.");
             }
 
-            return new TokenAmount(value);
+            value *= 100000000;
+
+            return new TokenAmount((long)value, TokenType.Divisible);
         }
 
         public static TokenAmount Indivisible(long value)
@@ -38,7 +36,7 @@ namespace Ztm.Zcoin.NBitcoin
                 throw new ArgumentOutOfRangeException(nameof(value), "The value is not valid.");
             }
 
-            return new TokenAmount(-value);
+            return new TokenAmount(value, TokenType.Indivisible);
         }
 
         public static TokenAmount Parse(string s)
@@ -54,33 +52,23 @@ namespace Ztm.Zcoin.NBitcoin
                 return default(TokenAmount);
             }
 
-            var divisible = (s.IndexOf('.') != -1);
+            var type = (s.IndexOf('.') != -1) ? TokenType.Divisible : TokenType.Indivisible;
 
-            if (divisible)
+            if (type == TokenType.Divisible)
             {
                 if (amount > 92233720368.54775807m || (amount % 0.00000001m) != 0)
                 {
                     throw new FormatException("The string is not valid.");
                 }
+
+                amount *= 100000000;
             }
             else if (amount > long.MaxValue)
             {
                 throw new FormatException("The string is not valid.");
             }
 
-            return new TokenAmount(divisible ? amount : -amount);
-        }
-
-        public static TokenAmount Satoshi(long value, bool divisible)
-        {
-            if (value <= 0 || (!divisible && (value % 100000000) != 0))
-            {
-                throw new ArgumentOutOfRangeException(nameof(value), "The value is not valid.");
-            }
-
-            var amount = (decimal)value / 100000000;
-
-            return new TokenAmount(divisible ? amount : -amount);
+            return new TokenAmount((long)amount, type);
         }
 
         public override string ToString()
@@ -90,7 +78,15 @@ namespace Ztm.Zcoin.NBitcoin
                 return "";
             }
 
-            return IsDivisible ? Value.ToString("0.00000000") : Value.ToString();
+            switch (this.type)
+            {
+                case TokenType.Divisible:
+                    return ((decimal)this.value / 100000000).ToString("0.00000000");
+                case TokenType.Indivisible:
+                    return this.value.ToString();
+                default:
+                    throw new InvalidOperationException($"Token type {this.type} is not valid.");
+            }
         }
     }
 }

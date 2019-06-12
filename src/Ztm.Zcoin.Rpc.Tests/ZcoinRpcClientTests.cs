@@ -416,12 +416,12 @@ namespace Ztm.Zcoin.Rpc.Tests
             Assert.Equal("Satang Corporation", info.Name);
             Assert.Equal(owner, info.Issuer);
             Assert.Equal(createTx.GetHash(), info.CreationTransaction);
-            Assert.Equal(1000, info.TotalTokens.Value.Value);
+            Assert.Equal("1000", info.TotalTokens.Value.ToString());
             Assert.Single(info.Histories);
 
             Assert.Equal(TokenGrantType.Grant, info.Histories.First().Type);
             Assert.Equal(grantTx.GetHash(), info.Histories.First().Transaction);
-            Assert.Equal(1000, info.Histories.First().Amount.Value);
+            Assert.Equal("1000", info.Histories.First().Amount.ToString());
         }
 
         [Fact]
