@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NBitcoin\NBitcoin\NBitcoin.csproj" />
+    <ProjectReference Include="..\Ztm.Zcoin.NBitcoin\Ztm.Zcoin.NBitcoin.csproj" />
   </ItemGroup>
 
 </Project>

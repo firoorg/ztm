@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 using NBitcoin;
 using Xunit;
+using Ztm.Zcoin.NBitcoin;
 
 namespace Ztm.Configuration.Tests
 {
@@ -20,7 +21,9 @@ namespace Ztm.Configuration.Tests
                 {"Zcoin:Network:Type", "Testnet"},
                 {"Zcoin:Rpc:Address", "http://127.0.0.1:8888"},
                 {"Zcoin:Rpc:UserName", "root"},
-                {"Zcoin:Rpc:Password", "abc"}
+                {"Zcoin:Rpc:Password", "abc"},
+                {"Zcoin:Token:Type", "Divisible"},
+                {"Zcoin:ZeroMq:Address", "tcp://127.0.0.1:5555"}
             });
 
             this.config = builder.Build();
@@ -41,13 +44,12 @@ namespace Ztm.Configuration.Tests
         {
             var parsed = this.config.GetZcoinSection();
 
-            Assert.NotNull(parsed);
-            Assert.NotNull(parsed.Network);
-            Assert.NotNull(parsed.Rpc);
             Assert.Equal(NetworkType.Testnet, parsed.Network.Type);
             Assert.Equal(new Uri("http://127.0.0.1:8888"), parsed.Rpc.Address);
             Assert.Equal("root", parsed.Rpc.UserName);
             Assert.Equal("abc", parsed.Rpc.Password);
+            Assert.Equal(TokenType.Divisible, parsed.Token.Type);
+            Assert.Equal("tcp://127.0.0.1:5555", parsed.ZeroMq.Address);
         }
     }
 }

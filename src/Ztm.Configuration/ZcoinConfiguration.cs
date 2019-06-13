@@ -1,5 +1,6 @@
 using System;
 using NBitcoin;
+using Ztm.Zcoin.NBitcoin;
 
 namespace Ztm.Configuration
 {
@@ -7,6 +8,7 @@ namespace Ztm.Configuration
     {
         public ZcoinNetworkConfiguration Network { get; set; }
         public ZcoinRpcConfiguration Rpc { get; set; }
+        public ZcoinTokenConfiguration Token { get; set; }
         public ZcoinZeroMqConfiguration ZeroMq { get; set; }
     }
 
@@ -20,6 +22,11 @@ namespace Ztm.Configuration
         public Uri Address { get; set; }
         public string UserName { get; set; }
         public string Password { get; set; }
+    }
+
+    public class ZcoinTokenConfiguration
+    {
+        public TokenType Type { get; set; }
     }
 
     public class ZcoinZeroMqConfiguration
