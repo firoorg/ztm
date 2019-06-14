@@ -20,6 +20,18 @@ namespace Ztm.Zcoin.NBitcoin
 
         public long Value => IsValid ? this.value : throw new InvalidOperationException("The identifier is not valid.");
 
+        public static TokenId Parse(string s)
+        {
+            try
+            {
+                return new TokenId(long.Parse(s));
+            }
+            catch (Exception ex) when (ex is ArgumentOutOfRangeException || ex is OverflowException)
+            {
+                throw new FormatException("The value is not valid.", ex);
+            }
+        }
+
         public override string ToString()
         {
             if (!IsValid)
