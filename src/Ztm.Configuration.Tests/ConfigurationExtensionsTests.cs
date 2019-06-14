@@ -22,6 +22,7 @@ namespace Ztm.Configuration.Tests
                 {"Zcoin:Rpc:Address", "http://127.0.0.1:8888"},
                 {"Zcoin:Rpc:UserName", "root"},
                 {"Zcoin:Rpc:Password", "abc"},
+                {"Zcoin:Token:Id", "1"},
                 {"Zcoin:Token:Type", "Divisible"},
                 {"Zcoin:ZeroMq:Address", "tcp://127.0.0.1:5555"}
             });
@@ -48,6 +49,7 @@ namespace Ztm.Configuration.Tests
             Assert.Equal(new Uri("http://127.0.0.1:8888"), parsed.Rpc.Address);
             Assert.Equal("root", parsed.Rpc.UserName);
             Assert.Equal("abc", parsed.Rpc.Password);
+            Assert.Equal(1, parsed.Token.Id);
             Assert.Equal(TokenType.Divisible, parsed.Token.Type);
             Assert.Equal("tcp://127.0.0.1:5555", parsed.ZeroMq.Address);
         }
