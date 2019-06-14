@@ -23,7 +23,8 @@ namespace Ztm.Zcoin.NBitcoin.Tests
             var id = new TokenId(1);
 
             Assert.True(id.IsValid);
-            Assert.Equal(1U, id.Value);
+            Assert.Equal(1, id.Value);
+            Assert.Equal("1", id.ToString());
         }
 
         [Fact]
@@ -36,6 +37,14 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         public void Value_WithDefaultInstance_ShouldThrow()
         {
             Assert.Throws<InvalidOperationException>(() => default(TokenId).Value);
+        }
+
+        [Fact]
+        public void ToString_WithDefaultInstance_ShouldReturnEmptyString()
+        {
+            var s = default(TokenId).ToString();
+
+            Assert.Empty(s);
         }
     }
 }

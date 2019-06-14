@@ -230,7 +230,7 @@ namespace Ztm.Zcoin.Rpc.Tests
             var tokens = await this.subject.ListTokensAsync(CancellationToken.None);
 
             Assert.Equal(3, tokens.Count());
-            Assert.Equal(3U, tokens.Last().Id.Value);
+            Assert.Equal(3, tokens.Last().Id.Value);
             Assert.Equal("Satang Corporation", tokens.Last().Name);
             Assert.Equal("Company", tokens.Last().Category);
             Assert.Equal("Private", tokens.Last().Subcategory);
@@ -287,7 +287,7 @@ namespace Ztm.Zcoin.Rpc.Tests
             var info = await this.subject.GetTokenGrantsAsync(3, CancellationToken.None);
 
             // Assert.
-            Assert.Equal(3U, info.Id.Value);
+            Assert.Equal(3, info.Id.Value);
             Assert.Equal("Satang Corporation", info.Name);
             Assert.Equal(owner, info.Issuer);
             Assert.Equal(tx.GetHash(), info.CreationTransaction);
@@ -412,7 +412,7 @@ namespace Ztm.Zcoin.Rpc.Tests
             // Assert.
             var info = await this.subject.GetTokenGrantsAsync(3, CancellationToken.None);
 
-            Assert.Equal(3U, info.Id.Value);
+            Assert.Equal(3, info.Id.Value);
             Assert.Equal("Satang Corporation", info.Name);
             Assert.Equal(owner, info.Issuer);
             Assert.Equal(createTx.GetHash(), info.CreationTransaction);
@@ -431,7 +431,7 @@ namespace Ztm.Zcoin.Rpc.Tests
 
             Assert.Equal(2, tokens.Count());
 
-            Assert.Equal(1U, tokens.First().Id.Value);
+            Assert.Equal(1, tokens.First().Id.Value);
             Assert.Equal("Exodus", tokens.First().Name);
             Assert.Equal("N/A", tokens.First().Category);
             Assert.Equal("N/A", tokens.First().Subcategory);
@@ -439,7 +439,7 @@ namespace Ztm.Zcoin.Rpc.Tests
             Assert.Equal("Exodus serve as the binding between Zcoin, smart properties and contracts created on the Exodus Layer.", tokens.First().Description);
             Assert.Equal(TokenType.Divisible, tokens.First().Type);
 
-            Assert.Equal(2U, tokens.Last().Id.Value);
+            Assert.Equal(2, tokens.Last().Id.Value);
             Assert.Equal("Test Exodus", tokens.Last().Name);
             Assert.Equal("N/A", tokens.Last().Category);
             Assert.Equal("N/A", tokens.Last().Subcategory);

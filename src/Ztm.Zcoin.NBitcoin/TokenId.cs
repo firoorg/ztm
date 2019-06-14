@@ -18,7 +18,17 @@ namespace Ztm.Zcoin.NBitcoin
 
         public bool IsValid => this.value != 0;
 
-        public uint Value => IsValid ? this.value : throw new InvalidOperationException("The identifier is not valid.");
+        public long Value => IsValid ? this.value : throw new InvalidOperationException("The identifier is not valid.");
+
+        public override string ToString()
+        {
+            if (!IsValid)
+            {
+                return "";
+            }
+
+            return this.value.ToString();
+        }
 
         public static implicit operator TokenId(long value)
         {
