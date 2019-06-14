@@ -1,7 +1,9 @@
 using System;
+using System.ComponentModel;
 
 namespace Ztm.Zcoin.NBitcoin
 {
+    [TypeConverter(typeof(TokenIdConverter))]
     public struct TokenId
     {
         readonly uint value;
