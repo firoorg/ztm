@@ -8,6 +8,7 @@ using NBitcoin.RPC;
 using Ztm.Configuration;
 using Ztm.Data.Entity.Contexts;
 using Ztm.Data.Entity.Postgres;
+using Ztm.WebApi.Binders;
 using Ztm.Zcoin.Rpc;
 using Ztm.Zcoin.Synchronization;
 
@@ -25,7 +26,7 @@ namespace Ztm.WebApi
         public void ConfigureServices(IServiceCollection services)
         {
             // ASP.NET Services.
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+            services.AddMvc(ConfigureMvc).SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 
             // Database Services.
             services.AddSingleton<IMainDatabaseFactory, MainDatabaseFactory>();
@@ -52,6 +53,11 @@ namespace Ztm.WebApi
             }
 
             app.UseMvc();
+        }
+
+        void ConfigureMvc(MvcOptions options)
+        {
+            options.ModelBinderProviders.Insert(0, new TokenAmountModelBinderProvider());
         }
 
         IZcoinRpcClientFactory CreateZcoinRpcClientFactory(IServiceProvider provider)
