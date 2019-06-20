@@ -17,6 +17,30 @@ namespace Ztm.ServiceModel
             this.services = new List<IService>();
         }
 
+        public ServiceManager(IEnumerable<IService> services) : this()
+        {
+            if (services == null)
+            {
+                throw new ArgumentNullException(nameof(services));
+            }
+
+            try
+            {
+                foreach (var service in services)
+                {
+                    Add(service);
+                }
+            }
+            catch
+            {
+                foreach (var service in this.services)
+                {
+                    service.Stopped -= OnServiceStopped;
+                }
+                throw;
+            }
+        }
+
         public override string Name => "Service Manager";
 
         public IEnumerable<IService> Services => this.services;

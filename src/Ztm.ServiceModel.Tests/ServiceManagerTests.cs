@@ -22,6 +22,27 @@ namespace Ztm.ServiceModel.Tests
         }
 
         [Fact]
+        public void Constructor_WithNullServices_ShouldThrow()
+        {
+            Assert.Throws<ArgumentNullException>("services", () => new ServiceManager(null));
+        }
+
+        [Fact]
+        public void Constructor_WithServices_ShouldAddedThoseServices()
+        {
+            // Arrange.
+            var service1 = Substitute.For<IBackgroundService>();
+            var service2 = Substitute.For<IBackgroundService>();
+
+            // Act.
+            using (var subject = new ServiceManager(new[] { service1, service2 }))
+            {
+                // Assert.
+                Assert.Equal(new[] { service1, service2 }, subject.Services);
+            }
+        }
+
+        [Fact]
         public void Add_PassNullForService_ShouldThrow()
         {
             Assert.Throws<ArgumentNullException>(
