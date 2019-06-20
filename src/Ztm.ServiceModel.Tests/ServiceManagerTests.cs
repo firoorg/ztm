@@ -90,7 +90,7 @@ namespace Ztm.ServiceModel.Tests
         }
 
         [Fact]
-        public void Dispose_WhenInvoke_ShouldDisposeAllServices()
+        public void Dispose_WhenInvoke_ShouldNotDisposeAnyServices()
         {
             // Arrange.
             var service1 = Substitute.For<IService>();
@@ -103,8 +103,8 @@ namespace Ztm.ServiceModel.Tests
             this.subject.Dispose();
 
             // Assert.
-            service1.Received(1).Dispose();
-            service2.Received(1).Dispose();
+            service1.Received(0).Dispose();
+            service2.Received(0).Dispose();
         }
 
         [Fact]

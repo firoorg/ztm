@@ -12,7 +12,6 @@ namespace Ztm.ServiceModel
     {
         readonly List<IService> services;
         int stopTriggered;
-        bool disposed;
 
         public ServiceManager()
         {
@@ -72,25 +71,6 @@ namespace Ztm.ServiceModel
             service.Stopped -= OnServiceStopped;
 
             this.services.RemoveAt(index);
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            base.Dispose(disposing);
-
-            if (!this.disposed)
-            {
-                if (disposing)
-                {
-                    foreach (var service in this.services.Reverse<IService>())
-                    {
-                        Debug.Assert(!service.IsRunning);
-                        service.Dispose();
-                    }
-                }
-
-                this.disposed = true;
-            }
         }
 
         protected override async Task OnStartAsync(CancellationToken cancellationToken)
