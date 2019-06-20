@@ -66,5 +66,32 @@ namespace Ztm.ServiceModel.Tests
                 );
             }
         }
+
+        [Fact]
+        public void TrySetException_WithNullException_ShouldThrow()
+        {
+            Assert.Throws<ArgumentNullException>("exception", () => this.subject.TrySetException(null));
+        }
+
+        [Fact]
+        public void TrySetException_NoExceptionSet_ShouldAssignToExceptionProperty()
+        {
+            var exception = new Exception();
+
+            this.subject.TrySetException(exception);
+
+            Assert.Same(exception, this.subject.Exception);
+        }
+
+        [Fact]
+        public void TrySetException_AlreadySet_ShouldNotChangeExceptionProperty()
+        {
+            var exception = new Exception();
+
+            this.subject.TrySetException(exception);
+            this.subject.TrySetException(new Exception());
+
+            Assert.Same(exception, this.subject.Exception);
+        }
     }
 }

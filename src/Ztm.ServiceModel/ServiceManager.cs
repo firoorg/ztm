@@ -153,7 +153,7 @@ namespace Ztm.ServiceModel
             if (service.Exception != null)
             {
                 // If there is a faulted service we need to stop now.
-                Exception = service.Exception;
+                TrySetException(service.Exception);
             }
             else if (service.Exception == null && this.services.Any(s => s.IsRunning))
             {

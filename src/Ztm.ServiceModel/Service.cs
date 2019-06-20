@@ -7,11 +7,13 @@ namespace Ztm.ServiceModel
 {
     public abstract class Service : IService
     {
+        Exception exception;
+
         protected Service()
         {
         }
 
-        public Exception Exception { get; protected set; }
+        public Exception Exception => this.exception;
 
         public bool IsRunning { get; private set; }
 
@@ -43,6 +45,16 @@ namespace Ztm.ServiceModel
             IsRunning = true;
 
             return Started.InvokeAsync(this, new AsyncEventArgs(cancellationToken));
+        }
+
+        protected void TrySetException(Exception exception)
+        {
+            if (exception == null)
+            {
+                throw new ArgumentNullException(nameof(exception));
+            }
+
+            Interlocked.CompareExchange(ref this.exception, exception, null);
         }
     }
 }
