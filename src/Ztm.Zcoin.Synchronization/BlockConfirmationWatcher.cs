@@ -8,11 +8,12 @@ using Microsoft.EntityFrameworkCore;
 using NBitcoin;
 using Ztm.Data.Entity.Contexts;
 using Ztm.Data.Entity.Contexts.Main;
+using Ztm.ServiceModel;
 using Ztm.Zcoin.NBitcoin;
 
 namespace Ztm.Zcoin.Synchronization
 {
-    public class BlockConfirmationWatcher : IBlockListener
+    public class BlockConfirmationWatcher : BackgroundService, IBlockListener
     {
         readonly IMainDatabaseFactory db;
         readonly IBlocksStorage blocks;
@@ -41,6 +42,16 @@ namespace Ztm.Zcoin.Synchronization
             this.db = db;
             this.blocks = blocks;
             this.listeners = listeners.ToDictionary(l => l.Id);
+        }
+
+        protected override Task OnStartAsync(CancellationToken cancellationToken)
+        {
+            return Task.CompletedTask;
+        }
+
+        protected override Task OnStopAsync(CancellationToken cancellationToken)
+        {
+            return Task.CompletedTask;
         }
 
         async Task InvokeListenersAsync(

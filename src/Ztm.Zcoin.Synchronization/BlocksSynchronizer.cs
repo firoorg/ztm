@@ -19,6 +19,7 @@ namespace Ztm.Zcoin.Synchronization
         readonly IBlocksStorage storage;
         readonly IEnumerable<IBlockListener> listeners;
         readonly Network activeNetwork;
+        readonly ServiceManager services;
         bool disposed;
 
         public BlocksSynchronizer(
@@ -58,6 +59,17 @@ namespace Ztm.Zcoin.Synchronization
             this.storage = storage;
             this.listeners = listeners;
             this.activeNetwork = ZcoinNetworks.Instance.GetNetwork(config.GetZcoinSection().Network.Type);
+            this.services = new ServiceManager(listeners);
+
+            try
+            {
+                this.services.Stopped += (sender, e) => ScheduleStop(((ServiceManager)sender).Exception);
+            }
+            catch
+            {
+                this.services.Dispose();
+                throw;
+            }
         }
 
         public event EventHandler<BlockEventArgs> BlockAdded;
@@ -66,27 +78,30 @@ namespace Ztm.Zcoin.Synchronization
 
         protected override void Dispose(bool disposing)
         {
+            base.Dispose(disposing);
+
             if (!this.disposed)
             {
                 if (disposing)
                 {
                     this.retriever.Dispose();
+                    this.services.Dispose();
                 }
 
                 this.disposed = true;
             }
-
-            base.Dispose(disposing);
         }
 
-        protected override Task OnStartAsync(CancellationToken cancellationToken)
+        protected override async Task OnStartAsync(CancellationToken cancellationToken)
         {
-            return this.retriever.StartAsync(this, cancellationToken);
+            await this.services.StartAsync(cancellationToken);
+            await this.retriever.StartAsync(this, CancellationToken.None);
         }
 
-        protected override Task OnStopAsync(CancellationToken cancellationToken)
+        protected override async Task OnStopAsync(CancellationToken cancellationToken)
         {
-            return this.retriever.StopAsync(cancellationToken);
+            await this.retriever.StopAsync(cancellationToken);
+            await this.services.StopAsync(cancellationToken);
         }
 
         async Task<int> IBlocksRetrieverHandler.GetBlockHintAsync(CancellationToken cancellationToken)

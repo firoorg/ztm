@@ -1,9 +1,10 @@
 using System.Threading.Tasks;
+using Ztm.ServiceModel;
 using Ztm.Zcoin.NBitcoin;
 
 namespace Ztm.Zcoin.Synchronization
 {
-    public interface IBlockListener
+    public interface IBlockListener : IBackgroundService
     {
         Task BlockAddedAsync(ZcoinBlock block, int height);
 
