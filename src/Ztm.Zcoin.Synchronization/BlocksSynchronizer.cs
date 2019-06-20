@@ -180,12 +180,7 @@ namespace Ztm.Zcoin.Synchronization
 
         Task IBlocksRetrieverHandler.StopAsync(Exception ex, CancellationToken cancellationToken)
         {
-            if (ex != null)
-            {
-                TrySetException(ex);
-            }
-
-            BeginStop();
+            ScheduleStop(ex);
 
             return Task.CompletedTask;
         }

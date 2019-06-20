@@ -11,7 +11,6 @@ namespace Ztm.ServiceModel
     public class ServiceManager : BackgroundService, IServiceManager
     {
         readonly List<IService> services;
-        int stopTriggered;
 
         public ServiceManager()
         {
@@ -161,12 +160,7 @@ namespace Ztm.ServiceModel
                 return;
             }
 
-            // There is possibility that two Stopped event will raised at the same time
-            // from multiple services. So we want to make sure there is only one call to StopAsync().
-            if (Interlocked.CompareExchange(ref this.stopTriggered, 1, 0) == 0)
-            {
-                BeginStop();
-            }
+            ScheduleStop(null);
         }
     }
 }

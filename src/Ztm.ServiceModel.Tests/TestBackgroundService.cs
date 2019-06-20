@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -11,9 +12,9 @@ namespace Ztm.ServiceModel.Tests
 
         public int OnStopAsyncCount { get; set; }
 
-        public new void BeginStop()
+        public new void ScheduleStop(Exception exception)
         {
-            base.BeginStop();
+            base.ScheduleStop(exception);
         }
 
         protected override Task OnStartAsync(CancellationToken cancellationToken)
