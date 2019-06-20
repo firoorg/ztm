@@ -72,9 +72,13 @@ namespace Ztm.ServiceModel
             {
                 if (disposing)
                 {
-                    if (IsRunning)
+                    try
                     {
                         StopAsync(CancellationToken.None).Wait();
+                    }
+                    catch (AggregateException ex)
+                    {
+                        ex.Handle(e => e is InvalidOperationException);
                     }
 
                     this.semaphore.Dispose();
