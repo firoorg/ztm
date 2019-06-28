@@ -3,7 +3,7 @@ using NBitcoin;
 
 namespace Ztm.Zcoin.Synchronization.Watchers
 {
-    public class Watch : IEquatable<Watch>
+    public class Watch
     {
         public Watch(uint256 startBlock) : this(startBlock, DateTime.Now)
         {
@@ -31,24 +31,16 @@ namespace Ztm.Zcoin.Synchronization.Watchers
 
         public DateTime StartTime { get; }
 
-        public bool Equals(Watch other)
+        public override bool Equals(object obj)
         {
+            var other = obj as Watch;
+
             if (other == null || other.GetType() != GetType())
             {
                 return false;
             }
 
             return other.Id == Id && other.StartBlock == StartBlock && other.StartTime == StartTime;
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (obj == null || obj.GetType() != GetType())
-            {
-                return false;
-            }
-
-            return Equals((Watch)obj);
         }
 
         public override int GetHashCode()

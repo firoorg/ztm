@@ -18,6 +18,8 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         public void Constructor_WithNullStartBlock_ShouldThrow()
         {
             Assert.Throws<ArgumentNullException>("startBlock", () => new Watch(null));
+            Assert.Throws<ArgumentNullException>("startBlock", () => new Watch(null, DateTime.Now));
+            Assert.Throws<ArgumentNullException>("startBlock", () => new Watch(null, DateTime.Now, Guid.NewGuid()));
         }
 
         [Fact]
@@ -51,7 +53,6 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         public void Equals_WithNull_ShouldReturnFalse()
         {
             Assert.False(this.subject.Equals(null));
-            Assert.False(this.subject.Equals((object)null));
         }
 
         [Fact]
@@ -60,7 +61,6 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
             var input = new DerivedWatch(this.subject.StartBlock, this.subject.StartTime, this.subject.Id);
 
             Assert.False(this.subject.Equals(input));
-            Assert.False(this.subject.Equals((object)input));
         }
 
         [Fact]
@@ -69,7 +69,6 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
             var input = new Watch(this.subject.StartBlock, this.subject.StartTime, Guid.NewGuid());
 
             Assert.False(this.subject.Equals(input));
-            Assert.False(this.subject.Equals((object)input));
         }
 
         [Fact]
@@ -78,7 +77,6 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
             var input = new Watch(uint256.Zero, this.subject.StartTime, this.subject.Id);
 
             Assert.False(this.subject.Equals(input));
-            Assert.False(this.subject.Equals((object)input));
         }
 
         [Fact]
@@ -87,7 +85,6 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
             var input = new Watch(this.subject.StartBlock, DateTime.Now, this.subject.Id);
 
             Assert.False(this.subject.Equals(input));
-            Assert.False(this.subject.Equals((object)input));
         }
 
         [Fact]
@@ -96,7 +93,6 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
             var input = new Watch(this.subject.StartBlock, this.subject.StartTime, this.subject.Id);
 
             Assert.True(this.subject.Equals(input));
-            Assert.True(this.subject.Equals((object)input));
         }
 
         class DerivedWatch : Watch
