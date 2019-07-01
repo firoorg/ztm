@@ -1,9 +1,9 @@
 using System;
 
-namespace Ztm.Zcoin.Synchronization
+namespace Ztm.Zcoin.Synchronization.Watchers.Rules
 {
     [Flags]
-    public enum AddressListeningType
+    public enum BalanceChangeType
     {
         None    = 0x0,
         Credit  = 0x1,
