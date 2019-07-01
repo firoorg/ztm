@@ -20,8 +20,6 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers.Rules
 
         public Func<ZcoinBlock, int, IEnumerable<RuledWatch<ExpirableRule>>> ExecuteRules { get; set; }
 
-        public Action<ExpirableRule> OnRuleExpired { get; set; }
-
         public Task AddRuleAsync(ExpirableRule rule, CancellationToken cancellationToken)
         {
             return ((IRulesExecutor<ExpirableRule, RuledWatch<ExpirableRule>>)this).AddRuleAsync(
@@ -54,12 +52,6 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers.Rules
             CancellationToken cancellationToken)
         {
             return Task.FromResult(ExecuteRules(block, height));
-        }
-
-        protected override Task OnRuleExpiredAsync(ExpirableRule rule, CancellationToken cancellationToken)
-        {
-            OnRuleExpired(rule);
-            return Task.CompletedTask;
         }
     }
 }

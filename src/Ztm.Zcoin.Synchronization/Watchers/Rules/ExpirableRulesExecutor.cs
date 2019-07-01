@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading;
 using System.Threading.Tasks;
+using Ztm.ObjectModel;
 using Ztm.ServiceModel;
 using Ztm.Threading;
 using Ztm.Zcoin.NBitcoin;
 
 namespace Ztm.Zcoin.Synchronization.Watchers.Rules
 {
-    public abstract class ExpirableRulesExecutor<TRule, TWatch> : BackgroundService, IRulesExecutor<TRule, TWatch>
+    public abstract class ExpirableRulesExecutor<TRule, TWatch> : BackgroundService, IExpirableRulesExecutor<TRule, TWatch>
         where TRule : ExpirableRule
         where TWatch : RuledWatch<TRule>
     {
@@ -36,10 +37,12 @@ namespace Ztm.Zcoin.Synchronization.Watchers.Rules
             this.expireWatcher = expireWatcher;
             this.expireWatcher.RuleExpired += (sender, e) =>
             {
-                e.RegisterBackgroundTask(cancellationToken => InvokeRuleExpiredAsync(e.Rule, cancellationToken));
+                e.RegisterBackgroundTask(cancellationToken => InvokeRuleExpiredAsync(e, cancellationToken));
             };
             this.shutdownGuard = new ShutdownGuard();
         }
+
+        public event EventHandler<RuleEventArgs<TRule>> RuleExpired;
 
         protected abstract Task<bool> DisassociateRuleAsyc(
             TWatch watch,
@@ -67,8 +70,6 @@ namespace Ztm.Zcoin.Synchronization.Watchers.Rules
             ZcoinBlock block,
             int height,
             CancellationToken cancellationToken);
-
-        protected abstract Task OnRuleExpiredAsync(TRule rule, CancellationToken cancellationToken);
 
         protected override async Task OnStartAsync(CancellationToken cancellationToken)
         {
@@ -108,10 +109,10 @@ namespace Ztm.Zcoin.Synchronization.Watchers.Rules
             await this.expireWatcher.StopAsync(cancellationToken);
         }
 
-        async Task InvokeRuleExpiredAsync(TRule rule, CancellationToken cancellationToken)
+        async Task InvokeRuleExpiredAsync(RuleEventArgs<TRule> e, CancellationToken cancellationToken)
         {
-            await OnRuleExpiredAsync(rule, cancellationToken);
-            await this.storage.RemoveRulesAsync(new[] { rule }, CancellationToken.None);
+            await RuleExpired.InvokeAsync(this, e);
+            await this.storage.RemoveRulesAsync(new[] { e.Rule }, CancellationToken.None);
         }
 
         async Task IRulesExecutor<TRule, TWatch>.AddRuleAsync(TRule rule, CancellationToken cancellationToken)

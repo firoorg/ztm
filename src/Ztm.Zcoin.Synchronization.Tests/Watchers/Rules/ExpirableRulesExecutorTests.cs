@@ -28,7 +28,6 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers.Rules
             {
                 this.subject.DisassociateRule = Substitute.For<Func<RuledWatch<ExpirableRule>, WatchRemoveReason, bool>>();
                 this.subject.ExecuteRules = Substitute.For<Func<ZcoinBlock, int, IEnumerable<RuledWatch<ExpirableRule>>>>();
-                this.subject.OnRuleExpired = Substitute.For<Action<ExpirableRule>>();
             }
             catch
             {
@@ -291,6 +290,9 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers.Rules
         {
             // Arrange.
             var rule = new ExpirableRule();
+            var ruleExpired = Substitute.For<EventHandler<RuleEventArgs<ExpirableRule>>>();
+
+            this.subject.RuleExpired += ruleExpired;
 
             await this.subject.StartAsync(CancellationToken.None);
 
@@ -300,7 +302,7 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers.Rules
             await Task.WhenAll(e.BackgroundTasks);
 
             // Assert.
-            this.subject.OnRuleExpired.Received(1)(rule);
+            ruleExpired.Received(1)(this.subject, Arg.Is<RuleEventArgs<ExpirableRule>>(a => a.Rule == rule));
 
             _ = this.storage.Received(1).RemoveRulesAsync(
                 Arg.Is<IEnumerable<ExpirableRule>>(l => l.SequenceEqual(new[] { rule })),

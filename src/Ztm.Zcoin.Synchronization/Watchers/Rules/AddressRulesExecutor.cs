@@ -80,11 +80,6 @@ namespace Ztm.Zcoin.Synchronization.Watchers.Rules
             return watches;
         }
 
-        protected override Task OnRuleExpiredAsync(AddressRule rule, CancellationToken cancellationToken)
-        {
-            return Task.CompletedTask;
-        }
-
         IReadOnlyDictionary<BitcoinAddress, Money> GetCredits(ZcoinBlock block)
         {
             var balances = new Dictionary<BitcoinAddress, Money>();
