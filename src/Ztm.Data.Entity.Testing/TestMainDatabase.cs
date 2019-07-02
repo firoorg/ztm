@@ -51,11 +51,6 @@ namespace Ztm.Data.Entity.Testing
                 b.Property(e => e.Hash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
             });
 
-            modelBuilder.Entity<WatchingBlock>(b =>
-            {
-                b.Property(e => e.Hash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
-            });
-
             modelBuilder.Entity<WebApiCallback>(b =>
             {
                 b.Property(e => e.TransactionId).HasConversion(Converters.UInt256ToBytesConverter);
