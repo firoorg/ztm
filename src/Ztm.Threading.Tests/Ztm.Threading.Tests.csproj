@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Ztm.Synchronization\Ztm.Synchronization.csproj" />
+    <ProjectReference Include="..\Ztm.Threading\Ztm.Threading.csproj" />
   </ItemGroup>
 
 </Project>

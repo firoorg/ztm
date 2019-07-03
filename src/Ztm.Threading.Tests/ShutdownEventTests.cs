@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace Ztm.Synchronization.Tests
+namespace Ztm.Threading.Tests
 {
     public class ShutdownEventTests : IDisposable
     {

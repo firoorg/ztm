@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Ztm.Synchronization
+namespace Ztm.Threading
 {
     public sealed class ShutdownEvent : IDisposable
     {
