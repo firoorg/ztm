@@ -32,16 +32,16 @@ namespace Ztm.Data.Entity.Contexts
             modelBuilder.Entity<Block>(b =>
             {
                 b.Property(e => e.Height).IsRequired().ValueGeneratedNever();
-                b.Property(e => e.Hash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
+                b.Property(e => e.Hash).IsRequired();
                 b.Property(e => e.Version).IsRequired();
                 b.Property(e => e.Bits).IsRequired().HasConversion(Converters.TargetToInt64);
                 b.Property(e => e.Nonce).IsRequired();
                 b.Property(e => e.Time).IsRequired();
-                b.Property(e => e.MerkleRoot).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
+                b.Property(e => e.MerkleRoot).IsRequired();
                 b.Property(e => e.MtpVersion);
-                b.Property(e => e.MtpHashValue).HasConversion(Converters.UInt256ToBytesConverter);
-                b.Property(e => e.Reserved1).HasConversion(Converters.UInt256ToBytesConverter);
-                b.Property(e => e.Reserved2).HasConversion(Converters.UInt256ToBytesConverter);
+                b.Property(e => e.MtpHashValue);
+                b.Property(e => e.Reserved1);
+                b.Property(e => e.Reserved2);
 
                 b.HasKey(e => e.Height);
                 b.HasAlternateKey(e => e.Hash);
@@ -52,8 +52,8 @@ namespace Ztm.Data.Entity.Contexts
         {
             modelBuilder.Entity<BlockTransaction>(b =>
             {
-                b.Property(e => e.BlockHash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
-                b.Property(e => e.TransactionHash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
+                b.Property(e => e.BlockHash).IsRequired();
+                b.Property(e => e.TransactionHash).IsRequired();
                 b.Property(e => e.Index).IsRequired();
 
                 b.HasKey(e => new { e.BlockHash, e.TransactionHash, e.Index });
@@ -75,9 +75,9 @@ namespace Ztm.Data.Entity.Contexts
         {
             modelBuilder.Entity<Input>(b =>
             {
-                b.Property(e => e.TransactionHash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
+                b.Property(e => e.TransactionHash).IsRequired();
                 b.Property(e => e.Index).IsRequired();
-                b.Property(e => e.OutputHash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
+                b.Property(e => e.OutputHash).IsRequired();
                 b.Property(e => e.OutputIndex).IsRequired();
                 b.Property(e => e.Script).IsRequired().HasConversion(Converters.ScriptToBytesConverter);
                 b.Property(e => e.Sequence).IsRequired();
@@ -96,7 +96,7 @@ namespace Ztm.Data.Entity.Contexts
         {
             modelBuilder.Entity<Output>(b =>
             {
-                b.Property(e => e.TransactionHash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
+                b.Property(e => e.TransactionHash).IsRequired();
                 b.Property(e => e.Index).IsRequired();
                 b.Property(e => e.Value).IsRequired();
                 b.Property(e => e.Script).IsRequired().HasConversion(Converters.ScriptToBytesConverter);
@@ -114,7 +114,7 @@ namespace Ztm.Data.Entity.Contexts
         {
             modelBuilder.Entity<Transaction>(b =>
             {
-                b.Property(e => e.Hash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
+                b.Property(e => e.Hash).IsRequired();
                 b.Property(e => e.Version).IsRequired();
                 b.Property(e => e.LockTime).IsRequired();
 
@@ -139,7 +139,7 @@ namespace Ztm.Data.Entity.Contexts
         {
             modelBuilder.Entity<WatchingBlock>(b =>
             {
-                b.Property(e => e.Hash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
+                b.Property(e => e.Hash).IsRequired();
                 b.Property(e => e.Listener).IsRequired();
                 b.Property(e => e.StartTime).IsRequired();
 
@@ -151,7 +151,7 @@ namespace Ztm.Data.Entity.Contexts
         {
             modelBuilder.Entity<WatchingTransaction>(b =>
             {
-                b.Property(e => e.Hash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
+                b.Property(e => e.Hash).IsRequired();
                 b.Property(e => e.Listener).IsRequired();
                 b.Property(e => e.StartTime).IsRequired();
 
@@ -166,7 +166,7 @@ namespace Ztm.Data.Entity.Contexts
                 b.Property(e => e.Id).IsRequired().ValueGeneratedNever();
                 b.Property(e => e.RequestIp).IsRequired();
                 b.Property(e => e.RequestTime).IsRequired();
-                b.Property(e => e.TransactionId).HasConversion(Converters.UInt256ToBytesConverter);
+                b.Property(e => e.TransactionId);
                 b.Property(e => e.Url).IsRequired();
 
                 b.HasKey(e => e.Id);
