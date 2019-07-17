@@ -4,6 +4,7 @@ using Npgsql;
 using Npgsql.TypeMapping;
 using NpgsqlTypes;
 using NBitcoin;
+using System;
 
 namespace Ztm.Data.Entity.Postgres
 {
@@ -15,7 +16,7 @@ namespace Ztm.Data.Entity.Postgres
             {
                 PgTypeName = "bytea",
                 NpgsqlDbType = NpgsqlDbType.Bytea,
-                ClrTypes = new[] { typeof(uint256), typeof(byte[]) },
+                ClrTypes = new[] { typeof(uint256), typeof(byte[]), typeof(ArraySegment<byte>) },
                 TypeHandlerFactory = new ByteaHandlerFactory()
             }.Build());
         }

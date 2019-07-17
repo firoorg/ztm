@@ -6,7 +6,7 @@ using NpgsqlTypes;
 
 namespace Ztm.Data.Entity.Postgres.Mapping
 {
-    public class UInt256TypeMapping : NpgsqlTypeMapping
+    class UInt256TypeMapping : NpgsqlTypeMapping
     {
         public UInt256TypeMapping() : base("bytea", typeof(uint256), NpgsqlDbType.Bytea)
         {

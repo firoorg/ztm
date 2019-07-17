@@ -10,9 +10,9 @@ namespace Ztm.Data.Entity.Testing
         {
         }
 
-        protected override void ConfigureWebApiCallback(ModelBuilder modelBuilder)
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            base.ConfigureWebApiCallback(modelBuilder);
+            base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<WebApiCallback>(b =>
             {

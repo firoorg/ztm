@@ -6,7 +6,7 @@ using Ztm.Data.Entity.Postgres.Mapping;
 
 namespace Ztm.Data.Entity.Postgres
 {
-    public class TypeMappingSource : NpgsqlTypeMappingSource
+    class TypeMappingSource : NpgsqlTypeMappingSource
     {
         public TypeMappingSource(
             TypeMappingSourceDependencies dependencies,

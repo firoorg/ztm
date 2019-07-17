@@ -1,5 +1,5 @@
 using System;
-using System.Text;
+using System.Threading.Tasks;
 using NBitcoin;
 using Npgsql;
 using Npgsql.BackendMessages;
@@ -7,23 +7,15 @@ using Npgsql.TypeHandling;
 
 namespace Ztm.Data.Entity.Postgres
 {
-    class ByteaHandler :  NpgsqlSimpleTypeHandlerWithPsv<byte[], uint256>
+    class ByteaHandler : Npgsql.TypeHandlers.ByteaHandler, INpgsqlTypeHandler<uint256>
     {
-        internal readonly bool storeUInt256AsLE;
-
-        public ByteaHandler(bool lendian = false)
-        {
-            storeUInt256AsLE = lendian;
-        }
-
-        #region Read
-        public override byte[] Read(NpgsqlReadBuffer buf, int len, FieldDescription fieldDescription = null)
+        async ValueTask<uint256> INpgsqlTypeHandler<uint256>.Read(NpgsqlReadBuffer buf, int len, bool async, FieldDescription fieldDescription)
         {
             try
             {
                 var bytes = new byte[len];
-                buf.ReadBytes(bytes, 0, len);
-                return bytes;
+                await buf.ReadBytes(bytes, 0, len, async);
+                return new uint256(bytes, false);
             }
             catch (Exception e)
             {
@@ -31,36 +23,12 @@ namespace Ztm.Data.Entity.Postgres
             }
         }
 
-        protected override uint256 ReadPsv(NpgsqlReadBuffer buf, int len, FieldDescription fieldDescription = null)
+        public async Task Write(uint256 value, NpgsqlWriteBuffer buf, NpgsqlLengthCache lengthCache, NpgsqlParameter parameter, bool async)
         {
-            try
-            {
-                var bytes = new byte[len];
-                buf.ReadBytes(bytes, 0, len);
-                return new uint256(bytes, storeUInt256AsLE);
-            }
-            catch (Exception e)
-            {
-                throw new NpgsqlSafeReadException(e);
-            }
+            await buf.WriteBytesRaw(value.ToBytes(false), async);
         }
 
-        #endregion Read
-
-        #region Write
-
-        public override int ValidateAndGetLength(byte[] value, NpgsqlParameter parameter)
-            => value.Length;
-
-        public override int ValidateAndGetLength(uint256 value, NpgsqlParameter parameter)
+        int INpgsqlTypeHandler<uint256>.ValidateAndGetLength(uint256 value, ref NpgsqlLengthCache lengthCache, NpgsqlParameter parameter)
             => 32;
-
-        public override void Write(uint256 value, NpgsqlWriteBuffer buf, NpgsqlParameter parameter)
-            => buf.WriteBytes(value.ToBytes(storeUInt256AsLE));
-
-        public override void Write(byte[] value, NpgsqlWriteBuffer buf, NpgsqlParameter parameter)
-            => buf.WriteBytesRaw(value, false);
-
-        #endregion Write
     }
 }
