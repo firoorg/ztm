@@ -12,7 +12,7 @@ namespace Ztm.Data.Entity.Postgres
         async ValueTask<uint256> INpgsqlTypeHandler<uint256>.Read(NpgsqlReadBuffer buf, int len, bool async,
             FieldDescription fieldDescription)
         {
-            var bytes = await Read<byte[]>(buf, len, async, fieldDescription);
+            var bytes = await base.Read(buf, len, async, fieldDescription);
             return new uint256(bytes);
         }
 
