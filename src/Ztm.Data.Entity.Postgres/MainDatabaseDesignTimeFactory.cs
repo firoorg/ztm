@@ -1,6 +1,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Ztm.Data.Entity.Postgres
 {
@@ -17,6 +18,7 @@ namespace Ztm.Data.Entity.Postgres
             }
 
             optionsBuilder.UseNpgsql(connectionString);
+            optionsBuilder.ReplaceService<IRelationalTypeMappingSource, TypeMappingSource>();
 
             return new MainDatabase(optionsBuilder.Options);
         }
