@@ -17,8 +17,6 @@ namespace Ztm.ServiceModel
 
         public bool IsRunning { get; private set; }
 
-        public abstract string Name { get; }
-
         public event EventHandler<AsyncEventArgs> Stopped;
 
         public event EventHandler<AsyncEventArgs> Started;

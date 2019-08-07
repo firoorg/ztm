@@ -41,8 +41,6 @@ namespace Ztm.ServiceModel
             }
         }
 
-        public override string Name => "Service Manager";
-
         public IEnumerable<IService> Services => this.services;
 
         public void Add(IService service)

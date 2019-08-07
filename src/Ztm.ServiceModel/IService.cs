@@ -9,8 +9,6 @@ namespace Ztm.ServiceModel
 
         bool IsRunning { get; }
 
-        string Name { get; }
-
         event EventHandler<AsyncEventArgs> Stopped;
 
         event EventHandler<AsyncEventArgs> Started;
