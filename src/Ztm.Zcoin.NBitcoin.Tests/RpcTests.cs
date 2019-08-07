@@ -17,7 +17,9 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         public RpcTests()
         {
             this.builder = NodeBuilderFactory.CreateNodeBuilder(GetType().Name);
-            this.node = this.builder.CreateNode(true);
+            this.node = this.builder.CreateNode(false);
+            this.node.ConfigParameters.Add("printtoconsole", "0");
+            this.node.StartAsync().Wait();
             this.rpc = new ZcoinRPCClient(node.GetRPCAuth(), node.RPCUri, node.Network); node.CreateRPCClient();
         }
 
