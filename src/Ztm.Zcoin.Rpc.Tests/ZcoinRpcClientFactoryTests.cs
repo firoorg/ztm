@@ -33,9 +33,7 @@ namespace Ztm.Zcoin.Rpc.Tests
         {
             using (var nodeBuilder = NodeBuilderFactory.CreateNodeBuilder(GetType().Name))
             {
-                var node = nodeBuilder.CreateNode(false);
-                node.ConfigParameters.Add("printtoconsole", "0");
-                node.StartAsync().Wait();
+                var node = nodeBuilder.CreateNode(true);
                 var cred = RPCCredentialString.Parse(node.GetRPCAuth());
                 var factory = new ZcoinRpcClientFactory(node.RPCUri, node.Network.NetworkType, cred);
 

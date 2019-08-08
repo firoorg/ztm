@@ -28,7 +28,19 @@ namespace Ztm.Zcoin.Testing
                 }
             };
 
-            return NodeBuilder.Create(data, ZcoinNetworks.Instance.Regtest, directoryName);
+            var builder = NodeBuilder.Create(data, ZcoinNetworks.Instance.Regtest, directoryName);
+
+            try
+            {
+                builder.ConfigParameters.Add("printtoconsole", "0");
+            }
+            catch
+            {
+                builder.Dispose();
+                throw;
+            }
+
+            return builder;
         }
     }
 }
