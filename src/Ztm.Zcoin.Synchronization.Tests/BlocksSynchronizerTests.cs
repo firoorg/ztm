@@ -96,12 +96,6 @@ namespace Ztm.Zcoin.Synchronization.Tests
         }
 
         [Fact]
-        public void Constructor_WhenSuccess_ShouldAssignNameToNonNull()
-        {
-            Assert.NotNull(this.subject.Name);
-        }
-
-        [Fact]
         public void Dispose_WhenSuccess_ShouldDisposeRetriever()
         {
             // Act.

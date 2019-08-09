@@ -60,8 +60,6 @@ namespace Ztm.Zcoin.Synchronization
             this.activeNetwork = ZcoinNetworks.Instance.GetNetwork(config.GetZcoinSection().Network.Type);
         }
 
-        public override string Name => "Blocks Synchronizer";
-
         public event EventHandler<BlockEventArgs> BlockAdded;
 
         public event EventHandler<BlockEventArgs> BlockRemoving;
@@ -180,9 +178,7 @@ namespace Ztm.Zcoin.Synchronization
 
         Task IBlocksRetrieverHandler.StopAsync(Exception ex, CancellationToken cancellationToken)
         {
-            Exception = ex;
-
-            BeginStop();
+            ScheduleStop(ex);
 
             return Task.CompletedTask;
         }

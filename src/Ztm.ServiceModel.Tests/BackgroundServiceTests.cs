@@ -22,13 +22,13 @@ namespace Ztm.ServiceModel.Tests
         }
 
         [Fact]
-        public async Task BeginStop_WhenInvoke_ShouldCallStopAsync()
+        public async Task ScheduleStop_WhenInvoke_ShouldCallStopAsync()
         {
             // Arrange.
             await this.subject.StartAsync(CancellationToken.None);
 
             // Act.
-            this.subject.BeginStop();
+            this.subject.ScheduleStop(null);
             await Task.Delay(1000);
 
             // Assert.

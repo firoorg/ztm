@@ -6,12 +6,12 @@ namespace Ztm.ServiceModel
 {
     public abstract class BackgroundService : Service, IBackgroundService
     {
-        readonly SemaphoreSlim stopAllowed;
+        readonly SemaphoreSlim semaphore;
         bool disposed;
 
         protected BackgroundService()
         {
-            this.stopAllowed = new SemaphoreSlim(1, 1);
+            this.semaphore = new SemaphoreSlim(1, 1);
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
@@ -21,13 +21,22 @@ namespace Ztm.ServiceModel
                 throw new ObjectDisposedException(GetType().FullName);
             }
 
-            if (IsRunning)
-            {
-                throw new InvalidOperationException("The service is already running.");
-            }
+            await this.semaphore.WaitAsync(cancellationToken);
 
-            await OnStartAsync(cancellationToken);
-            await OnStartedAsync(cancellationToken);
+            try
+            {
+                if (IsRunning)
+                {
+                    throw new InvalidOperationException("The service is already running.");
+                }
+
+                await OnStartAsync(cancellationToken);
+                await OnStartedAsync(cancellationToken);
+            }
+            finally
+            {
+                this.semaphore.Release();
+            }
         }
 
         public async Task StopAsync(CancellationToken cancellationToken)
@@ -37,7 +46,7 @@ namespace Ztm.ServiceModel
                 throw new ObjectDisposedException(GetType().FullName);
             }
 
-            await this.stopAllowed.WaitAsync(cancellationToken);
+            await this.semaphore.WaitAsync(cancellationToken);
 
             try
             {
@@ -51,12 +60,45 @@ namespace Ztm.ServiceModel
             }
             finally
             {
-                this.stopAllowed.Release();
+                this.semaphore.Release();
             }
         }
 
-        protected void BeginStop()
+        protected override void Dispose(bool disposing)
         {
+            base.Dispose(disposing);
+
+            if (!this.disposed)
+            {
+                if (disposing)
+                {
+                    try
+                    {
+                        StopAsync(CancellationToken.None).Wait();
+                    }
+                    catch (AggregateException ex)
+                    {
+                        ex.Handle(e => e is InvalidOperationException);
+                    }
+
+                    this.semaphore.Dispose();
+                }
+
+                this.disposed = true;
+            }
+        }
+
+        protected abstract Task OnStartAsync(CancellationToken cancellationToken);
+
+        protected abstract Task OnStopAsync(CancellationToken cancellationToken);
+
+        protected void ScheduleStop(Exception exception)
+        {
+            if (exception != null)
+            {
+                TrySetException(exception);
+            }
+
             Task.Run(async () =>
             {
                 try
@@ -73,29 +115,5 @@ namespace Ztm.ServiceModel
                 }
             });
         }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (!this.disposed)
-            {
-                if (disposing)
-                {
-                    if (IsRunning)
-                    {
-                        StopAsync(CancellationToken.None).Wait();
-                    }
-
-                    this.stopAllowed.Dispose();
-                }
-
-                this.disposed = true;
-            }
-
-            base.Dispose(disposing);
-        }
-
-        protected abstract Task OnStartAsync(CancellationToken cancellationToken);
-
-        protected abstract Task OnStopAsync(CancellationToken cancellationToken);
     }
 }

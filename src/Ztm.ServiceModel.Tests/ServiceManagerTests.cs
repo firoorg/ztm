@@ -22,6 +22,27 @@ namespace Ztm.ServiceModel.Tests
         }
 
         [Fact]
+        public void Constructor_WithNullServices_ShouldThrow()
+        {
+            Assert.Throws<ArgumentNullException>("services", () => new ServiceManager(null));
+        }
+
+        [Fact]
+        public void Constructor_WithServices_ShouldAddedThoseServices()
+        {
+            // Arrange.
+            var service1 = Substitute.For<IBackgroundService>();
+            var service2 = Substitute.For<IBackgroundService>();
+
+            // Act.
+            using (var subject = new ServiceManager(new[] { service1, service2 }))
+            {
+                // Assert.
+                Assert.Equal(new[] { service1, service2 }, subject.Services);
+            }
+        }
+
+        [Fact]
         public void Add_PassNullForService_ShouldThrow()
         {
             Assert.Throws<ArgumentNullException>(
@@ -90,7 +111,7 @@ namespace Ztm.ServiceModel.Tests
         }
 
         [Fact]
-        public void Dispose_WhenInvoke_ShouldDisposeAllServices()
+        public void Dispose_WhenInvoke_ShouldNotDisposeAnyServices()
         {
             // Arrange.
             var service1 = Substitute.For<IService>();
@@ -103,8 +124,8 @@ namespace Ztm.ServiceModel.Tests
             this.subject.Dispose();
 
             // Assert.
-            service1.Received(1).Dispose();
-            service2.Received(1).Dispose();
+            service1.Received(0).Dispose();
+            service2.Received(0).Dispose();
         }
 
         [Fact]

@@ -11,15 +11,35 @@ namespace Ztm.ServiceModel
     public class ServiceManager : BackgroundService, IServiceManager
     {
         readonly List<IService> services;
-        int stopTriggered;
-        bool disposed;
 
         public ServiceManager()
         {
             this.services = new List<IService>();
         }
 
-        public override string Name => "Service Manager";
+        public ServiceManager(IEnumerable<IService> services) : this()
+        {
+            if (services == null)
+            {
+                throw new ArgumentNullException(nameof(services));
+            }
+
+            try
+            {
+                foreach (var service in services)
+                {
+                    Add(service);
+                }
+            }
+            catch
+            {
+                foreach (var service in this.services)
+                {
+                    service.Stopped -= OnServiceStopped;
+                }
+                throw;
+            }
+        }
 
         public IEnumerable<IService> Services => this.services;
 
@@ -72,25 +92,6 @@ namespace Ztm.ServiceModel
             service.Stopped -= OnServiceStopped;
 
             this.services.RemoveAt(index);
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            base.Dispose(disposing);
-
-            if (!this.disposed)
-            {
-                if (disposing)
-                {
-                    foreach (var service in this.services.Reverse<IService>())
-                    {
-                        Debug.Assert(!service.IsRunning);
-                        service.Dispose();
-                    }
-                }
-
-                this.disposed = true;
-            }
         }
 
         protected override async Task OnStartAsync(CancellationToken cancellationToken)
@@ -173,7 +174,7 @@ namespace Ztm.ServiceModel
             if (service.Exception != null)
             {
                 // If there is a faulted service we need to stop now.
-                Exception = service.Exception;
+                TrySetException(service.Exception);
             }
             else if (service.Exception == null && this.services.Any(s => s.IsRunning))
             {
@@ -181,12 +182,7 @@ namespace Ztm.ServiceModel
                 return;
             }
 
-            // There is possibility that two Stopped event will raised at the same time
-            // from multiple services. So we want to make sure there is only one call to StopAsync().
-            if (Interlocked.CompareExchange(ref this.stopTriggered, 1, 0) == 0)
-            {
-                BeginStop();
-            }
+            ScheduleStop(null);
         }
     }
 }
