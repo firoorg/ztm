@@ -1,11 +1,21 @@
 using System;
+using System.ComponentModel;
 
 namespace Ztm.Zcoin.NBitcoin
 {
+    [TypeConverter(typeof(TokenAmountConverter))]
     public struct TokenAmount
     {
         readonly long value;
         readonly TokenType type;
+
+        public static readonly TokenAmount MaxDivisible = TokenAmount.Divisible(92233720368.54775807m);
+
+        public static readonly TokenAmount MaxIndivisible = TokenAmount.Indivisible(long.MaxValue);
+
+        public static readonly TokenAmount MinDivisible = TokenAmount.Divisible(0.00000001m);
+
+        public static readonly TokenAmount MinIndivisible = TokenAmount.Indivisible(1);
 
         private TokenAmount(long value, TokenType type)
         {
