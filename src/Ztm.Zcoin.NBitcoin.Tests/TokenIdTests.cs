@@ -23,7 +23,8 @@ namespace Ztm.Zcoin.NBitcoin.Tests
             var id = new TokenId(1);
 
             Assert.True(id.IsValid);
-            Assert.Equal(1U, id.Value);
+            Assert.Equal(1, id.Value);
+            Assert.Equal("1", id.ToString());
         }
 
         [Fact]
@@ -36,6 +37,42 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         public void Value_WithDefaultInstance_ShouldThrow()
         {
             Assert.Throws<InvalidOperationException>(() => default(TokenId).Value);
+        }
+
+        [Fact]
+        public void Parse_WithNull_ShouldThrow()
+        {
+            Assert.Throws<ArgumentNullException>("s", () => TokenId.Parse(null));
+        }
+
+        [Theory]
+        [InlineData("1")]
+        [InlineData("4294967295")]
+        public void Parse_WithValidString_ShouldSuccess(string value)
+        {
+            var id = TokenId.Parse(value);
+
+            Assert.True(id.IsValid);
+            Assert.Equal(value, id.ToString());
+        }
+
+        [Theory]
+        [InlineData("-9223372036854775809")]
+        [InlineData("-9223372036854775808")]
+        [InlineData("0")]
+        [InlineData("4294967296")]
+        [InlineData("9223372036854775808")]
+        public void Parse_WithInvalidString_ShouldThrow(string value)
+        {
+            Assert.Throws<FormatException>(() => TokenId.Parse(value));
+        }
+
+        [Fact]
+        public void ToString_WithDefaultInstance_ShouldReturnEmptyString()
+        {
+            var s = default(TokenId).ToString();
+
+            Assert.Empty(s);
         }
     }
 }

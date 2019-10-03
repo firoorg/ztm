@@ -26,6 +26,7 @@ namespace Ztm.Configuration
 
     public class ZcoinTokenConfiguration
     {
+        public TokenId Id { get; set; }
         public TokenType Type { get; set; }
     }
 
