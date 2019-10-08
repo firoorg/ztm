@@ -41,5 +41,10 @@ namespace Ztm.Data.Entity.Contexts.Main
 
             return 0;
         }
+
+        public bool Equals(Input other)
+        {
+            return CompareTo(other) == 0;
+        }
     }
 }

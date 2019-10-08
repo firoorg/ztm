@@ -28,5 +28,10 @@ namespace Ztm.Data.Entity.Contexts.Main
 
             return Index - other.Index;
         }
+
+        public bool Equals(BlockTransaction other)
+        {
+            return CompareTo(other) == 0;
+        }
     }
 }
