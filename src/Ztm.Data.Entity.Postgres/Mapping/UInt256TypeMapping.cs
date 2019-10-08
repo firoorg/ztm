@@ -21,13 +21,13 @@ namespace Ztm.Data.Entity.Postgres.Mapping
             => new UInt256TypeMapping(parameters);
 
         protected override string GenerateNonNullSqlLiteral(object value)
-            => @"'\x" + ((uint256)value).ToString() + @"'";
+            => @"'\x" + (uint256)value + @"'";
 
         public override Expression GenerateCodeLiteral(object value)
             => Expression.Call(
                 typeof(uint256).GetMethod("Parse", new[] {typeof(string)}),
                 Expression.Constant(
-                    @"'\x" + ((uint256)value).ToString() + @"'"));
+                    @"'\x" + (uint256)value + @"'"));
 
     }
 }
