@@ -14,7 +14,7 @@ namespace Ztm.Threading
         readonly Stopwatch stopwatch;
         TimerStatus status;
         int oneShotState; // 0 = not one shot, 1 = not fired, 2 = stopping by outside, 3 = stopping by inside
-        ShutdownEvent stopGuard;
+        ShutdownGuard stopGuard;
         System.Threading.Timer timer;
         int elapsed;
 
@@ -62,7 +62,7 @@ namespace Ztm.Threading
                 period = TimeSpan.FromMilliseconds(1);
             }
 
-            this.stopGuard = new ShutdownEvent();
+            this.stopGuard = new ShutdownGuard();
             this.oneShotState = period.HasValue ? 0 : 1;
             this.status = TimerStatus.Started; // We need to change status here due to timer might elapsed immediately.
 

@@ -5,18 +5,18 @@ using Xunit;
 
 namespace Ztm.Threading.Tests
 {
-    public class ShutdownEventTests : IDisposable
+    public class ShutdownGuardTests : IDisposable
     {
         readonly Thread thread1, thread2, thread3, thread4;
-        readonly ShutdownEvent subject;
+        readonly ShutdownGuard subject;
 
-        public ShutdownEventTests()
+        public ShutdownGuardTests()
         {
             this.thread1 = new Thread(SeparatedThread);
             this.thread2 = new Thread(SeparatedThread);
             this.thread3 = new Thread(SeparatedThread);
             this.thread4 = new Thread(SeparatedThread);
-            this.subject = new ShutdownEvent();
+            this.subject = new ShutdownGuard();
         }
 
         public void Dispose()
