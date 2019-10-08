@@ -5,14 +5,14 @@ using System.Threading.Tasks;
 
 namespace Ztm.Threading
 {
-    public sealed class ShutdownEvent : IDisposable
+    public sealed class ShutdownGuard : IDisposable
     {
         readonly SemaphoreSlim releaseEvent;
         volatile bool shuttingdown;
         volatile int lockCount;
         bool disposed;
 
-        public ShutdownEvent()
+        public ShutdownGuard()
         {
             this.releaseEvent = new SemaphoreSlim(0);
         }
