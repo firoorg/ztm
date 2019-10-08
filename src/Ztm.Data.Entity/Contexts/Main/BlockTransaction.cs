@@ -29,9 +29,23 @@ namespace Ztm.Data.Entity.Contexts.Main
             return Index - other.Index;
         }
 
-        public bool Equals(BlockTransaction other)
+        public override bool Equals(Object other)
         {
-            return CompareTo(other) == 0;
+            var tx = other as BlockTransaction;
+            return CompareTo(tx) == 0;
+        }
+
+        public override int GetHashCode()
+        {
+            int hash = 0;
+
+            hash ^= (BlockHash != null) ? BlockHash.GetHashCode() : 0;
+            hash ^= (TransactionHash != null) ? TransactionHash.GetHashCode() : 0;
+            hash ^= Index.GetHashCode();
+            hash ^= (Block != null) ? Block.GetHashCode() : 0;
+            hash ^= (Transaction != null) ? Transaction.GetHashCode() : 0;
+
+            return hash;
         }
     }
 }

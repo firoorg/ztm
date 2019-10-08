@@ -42,9 +42,23 @@ namespace Ztm.Data.Entity.Contexts.Main
             return 0;
         }
 
-        public bool Equals(Output other)
+        public override bool Equals(Object other)
         {
-            return CompareTo(other) == 0;
+            var output = other as Output;
+            return CompareTo(output) == 0;
+        }
+
+        public override int GetHashCode()
+        {
+            int hash = 0;
+
+            hash ^= (TransactionHash != null) ? TransactionHash.GetHashCode() : 0;
+            hash ^= Index.GetHashCode();
+            hash ^= Value.GetHashCode();
+            hash ^= (Script != null) ? Script.GetHashCode() : 0;
+            hash ^= (Transaction != null) ? Transaction.GetHashCode() : 0;
+
+            return hash;
         }
     }
 }

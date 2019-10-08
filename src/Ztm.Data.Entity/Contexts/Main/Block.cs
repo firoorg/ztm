@@ -45,9 +45,15 @@ namespace Ztm.Data.Entity.Contexts.Main
             return Height - other.Height;
         }
 
-        public bool Equals(Block other)
+        public override bool Equals(Object other)
         {
-            return CompareTo(other) == 0;
+            var block = other as Block;
+            return CompareTo(block) == 0;
+        }
+
+        public override int GetHashCode()
+        {
+            return Height.GetHashCode() ^ (Hash != null ? Hash.GetHashCode() : 0);
         }
     }
 }

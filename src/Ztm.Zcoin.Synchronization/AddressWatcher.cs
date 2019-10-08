@@ -159,14 +159,7 @@ namespace Ztm.Zcoin.Synchronization
 
                 // Add debit to address.
                 Money val;
-                if (balances.TryGetValue(address, out val))
-                {
-                    balances[address] = val + spend.Value;
-                }
-                else
-                {
-                    balances[address] = spend.Value;
-                }
+                balances[address] = balances.TryGetValue(address, out val) ? val + spend.Value : spend.Value;
             }
 
             return balances;
