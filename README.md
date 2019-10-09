@@ -10,14 +10,6 @@ This is a service for provide rich API for manage tokens on Zcoin Exodus Protoco
 ## Build
 
 ```sh
-git submodule init
-```
-
-```sh
-git submodule update --recursive
-```
-
-```sh
 dotnet build src/Ztm.sln
 ```
 

@@ -7,12 +7,12 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="2.2.4" />
+    <PackageReference Include="NBitcoin" Version="4.2.15" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="2.2.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Ztm.Data.Entity\Ztm.Data.Entity.csproj" />
-    <ProjectReference Include="..\NBitcoin\NBitcoin\NBitcoin.csproj" />
     <ProjectReference Include="..\Ztm.Configuration\Ztm.Configuration.csproj" />
   </ItemGroup>
 

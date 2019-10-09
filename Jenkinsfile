@@ -7,8 +7,6 @@ pipeline {
         stage('Setup') {
             steps {
                 sh 'git clean -d -f -f -q -x'
-                sh 'git submodule init'
-                sh 'git submodule update --recursive'
             }
         }
 
