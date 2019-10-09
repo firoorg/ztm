@@ -251,10 +251,10 @@ namespace Ztm.Zcoin.Synchronization.Tests
                 offset: TimeSpan.Zero
             );
 
-            block.Header.MtpVersion = 99;
-            block.Header.MtpHashValue = new uint256(1);
-            block.Header.Reserved1 = new uint256(2);
-            block.Header.Reserved2 = new uint256(3);
+            block.Header.SetMtpVersion(99);
+            block.Header.SetMtpHashValue(new uint256(1));
+            block.Header.SetReserved1(new uint256(2));
+            block.Header.SetReserved2(new uint256(3));
 
             // Act.
             await subject.AddAsync(block, 0, CancellationToken.None);

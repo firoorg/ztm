@@ -26,9 +26,9 @@ namespace Ztm.Zcoin.Rpc
 
         Task<ZcoinBlock> GetBlockAsync(int height, CancellationToken cancellationToken);
 
-        Task<ZcoinBlockHeader> GetBlockHeaderAsync(uint256 blockHash, CancellationToken cancellationToken);
+        Task<BlockHeader> GetBlockHeaderAsync(uint256 blockHash, CancellationToken cancellationToken);
 
-        Task<ZcoinBlockHeader> GetBlockHeaderAsync(int height, CancellationToken cancellationToken);
+        Task<BlockHeader> GetBlockHeaderAsync(int height, CancellationToken cancellationToken);
 
         Task<BlockchainInfo> GetBlockchainInfoAsync(CancellationToken cancellationToken);
 

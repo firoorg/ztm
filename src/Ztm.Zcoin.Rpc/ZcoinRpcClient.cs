@@ -102,12 +102,12 @@ namespace Ztm.Zcoin.Rpc
             return this.client.GetBlockAsync(height);
         }
 
-        public Task<ZcoinBlockHeader> GetBlockHeaderAsync(uint256 blockHash, CancellationToken cancellationToken)
+        public Task<BlockHeader> GetBlockHeaderAsync(uint256 blockHash, CancellationToken cancellationToken)
         {
             return this.client.GetBlockHeaderAsync(blockHash);
         }
 
-        public Task<ZcoinBlockHeader> GetBlockHeaderAsync(int height, CancellationToken cancellationToken)
+        public Task<BlockHeader> GetBlockHeaderAsync(int height, CancellationToken cancellationToken)
         {
             return this.client.GetBlockHeaderAsync(height);
         }
