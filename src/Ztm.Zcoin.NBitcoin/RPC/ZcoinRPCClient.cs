@@ -26,15 +26,5 @@ namespace Ztm.Zcoin.NBitcoin.RPC
         {
             return (ZcoinBlock)await base.GetBlockAsync(height);
         }
-
-        public new async Task<BlockHeader> GetBlockHeaderAsync(uint256 blockHash)
-        {
-            return await base.GetBlockHeaderAsync(blockHash);
-        }
-
-        public new async Task<BlockHeader> GetBlockHeaderAsync(int height)
-        {
-            return (BlockHeader)await base.GetBlockHeaderAsync(height);
-        }
     }
 }
