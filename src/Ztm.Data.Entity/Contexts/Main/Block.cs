@@ -62,7 +62,7 @@ namespace Ztm.Data.Entity.Contexts.Main
 
         public override int GetHashCode()
         {
-            return Height.GetHashCode() ^ (Hash != null ? Hash.GetHashCode() : 0);
+            return Height ^ (Hash != null ? Hash.GetHashCode() : 0);
         }
     }
 }

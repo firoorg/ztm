@@ -50,7 +50,7 @@ namespace Ztm.Data.Entity.Contexts.Main
 
             hash ^= (BlockHash != null) ? BlockHash.GetHashCode() : 0;
             hash ^= (TransactionHash != null) ? TransactionHash.GetHashCode() : 0;
-            hash ^= (int)Index;
+            hash ^= Index;
             hash ^= (Block != null) ? Block.GetHashCode() : 0;
             hash ^= (Transaction != null) ? Transaction.GetHashCode() : 0;
 
