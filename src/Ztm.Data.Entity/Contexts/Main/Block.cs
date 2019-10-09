@@ -41,8 +41,12 @@ namespace Ztm.Data.Entity.Contexts.Main
             {
                 return Hash.CompareTo(other.Hash);
             }
+            else if (other.Hash != null)
+            {
+                return -1;
+            }
 
-            return Hash == other.Hash ? 0 : -1;
+            return 0;
         }
 
         public override bool Equals(object other)
