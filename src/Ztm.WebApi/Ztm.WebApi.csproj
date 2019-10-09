@@ -8,6 +8,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.2.0" PrivateAssets="All" />
+    <PackageReference Include="NBitcoin" Version="4.2.15" />
   </ItemGroup>
 
   <ItemGroup>
@@ -15,7 +16,6 @@
     <ProjectReference Include="..\Ztm.ServiceModel\Ztm.ServiceModel.csproj" />
     <ProjectReference Include="..\Ztm.Zcoin.Rpc\Ztm.Zcoin.Rpc.csproj" />
     <ProjectReference Include="..\Ztm.Configuration\Ztm.Configuration.csproj" />
-    <ProjectReference Include="..\NBitcoin\NBitcoin\NBitcoin.csproj" />
     <ProjectReference Include="..\Ztm.Data.Entity\Ztm.Data.Entity.csproj" />
     <ProjectReference Include="..\Ztm.Data.Entity.Postgres\Ztm.Data.Entity.Postgres.csproj" />
   </ItemGroup>

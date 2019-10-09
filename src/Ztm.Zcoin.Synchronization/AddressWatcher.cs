@@ -149,8 +149,22 @@ namespace Ztm.Zcoin.Synchronization
                 }
 
                 // Extract owner address.
+                BitcoinAddress address = null;
                 var spend = spendTx.Outputs[input.PrevOut.N];
-                var address = spend.ScriptPubKey.GetDestinationAddress(this.zcoinNetwork);
+
+                if (spend.ScriptPubKey.IsScriptType(ScriptType.P2PK))
+                {
+                    var pubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(spend.ScriptPubKey);
+                    if (pubKey == null)
+                    {
+                        throw new ArgumentException($"Invalid script pub key {i}.", nameof(transaction));
+                    }
+                    address = pubKey.GetAddress(ScriptPubKeyType.Legacy, this.zcoinNetwork);
+                }
+                else
+                {
+                    address = spend.ScriptPubKey.GetDestinationAddress(this.zcoinNetwork);
+                }
 
                 if (address == null)
                 {
