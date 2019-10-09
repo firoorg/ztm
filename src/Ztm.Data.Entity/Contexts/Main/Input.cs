@@ -62,11 +62,11 @@ namespace Ztm.Data.Entity.Contexts.Main
             int hash = 0;
 
             hash ^= (TransactionHash != null) ? TransactionHash.GetHashCode() : 0;
-            hash ^= Index.GetHashCode();
+            hash ^= (int)Index;
             hash ^= (OutputHash != null) ? OutputHash.GetHashCode() : 0;
-            hash ^= OutputIndex.GetHashCode();
+            hash ^= (int)OutputIndex;
             hash ^= (Script != null) ? Script.GetHashCode() : 0;
-            hash ^= Sequence.GetHashCode();
+            hash ^= (int)Sequence;
             hash ^= (Transaction != null) ? Transaction.GetHashCode() : 0;
 
             return hash;

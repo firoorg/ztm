@@ -62,8 +62,8 @@ namespace Ztm.Data.Entity.Contexts.Main
             int hash = 0;
 
             hash ^= (TransactionHash != null) ? TransactionHash.GetHashCode() : 0;
-            hash ^= Index.GetHashCode();
-            hash ^= Value.GetHashCode();
+            hash ^= (int)Index;
+            hash ^= (int)Value;
             hash ^= (Script != null) ? Script.GetHashCode() : 0;
             hash ^= (Transaction != null) ? Transaction.GetHashCode() : 0;
 
