@@ -29,14 +29,9 @@ namespace Ztm.Data.Entity.Contexts.Main
             return Index - other.Index;
         }
 
-        public override bool Equals(Object other)
+        public override bool Equals(object other)
         {
-            if (other == null)
-            {
-                return false;
-            }
-
-            if (GetType() != other.GetType())
+            if (other == null || GetType() != other.GetType())
             {
                 return false;
             }
@@ -51,8 +46,6 @@ namespace Ztm.Data.Entity.Contexts.Main
             hash ^= (BlockHash != null) ? BlockHash.GetHashCode() : 0;
             hash ^= (TransactionHash != null) ? TransactionHash.GetHashCode() : 0;
             hash ^= Index;
-            hash ^= (Block != null) ? Block.GetHashCode() : 0;
-            hash ^= (Transaction != null) ? Transaction.GetHashCode() : 0;
 
             return hash;
         }
