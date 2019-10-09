@@ -3,3 +3,6 @@ path_classifiers:
     - src/NBitcoin
 queries:
   - include: "*"
+  - exclude: cs/class-name-matches-base-class
+  - exclude: cs/misleading-indentation
+  - exclude: cs/useless-gethashcode-call

@@ -32,7 +32,36 @@ namespace Ztm.Data.Entity.Contexts.Main
                 return 1;
             }
 
-            return Height - other.Height;
+            if (Height != other.Height)
+            {
+                return Height - other.Height;
+            }
+
+            if (Hash != null)
+            {
+                return Hash.CompareTo(other.Hash);
+            }
+            else if (other.Hash != null)
+            {
+                return -1;
+            }
+
+            return 0;
+        }
+
+        public override bool Equals(object other)
+        {
+            if (other == null || GetType() != other.GetType())
+            {
+                return false;
+            }
+
+            return CompareTo((Block)other) == 0;
+        }
+
+        public override int GetHashCode()
+        {
+            return Height ^ (Hash != null ? Hash.GetHashCode() : 0);
         }
     }
 }

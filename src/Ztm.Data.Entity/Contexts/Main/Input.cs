@@ -41,5 +41,25 @@ namespace Ztm.Data.Entity.Contexts.Main
 
             return 0;
         }
+
+        public override bool Equals(object other)
+        {
+            if (other == null || GetType() != other.GetType())
+            {
+                return false;
+            }
+
+            return CompareTo((Input)other) == 0;
+        }
+
+        public override int GetHashCode()
+        {
+            int hash = 0;
+
+            hash ^= (TransactionHash != null) ? TransactionHash.GetHashCode() : 0;
+            hash ^= Index.GetHashCode();
+
+            return hash;
+        }
     }
 }

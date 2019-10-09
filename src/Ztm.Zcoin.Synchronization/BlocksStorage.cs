@@ -59,12 +59,9 @@ namespace Ztm.Zcoin.Synchronization
                     .Where(t => transactions.Contains(t.Hash))
                     .ToDictionaryAsync(t => t.Hash, cancellationToken);
 
-                foreach (var tx in entity.Transactions)
+                foreach (var tx in entity.Transactions.Where(t => existed.ContainsKey(t.TransactionHash)))
                 {
-                    if (existed.ContainsKey(tx.TransactionHash))
-                    {
-                        tx.Transaction = null;
-                    }
+                    tx.Transaction = null;
                 }
 
                 // Add block.
@@ -93,14 +90,9 @@ namespace Ztm.Zcoin.Synchronization
                     return (block: null, height: 0);
                 }
 
-                if (data.Height == 0)
-                {
-                    previous = null;
-                }
-                else
-                {
-                    previous = await db.Blocks.SingleAsync(b => b.Height == data.Height - 1, cancellationToken);
-                }
+                previous = (data.Height == 0)
+                    ? null
+                    : await db.Blocks.SingleAsync(b => b.Height == data.Height - 1, cancellationToken);
             }
 
             return (block: ToDomain(data, previous), height: data.Height);

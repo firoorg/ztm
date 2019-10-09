@@ -12,7 +12,7 @@ namespace Ztm.Zcoin.NBitcoin
 
         byte[] hashRootMTP;
         byte[] nBlockMTP;
-        Collection<byte[]>[] nProofMTP;
+        readonly Collection<byte[]>[] nProofMTP;
 
         public MTPHashData()
         {
