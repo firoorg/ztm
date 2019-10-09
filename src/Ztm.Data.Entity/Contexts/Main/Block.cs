@@ -47,8 +47,17 @@ namespace Ztm.Data.Entity.Contexts.Main
 
         public override bool Equals(Object other)
         {
-            var block = other as Block;
-            return CompareTo(block) == 0;
+            if (other == null)
+            {
+                return false;
+            }
+
+            if (GetType() != other.GetType())
+            {
+                return false;
+            }
+
+            return CompareTo((Block)other) == 0;
         }
 
         public override int GetHashCode()

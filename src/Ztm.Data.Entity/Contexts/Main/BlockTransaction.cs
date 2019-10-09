@@ -31,8 +31,17 @@ namespace Ztm.Data.Entity.Contexts.Main
 
         public override bool Equals(Object other)
         {
-            var tx = other as BlockTransaction;
-            return CompareTo(tx) == 0;
+            if (other == null)
+            {
+                return false;
+            }
+
+            if (GetType() != other.GetType())
+            {
+                return false;
+            }
+
+            return CompareTo((BlockTransaction)other) == 0;
         }
 
         public override int GetHashCode()
