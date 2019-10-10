@@ -19,11 +19,6 @@ namespace Ztm.Zcoin.NBitcoin
         }
         #pragma warning restore CS0618
 
-        public new BlockHeader Header
-        {
-            get { return base.Header; }
-        }
-
         public static new ZcoinBlock CreateBlock(Network network)
         {
             return (ZcoinBlock)CreateBlock(network.Consensus.ConsensusFactory);
