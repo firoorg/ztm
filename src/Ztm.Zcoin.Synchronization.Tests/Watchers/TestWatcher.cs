@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
-using Ztm.ObjectModel;
 using Ztm.Zcoin.NBitcoin;
 using Ztm.Zcoin.Synchronization.Watchers;
 
@@ -12,53 +11,48 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
     {
         public TestWatcher(IWatcherStorage<Watch> storage) : base(storage)
         {
-            NewWatches = new Dictionary<ZcoinBlock, ICollection<Watch>>(ReferenceEqualityComparer<ZcoinBlock>.Default);
-            Watches = new Dictionary<ZcoinBlock, ICollection<Watch>>(ReferenceEqualityComparer<ZcoinBlock>.Default);
         }
 
-        public Func<Watch, ZcoinBlock, int, BlockEventType, bool> ExecuteMatchedWatch { get; set; }
+        public Func<ZcoinBlock, int, CancellationToken, IEnumerable<Watch>> CreateWatches { get; set; }
 
-        public IDictionary<ZcoinBlock, ICollection<Watch>> NewWatches { get; }
+        public Func<Watch, ZcoinBlock, int, BlockEventType, CancellationToken, bool> ExecuteMatchedWatch { get; set; }
 
-        public IDictionary<ZcoinBlock, ICollection<Watch>> Watches { get; }
+        public Func<ZcoinBlock, int, CancellationToken, IEnumerable<Watch>> GetWatches { get; set; }
 
-        public Task BlockAddedAsync(ZcoinBlock block, int height)
+        public Task BlockAddedAsync(ZcoinBlock block, int height, CancellationToken cancellationToken)
         {
-            return ((IBlockListener)this).BlockAddedAsync(block, height);
+            return ((IBlockListener)this).BlockAddedAsync(block, height, cancellationToken);
         }
 
-        public Task BlockRemovingAsync(ZcoinBlock block, int height)
+        public Task BlockRemovingAsync(ZcoinBlock block, int height, CancellationToken cancellationToken)
         {
-            return ((IBlockListener)this).BlockRemovingAsync(block, height);
+            return ((IBlockListener)this).BlockRemovingAsync(block, height, cancellationToken);
         }
 
-        protected override Task<IEnumerable<Watch>> CreateWatchesAsync(ZcoinBlock block, int height)
+        protected override Task<IEnumerable<Watch>> CreateWatchesAsync(
+            ZcoinBlock block,
+            int height,
+            CancellationToken cancellationToken)
         {
-            if (NewWatches.TryGetValue(block, out var watches))
-            {
-                return Task.FromResult<IEnumerable<Watch>>(watches);
-            }
-
-            return Task.FromResult(Enumerable.Empty<Watch>());
+            return Task.FromResult(CreateWatches(block, height, cancellationToken));
         }
 
         protected override Task<bool> ExecuteMatchedWatchAsync(
             Watch watch,
             ZcoinBlock block,
             int height,
-            BlockEventType blockEventType)
+            BlockEventType blockEventType,
+            CancellationToken cancellationToken)
         {
-            return Task.FromResult(ExecuteMatchedWatch(watch, block, height, blockEventType));
+            return Task.FromResult(ExecuteMatchedWatch(watch, block, height, blockEventType, cancellationToken));
         }
 
-        protected override Task<IEnumerable<Watch>> GetWatchesAsync(ZcoinBlock block, int height)
+        protected override Task<IEnumerable<Watch>> GetWatchesAsync(
+            ZcoinBlock block,
+            int height,
+            CancellationToken cancellationToken)
         {
-            if (Watches.TryGetValue(block, out var watches))
-            {
-                return Task.FromResult<IEnumerable<Watch>>(watches);
-            }
-
-            return Task.FromResult(Enumerable.Empty<Watch>());
+            return Task.FromResult(GetWatches(block, height, cancellationToken));
         }
     }
 }

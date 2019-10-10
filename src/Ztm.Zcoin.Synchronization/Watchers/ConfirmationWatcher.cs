@@ -22,16 +22,19 @@ namespace Ztm.Zcoin.Synchronization.Watchers
             this.blocks = blocks;
         }
 
-        protected abstract Task<bool> ConfirmAsync(T watch, ConfirmationType type, int confirmation);
+        protected abstract Task<bool> ConfirmAsync(
+            T watch,
+            ConfirmationType type,
+            int confirmation,
+            CancellationToken cancellationToken);
 
         protected override async Task<bool> ExecuteMatchedWatchAsync(
             T watch,
             ZcoinBlock block,
             int height,
-            BlockEventType blockEventType)
+            BlockEventType blockEventType,
+            CancellationToken cancellationToken)
         {
-            var currentHeight = height;
-
             // Get confirmation type.
             ConfirmationType confirmationType;
 
@@ -52,7 +55,9 @@ namespace Ztm.Zcoin.Synchronization.Watchers
             }
 
             // Load watching block.
-            (block, height) = await this.blocks.GetAsync(watch.StartBlock, CancellationToken.None);
+            var currentHeight = height;
+
+            (block, height) = await this.blocks.GetAsync(watch.StartBlock, cancellationToken);
 
             if (height > currentHeight)
             {
@@ -62,12 +67,15 @@ namespace Ztm.Zcoin.Synchronization.Watchers
             // Invoke handler.
             var confirmation = currentHeight - height + 1;
 
-            return await ConfirmAsync(watch, confirmationType, confirmation);
+            return await ConfirmAsync(watch, confirmationType, confirmation, cancellationToken);
         }
 
-        protected override Task<IEnumerable<T>> GetWatchesAsync(ZcoinBlock block, int height)
+        protected override Task<IEnumerable<T>> GetWatchesAsync(
+            ZcoinBlock block,
+            int height,
+            CancellationToken cancellationToken)
         {
-            return this.storage.GetWatchesAsync(CancellationToken.None);
+            return this.storage.GetWatchesAsync(cancellationToken);
         }
     }
 }
