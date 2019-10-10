@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,6 +17,8 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         }
 
         public Func<Watch, ConfirmationType, int, CancellationToken, bool> Confirm { get; set; }
+
+        public IList<(Watch watch, WatchRemoveReason reason, CancellationToken cancellationToken)> RemovedWatches { get; } = new Collection<(Watch watch, WatchRemoveReason reason, CancellationToken cancellationToken)>();
 
         public Task BlockAddedAsync(ZcoinBlock block, int height, CancellationToken cancellationToken)
         {
@@ -42,6 +45,12 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
             CancellationToken cancellationToken)
         {
             return Task.FromResult(Enumerable.Empty<Watch>());
+        }
+
+        protected override Task RemoveWatchAsync(Watch watch, WatchRemoveReason reason, CancellationToken cancellationToken)
+        {
+            RemovedWatches.Add((watch, reason, cancellationToken));
+            return base.RemoveWatchAsync(watch, reason, cancellationToken);
         }
     }
 }

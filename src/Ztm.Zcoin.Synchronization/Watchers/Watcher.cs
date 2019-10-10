@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -50,21 +49,14 @@ namespace Ztm.Zcoin.Synchronization.Watchers
             return this.storage.StopAsync(cancellationToken);
         }
 
-        protected virtual Task RemoveWatchesAsync(
-            IEnumerable<WatchToRemove<T>> watches,
-            CancellationToken cancellationToken)
+        protected virtual Task RemoveWatchAsync(T watch, WatchRemoveReason reason, CancellationToken cancellationToken)
         {
-            if (watches == null)
+            if (watch == null)
             {
-                throw new ArgumentNullException(nameof(watches));
+                throw new ArgumentNullException(nameof(watch));
             }
 
-            if (!watches.Any())
-            {
-                throw new ArgumentException("The list is empty.", nameof(watches));
-            }
-
-            return this.storage.RemoveWatchesAsync(watches, cancellationToken);
+            return this.storage.RemoveWatchAsync(watch, cancellationToken);
         }
 
         async Task ExecuteWatchesAsync(
@@ -73,8 +65,6 @@ namespace Ztm.Zcoin.Synchronization.Watchers
             BlockEventType blockEventType,
             CancellationToken cancellationToken)
         {
-            var removes = new Collection<WatchToRemove<T>>();
-
             // Load watches that match with the block and execute it.
             foreach (var watch in await GetWatchesAsync(block, height, cancellationToken))
             {
@@ -85,6 +75,8 @@ namespace Ztm.Zcoin.Synchronization.Watchers
                     blockEventType,
                     CancellationToken.None
                 );
+
+                // Determine if we need to remove watch.
                 var removeReason = WatchRemoveReason.None;
 
                 if (success)
@@ -99,14 +91,8 @@ namespace Ztm.Zcoin.Synchronization.Watchers
 
                 if (removeReason != WatchRemoveReason.None)
                 {
-                    removes.Add(new WatchToRemove<T>(watch, removeReason));
+                    await RemoveWatchAsync(watch, removeReason, CancellationToken.None);
                 }
-            }
-
-            // Remove watches that need to remove.
-            if (removes.Count > 0)
-            {
-                await RemoveWatchesAsync(removes, CancellationToken.None);
             }
         }
 

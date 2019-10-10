@@ -176,13 +176,12 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
                 this.subject.GetWatches.Received(1)(block, 0, cancellationSource.Token);
                 this.subject.ExecuteMatchedWatch.Received(1)(watch, block, 0, BlockEventType.Added, CancellationToken.None);
 
-                _ = this.storage.Received(1).RemoveWatchesAsync(
-                    Arg.Is<IEnumerable<WatchToRemove<Watch>>>(l => l.SequenceEqual(new[]
-                    {
-                        new WatchToRemove<Watch>(watch, WatchRemoveReason.Completed)
-                    })),
-                    CancellationToken.None
-                );
+                Assert.Equal(1, this.subject.RemovedWatches.Count);
+                Assert.Equal(watch, this.subject.RemovedWatches[0].watch);
+                Assert.Equal(WatchRemoveReason.Completed, this.subject.RemovedWatches[0].reason);
+                Assert.Equal(CancellationToken.None, this.subject.RemovedWatches[0].cancellationToken);
+
+                _ = this.storage.Received(1).RemoveWatchAsync(watch, CancellationToken.None);
             }
         }
 
@@ -206,10 +205,9 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
                 this.subject.GetWatches.Received(1)(block, 0, cancellationSource.Token);
                 this.subject.ExecuteMatchedWatch.Received(1)(watch, block, 0, BlockEventType.Added, CancellationToken.None);
 
-                _ = this.storage.Received(0).RemoveWatchesAsync(
-                    Arg.Any<IEnumerable<WatchToRemove<Watch>>>(),
-                    Arg.Any<CancellationToken>()
-                );
+                Assert.Equal(0, this.subject.RemovedWatches.Count);
+
+                _ = this.storage.Received(0).RemoveWatchAsync(Arg.Any<Watch>(), Arg.Any<CancellationToken>());
             }
         }
 
@@ -236,10 +234,9 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
                     Arg.Any<CancellationToken>()
                 );
 
-                _ = this.storage.Received(0).RemoveWatchesAsync(
-                    Arg.Any<IEnumerable<WatchToRemove<Watch>>>(),
-                    Arg.Any<CancellationToken>()
-                );
+                Assert.Equal(0, this.subject.RemovedWatches.Count);
+
+                _ = this.storage.Received(0).RemoveWatchAsync(Arg.Any<Watch>(), Arg.Any<CancellationToken>());
             }
         }
 
@@ -262,13 +259,12 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
                 this.subject.GetWatches.Received(1)(block, 1, cancellationSource.Token);
                 this.subject.ExecuteMatchedWatch.Received(1)(watch, block, 1, BlockEventType.Removing, CancellationToken.None);
 
-                _ = this.storage.Received(1).RemoveWatchesAsync(
-                    Arg.Is<IEnumerable<WatchToRemove<Watch>>>(l => l.SequenceEqual(new[]
-                    {
-                        new WatchToRemove<Watch>(watch, WatchRemoveReason.Completed)
-                    })),
-                    CancellationToken.None
-                );
+                Assert.Equal(1, this.subject.RemovedWatches.Count);
+                Assert.Equal(watch, this.subject.RemovedWatches[0].watch);
+                Assert.Equal(WatchRemoveReason.Completed, this.subject.RemovedWatches[0].reason);
+                Assert.Equal(CancellationToken.None, this.subject.RemovedWatches[0].cancellationToken);
+
+                _ = this.storage.Received(1).RemoveWatchAsync(watch, CancellationToken.None);
             }
         }
 
@@ -291,10 +287,9 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
                 this.subject.GetWatches.Received(1)(block, 1, cancellationSource.Token);
                 this.subject.ExecuteMatchedWatch.Received(1)(watch, block, 1, BlockEventType.Removing, CancellationToken.None);
 
-                _ = this.storage.Received(0).RemoveWatchesAsync(
-                    Arg.Any<IEnumerable<WatchToRemove<Watch>>>(),
-                    Arg.Any<CancellationToken>()
-                );
+                Assert.Equal(0, this.subject.RemovedWatches.Count);
+
+                _ = this.storage.Received(0).RemoveWatchAsync(Arg.Any<Watch>(), Arg.Any<CancellationToken>());
             }
         }
 
@@ -317,13 +312,12 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
                 this.subject.GetWatches.Received(1)(block, 0, cancellationSource.Token);
                 this.subject.ExecuteMatchedWatch.Received(1)(watch, block, 0, BlockEventType.Removing, CancellationToken.None);
 
-                _ = this.storage.Received(1).RemoveWatchesAsync(
-                    Arg.Is<IEnumerable<WatchToRemove<Watch>>>(l => l.SequenceEqual(new[]
-                    {
-                        new WatchToRemove<Watch>(watch, WatchRemoveReason.BlockRemoved)
-                    })),
-                    CancellationToken.None
-                );
+                Assert.Equal(1, this.subject.RemovedWatches.Count);
+                Assert.Equal(watch, this.subject.RemovedWatches[0].watch);
+                Assert.Equal(WatchRemoveReason.BlockRemoved, this.subject.RemovedWatches[0].reason);
+                Assert.Equal(CancellationToken.None, this.subject.RemovedWatches[0].cancellationToken);
+
+                _ = this.storage.Received(1).RemoveWatchAsync(watch, CancellationToken.None);
             }
         }
     }

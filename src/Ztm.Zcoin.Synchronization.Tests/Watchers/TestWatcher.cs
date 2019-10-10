@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Threading;
 using System.Threading.Tasks;
 using Ztm.Zcoin.NBitcoin;
@@ -18,6 +19,8 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         public Func<Watch, ZcoinBlock, int, BlockEventType, CancellationToken, bool> ExecuteMatchedWatch { get; set; }
 
         public Func<ZcoinBlock, int, CancellationToken, IEnumerable<Watch>> GetWatches { get; set; }
+
+        public IList<(Watch watch, WatchRemoveReason reason, CancellationToken cancellationToken)> RemovedWatches { get; } = new Collection<(Watch watch, WatchRemoveReason reason, CancellationToken cancellationToken)>();
 
         public Task BlockAddedAsync(ZcoinBlock block, int height, CancellationToken cancellationToken)
         {
@@ -53,6 +56,12 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
             CancellationToken cancellationToken)
         {
             return Task.FromResult(GetWatches(block, height, cancellationToken));
+        }
+
+        protected override Task RemoveWatchAsync(Watch watch, WatchRemoveReason reason, CancellationToken cancellationToken)
+        {
+            RemovedWatches.Add((watch, reason, cancellationToken));
+            return base.RemoveWatchAsync(watch, reason, cancellationToken);
         }
     }
 }

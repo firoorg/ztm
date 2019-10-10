@@ -9,6 +9,6 @@ namespace Ztm.Zcoin.Synchronization.Watchers
     {
         Task AddWatchesAsync(IEnumerable<T> watches, CancellationToken cancellationToken);
 
-        Task RemoveWatchesAsync(IEnumerable<WatchToRemove<T>> watches, CancellationToken cancellationToken);
+        Task RemoveWatchAsync(T watch, CancellationToken cancellationToken);
     }
 }
