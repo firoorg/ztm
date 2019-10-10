@@ -242,7 +242,7 @@ namespace Ztm.Zcoin.Synchronization
 
             if (data.MtpVersion != null)
             {
-                if (!block.Header.IsMtp)
+                if (!block.Header.IsMtp())
                 {
                     throw new ArgumentException(
                         "The data is MTP-enabled but the consensus not activated for this data.",
@@ -258,10 +258,10 @@ namespace Ztm.Zcoin.Synchronization
                     );
                 }
 
-                block.Header.MtpVersion = data.MtpVersion.Value;
-                block.Header.MtpHashValue = data.MtpHashValue;
-                block.Header.Reserved1 = data.Reserved1;
-                block.Header.Reserved2 = data.Reserved2;
+                block.Header.SetMtpVersion(data.MtpVersion.Value);
+                block.Header.SetMtpHashValue(data.MtpHashValue);
+                block.Header.SetReserved1(data.Reserved1);
+                block.Header.SetReserved2(data.Reserved2);
             }
 
             if (previous != null)
@@ -325,9 +325,9 @@ namespace Ztm.Zcoin.Synchronization
                 MerkleRoot = header.HashMerkleRoot
             };
 
-            if (header.IsMtp)
+            if (header.IsMtp())
             {
-                if (header.MtpHashValue == null || header.Reserved1 == null || header.Reserved2 == null)
+                if (header.GetMtpHashValue() == null || header.GetReserved1() == null || header.GetReserved2() == null)
                 {
                     throw new ArgumentException(
                         "Block is MTP-enabled but some required fields is null.",
@@ -335,10 +335,10 @@ namespace Ztm.Zcoin.Synchronization
                     );
                 }
 
-                entity.MtpVersion = header.MtpVersion;
-                entity.MtpHashValue = header.MtpHashValue;
-                entity.Reserved1 = header.Reserved1;
-                entity.Reserved2 = header.Reserved2;
+                entity.MtpVersion = header.GetMtpVersion();
+                entity.MtpHashValue = header.GetMtpHashValue();
+                entity.Reserved1 = header.GetReserved1();
+                entity.Reserved2 = header.GetReserved2();
             }
 
             // Transactions.

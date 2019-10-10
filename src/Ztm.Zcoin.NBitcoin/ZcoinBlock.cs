@@ -8,7 +8,7 @@ namespace Ztm.Zcoin.NBitcoin
         readonly ZcoinConsensusFactory consensusFactory;
 
         #pragma warning disable CS0618
-        public ZcoinBlock(ZcoinConsensusFactory consensusFactory, ZcoinBlockHeader header) : base(header)
+        public ZcoinBlock(ZcoinConsensusFactory consensusFactory, BlockHeader header) : base(header)
         {
             if (consensusFactory == null)
             {
@@ -18,11 +18,6 @@ namespace Ztm.Zcoin.NBitcoin
             this.consensusFactory = consensusFactory;
         }
         #pragma warning restore CS0618
-
-        public new ZcoinBlockHeader Header
-        {
-            get { return (ZcoinBlockHeader)base.Header; }
-        }
 
         public static new ZcoinBlock CreateBlock(Network network)
         {

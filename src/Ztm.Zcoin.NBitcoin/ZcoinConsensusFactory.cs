@@ -11,7 +11,7 @@ namespace Ztm.Zcoin.NBitcoin
 
         public override Block CreateBlock()
         {
-            return new ZcoinBlock(this, (ZcoinBlockHeader)CreateBlockHeader());
+            return new ZcoinBlock(this, CreateBlockHeader());
         }
 
         public override abstract BlockHeader CreateBlockHeader();
