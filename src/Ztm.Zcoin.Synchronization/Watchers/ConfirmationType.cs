@@ -1,4 +1,4 @@
-namespace Ztm.Zcoin.Synchronization
+namespace Ztm.Zcoin.Synchronization.Watchers
 {
     public enum ConfirmationType
     {

@@ -19,6 +19,7 @@ namespace Ztm.Zcoin.Synchronization
         readonly IBlocksStorage storage;
         readonly IEnumerable<IBlockListener> listeners;
         readonly Network activeNetwork;
+        readonly ServiceManager services;
         bool disposed;
 
         public BlocksSynchronizer(
@@ -58,6 +59,17 @@ namespace Ztm.Zcoin.Synchronization
             this.storage = storage;
             this.listeners = listeners;
             this.activeNetwork = ZcoinNetworks.Instance.GetNetwork(config.GetZcoinSection().Network.Type);
+            this.services = new ServiceManager(listeners);
+
+            try
+            {
+                this.services.Stopped += (sender, e) => ScheduleStop(((ServiceManager)sender).Exception);
+            }
+            catch
+            {
+                this.services.Dispose();
+                throw;
+            }
         }
 
         public event EventHandler<BlockEventArgs> BlockAdded;
@@ -66,27 +78,30 @@ namespace Ztm.Zcoin.Synchronization
 
         protected override void Dispose(bool disposing)
         {
+            base.Dispose(disposing);
+
             if (!this.disposed)
             {
                 if (disposing)
                 {
                     this.retriever.Dispose();
+                    this.services.Dispose();
                 }
 
                 this.disposed = true;
             }
-
-            base.Dispose(disposing);
         }
 
-        protected override Task OnStartAsync(CancellationToken cancellationToken)
+        protected override async Task OnStartAsync(CancellationToken cancellationToken)
         {
-            return this.retriever.StartAsync(this, cancellationToken);
+            await this.services.StartAsync(cancellationToken);
+            await this.retriever.StartAsync(this, CancellationToken.None);
         }
 
-        protected override Task OnStopAsync(CancellationToken cancellationToken)
+        protected override async Task OnStopAsync(CancellationToken cancellationToken)
         {
-            return this.retriever.StopAsync(cancellationToken);
+            await this.retriever.StopAsync(cancellationToken);
+            await this.services.StopAsync(cancellationToken);
         }
 
         async Task<int> IBlocksRetrieverHandler.GetBlockHintAsync(CancellationToken cancellationToken)
@@ -104,8 +119,6 @@ namespace Ztm.Zcoin.Synchronization
         async Task<int> IBlocksRetrieverHandler.ProcessBlockAsync(ZcoinBlock block, int height, CancellationToken cancellationToken)
         {
             var (localBlock, localHeight) = await this.storage.GetLastAsync(cancellationToken);
-
-            block.Header.PrecomputeHash(invalidateExisting: false, lazily: false);
 
             // Make sure passed block is expected one.
             if (localBlock == null)
@@ -127,8 +140,6 @@ namespace Ztm.Zcoin.Synchronization
                     return localHeight + 1;
                 }
 
-                localBlock.Header.PrecomputeHash(invalidateExisting: false, lazily: false);
-
                 if (block.Header.HashPrevBlock != localBlock.GetHash())
                 {
                     // Our latest block is not what expected (e.g. chain already switched)
@@ -143,7 +154,7 @@ namespace Ztm.Zcoin.Synchronization
 
                     foreach (var listener in this.listeners)
                     {
-                        await listener.BlockRemovingAsync(localBlock, localHeight);
+                        await listener.BlockRemovingAsync(localBlock, localHeight, CancellationToken.None);
                     }
 
                     await BlockRemoving.InvokeAsync(
@@ -151,7 +162,7 @@ namespace Ztm.Zcoin.Synchronization
                         new BlockEventArgs(localBlock, localHeight, CancellationToken.None)
                     );
 
-                    await this.storage.RemoveLastAsync(cancellationToken);
+                    await this.storage.RemoveLastAsync(CancellationToken.None);
 
                     return localHeight;
                 }
@@ -165,7 +176,7 @@ namespace Ztm.Zcoin.Synchronization
             // Raise event.
             foreach (var listener in this.listeners)
             {
-                await listener.BlockAddedAsync(block, height);
+                await listener.BlockAddedAsync(block, height, CancellationToken.None);
             }
 
             await BlockAdded.InvokeAsync(

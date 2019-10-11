@@ -7,6 +7,7 @@
     <ProjectReference Include="..\Ztm.Zcoin.Rpc\Ztm.Zcoin.Rpc.csproj" />
     <ProjectReference Include="..\Ztm.Data.Entity\Ztm.Data.Entity.csproj" />
     <ProjectReference Include="..\Ztm.ObjectModel\Ztm.ObjectModel.csproj" />
+    <ProjectReference Include="..\Ztm.Threading\Ztm.Threading.csproj" />
   </ItemGroup>
 
   <ItemGroup>
