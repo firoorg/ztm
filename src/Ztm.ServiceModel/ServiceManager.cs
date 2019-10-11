@@ -108,7 +108,7 @@ namespace Ztm.ServiceModel
                             await s.StartAsync(cancellationToken);
                             break;
                         default:
-                            throw new InvalidOperationException($"Service {service.GetType().FullName} is not supported.");
+                            throw new InvalidOperationException($"Service {service.GetType()} is not supported.");
                     }
 
                     started.Add(service);
@@ -129,13 +129,13 @@ namespace Ztm.ServiceModel
                                 await s.StopAsync(CancellationToken.None);
                                 break;
                             default:
-                                Debug.Fail($"Don't know how to stop {service.GetType().FullName}.");
+                                Debug.Fail($"Don't know how to stop {service.GetType()}.");
                                 break;
                         }
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        // Ignore.
+                        Debug.Fail($"Failed to stop {service.GetType()}: {ex.Message}.");
                     }
                 }
                 throw;
@@ -159,7 +159,7 @@ namespace Ztm.ServiceModel
                         }
                         break;
                     default:
-                        Debug.Fail($"Don't know how to stop {service.GetType().FullName}.");
+                        Debug.Fail($"Don't know how to stop {service.GetType()}.");
                         break;
                 }
             }

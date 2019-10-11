@@ -12,7 +12,7 @@ namespace Ztm.Data.Entity.Contexts.Main
 
         public Transaction Transaction { get; set; }
 
-        public int CompareTo(Output other)
+        public int CompareTo(Output other) // lgtm[cs/duplicate-method]
         {
             if (other == null)
             {
