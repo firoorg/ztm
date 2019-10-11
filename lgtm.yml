@@ -1,6 +1,6 @@
 path_classifiers:
-  library:
-    - src/NBitcoin
+  generated:
+    - src/Ztm.Data.Entity.Postgres/Migrations
 queries:
   - include: "*"
   - exclude: cs/class-name-matches-base-class

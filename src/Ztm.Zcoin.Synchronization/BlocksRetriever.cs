@@ -18,7 +18,7 @@ namespace Ztm.Zcoin.Synchronization
         readonly IZcoinRpcClientFactory rpc;
         SubscriberSocket subscriber;
         NetMQPoller poller;
-        SemaphoreSlim newBlockNotification;
+        SemaphoreSlim newBlockNotification; // lgtm[cs/missed-using-statement]
         CancellationTokenSource retrieveBlocksCancelSource;
         Task retrieveBlocksTask;
         bool disposed;
@@ -190,7 +190,7 @@ namespace Ztm.Zcoin.Synchronization
                     height = await handler.ProcessBlockAsync(block, height, cancellationToken);
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) // lgtm[cs/catch-of-all-exceptions]
             {
                 if (!(ex is OperationCanceledException))
                 {
