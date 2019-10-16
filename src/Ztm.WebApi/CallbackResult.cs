@@ -2,20 +2,11 @@ namespace Ztm.WebApi
 {
     public abstract class CallbackResult
     {
-        public static class CallbackStatus
-        {
-            public const string Error   = "error";
-            public const string Success = "success";
-            public const string Update  = "update";
-        }
+        public const string StatusError   = "error";
+        public const string StatusSuccess = "success";
+        public const string StatusUpdate  = "update";
 
-        public CallbackResult(string status, object data)
-        {
-            this.Status = status;
-            this.Data = data;
-        }
-
-        public string Status { get; }
-        public object Data { get; }
+        public abstract string Status { get; }
+        public abstract object Data { get; }
     }
 }
