@@ -31,9 +31,9 @@ namespace Ztm.Configuration
             {
                 (networkName, address) = ParseAddress((string)value);
             }
-            catch (FormatException)
+            catch (FormatException ex)
             {
-                throw new NotSupportedException($"Cannot convert {(string)value} to {typeof(BitcoinAddressConfiguration)}.");
+                throw new NotSupportedException($"Cannot convert {(string)value} to {typeof(BitcoinAddressConfiguration)}.", ex);
             }
 
             NetworkType networkType;
@@ -42,9 +42,9 @@ namespace Ztm.Configuration
             {
                 networkType = GetNetworkType(networkName);
             }
-            catch (ArgumentException)
+            catch (ArgumentException ex)
             {
-                throw new NotSupportedException($"Network {networkName} is not supported.");
+                throw new NotSupportedException($"Network {networkName} is not supported.", ex);
             }
 
             var network = ZcoinNetworks.Instance.GetNetwork(networkType);
@@ -59,9 +59,9 @@ namespace Ztm.Configuration
                     Type = networkType
                 };
             }
-            catch (FormatException)
+            catch (FormatException ex)
             {
-                throw new NotSupportedException($"Cannot convert {(string)value} to {typeof(BitcoinAddressConfiguration)}.");
+                throw new NotSupportedException($"Cannot convert {(string)value} to {typeof(BitcoinAddressConfiguration)}.", ex);
             }
 
             return configuration;
