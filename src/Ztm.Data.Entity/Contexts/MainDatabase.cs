@@ -21,6 +21,8 @@ namespace Ztm.Data.Entity.Contexts
 
         public DbSet<WebApiCallback> WebApiCallbacks { get; set; }
 
+        public DbSet<CallbackInvocation> CallbackInvocations { get; set; }
+
         protected virtual void ConfigureBlock(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Block>(b =>
@@ -123,11 +125,26 @@ namespace Ztm.Data.Entity.Contexts
                 b.Property(e => e.Id).IsRequired().ValueGeneratedNever();
                 b.Property(e => e.RequestIp).IsRequired();
                 b.Property(e => e.RequestTime).IsRequired();
-                b.Property(e => e.TransactionId);
                 b.Property(e => e.Url).IsRequired();
 
                 b.HasKey(e => e.Id);
-                b.HasIndex(e => e.TransactionId);
+            });
+        }
+
+        protected virtual void ConfigureCallbackInvocation(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<CallbackInvocation>(b =>
+            {
+                b.Property(e => e.CallbackId).IsRequired();
+                b.Property(e => e.Status).IsRequired();
+                b.Property(e => e.InvokedTime).IsRequired();
+
+                b.HasKey(e => new { e.CallbackId, e.InvokedTime });
+                b.HasOne(e => e.Callback)
+                 .WithMany(e => e.Invocations)
+                 .HasForeignKey(e => e.CallbackId)
+                 .HasPrincipalKey(e => e.Id)
+                 .OnDelete(DeleteBehavior.Cascade);
             });
         }
 
@@ -139,6 +156,7 @@ namespace Ztm.Data.Entity.Contexts
             ConfigureOutput(modelBuilder);
             ConfigureTransaction(modelBuilder);
             ConfigureWebApiCallback(modelBuilder);
+            ConfigureCallbackInvocation(modelBuilder);
         }
     }
 }
