@@ -3,24 +3,21 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Ztm.Configuration;
-using Ztm.ObjectModel;
-using Ztm.ServiceModel;
 using Ztm.Zcoin.NBitcoin;
 
 namespace Ztm.Zcoin.Synchronization
 {
-    public class BlocksSynchronizer : BackgroundService, IBlocksRetrieverHandler, IBlocksSynchronizer
+    public sealed class BlocksSynchronizer : IBlocksRetrieverHandler, IHostedService
     {
         readonly ILogger logger;
         readonly IBlocksRetriever retriever;
         readonly IBlocksStorage storage;
         readonly IEnumerable<IBlockListener> listeners;
-        readonly Network activeNetwork;
-        readonly ServiceManager services;
-        bool disposed;
+        readonly Network chainNetwork;
 
         public BlocksSynchronizer(
             IConfiguration config,
@@ -58,50 +55,17 @@ namespace Ztm.Zcoin.Synchronization
             this.retriever = retriever;
             this.storage = storage;
             this.listeners = listeners;
-            this.activeNetwork = ZcoinNetworks.Instance.GetNetwork(config.GetZcoinSection().Network.Type);
-            this.services = new ServiceManager(listeners);
-
-            try
-            {
-                this.services.Stopped += (sender, e) => ScheduleStop(((ServiceManager)sender).Exception);
-            }
-            catch
-            {
-                this.services.Dispose();
-                throw;
-            }
+            this.chainNetwork = ZcoinNetworks.Instance.GetNetwork(config.GetZcoinSection().Network.Type);
         }
 
-        public event EventHandler<BlockEventArgs> BlockAdded;
-
-        public event EventHandler<BlockEventArgs> BlockRemoving;
-
-        protected override void Dispose(bool disposing)
+        public Task StartAsync(CancellationToken cancellationToken)
         {
-            base.Dispose(disposing);
-
-            if (!this.disposed)
-            {
-                if (disposing)
-                {
-                    this.retriever.Dispose();
-                    this.services.Dispose();
-                }
-
-                this.disposed = true;
-            }
+            return this.retriever.StartAsync(this, cancellationToken);
         }
 
-        protected override async Task OnStartAsync(CancellationToken cancellationToken)
+        public Task StopAsync(CancellationToken cancellationToken)
         {
-            await this.services.StartAsync(cancellationToken);
-            await this.retriever.StartAsync(this, CancellationToken.None);
-        }
-
-        protected override async Task OnStopAsync(CancellationToken cancellationToken)
-        {
-            await this.retriever.StopAsync(cancellationToken);
-            await this.services.StopAsync(cancellationToken);
+            return this.retriever.StopAsync(cancellationToken);
         }
 
         async Task<int> IBlocksRetrieverHandler.GetBlockHintAsync(CancellationToken cancellationToken)
@@ -128,7 +92,7 @@ namespace Ztm.Zcoin.Synchronization
                     return 0;
                 }
 
-                if (block.GetHash() != this.activeNetwork.GetGenesis().GetHash())
+                if (block.GetHash() != this.chainNetwork.GetGenesis().GetHash())
                 {
                     throw new ArgumentException("Block is not genesis block.", nameof(block));
                 }
@@ -154,13 +118,10 @@ namespace Ztm.Zcoin.Synchronization
 
                     foreach (var listener in this.listeners)
                     {
+                        // Don't allow to cancel here due to we don't want the first listener sucess but the next one
+                        // get cancelled.
                         await listener.BlockRemovingAsync(localBlock, localHeight, CancellationToken.None);
                     }
-
-                    await BlockRemoving.InvokeAsync(
-                        this,
-                        new BlockEventArgs(localBlock, localHeight, CancellationToken.None)
-                    );
 
                     await this.storage.RemoveLastAsync(CancellationToken.None);
 
@@ -176,22 +137,12 @@ namespace Ztm.Zcoin.Synchronization
             // Raise event.
             foreach (var listener in this.listeners)
             {
+                // Don't allow to cancel here due to we don't want the first listener sucess but the next one get
+                // cancelled.
                 await listener.BlockAddedAsync(block, height, CancellationToken.None);
             }
 
-            await BlockAdded.InvokeAsync(
-                this,
-                new BlockEventArgs(block, height, CancellationToken.None)
-            );
-
             return height + 1;
-        }
-
-        Task IBlocksRetrieverHandler.StopAsync(Exception ex, CancellationToken cancellationToken)
-        {
-            ScheduleStop(ex);
-
-            return Task.CompletedTask;
         }
     }
 }
