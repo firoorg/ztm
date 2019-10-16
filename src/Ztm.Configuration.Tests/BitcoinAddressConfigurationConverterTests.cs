@@ -7,11 +7,11 @@ namespace Ztm.Configuration.Tests
 {
     public class BitcoinAddressConfigurationConverterTests
     {
-        readonly BitcoinAddressConfigurationConveter subject;
+        readonly BitcoinAddressConfigurationConverter subject;
 
         public BitcoinAddressConfigurationConverterTests()
         {
-            this.subject = new BitcoinAddressConfigurationConveter();
+            this.subject = new BitcoinAddressConfigurationConverter();
         }
 
         [Fact]
@@ -51,16 +51,15 @@ namespace Ztm.Configuration.Tests
         {
             var configuration = (BitcoinAddressConfiguration)this.subject.ConvertFrom(address);
 
-            Assert.Equal(expectedNetwork, configuration.type);
-            Assert.Equal(address.Split(':')[1], configuration.address.ToString());
+            Assert.Equal(expectedNetwork, configuration.Type);
+            Assert.Equal(address.Split(':')[1], configuration.Address.ToString());
         }
 
         [Fact]
         public void ConvertFrom_WithInvalidNetworkPrefix_ShouldThrow()
         {
-            Assert.Throws<ArgumentException>(
-                () =>
-                this.subject.ConvertFrom("inexistnetwork:a8ULhhDgfdSiXJhSZVdhb8EuDc6R3ogsaM")
+            Assert.Throws<NotSupportedException>(
+                () => this.subject.ConvertFrom("inexistnetwork:a8ULhhDgfdSiXJhSZVdhb8EuDc6R3ogsaM")
             );
         }
 
@@ -70,7 +69,7 @@ namespace Ztm.Configuration.Tests
         [InlineData("Mainnet:a8ULhhDgfdSiXJhSZVdhb8EuDc6R3ogsaM:extended")]
         public void ConvertFrom_WithInvalidFormat_ShouldThrow(string address)
         {
-            Assert.Throws<FormatException>(
+            Assert.Throws<NotSupportedException>(
                 () => this.subject.ConvertFrom(address)
             );
         }
@@ -91,7 +90,7 @@ namespace Ztm.Configuration.Tests
         [InlineData("Regtest:a8ULhhDgfdSiXJhSZVdhb8EuDc6R3ogsaM")]
         public void ConvertFrom_WithMissmatchNetwork_ShouldThrow(string address)
         {
-            Assert.Throws<FormatException>(
+            Assert.Throws<NotSupportedException>(
                 () => this.subject.ConvertFrom(address)
             );
         }
@@ -103,8 +102,8 @@ namespace Ztm.Configuration.Tests
         public void ConvertTo_WithValidValue_ShouldSuccess(string address, NetworkType networkType, string expectedOutput)
         {
             var configuration = new BitcoinAddressConfiguration();
-            configuration.type = networkType;
-            configuration.address = BitcoinAddress.Create(address, ZcoinNetworks.Instance.GetNetwork(networkType));
+            configuration.Type = networkType;
+            configuration.Address = BitcoinAddress.Create(address, ZcoinNetworks.Instance.GetNetwork(networkType));
 
             // Assert.
             Assert.Equal(expectedOutput, this.subject.ConvertTo(configuration, typeof(string)));
@@ -116,8 +115,8 @@ namespace Ztm.Configuration.Tests
         public void ConvertTo_WithUnsupportType_ShouldThrow(Type type)
         {
             var configuration = new BitcoinAddressConfiguration();
-            configuration.type = NetworkType.Mainnet;
-            configuration.address = BitcoinAddress.Create(
+            configuration.Type = NetworkType.Mainnet;
+            configuration.Address = BitcoinAddress.Create(
                 "a8ULhhDgfdSiXJhSZVdhb8EuDc6R3ogsaM",
                 ZcoinNetworks.Instance.GetNetwork(NetworkType.Mainnet)
             );

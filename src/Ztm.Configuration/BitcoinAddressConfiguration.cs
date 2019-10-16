@@ -6,10 +6,10 @@ using Ztm.Zcoin.NBitcoin;
 
 namespace Ztm.Configuration
 {
-    [TypeConverter(typeof(BitcoinAddressConfigurationConveter))]
+    [TypeConverter(typeof(BitcoinAddressConfigurationConverter))]
     public class BitcoinAddressConfiguration
     {
-        public NetworkType type { get; set; }
-        public BitcoinAddress address { get; set; }
+        public NetworkType Type { get; set; }
+        public BitcoinAddress Address { get; set; }
     }
 }

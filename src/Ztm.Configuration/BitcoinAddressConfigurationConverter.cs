@@ -6,32 +6,8 @@ using Ztm.Zcoin.NBitcoin;
 
 namespace Ztm.Configuration
 {
-    public sealed class BitcoinAddressConfigurationConveter : TypeConverter
+    public sealed class BitcoinAddressConfigurationConverter : TypeConverter
     {
-        NetworkType GetNetworkType(string networkName)
-        {
-            NetworkType networkType;
-            if (Enum.TryParse<NetworkType>(networkName, out networkType))
-            {
-                return networkType;
-            }
-
-            throw new ArgumentException($"Value is not valid.", nameof(networkType));
-        }
-
-        (string, string) ParseAddress(string address)
-        {
-            Regex rx = new Regex(@"^(\w+):(\w+)$", RegexOptions.Compiled);
-            MatchCollection matcheds = rx.Matches(address);
-
-            if (matcheds.Count < 1)
-            {
-                throw new FormatException($"Format is not valid.");
-            }
-
-            return (matcheds[0].Groups[1].Value, matcheds[0].Groups[2].Value);
-        }
-
         public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType)
         {
             return sourceType == typeof(string);
@@ -46,17 +22,47 @@ namespace Ztm.Configuration
         {
             if (!(value is string))
             {
-                throw new NotSupportedException($"Cannot convert {value} to {typeof(BitcoinAddressConfiguration)}.");
+                throw new NotSupportedException($"Cannot convert {value.GetType()} to {typeof(BitcoinAddressConfiguration)}.");
             }
 
-            var (networkName, address) = ParseAddress((string)value);
+            string networkName, address;
 
-            var networkType = GetNetworkType(networkName);
+            try
+            {
+                (networkName, address) = ParseAddress((string)value);
+            }
+            catch (FormatException)
+            {
+                throw new NotSupportedException($"Cannot convert {(string)value} to {typeof(BitcoinAddressConfiguration)}.");
+            }
+
+            NetworkType networkType;
+
+            try
+            {
+                networkType = GetNetworkType(networkName);
+            }
+            catch (ArgumentException)
+            {
+                throw new NotSupportedException($"Network {networkName} is not supported.");
+            }
+
             var network = ZcoinNetworks.Instance.GetNetwork(networkType);
 
-            var configuration = new BitcoinAddressConfiguration();
-            configuration.address = BitcoinAddress.Create(address, network);
-            configuration.type = networkType;
+            BitcoinAddressConfiguration configuration;
+
+            try
+            {
+                configuration = new BitcoinAddressConfiguration
+                {
+                    Address = BitcoinAddress.Create(address, network),
+                    Type = networkType
+                };
+            }
+            catch (FormatException)
+            {
+                throw new NotSupportedException($"Cannot convert {(string)value} to {typeof(BitcoinAddressConfiguration)}.");
+            }
 
             return configuration;
         }
@@ -65,11 +71,36 @@ namespace Ztm.Configuration
         {
             if (destinationType != typeof(string))
             {
-                throw new NotSupportedException($"Cannot convert {typeof(BitcoinAddressConfiguration)} to {destinationType}");
+                throw new NotSupportedException($"Cannot convert {typeof(BitcoinAddressConfiguration)} to {destinationType}.");
             }
 
             var configuration = (BitcoinAddressConfiguration)value;
-            return String.Format("{0}:{1}", configuration.type, configuration.address);
+            return $"{configuration.Type}:{configuration.Address}";
+        }
+
+        static NetworkType GetNetworkType(string networkName)
+        {
+            NetworkType networkType;
+            if (Enum.TryParse<NetworkType>(networkName, out networkType))
+            {
+                return networkType;
+            }
+
+            throw new ArgumentException("Value is not valid.", nameof(networkType));
+        }
+
+        static readonly Regex regex = new Regex(@"^(\w+):(\w+)$", RegexOptions.Compiled);
+
+        static (string networkName, string address) ParseAddress(string address)
+        {
+            MatchCollection matcheds = regex.Matches(address);
+
+            if (matcheds.Count < 1)
+            {
+                throw new FormatException("Format is not valid.");
+            }
+
+            return (matcheds[0].Groups[1].Value, matcheds[0].Groups[2].Value);
         }
     }
 }
