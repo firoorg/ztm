@@ -11,7 +11,7 @@ using Ztm.Zcoin.Synchronization.Watchers;
 
 namespace Ztm.Zcoin.Synchronization.Tests.Watchers
 {
-    public sealed class WatcherTests : IDisposable
+    public sealed class WatcherTests
     {
         readonly IWatcherStorage<Watch> storage;
         readonly TestWatcher subject;
@@ -20,56 +20,15 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         {
             this.storage = Substitute.For<IWatcherStorage<Watch>>();
             this.subject = new TestWatcher(this.storage);
-
-            try
-            {
-                this.subject.CreateWatches = Substitute.For<Func<ZcoinBlock, int, CancellationToken, IEnumerable<Watch>>>();
-                this.subject.ExecuteMatchedWatch = Substitute.For<Func<Watch, ZcoinBlock, int, BlockEventType, CancellationToken, bool>>();
-                this.subject.GetWatches = Substitute.For<Func<ZcoinBlock, int, CancellationToken, IEnumerable<Watch>>>();
-            }
-            catch
-            {
-                this.subject.Dispose();
-                throw;
-            }
-        }
-
-        public void Dispose()
-        {
-            this.subject.Dispose();
+            this.subject.CreateWatches = Substitute.For<Func<ZcoinBlock, int, CancellationToken, IEnumerable<Watch>>>();
+            this.subject.ExecuteMatchedWatch = Substitute.For<Func<Watch, ZcoinBlock, int, BlockEventType, CancellationToken, bool>>();
+            this.subject.GetWatches = Substitute.For<Func<ZcoinBlock, int, CancellationToken, IEnumerable<Watch>>>();
         }
 
         [Fact]
         public void Constructor_WithNullStorage_ShouldThrow()
         {
             Assert.Throws<ArgumentNullException>("storage", () => new TestWatcher(null));
-        }
-
-        [Fact]
-        public async Task StartAsync_WhenSuccess_ShouldStartStorage()
-        {
-            using (var cancellationSource = new CancellationTokenSource())
-            {
-                await this.subject.StartAsync(cancellationSource.Token);
-
-                _ = this.storage.Received(1).StartAsync(cancellationSource.Token);
-            }
-        }
-
-        [Fact]
-        public async Task StopAsync_WhenSuccess_ShouldStopStorage()
-        {
-            // Arrange.
-            await this.subject.StartAsync(CancellationToken.None);
-
-            // Act.
-            using (var cancellationSource = new CancellationTokenSource())
-            {
-                await this.storage.StopAsync(cancellationSource.Token);
-
-                // Assert.
-                _ = this.storage.Received(1).StopAsync(cancellationSource.Token);
-            }
         }
 
         [Fact]

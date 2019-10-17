@@ -8,7 +8,7 @@ using Ztm.Zcoin.Synchronization.Watchers;
 
 namespace Ztm.Zcoin.Synchronization.Tests.Watchers
 {
-    public sealed class ConfirmationWatcherTests : IDisposable
+    public sealed class ConfirmationWatcherTests
     {
         readonly IConfirmationWatcherStorage<Watch> storage;
         readonly IBlocksStorage blocks;
@@ -19,21 +19,7 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
             this.storage = Substitute.For<IConfirmationWatcherStorage<Watch>>();
             this.blocks = Substitute.For<IBlocksStorage>();
             this.subject = new TestConfirmationWatcher(this.storage, this.blocks);
-
-            try
-            {
-                this.subject.Confirm = Substitute.For<Func<Watch, ConfirmationType, int, CancellationToken, bool>>();
-            }
-            catch
-            {
-                this.subject.Dispose();
-                throw;
-            }
-        }
-
-        public void Dispose()
-        {
-            this.subject.Dispose();
+            this.subject.Confirm = Substitute.For<Func<Watch, ConfirmationType, int, CancellationToken, bool>>();
         }
 
         [Fact]

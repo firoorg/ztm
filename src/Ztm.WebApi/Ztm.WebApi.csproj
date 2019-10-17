@@ -13,7 +13,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Ztm.Zcoin.Synchronization\Ztm.Zcoin.Synchronization.csproj" />
-    <ProjectReference Include="..\Ztm.ServiceModel\Ztm.ServiceModel.csproj" />
     <ProjectReference Include="..\Ztm.Zcoin.Rpc\Ztm.Zcoin.Rpc.csproj" />
     <ProjectReference Include="..\Ztm.Configuration\Ztm.Configuration.csproj" />
     <ProjectReference Include="..\Ztm.Data.Entity\Ztm.Data.Entity.csproj" />

@@ -36,8 +36,7 @@ namespace Ztm.WebApi
             services.AddSingleton<IBlocksStorage, BlocksStorage>();
 
             // Background Services.
-            services.AddSingleton<IBlocksSynchronizer, BlocksSynchronizer>();
-            services.AddHostedService<ServiceManager>();
+            services.AddHostedService<BlocksSynchronizer>();
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)

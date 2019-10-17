@@ -125,7 +125,7 @@ namespace Ztm.Zcoin.Synchronization
             return Task.CompletedTask;
         }
 
-        public async Task StopAsync(CancellationToken cancellationToken)
+        public async Task<Exception> StopAsync(CancellationToken cancellationToken)
         {
             ThrowIfAlreadyDisposed();
             ThrowIfNotRunning();
@@ -134,7 +134,20 @@ namespace Ztm.Zcoin.Synchronization
             this.retrieveBlocksCancelSource.Cancel();
 
             // Wait until background tasks is completed.
-            await this.retrieveBlocksTask;
+            Exception error = null;
+
+            try
+            {
+                await this.retrieveBlocksTask;
+            }
+            catch (OperationCanceledException)
+            {
+                // Ignore.
+            }
+            catch (Exception ex)
+            {
+                error = ex;
+            }
 
             Debug.Assert(this.newBlockNotification == null);
 
@@ -152,54 +165,37 @@ namespace Ztm.Zcoin.Synchronization
             this.subscriber = null;
             this.poller.Dispose();
             this.poller = null;
+
+            return error;
         }
 
         async Task RetrieveBlocks(IBlocksRetrieverHandler handler)
         {
             var cancellationToken = this.retrieveBlocksCancelSource.Token;
+            var height = await handler.GetBlockHintAsync(cancellationToken);
 
-            try
+            while (true)
             {
-                var height = await handler.GetBlockHintAsync(cancellationToken);
+                // Get block.
+                ZcoinBlock block;
 
-                while (true)
+                using (var rpc = await this.rpc.CreateRpcClientAsync(cancellationToken))
                 {
-                    if (height < 0)
+                    try
                     {
-                        break;
+                        block = await rpc.GetBlockAsync(height, cancellationToken);
                     }
-
-                    // Get block.
-                    ZcoinBlock block;
-
-                    using (var rpc = await this.rpc.CreateRpcClientAsync(cancellationToken))
+                    catch (RPCException ex) when (ex.RPCCode == RPCErrorCode.RPC_INVALID_PARAMETER)
                     {
-                        try
-                        {
-                            block = await rpc.GetBlockAsync(height, cancellationToken);
-                        }
-                        catch (RPCException ex) when (ex.RPCCode == RPCErrorCode.RPC_INVALID_PARAMETER)
-                        {
-                            // Invalid block height.
-                            await WaitNewBlockAsync(cancellationToken);
-                            continue;
-                        }
+                        // Invalid block height.
+                        await WaitNewBlockAsync(cancellationToken);
+                        continue;
                     }
-
-                    // Execute handler.
-                    height = await handler.ProcessBlockAsync(block, height, cancellationToken);
                 }
-            }
-            catch (Exception ex) // lgtm[cs/catch-of-all-exceptions]
-            {
-                if (!(ex is OperationCanceledException))
-                {
-                    await handler.StopAsync(ex, cancellationToken);
-                    return;
-                }
-            }
 
-            await handler.StopAsync(null, cancellationToken);
+                // Execute handler.
+                height = await handler.ProcessBlockAsync(block, height, cancellationToken);
+            }
         }
 
         void NotifyNewBlock()

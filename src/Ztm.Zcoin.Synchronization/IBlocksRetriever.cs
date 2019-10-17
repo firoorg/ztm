@@ -10,6 +10,6 @@ namespace Ztm.Zcoin.Synchronization
 
         Task StartAsync(IBlocksRetrieverHandler handler, CancellationToken cancellationToken);
 
-        Task StopAsync(CancellationToken cancellationToken);
+        Task<Exception> StopAsync(CancellationToken cancellationToken);
     }
 }

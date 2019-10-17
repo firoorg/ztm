@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Ztm.ServiceModel;
 using Ztm.Zcoin.NBitcoin;
 
 namespace Ztm.Zcoin.Synchronization.Watchers
 {
-    public abstract class Watcher<T> : BackgroundService, IBlockListener where T : Watch
+    public abstract class Watcher<T> : IBlockListener where T : Watch
     {
         readonly IWatcherStorage<T> storage;
 
@@ -38,16 +37,6 @@ namespace Ztm.Zcoin.Synchronization.Watchers
             ZcoinBlock block,
             int height,
             CancellationToken cancellationToken);
-
-        protected override Task OnStartAsync(CancellationToken cancellationToken)
-        {
-            return this.storage.StartAsync(cancellationToken);
-        }
-
-        protected override Task OnStopAsync(CancellationToken cancellationToken)
-        {
-            return this.storage.StopAsync(cancellationToken);
-        }
 
         protected virtual Task RemoveWatchAsync(T watch, WatchRemoveReason reason, CancellationToken cancellationToken)
         {
