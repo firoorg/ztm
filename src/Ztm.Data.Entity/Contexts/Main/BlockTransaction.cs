@@ -3,7 +3,7 @@ using NBitcoin;
 
 namespace Ztm.Data.Entity.Contexts.Main
 {
-    public class BlockTransaction : IComparable<BlockTransaction>
+    public sealed class BlockTransaction : IComparable<BlockTransaction>
     {
         public uint256 BlockHash { get; set; }
         public uint256 TransactionHash { get; set; }

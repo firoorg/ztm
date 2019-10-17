@@ -3,7 +3,7 @@ using NBitcoin;
 
 namespace Ztm.Data.Entity.Contexts.Main
 {
-    public class Transaction
+    public sealed class Transaction
     {
         public Transaction()
         {

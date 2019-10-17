@@ -3,7 +3,7 @@ using NBitcoin;
 
 namespace Ztm.Data.Entity.Contexts.Main
 {
-    public class Output : IComparable<Output>
+    public sealed class Output : IComparable<Output>
     {
         public uint256 TransactionHash { get; set; }
         public long Index { get; set; }
