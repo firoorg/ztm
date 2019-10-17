@@ -24,6 +24,8 @@ namespace Ztm.Configuration.Tests
                 {"Zcoin:Rpc:Password", "abc"},
                 {"Zcoin:Token:Id", "1"},
                 {"Zcoin:Token:Type", "Divisible"},
+                {"Zcoin:Token:Issuer", "Mainnet:a8ULhhDgfdSiXJhSZVdhb8EuDc6R3ogsaM"},
+                {"Zcoin:Token:Distributor", "Testnet:TEDC38GBncNgtd2pVXeDhLeUGwJmXsiJBA"},
                 {"Zcoin:ZeroMq:Address", "tcp://127.0.0.1:5555"}
             });
 
@@ -51,6 +53,10 @@ namespace Ztm.Configuration.Tests
             Assert.Equal("abc", parsed.Rpc.Password);
             Assert.Equal(1, parsed.Token.Id);
             Assert.Equal(TokenType.Divisible, parsed.Token.Type);
+            Assert.Equal(NetworkType.Mainnet, parsed.Token.Issuer.Type);
+            Assert.Equal(BitcoinAddress.Create("a8ULhhDgfdSiXJhSZVdhb8EuDc6R3ogsaM", ZcoinNetworks.Instance.Mainnet), parsed.Token.Issuer.Address);
+            Assert.Equal(NetworkType.Testnet, parsed.Token.Distributor.Type);
+            Assert.Equal(BitcoinAddress.Create("TEDC38GBncNgtd2pVXeDhLeUGwJmXsiJBA", ZcoinNetworks.Instance.Testnet), parsed.Token.Distributor.Address);
             Assert.Equal("tcp://127.0.0.1:5555", parsed.ZeroMq.Address);
         }
     }
