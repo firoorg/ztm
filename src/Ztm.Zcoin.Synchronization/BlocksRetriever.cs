@@ -144,7 +144,7 @@ namespace Ztm.Zcoin.Synchronization
             {
                 // Ignore.
             }
-            catch (Exception ex)
+            catch (Exception ex) // lgtm[cs/catch-of-all-exceptions]
             {
                 error = ex;
             }

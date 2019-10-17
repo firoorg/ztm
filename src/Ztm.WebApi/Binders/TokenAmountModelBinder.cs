@@ -64,7 +64,7 @@ namespace Ztm.WebApi.Binders
                         throw new InvalidOperationException("The configuration for binder is not valid.");
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) // lgtm[cs/catch-of-all-exceptions]
             {
                 bindingContext.ModelState.AddModelError(name, ex, bindingContext.ModelMetadata);
                 return Task.CompletedTask;
