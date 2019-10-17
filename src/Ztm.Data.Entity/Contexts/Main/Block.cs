@@ -4,7 +4,7 @@ using NBitcoin;
 
 namespace Ztm.Data.Entity.Contexts.Main
 {
-    public class Block : IComparable<Block>
+    public sealed class Block : IComparable<Block>
     {
         public Block()
         {

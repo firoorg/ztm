@@ -4,7 +4,7 @@ using NBitcoin;
 
 namespace Ztm.Data.Entity.Contexts.Main
 {
-    public class WebApiCallback
+    public sealed class WebApiCallback
     {
         public Guid Id { get; set; }
         public IPAddress RequestIp { get; set; }
