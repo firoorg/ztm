@@ -16,7 +16,7 @@ namespace Ztm.Data.Entity.Testing
 
             modelBuilder.Entity<WebApiCallback>(b =>
             {
-                b.Property(e => e.RequestIp).HasConversion(Converters.IPAddressToStringConverter);
+                b.Property(e => e.RegisteredIp).HasConversion(Converters.IPAddressToStringConverter);
                 b.Property(e => e.Url).HasConversion(Converters.UriToStringConverter);
             });
 

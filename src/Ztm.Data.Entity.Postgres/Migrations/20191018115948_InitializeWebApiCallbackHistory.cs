@@ -4,7 +4,7 @@ using NBitcoin;
 
 namespace Ztm.Data.Entity.Postgres.Migrations
 {
-    public partial class InitializeCallbackInvocation : Migration
+    public partial class InitializeWebApiCallbackHistory : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -16,6 +16,16 @@ namespace Ztm.Data.Entity.Postgres.Migrations
                 name: "TransactionId",
                 table: "WebApiCallbacks");
 
+            migrationBuilder.RenameColumn(
+                name: "RequestTime",
+                table: "WebApiCallbacks",
+                newName: "RegisteredTime");
+
+            migrationBuilder.RenameColumn(
+                name: "RequestIp",
+                table: "WebApiCallbacks",
+                newName: "RegisteredIp");
+
             migrationBuilder.AddColumn<bool>(
                 name: "Completed",
                 table: "WebApiCallbacks",
@@ -23,19 +33,19 @@ namespace Ztm.Data.Entity.Postgres.Migrations
                 defaultValue: false);
 
             migrationBuilder.CreateTable(
-                name: "CallbackInvocations",
+                name: "WebApiCallbackHistories",
                 columns: table => new
                 {
                     CallbackId = table.Column<Guid>(nullable: false),
                     InvokedTime = table.Column<DateTime>(nullable: false),
                     Status = table.Column<string>(nullable: false),
-                    Data = table.Column<byte[]>(nullable: true)
+                    Data = table.Column<byte[]>(nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_CallbackInvocations", x => new { x.CallbackId, x.InvokedTime });
+                    table.PrimaryKey("PK_WebApiCallbackHistories", x => new { x.CallbackId, x.InvokedTime });
                     table.ForeignKey(
-                        name: "FK_CallbackInvocations_WebApiCallbacks_CallbackId",
+                        name: "FK_WebApiCallbackHistories_WebApiCallbacks_CallbackId",
                         column: x => x.CallbackId,
                         principalTable: "WebApiCallbacks",
                         principalColumn: "Id",
@@ -46,11 +56,21 @@ namespace Ztm.Data.Entity.Postgres.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "CallbackInvocations");
+                name: "WebApiCallbackHistories");
 
             migrationBuilder.DropColumn(
                 name: "Completed",
                 table: "WebApiCallbacks");
+
+            migrationBuilder.RenameColumn(
+                name: "RegisteredTime",
+                table: "WebApiCallbacks",
+                newName: "RequestTime");
+
+            migrationBuilder.RenameColumn(
+                name: "RegisteredIp",
+                table: "WebApiCallbacks",
+                newName: "RequestIp");
 
             migrationBuilder.AddColumn<uint256>(
                 name: "TransactionId",

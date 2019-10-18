@@ -67,22 +67,6 @@ namespace Ztm.Data.Entity.Postgres.Migrations
                     b.ToTable("BlockTransactions");
                 });
 
-            modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.CallbackInvocation", b =>
-                {
-                    b.Property<Guid>("CallbackId");
-
-                    b.Property<DateTime>("InvokedTime");
-
-                    b.Property<byte[]>("Data");
-
-                    b.Property<string>("Status")
-                        .IsRequired();
-
-                    b.HasKey("CallbackId", "InvokedTime");
-
-                    b.ToTable("CallbackInvocations");
-                });
-
             modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.Input", b =>
                 {
                     b.Property<uint256>("TransactionHash");
@@ -141,10 +125,10 @@ namespace Ztm.Data.Entity.Postgres.Migrations
 
                     b.Property<bool>("Completed");
 
-                    b.Property<IPAddress>("RequestIp")
+                    b.Property<IPAddress>("RegisteredIp")
                         .IsRequired();
 
-                    b.Property<DateTime>("RequestTime");
+                    b.Property<DateTime>("RegisteredTime");
 
                     b.Property<string>("Url")
                         .IsRequired();
@@ -152,6 +136,23 @@ namespace Ztm.Data.Entity.Postgres.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("WebApiCallbacks");
+                });
+
+            modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.WebApiCallbackHistory", b =>
+                {
+                    b.Property<Guid>("CallbackId");
+
+                    b.Property<DateTime>("InvokedTime");
+
+                    b.Property<byte[]>("Data")
+                        .IsRequired();
+
+                    b.Property<string>("Status")
+                        .IsRequired();
+
+                    b.HasKey("CallbackId", "InvokedTime");
+
+                    b.ToTable("WebApiCallbackHistories");
                 });
 
             modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.BlockTransaction", b =>
@@ -168,14 +169,6 @@ namespace Ztm.Data.Entity.Postgres.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
-            modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.CallbackInvocation", b =>
-                {
-                    b.HasOne("Ztm.Data.Entity.Contexts.Main.WebApiCallback", "Callback")
-                        .WithMany("Invocations")
-                        .HasForeignKey("CallbackId")
-                        .OnDelete(DeleteBehavior.Cascade);
-                });
-
             modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.Input", b =>
                 {
                     b.HasOne("Ztm.Data.Entity.Contexts.Main.Transaction", "Transaction")
@@ -189,6 +182,14 @@ namespace Ztm.Data.Entity.Postgres.Migrations
                     b.HasOne("Ztm.Data.Entity.Contexts.Main.Transaction", "Transaction")
                         .WithMany("Outputs")
                         .HasForeignKey("TransactionHash")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.WebApiCallbackHistory", b =>
+                {
+                    b.HasOne("Ztm.Data.Entity.Contexts.Main.WebApiCallback", "Callback")
+                        .WithMany("InvocationHistories")
+                        .HasForeignKey("CallbackId")
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 #pragma warning restore 612, 618

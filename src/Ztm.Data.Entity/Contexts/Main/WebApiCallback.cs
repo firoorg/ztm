@@ -8,15 +8,15 @@ namespace Ztm.Data.Entity.Contexts.Main
     {
         public WebApiCallback()
         {
-            Invocations = new List<CallbackInvocation>();
+            InvocationHistories = new SortedSet<WebApiCallbackHistory>();
         }
 
         public Guid Id { get; set; }
-        public IPAddress RequestIp { get; set; }
-        public DateTime RequestTime { get; set; }
+        public IPAddress RegisteredIp { get; set; }
+        public DateTime RegisteredTime { get; set; }
         public bool Completed { get; set; }
         public Uri Url { get; set; }
 
-        public List<CallbackInvocation> Invocations { get; set; }
+        public SortedSet<WebApiCallbackHistory> InvocationHistories { get; set; }
     }
 }

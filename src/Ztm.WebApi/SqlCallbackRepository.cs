@@ -95,7 +95,7 @@ namespace Ztm.WebApi
                     throw new KeyNotFoundException($"Id {id} is not found");
                 }
 
-                var invocation = new CallbackInvocation
+                var invocation = new WebApiCallbackHistory
                 {
                     CallbackId = id,
                     Status = status,
@@ -103,7 +103,7 @@ namespace Ztm.WebApi
                     Data = data,
                 };
 
-                await db.CallbackInvocations.AddAsync(invocation);
+                await db.WebApiCallbackHistories.AddAsync(invocation);
                 await db.SaveChangesAsync(cancellationToken);
                 dbtx.Commit();
             }
@@ -114,8 +114,8 @@ namespace Ztm.WebApi
             return new WebApiCallback
             {
                 Id = callback.Id,
-                RequestIp = callback.RequestIp,
-                RequestTime = callback.RequestTime.ToUniversalTime(),
+                RegisteredIp = callback.RegisteredIp,
+                RegisteredTime = callback.RegisteredTime.ToUniversalTime(),
                 Completed = callback.Completed,
                 Url = callback.Url,
             };
@@ -125,8 +125,8 @@ namespace Ztm.WebApi
         {
             return new Callback(
                 callback.Id,
-                callback.RequestIp,
-                DateTime.SpecifyKind(callback.RequestTime, DateTimeKind.Utc),
+                callback.RegisteredIp,
+                DateTime.SpecifyKind(callback.RegisteredTime, DateTimeKind.Utc),
                 callback.Completed,
                 callback.Url
             );

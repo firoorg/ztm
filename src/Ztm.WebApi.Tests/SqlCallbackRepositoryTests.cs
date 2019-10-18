@@ -31,15 +31,15 @@ namespace Ztm.WebApi.Tests
         public async Task AddAsync_WithValidArgs_ShouldSuccess()
         {
             // Arrange.
-            var requestTime = DateTime.Now;
+            var registeredTime = DateTime.Now;
 
             // Act.
-            var callback = await this.subject.AddAsync(IPAddress.Loopback, requestTime, this.defaultUrl, CancellationToken.None);
+            var callback = await this.subject.AddAsync(IPAddress.Loopback, registeredTime, this.defaultUrl, CancellationToken.None);
 
             // Assert.
             Assert.NotEqual(Guid.Empty, callback.Id);
-            Assert.Equal(IPAddress.Loopback, callback.RequestIp);
-            Assert.Equal(requestTime.ToUniversalTime(), callback.RequestTime);
+            Assert.Equal(IPAddress.Loopback, callback.RegisteredIp);
+            Assert.Equal(registeredTime.ToUniversalTime(), callback.RegisteredTime);
             Assert.False(callback.Completed);
             Assert.Equal(this.defaultUrl, callback.Url);
         }
@@ -47,28 +47,28 @@ namespace Ztm.WebApi.Tests
         [Fact]
         public async Task AddAsync_WithInvalidArgs_ShouldThrow()
         {
-            var requestTime = DateTime.Now;
+            var registeredTime = DateTime.Now;
 
             await Assert.ThrowsAsync<ArgumentNullException>(
-                "ip", () => this.subject.AddAsync(null, requestTime, this.defaultUrl, CancellationToken.None));
+                "ip", () => this.subject.AddAsync(null, registeredTime, this.defaultUrl, CancellationToken.None));
             await Assert.ThrowsAsync<ArgumentNullException>(
-                "url", () => this.subject.AddAsync(IPAddress.Loopback, requestTime, null, CancellationToken.None));
+                "url", () => this.subject.AddAsync(IPAddress.Loopback, registeredTime, null, CancellationToken.None));
         }
 
         [Fact]
         public async Task SetStatusAsCompletedAsync_WithValidId_ShouldSuccess()
         {
             // Arrange.
-            var requestTime = DateTime.Now;
-            var callback = await this.subject.AddAsync(IPAddress.Loopback, requestTime, this.defaultUrl, CancellationToken.None);
+            var registeredTime = DateTime.Now;
+            var callback = await this.subject.AddAsync(IPAddress.Loopback, registeredTime, this.defaultUrl, CancellationToken.None);
 
             // Act.
             var updated = await this.subject.SetStatusAsCompletedAsync(callback.Id, CancellationToken.None);
 
             // Assert.
             Assert.Equal(callback.Id, updated.Id);
-            Assert.Equal(IPAddress.Loopback, updated.RequestIp);
-            Assert.Equal(requestTime.ToUniversalTime(), updated.RequestTime);
+            Assert.Equal(IPAddress.Loopback, updated.RegisteredIp);
+            Assert.Equal(registeredTime.ToUniversalTime(), updated.RegisteredTime);
             Assert.True(updated.Completed);
             Assert.Equal(this.defaultUrl, updated.Url);
         }
@@ -84,16 +84,16 @@ namespace Ztm.WebApi.Tests
         public async Task GetAsync_WithExistentId_ShouldSuccess()
         {
             // Arrange.
-            var requestTime = DateTime.Now;
+            var registeredTime = DateTime.Now;
 
             // Act.
-            var callback = await this.subject.AddAsync(IPAddress.Loopback, requestTime, this.defaultUrl, CancellationToken.None);
+            var callback = await this.subject.AddAsync(IPAddress.Loopback, registeredTime, this.defaultUrl, CancellationToken.None);
             var retrieved = await this.subject.GetAsync(callback.Id, CancellationToken.None);
 
             // Assert.
             Assert.Equal(callback.Id, retrieved.Id);
-            Assert.Equal(IPAddress.Loopback, retrieved.RequestIp);
-            Assert.Equal(requestTime.ToUniversalTime(), retrieved.RequestTime);
+            Assert.Equal(IPAddress.Loopback, retrieved.RegisteredIp);
+            Assert.Equal(registeredTime.ToUniversalTime(), retrieved.RegisteredTime);
             Assert.False(retrieved.Completed);
             Assert.Equal(this.defaultUrl, retrieved.Url);
         }
@@ -109,10 +109,10 @@ namespace Ztm.WebApi.Tests
         public async Task AddInvocation_WithExistentId_ShouldSuccess()
         {
             // Arrange.
-            var requestTime = DateTime.Now;
-            var callback = await this.subject.AddAsync(IPAddress.Loopback, requestTime, this.defaultUrl, CancellationToken.None);
+            var registeredTime = DateTime.Now;
+            var callback = await this.subject.AddAsync(IPAddress.Loopback, registeredTime, this.defaultUrl, CancellationToken.None);
 
-            var invokedTime = requestTime.Add(TimeSpan.FromDays(1));
+            var invokedTime = registeredTime.Add(TimeSpan.FromDays(1));
             var data = Encoding.ASCII.GetBytes("txid:46bdfcc6c953ba3e9a12456e3bd75ff887c9ba50051b3c58113eebffa35d7df4");
 
             // Act.
@@ -120,10 +120,10 @@ namespace Ztm.WebApi.Tests
                 callback.Id, CallbackResult.StatusUpdate, invokedTime, data, CancellationToken.None);
 
             // Assert.
-            CallbackInvocation invocation;
+            WebApiCallbackHistory invocation;
             using (var db = this.dbFactory.CreateDbContext())
             {
-                invocation = await db.CallbackInvocations.FirstAsync(CancellationToken.None);
+                invocation = await db.WebApiCallbackHistories.FirstAsync(CancellationToken.None);
             }
 
             Assert.Equal(callback.Id, invocation.CallbackId);
