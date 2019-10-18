@@ -1,12 +1,7 @@
 version: '3.4'
 services:
   db-main:
-    image: postgres:11
+    image: postgres:10
     container_name: ztm-db-main
     ports:
       - 127.0.0.1:5432:5432
-    volumes:
-      - db-main:/var/lib/postgresql/data
-volumes:
-  db-main:
-    name: ztm-db-main
