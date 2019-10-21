@@ -140,18 +140,23 @@ namespace Ztm.Data.Entity.Postgres.Migrations
 
             modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.WebApiCallbackHistory", b =>
                 {
-                    b.Property<Guid>("CallbackId");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd();
 
-                    b.Property<DateTime>("InvokedTime");
+                    b.Property<Guid>("CallbackId");
 
                     b.Property<string>("Data")
                         .IsRequired()
                         .HasColumnType("jsonb");
 
+                    b.Property<DateTime>("InvokedTime");
+
                     b.Property<string>("Status")
                         .IsRequired();
 
-                    b.HasKey("CallbackId", "InvokedTime");
+                    b.HasKey("Id");
+
+                    b.HasIndex("CallbackId");
 
                     b.ToTable("WebApiCallbackHistories");
                 });

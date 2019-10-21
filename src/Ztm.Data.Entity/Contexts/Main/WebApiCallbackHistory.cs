@@ -4,14 +4,14 @@ namespace Ztm.Data.Entity.Contexts.Main
 {
     public sealed class WebApiCallbackHistory : IComparable<WebApiCallbackHistory>
     {
+        public int Id { get; set; }
         public Guid CallbackId { get; set; }
         public string Status { get; set; }
         public DateTime InvokedTime { get; set; }
 
-        /// <remarks>
-        /// Data must be compatible with type jsonb
-        /// https://www.postgresql.org/docs/10/datatype-json.html
-        /// </remarks>
+        /// <value>
+        /// A JSON represents the callback data.
+        /// </value>
         public string Data { get; set; }
 
         public WebApiCallback Callback { get; set; }
@@ -23,19 +23,7 @@ namespace Ztm.Data.Entity.Contexts.Main
                 return 1;
             }
 
-            // Check CallbackId
-            if (CallbackId != other.CallbackId)
-            {
-                return CallbackId.CompareTo(other.CallbackId);
-            }
-
-            // Check InvokeredTime
-            if (InvokedTime != other.InvokedTime)
-            {
-                return InvokedTime.CompareTo(other.InvokedTime);
-            }
-
-            return 0;
+            return Id.CompareTo(other.Id);
         }
 
         public override bool Equals(object other)
@@ -50,12 +38,7 @@ namespace Ztm.Data.Entity.Contexts.Main
 
         public override int GetHashCode()
         {
-            int hash = 0;
-
-            hash ^= CallbackId.GetHashCode();
-            hash ^= InvokedTime.GetHashCode();
-
-            return hash;
+            return Id;
         }
     }
 }

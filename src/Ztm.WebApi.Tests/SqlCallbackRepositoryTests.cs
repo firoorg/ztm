@@ -126,10 +126,42 @@ namespace Ztm.WebApi.Tests
                 invocation = await db.WebApiCallbackHistories.FirstAsync(CancellationToken.None);
             }
 
+            Assert.Equal(1, invocation.Id);
             Assert.Equal(callback.Id, invocation.CallbackId);
             Assert.Equal(CallbackResult.StatusUpdate, invocation.Status);
             Assert.Equal(invokedTime.ToUniversalTime(), DateTime.SpecifyKind(invocation.InvokedTime, DateTimeKind.Utc));
             Assert.Equal(data, invocation.Data);
+        }
+
+        [Fact]
+        public async Task AddInvocation_Twice_IdShouldBeIncreased()
+        {
+            // Arrange.
+            var registeredTime = DateTime.Now;
+            var callback = await this.subject.AddAsync(IPAddress.Loopback, registeredTime, this.defaultUrl, CancellationToken.None);
+
+            var invokedTime = registeredTime.Add(TimeSpan.FromDays(1));
+            var data = "txid:46bdfcc6c953ba3e9a12456e3bd75ff887c9ba50051b3c58113eebffa35d7df4";
+
+            // Act.
+            await this.subject.AddInvocationAsync(
+                callback.Id, CallbackResult.StatusUpdate, invokedTime, data, CancellationToken.None);
+            await this.subject.AddInvocationAsync(
+                callback.Id, CallbackResult.StatusUpdate, invokedTime, data, CancellationToken.None);
+
+            // Assert.
+            var invocations = new List<WebApiCallbackHistory>();
+            using (var db = this.dbFactory.CreateDbContext())
+            {
+                await db.WebApiCallbackHistories.ForEachAsync(delegate(WebApiCallbackHistory history)
+                {
+                    invocations.Add(history);
+                });
+            }
+
+            Assert.Equal(2, invocations.Count);
+            Assert.Equal(1, invocations[0].Id);
+            Assert.Equal(2, invocations[1].Id);
         }
 
         [Fact]

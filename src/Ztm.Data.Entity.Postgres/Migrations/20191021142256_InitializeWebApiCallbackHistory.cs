@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 using NBitcoin;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Ztm.Data.Entity.Postgres.Migrations
 {
@@ -36,14 +37,16 @@ namespace Ztm.Data.Entity.Postgres.Migrations
                 name: "WebApiCallbackHistories",
                 columns: table => new
                 {
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn),
                     CallbackId = table.Column<Guid>(nullable: false),
-                    InvokedTime = table.Column<DateTime>(nullable: false),
                     Status = table.Column<string>(nullable: false),
+                    InvokedTime = table.Column<DateTime>(nullable: false),
                     Data = table.Column<string>(type: "jsonb", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_WebApiCallbackHistories", x => new { x.CallbackId, x.InvokedTime });
+                    table.PrimaryKey("PK_WebApiCallbackHistories", x => x.Id);
                     table.ForeignKey(
                         name: "FK_WebApiCallbackHistories_WebApiCallbacks_CallbackId",
                         column: x => x.CallbackId,
@@ -51,6 +54,11 @@ namespace Ztm.Data.Entity.Postgres.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WebApiCallbackHistories_CallbackId",
+                table: "WebApiCallbackHistories",
+                column: "CallbackId");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)

@@ -136,12 +136,12 @@ namespace Ztm.Data.Entity.Contexts
         {
             modelBuilder.Entity<WebApiCallbackHistory>(b =>
             {
-                b.Property(e => e.CallbackId).IsRequired().ValueGeneratedNever();
+                b.HasKey(e => e.Id);
+                b.Property(e => e.CallbackId).IsRequired();
                 b.Property(e => e.Status).IsRequired();
                 b.Property(e => e.InvokedTime).IsRequired();
                 b.Property(e => e.Data).HasColumnType("jsonb").IsRequired();
 
-                b.HasKey(e => new { e.CallbackId, e.InvokedTime });
                 b.HasOne(e => e.Callback)
                  .WithMany(e => e.InvocationHistories)
                  .HasForeignKey(e => e.CallbackId)
