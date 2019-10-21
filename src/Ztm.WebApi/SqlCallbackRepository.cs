@@ -78,7 +78,7 @@ namespace Ztm.WebApi
             }
         }
 
-        public async Task AddInvocationAsync(Guid id, string status, DateTime invokedTime, byte[] data, CancellationToken cancellationToken)
+        public async Task AddInvocationAsync(Guid id, string status, DateTime invokedTime, string data, CancellationToken cancellationToken)
         {
             if (status == null)
             {

@@ -7,7 +7,12 @@ namespace Ztm.Data.Entity.Contexts.Main
         public Guid CallbackId { get; set; }
         public string Status { get; set; }
         public DateTime InvokedTime { get; set; }
-        public byte[] Data { get; set; }
+
+        /// <remarks>
+        /// Data must be compatible with type jsonb
+        /// https://www.postgresql.org/docs/10/datatype-json.html
+        /// </remarks>
+        public string Data { get; set; }
 
         public WebApiCallback Callback { get; set; }
 

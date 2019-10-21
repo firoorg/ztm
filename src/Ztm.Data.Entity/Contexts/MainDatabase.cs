@@ -139,7 +139,7 @@ namespace Ztm.Data.Entity.Contexts
                 b.Property(e => e.CallbackId).IsRequired().ValueGeneratedNever();
                 b.Property(e => e.Status).IsRequired();
                 b.Property(e => e.InvokedTime).IsRequired();
-                b.Property(e => e.Data).IsRequired();
+                b.Property(e => e.Data).HasColumnType("jsonb").IsRequired();
 
                 b.HasKey(e => new { e.CallbackId, e.InvokedTime });
                 b.HasOne(e => e.Callback)

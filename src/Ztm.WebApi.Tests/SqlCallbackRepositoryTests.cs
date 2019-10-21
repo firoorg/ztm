@@ -113,7 +113,7 @@ namespace Ztm.WebApi.Tests
             var callback = await this.subject.AddAsync(IPAddress.Loopback, registeredTime, this.defaultUrl, CancellationToken.None);
 
             var invokedTime = registeredTime.Add(TimeSpan.FromDays(1));
-            var data = Encoding.ASCII.GetBytes("txid:46bdfcc6c953ba3e9a12456e3bd75ff887c9ba50051b3c58113eebffa35d7df4");
+            var data = "txid:46bdfcc6c953ba3e9a12456e3bd75ff887c9ba50051b3c58113eebffa35d7df4";
 
             // Act.
             await this.subject.AddInvocationAsync(
@@ -136,7 +136,7 @@ namespace Ztm.WebApi.Tests
         public async Task AddInvocation_WithInvalidArgs_ShouldThrow()
         {
             var invokedTime = DateTime.Now;
-            var data = Encoding.ASCII.GetBytes("txid:46bdfcc6c953ba3e9a12456e3bd75ff887c9ba50051b3c58113eebffa35d7df4");
+            var data = "txid:46bdfcc6c953ba3e9a12456e3bd75ff887c9ba50051b3c58113eebffa35d7df4";
 
             await Assert.ThrowsAsync<ArgumentNullException>(
                 "status",
@@ -150,8 +150,7 @@ namespace Ztm.WebApi.Tests
         public async Task AddInvocation_WithNonexistentId_ShouldThrow()
         {
             var invokedTime = DateTime.Now;
-            var data = Encoding.ASCII.GetBytes("txid:46bdfcc6c953ba3e9a12456e3bd75ff887c9ba50051b3c58113eebffa35d7df4");
-
+            var data = "txid:46bdfcc6c953ba3e9a12456e3bd75ff887c9ba50051b3c58113eebffa35d7df4";
             await Assert.ThrowsAsync<KeyNotFoundException>
             (
                 () => this.subject.AddInvocationAsync(

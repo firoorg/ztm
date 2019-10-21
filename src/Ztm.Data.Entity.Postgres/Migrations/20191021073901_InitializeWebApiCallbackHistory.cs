@@ -39,7 +39,7 @@ namespace Ztm.Data.Entity.Postgres.Migrations
                     CallbackId = table.Column<Guid>(nullable: false),
                     InvokedTime = table.Column<DateTime>(nullable: false),
                     Status = table.Column<string>(nullable: false),
-                    Data = table.Column<byte[]>(nullable: false)
+                    Data = table.Column<string>(type: "jsonb", nullable: false)
                 },
                 constraints: table =>
                 {

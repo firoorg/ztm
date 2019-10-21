@@ -144,8 +144,9 @@ namespace Ztm.Data.Entity.Postgres.Migrations
 
                     b.Property<DateTime>("InvokedTime");
 
-                    b.Property<byte[]>("Data")
-                        .IsRequired();
+                    b.Property<string>("Data")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
 
                     b.Property<string>("Status")
                         .IsRequired();

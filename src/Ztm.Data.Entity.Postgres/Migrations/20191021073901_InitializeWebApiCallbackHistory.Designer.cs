@@ -12,7 +12,7 @@ using Ztm.Data.Entity.Postgres;
 namespace Ztm.Data.Entity.Postgres.Migrations
 {
     [DbContext(typeof(MainDatabase))]
-    [Migration("20191018115948_InitializeWebApiCallbackHistory")]
+    [Migration("20191021073901_InitializeWebApiCallbackHistory")]
     partial class InitializeWebApiCallbackHistory
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -146,8 +146,9 @@ namespace Ztm.Data.Entity.Postgres.Migrations
 
                     b.Property<DateTime>("InvokedTime");
 
-                    b.Property<byte[]>("Data")
-                        .IsRequired();
+                    b.Property<string>("Data")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
 
                     b.Property<string>("Status")
                         .IsRequired();
