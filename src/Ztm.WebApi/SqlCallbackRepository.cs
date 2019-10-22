@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Net;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using Ztm.Data.Entity.Contexts;
 using Ztm.Data.Entity.Contexts.Main;
 
@@ -25,11 +25,11 @@ namespace Ztm.WebApi
             this.db = db;
         }
 
-        public async Task<Callback> AddAsync(IPAddress ip, Uri url, CancellationToken cancellationToken)
+        public async Task<Callback> AddAsync(IPAddress registeringIp, Uri url, CancellationToken cancellationToken)
         {
-            if (ip == null)
+            if (registeringIp == null)
             {
-                throw new ArgumentNullException(nameof(ip));
+                throw new ArgumentNullException(nameof(registeringIp));
             }
 
             if (url == null)
@@ -41,8 +41,9 @@ namespace Ztm.WebApi
             {
                 var callback = await db.WebApiCallbacks.AddAsync(new WebApiCallback()
                 {
-                    RegisteredIp = ip,
-                    RegisteredTime = DateTime.Now.ToUniversalTime(),
+                    Id = Guid.NewGuid(),
+                    RegisteredIp = registeringIp,
+                    RegisteredTime = DateTime.UtcNow,
                     Url = url,
                 }, cancellationToken);
 
@@ -57,7 +58,7 @@ namespace Ztm.WebApi
             using (var db = this.db.CreateDbContext())
             using (var dbtx = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken))
             {
-                var update = await db.WebApiCallbacks.FindAsync(new object[]{ id }, cancellationToken);
+                var update = await db.WebApiCallbacks.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
                 if (update == null)
                 {
@@ -75,21 +76,16 @@ namespace Ztm.WebApi
         {
             using (var db = this.db.CreateDbContext())
             {
-                var callback = await db.WebApiCallbacks.FindAsync(new object[]{ id }, cancellationToken);
+                var callback = await db.WebApiCallbacks.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
                 return callback == null ? null : ToDomain(callback);
             }
         }
 
-        public async Task AddHistoryAsync(Guid id, string status, string data, CancellationToken cancellationToken)
+        public async Task AddHistoryAsync(Guid id, CallbackResult result, CancellationToken cancellationToken)
         {
-            if (status == null)
+            if (result == null)
             {
-                throw new ArgumentNullException(nameof(status));
-            }
-
-            if (data == null)
-            {
-                throw new ArgumentNullException(nameof(data));
+                throw new ArgumentNullException(nameof(result));
             }
 
             using (var db = this.db.CreateDbContext())
@@ -103,11 +99,12 @@ namespace Ztm.WebApi
                 }
 
                 await db.WebApiCallbackHistories.AddAsync(
-                    new WebApiCallbackHistory{
+                    new WebApiCallbackHistory
+                    {
                         CallbackId = id,
-                        Status = status,
-                        Data = data,
-                        InvokedTime = DateTime.Now.ToUniversalTime(),
+                        Status = result.Status,
+                        Data = JsonConvert.SerializeObject(result.Data),
+                        InvokedTime = DateTime.UtcNow,
                     }
                 );
                 await db.SaveChangesAsync(cancellationToken);

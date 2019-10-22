@@ -4,12 +4,29 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using Xunit;
 using Ztm.Data.Entity.Contexts.Main;
 using Ztm.Data.Entity.Testing;
 
 namespace Ztm.WebApi.Tests
 {
+    sealed class TestCallbackResult : CallbackResult
+    {
+        public TestCallbackResult(string status, object data)
+        {
+            this.status = status;
+            this.data = data;
+        }
+
+        readonly string status;
+        readonly object data;
+
+        public override string Status => status;
+
+        public override object Data => data;
+    }
+
     public class SqlCallbackRepositoryTests : IDisposable
     {
         readonly SqlCallbackRepository subject;
@@ -57,7 +74,7 @@ namespace Ztm.WebApi.Tests
         public async Task AddAsync_WithInvalidArgs_ShouldThrow()
         {
             await Assert.ThrowsAsync<ArgumentNullException>(
-                "ip", () => this.subject.AddAsync(null, this.defaultUrl, CancellationToken.None));
+                "registeringIp", () => this.subject.AddAsync(null, this.defaultUrl, CancellationToken.None));
             await Assert.ThrowsAsync<ArgumentNullException>(
                 "url", () => this.subject.AddAsync(IPAddress.Loopback, null, CancellationToken.None));
         }
@@ -123,7 +140,7 @@ namespace Ztm.WebApi.Tests
 
             // Act.
             await this.subject.AddHistoryAsync(
-                callback.Id, CallbackResult.StatusUpdate, data, CancellationToken.None);
+                callback.Id, new TestCallbackResult(CallbackResult.StatusUpdate, data), CancellationToken.None);
 
             // Assert.
             WebApiCallbackHistory history;
@@ -137,7 +154,7 @@ namespace Ztm.WebApi.Tests
             Assert.Equal(CallbackResult.StatusUpdate, history.Status);
             Assert.True(DateTime.Now.Add(TimeSpan.FromSeconds(-1)).ToUniversalTime()
                 < DateTime.SpecifyKind(history.InvokedTime, DateTimeKind.Utc));
-            Assert.Equal(data, history.Data);
+            Assert.Equal(data, JsonConvert.DeserializeObject<string>(history.Data));
         }
 
         [Fact]
@@ -149,9 +166,9 @@ namespace Ztm.WebApi.Tests
 
             // Act.
             await this.subject.AddHistoryAsync(
-                callback.Id, CallbackResult.StatusUpdate, data, CancellationToken.None);
+                callback.Id, new TestCallbackResult(CallbackResult.StatusUpdate, data), CancellationToken.None);
             await this.subject.AddHistoryAsync(
-                callback.Id, CallbackResult.StatusUpdate, data, CancellationToken.None);
+                callback.Id, new TestCallbackResult(CallbackResult.StatusUpdate, data), CancellationToken.None);
 
             // Assert.
             var histories = new List<WebApiCallbackHistory>();
@@ -169,26 +186,12 @@ namespace Ztm.WebApi.Tests
         }
 
         [Fact]
-        public async Task AddHistoryAsync_WithNullStatus_ShouldThrow()
+        public async Task AddHistoryAsync_WithNullCallbackResult_ShouldThrow()
         {
-            var data = "txid:46bdfcc6c953ba3e9a12456e3bd75ff887c9ba50051b3c58113eebffa35d7df4";
-
-            await Assert.ThrowsAsync<ArgumentNullException>(
-                "status",
-                () => this.subject.AddHistoryAsync(
-                    Guid.NewGuid(), null, data, CancellationToken.None
-                )
-            );
-        }
-
-        [Fact]
-        public async Task AddHistoryAsync_WithNullData_ShouldThrow()
-        {
-            await Assert.ThrowsAsync<ArgumentNullException>(
-                "data",
-                () => this.subject.AddHistoryAsync(
-                    Guid.NewGuid(), CallbackResult.StatusSuccess, null, CancellationToken.None
-                )
+            await Assert.ThrowsAsync<ArgumentNullException>
+            (
+                "result",
+                () => this.subject.AddHistoryAsync(Guid.NewGuid(), null, CancellationToken.None)
             );
         }
 
@@ -199,7 +202,7 @@ namespace Ztm.WebApi.Tests
             await Assert.ThrowsAsync<KeyNotFoundException>
             (
                 () => this.subject.AddHistoryAsync(
-                    Guid.NewGuid(), CallbackResult.StatusUpdate, data, CancellationToken.None
+                    Guid.NewGuid(), new TestCallbackResult(CallbackResult.StatusUpdate, data), CancellationToken.None
                 )
             );
         }

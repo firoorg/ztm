@@ -122,7 +122,7 @@ namespace Ztm.Data.Entity.Contexts
         {
             modelBuilder.Entity<WebApiCallback>(b =>
             {
-                b.Property(e => e.Id).IsRequired().ValueGeneratedOnAdd();
+                b.Property(e => e.Id).IsRequired().ValueGeneratedNever();
                 b.Property(e => e.RegisteredIp).IsRequired();
                 b.Property(e => e.RegisteredTime).IsRequired();
                 b.Property(e => e.Completed).IsRequired();
@@ -136,12 +136,14 @@ namespace Ztm.Data.Entity.Contexts
         {
             modelBuilder.Entity<WebApiCallbackHistory>(b =>
             {
-                b.HasKey(e => e.Id);
+                b.Property(e => e.Id).ValueGeneratedOnAdd();
                 b.Property(e => e.CallbackId).IsRequired();
                 b.Property(e => e.Status).IsRequired();
                 b.Property(e => e.InvokedTime).IsRequired();
                 b.Property(e => e.Data).IsRequired();
 
+                b.HasKey(e => e.Id);
+                b.HasIndex(e => e.CallbackId); // Intentionally add
                 b.HasOne(e => e.Callback)
                  .WithMany(e => e.InvocationHistories)
                  .HasForeignKey(e => e.CallbackId)
