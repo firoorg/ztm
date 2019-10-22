@@ -7,6 +7,16 @@ namespace Ztm.WebApi
     {
         public Callback(Guid id, IPAddress registeredIp, DateTime registeredTime, bool completed, Uri url)
         {
+            if (registeredIp == null)
+            {
+                throw new ArgumentNullException(nameof(registeredIp));
+            }
+
+            if (url == null)
+            {
+                throw new ArgumentNullException(nameof(url));
+            }
+
             this.Id = id;
             this.RegisteredIp = registeredIp;
             this.RegisteredTime = registeredTime;
