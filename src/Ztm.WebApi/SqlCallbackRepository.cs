@@ -49,7 +49,7 @@ namespace Ztm.WebApi
             }
         }
 
-        public async Task<Callback> SetStatusAsCompletedAsync(Guid id, CancellationToken cancellationToken)
+        public async Task SetCompletedAsyc(Guid id, CancellationToken cancellationToken)
         {
             using (var db = this.db.CreateDbContext())
             using (var dbtx = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken))
@@ -65,8 +65,6 @@ namespace Ztm.WebApi
 
                 await db.SaveChangesAsync();
                 dbtx.Commit();
-
-                return ToDomain(update);
             }
         }
 
@@ -80,7 +78,7 @@ namespace Ztm.WebApi
             }
         }
 
-        public async Task AddInvocationAsync(Guid id, string status, string data, CancellationToken cancellationToken)
+        public async Task AddHistoryAsync(Guid id, string status, string data, CancellationToken cancellationToken)
         {
             if (status == null)
             {
