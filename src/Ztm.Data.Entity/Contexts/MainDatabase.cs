@@ -122,7 +122,7 @@ namespace Ztm.Data.Entity.Contexts
         {
             modelBuilder.Entity<WebApiCallback>(b =>
             {
-                b.Property(e => e.Id).IsRequired().ValueGeneratedNever();
+                b.Property(e => e.Id).IsRequired().ValueGeneratedOnAdd();
                 b.Property(e => e.RegisteredIp).IsRequired();
                 b.Property(e => e.RegisteredTime).IsRequired();
                 b.Property(e => e.Completed).IsRequired();
@@ -140,7 +140,7 @@ namespace Ztm.Data.Entity.Contexts
                 b.Property(e => e.CallbackId).IsRequired();
                 b.Property(e => e.Status).IsRequired();
                 b.Property(e => e.InvokedTime).IsRequired();
-                b.Property(e => e.Data).HasColumnType("jsonb").IsRequired();
+                b.Property(e => e.Data).IsRequired();
 
                 b.HasOne(e => e.Callback)
                  .WithMany(e => e.InvocationHistories)

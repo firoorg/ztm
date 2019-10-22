@@ -121,7 +121,8 @@ namespace Ztm.Data.Entity.Postgres.Migrations
 
             modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.WebApiCallback", b =>
                 {
-                    b.Property<Guid>("Id");
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd();
 
                     b.Property<bool>("Completed");
 

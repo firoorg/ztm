@@ -12,7 +12,7 @@ using Ztm.Data.Entity.Postgres;
 namespace Ztm.Data.Entity.Postgres.Migrations
 {
     [DbContext(typeof(MainDatabase))]
-    [Migration("20191021142256_InitializeWebApiCallbackHistory")]
+    [Migration("20191022052709_InitializeWebApiCallbackHistory")]
     partial class InitializeWebApiCallbackHistory
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -123,7 +123,8 @@ namespace Ztm.Data.Entity.Postgres.Migrations
 
             modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.WebApiCallback", b =>
                 {
-                    b.Property<Guid>("Id");
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd();
 
                     b.Property<bool>("Completed");
 

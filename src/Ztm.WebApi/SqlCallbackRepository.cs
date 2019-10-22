@@ -20,7 +20,7 @@ namespace Ztm.WebApi
             this.db = db;
         }
 
-        public async Task<Callback> AddAsync(IPAddress ip, DateTime requestTime, Uri url, CancellationToken cancellationToken)
+        public async Task<Callback> AddAsync(IPAddress ip, Uri url, CancellationToken cancellationToken)
         {
             if (ip == null)
             {
@@ -32,16 +32,18 @@ namespace Ztm.WebApi
                 throw new ArgumentNullException(nameof(url));
             }
 
-            var callback = new Callback(Guid.NewGuid(), ip, requestTime, false, url);
-
             using (var db = this.db.CreateDbContext())
-            using (var dbtx = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken))
             {
-                await db.WebApiCallbacks.AddAsync(ToEntity(callback));
-                await db.SaveChangesAsync(cancellationToken);
+                var callback = await db.WebApiCallbacks.AddAsync(new WebApiCallback()
+                {
+                    RegisteredIp = ip,
+                    RegisteredTime = DateTime.Now.ToUniversalTime(),
+                    Url = url,
+                }, cancellationToken);
 
-                var webApiCallback = await db.WebApiCallbacks.FirstOrDefaultAsync(c => c.Id == callback.Id);
-                dbtx.Commit();
+                var webApiCallback = (WebApiCallback)callback.Entity;
+
+                await db.SaveChangesAsync(cancellationToken);
 
                 return ToDomain(webApiCallback);
             }
@@ -78,7 +80,7 @@ namespace Ztm.WebApi
             }
         }
 
-        public async Task AddInvocationAsync(Guid id, string status, DateTime invokedTime, string data, CancellationToken cancellationToken)
+        public async Task AddInvocationAsync(Guid id, string status, string data, CancellationToken cancellationToken)
         {
             if (status == null)
             {
@@ -95,15 +97,14 @@ namespace Ztm.WebApi
                     throw new KeyNotFoundException($"Id {id} is not found");
                 }
 
-                var invocation = new WebApiCallbackHistory
-                {
-                    CallbackId = id,
-                    Status = status,
-                    InvokedTime = invokedTime.ToUniversalTime(),
-                    Data = data,
-                };
-
-                await db.WebApiCallbackHistories.AddAsync(invocation);
+                await db.WebApiCallbackHistories.AddAsync(
+                    new WebApiCallbackHistory{
+                        CallbackId = id,
+                        Status = status,
+                        Data = data,
+                        InvokedTime = DateTime.Now.ToUniversalTime(),
+                    }
+                );
                 await db.SaveChangesAsync(cancellationToken);
                 dbtx.Commit();
             }
