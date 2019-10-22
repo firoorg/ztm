@@ -20,9 +20,9 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         {
             this.storage = Substitute.For<IWatcherStorage<Watch>>();
             this.subject = new TestWatcher(this.storage);
-            this.subject.CreateWatches = Substitute.For<Func<ZcoinBlock, int, CancellationToken, IEnumerable<Watch>>>();
-            this.subject.ExecuteMatchedWatch = Substitute.For<Func<Watch, ZcoinBlock, int, BlockEventType, CancellationToken, bool>>();
-            this.subject.GetWatches = Substitute.For<Func<ZcoinBlock, int, CancellationToken, IEnumerable<Watch>>>();
+            this.subject.CreateWatches = Substitute.For<Func<Block, int, CancellationToken, IEnumerable<Watch>>>();
+            this.subject.ExecuteMatchedWatch = Substitute.For<Func<Watch, Block, int, BlockEventType, CancellationToken, bool>>();
+            this.subject.GetWatches = Substitute.For<Func<Block, int, CancellationToken, IEnumerable<Watch>>>();
         }
 
         [Fact]
@@ -35,10 +35,10 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         public async Task BlockAddedAsync_WhenInvoke_ShouldInvokeCreateWatchesAsync()
         {
             // Arrange.
-            var block = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
+            var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
 
-            this.subject.CreateWatches(Arg.Any<ZcoinBlock>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
-            this.subject.GetWatches(Arg.Any<ZcoinBlock>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
+            this.subject.CreateWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
+            this.subject.GetWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
 
             // Act.
             using (var cancellationSource = new CancellationTokenSource())
@@ -54,10 +54,10 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         public async Task BlockAddedAsync_CreateWatchesAsyncReturnEmptyList_ShouldNotAddToStorage()
         {
             // Arrange.
-            var block = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
+            var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
 
             this.subject.CreateWatches(block, 0, Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
-            this.subject.GetWatches(Arg.Any<ZcoinBlock>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
+            this.subject.GetWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
 
             // Act.
             await this.subject.BlockAddedAsync(block, 0, CancellationToken.None);
@@ -70,11 +70,11 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         public async Task BlockAddedAsync_CreateWatchesAsyncReturnNonEmptyList_ShouldAddToStorage()
         {
             // Arrange.
-            var block = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
+            var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
             var watch = new Watch(block.GetHash());
 
             this.subject.CreateWatches(block, 0, Arg.Any<CancellationToken>()).Returns(new[] { watch });
-            this.subject.GetWatches(Arg.Any<ZcoinBlock>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
+            this.subject.GetWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
 
             // Act.
             using (var cancellationSource = new CancellationTokenSource())
@@ -93,10 +93,10 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         public async Task BlockAddedAsync_GetWatchesAsyncReturnEmptyList_ShouldNotCallExecuteMatchedWatchAsync()
         {
             // Arrange.
-            var block = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
+            var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
 
-            this.subject.CreateWatches(Arg.Any<ZcoinBlock>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
-            this.subject.GetWatches(Arg.Any<ZcoinBlock>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
+            this.subject.CreateWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
+            this.subject.GetWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
 
             // Act.
             using (var cancellationSource = new CancellationTokenSource())
@@ -107,7 +107,7 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
                 this.subject.GetWatches.Received(1)(block, 0, cancellationSource.Token);
                 this.subject.ExecuteMatchedWatch.Received(0)(
                     Arg.Any<Watch>(),
-                    Arg.Any<ZcoinBlock>(),
+                    Arg.Any<Block>(),
                     Arg.Any<int>(),
                     Arg.Any<BlockEventType>(),
                     Arg.Any<CancellationToken>()
@@ -119,10 +119,10 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         public async Task BlockAddedAsync_ExecuteMatchedWatchAsyncReturnTrue_ShouldRemoveThatWatch()
         {
             // Arrange.
-            var block = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
+            var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
             var watch = new Watch(block.GetHash());
 
-            this.subject.CreateWatches(Arg.Any<ZcoinBlock>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
+            this.subject.CreateWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
             this.subject.GetWatches(block, 0, Arg.Any<CancellationToken>()).Returns(new[] { watch });
             this.subject.ExecuteMatchedWatch(watch, block, 0, BlockEventType.Added, Arg.Any<CancellationToken>()).Returns(true);
 
@@ -148,10 +148,10 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         public async Task BlockAddedAsync_ExecuteMatchedWatchAsyncReturnFalse_ShouldKeepThatWatch()
         {
             // Arrange.
-            var block = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
+            var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
             var watch = new Watch(block.GetHash());
 
-            this.subject.CreateWatches(Arg.Any<ZcoinBlock>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
+            this.subject.CreateWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
             this.subject.GetWatches(block, 0, Arg.Any<CancellationToken>()).Returns(new[] { watch });
             this.subject.ExecuteMatchedWatch(watch, block, 0, BlockEventType.Added, Arg.Any<CancellationToken>()).Returns(false);
 
@@ -174,7 +174,7 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         public async Task BlockRemovingAsync_GetWatchesAsyncReturnEmptyList_ShouldNotCallExecuteMatchedWatchAsync()
         {
             // Arrange.
-            var block = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
+            var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
 
             this.subject.GetWatches(block, 0, Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
 
@@ -187,7 +187,7 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
                 this.subject.GetWatches.Received(1)(block, 0, cancellationSource.Token);
                 this.subject.ExecuteMatchedWatch.Received(0)(
                     Arg.Any<Watch>(),
-                    Arg.Any<ZcoinBlock>(),
+                    Arg.Any<Block>(),
                     Arg.Any<int>(),
                     Arg.Any<BlockEventType>(),
                     Arg.Any<CancellationToken>()
@@ -203,7 +203,7 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         public async Task BlockRemovingAsync_ExecuteMatchedWatchAsyncReturnTrue_ShouldRemoveThatWatch()
         {
             // Arrange.
-            var block = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
+            var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
             var watch = new Watch(uint256.One);
 
             this.subject.GetWatches(block, 1, Arg.Any<CancellationToken>()).Returns(new[] { watch });
@@ -231,7 +231,7 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         public async Task BlockRemovingAsync_ExecuteMatchedWatchAsyncReturnFalse_ShouldKeepThatWatch()
         {
             // Arrange.
-            var block = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
+            var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
             var watch = new Watch(uint256.One);
 
             this.subject.GetWatches(block, 1, Arg.Any<CancellationToken>()).Returns(new[] { watch });
@@ -256,11 +256,11 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         public async Task BlockRemovingAsync_WatchingOnRemovingBlock_ShouldRemoveThatWatch()
         {
             // Arrange.
-            var block = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
+            var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
             var watch = new Watch(block.GetHash());
 
             this.subject.GetWatches(block, 0, Arg.Any<CancellationToken>()).Returns(new[] { watch });
-            this.subject.ExecuteMatchedWatch(Arg.Any<Watch>(), Arg.Any<ZcoinBlock>(), Arg.Any<int>(), Arg.Any<BlockEventType>(), Arg.Any<CancellationToken>()).Returns(false);
+            this.subject.ExecuteMatchedWatch(Arg.Any<Watch>(), Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<BlockEventType>(), Arg.Any<CancellationToken>()).Returns(false);
 
             // Act.
             using (var cancellationSource = new CancellationTokenSource())

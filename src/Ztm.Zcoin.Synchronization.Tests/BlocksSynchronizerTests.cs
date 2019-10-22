@@ -110,7 +110,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
         {
             // Arrange.
             var subject = this.subject as IBlocksRetrieverHandler;
-            var block = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
+            var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
 
             this.storage.GetLastAsync(Arg.Any<CancellationToken>()).Returns((block, 0));
 
@@ -126,7 +126,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
         {
             // Arrange.
             var subject = this.subject as IBlocksRetrieverHandler;
-            var block = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
+            var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
 
             this.storage.GetLastAsync(Arg.Any<CancellationToken>()).Returns((null, 0));
 
@@ -142,7 +142,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
         {
             // Arrange.
             var subject = this.subject as IBlocksRetrieverHandler;
-            var block = ZcoinBlock.CreateBlock(ZcoinNetworks.Instance.Regtest);
+            var block = Block.CreateBlock(ZcoinNetworks.Instance.Regtest);
 
             this.storage.GetLastAsync(Arg.Any<CancellationToken>()).Returns((null, 0));
 
@@ -158,7 +158,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
         {
             // Arrange.
             var subject = this.subject as IBlocksRetrieverHandler;
-            var block = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
+            var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
 
             this.storage.GetLastAsync(Arg.Any<CancellationToken>()).Returns((null, 0));
             this.storage.AddAsync(block, 0, Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
@@ -182,7 +182,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
         {
             // Arrange.
             var subject = this.subject as IBlocksRetrieverHandler;
-            var genesis = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
+            var genesis = ZcoinNetworks.Instance.Regtest.GetGenesis();
             var block1 = genesis.CreateNextBlockWithCoinbase(
                 BitcoinAddress.Create("THMdcCZXJvUGMHo4BVumsPvPQbzr87Wah7", ZcoinNetworks.Instance.Regtest),
                 1
@@ -206,7 +206,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
         {
             // Arrange.
             var subject = this.subject as IBlocksRetrieverHandler;
-            var genesis = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
+            var genesis = ZcoinNetworks.Instance.Regtest.GetGenesis();
             var block1 = genesis.CreateNextBlockWithCoinbase(
                 BitcoinAddress.Create("THMdcCZXJvUGMHo4BVumsPvPQbzr87Wah7", ZcoinNetworks.Instance.Regtest),
                 1
@@ -235,7 +235,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
         {
             // Arrange.
             var subject = this.subject as IBlocksRetrieverHandler;
-            var genesis = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
+            var genesis = ZcoinNetworks.Instance.Regtest.GetGenesis();
             var block1 = genesis.CreateNextBlockWithCoinbase(
                 BitcoinAddress.Create("THMdcCZXJvUGMHo4BVumsPvPQbzr87Wah7", ZcoinNetworks.Instance.Regtest),
                 1

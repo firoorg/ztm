@@ -4,15 +4,13 @@ using NBitcoin;
 
 namespace Ztm.Zcoin.NBitcoin.Tests
 {
-    public class BlockHeaderExtensionsTests
+    public sealed class BlockHeaderExtensionsTests
     {
         readonly BlockHeader subject;
 
-        static readonly DateTimeOffset MtpSwitchTime = DateTimeOffset.FromUnixTimeSeconds(1544443200);
-
         public BlockHeaderExtensionsTests()
         {
-            this.subject = new ZcoinBlockHeader(MtpSwitchTime);
+            this.subject = ZcoinNetworks.Instance.Mainnet.Consensus.ConsensusFactory.CreateBlockHeader();
         }
 
         [Theory]

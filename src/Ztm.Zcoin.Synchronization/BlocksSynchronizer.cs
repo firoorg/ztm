@@ -80,7 +80,7 @@ namespace Ztm.Zcoin.Synchronization
             return height + 1;
         }
 
-        async Task<int> IBlocksRetrieverHandler.ProcessBlockAsync(ZcoinBlock block, int height, CancellationToken cancellationToken)
+        async Task<int> IBlocksRetrieverHandler.ProcessBlockAsync(Block block, int height, CancellationToken cancellationToken)
         {
             var (localBlock, localHeight) = await this.storage.GetLastAsync(cancellationToken);
 

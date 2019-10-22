@@ -35,8 +35,8 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         public async Task BlockAddedAsync_WithWatchOnPreviousBlock_ShouldConfirmWithTwoConfirmation()
         {
             // Arrange.
-            var block0 = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
-            var block1 = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.Consensus.ConsensusFactory.CreateBlock();
+            var block0 = ZcoinNetworks.Instance.Regtest.GetGenesis();
+            var block1 = ZcoinNetworks.Instance.Regtest.Consensus.ConsensusFactory.CreateBlock();
             var watch = new Watch(block0.GetHash());
 
             this.storage.GetWatchesAsync(Arg.Any<CancellationToken>()).Returns(new[] { watch });
@@ -59,7 +59,7 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         public async Task BlockAddedAsync_ConfirmAsyncReturnTrue_ShouldRemoveThatWatch()
         {
             // Arrange.
-            var block = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
+            var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
             var watch = new Watch(block.GetHash());
 
             this.storage.GetWatchesAsync(Arg.Any<CancellationToken>()).Returns(new[] { watch });
@@ -89,7 +89,7 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         public async Task BlockAddedAsync_ConfirmAsyncReturnFalse_ShouldKeepThatWatch()
         {
             // Arrange.
-            var block = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
+            var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
             var watch = new Watch(block.GetHash());
 
             this.storage.GetWatchesAsync(Arg.Any<CancellationToken>()).Returns(new[] { watch });
@@ -116,8 +116,8 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         public async Task BlockRemovingAsync_WithWatchOnPreviousBlock_ShouldUnconfirmWithTwoConfirmation()
         {
             // Arrange.
-            var block0 = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
-            var block1 = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.Consensus.ConsensusFactory.CreateBlock();
+            var block0 = ZcoinNetworks.Instance.Regtest.GetGenesis();
+            var block1 = ZcoinNetworks.Instance.Regtest.Consensus.ConsensusFactory.CreateBlock();
             var watch = new Watch(block0.GetHash());
 
             this.storage.GetWatchesAsync(Arg.Any<CancellationToken>()).Returns(new[] { watch });
@@ -144,7 +144,7 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         public async Task BlockRemovingAsync_ConfirmAsyncReturnTrue_ShouldRemoveThatWatchWithCompletedReason()
         {
             // Arrange.
-            var block = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
+            var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
             var watch = new Watch(block.GetHash());
 
             this.storage.GetWatchesAsync(Arg.Any<CancellationToken>()).Returns(new[] { watch });
@@ -174,7 +174,7 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         public async Task BlockRemovingAsync_ConfirmAsyncReturnFalse_ShouldNotRemoveThatWatchWithCompletedReason()
         {
             // Arrange.
-            var block = (ZcoinBlock)ZcoinNetworks.Instance.Regtest.GetGenesis();
+            var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
             var watch = new Watch(block.GetHash());
 
             this.storage.GetWatchesAsync(Arg.Any<CancellationToken>()).Returns(new[] { watch });

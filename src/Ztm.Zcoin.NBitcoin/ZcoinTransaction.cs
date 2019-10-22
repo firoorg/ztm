@@ -1,18 +1,27 @@
+using System;
 using NBitcoin;
 
 namespace Ztm.Zcoin.NBitcoin
 {
-    public class ZcoinTransaction : Transaction
+    sealed class ZcoinTransaction : Transaction
     {
+        readonly ZcoinConsensusFactory consensusFactory;
+
         #pragma warning disable CS0618
-        public ZcoinTransaction()
+        public ZcoinTransaction(ZcoinConsensusFactory consensusFactory)
         {
+            if (consensusFactory == null)
+            {
+                throw new ArgumentNullException(nameof(consensusFactory));
+            }
+
+            this.consensusFactory = consensusFactory;
         }
         #pragma warning restore CS0618
 
-        public static new ZcoinTransaction Parse(string hex, Network network)
+        public override ConsensusFactory GetConsensusFactory()
         {
-            return (ZcoinTransaction)Transaction.Parse(hex, network);
+            return this.consensusFactory;
         }
     }
 }

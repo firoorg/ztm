@@ -3,11 +3,11 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using NBitcoin;
 using NBitcoin.RPC;
 using NetMQ;
 using NetMQ.Sockets;
 using Ztm.Configuration;
-using Ztm.Zcoin.NBitcoin;
 using Ztm.Zcoin.Rpc;
 
 namespace Ztm.Zcoin.Synchronization
@@ -177,7 +177,7 @@ namespace Ztm.Zcoin.Synchronization
             while (true)
             {
                 // Get block.
-                ZcoinBlock block;
+                Block block;
 
                 using (var rpc = await this.rpc.CreateRpcClientAsync(cancellationToken))
                 {
