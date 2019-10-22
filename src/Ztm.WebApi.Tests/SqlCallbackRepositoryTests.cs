@@ -5,16 +5,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
-using Ztm.Data.Entity.Contexts;
 using Ztm.Data.Entity.Contexts.Main;
 using Ztm.Data.Entity.Testing;
 
 namespace Ztm.WebApi.Tests
 {
-    public class SqlCallbackRepositoryTests
+    public class SqlCallbackRepositoryTests : IDisposable
     {
-        readonly ICallbackRepository subject;
-        readonly IMainDatabaseFactory dbFactory;
+        readonly SqlCallbackRepository subject;
+        readonly TestMainDatabaseFactory dbFactory;
 
         readonly Uri defaultUrl;
 
@@ -24,6 +23,20 @@ namespace Ztm.WebApi.Tests
 
             this.dbFactory = new TestMainDatabaseFactory();
             this.subject = new SqlCallbackRepository(dbFactory);
+        }
+
+        public void Dispose()
+        {
+            this.dbFactory.Dispose();
+        }
+
+        [Fact]
+        public void ConstructSqlCallbackRepository_WithNullDatabaseFactory_ShouldThrow()
+        {
+            Assert.Throws<ArgumentNullException>(
+                "db",
+                () => new SqlCallbackRepository(null)
+            );
         }
 
         [Fact]
@@ -156,7 +169,7 @@ namespace Ztm.WebApi.Tests
         }
 
         [Fact]
-        public async Task AddHistoryAsync_WithInvalidArgs_ShouldThrow()
+        public async Task AddHistoryAsync_WithNullStatus_ShouldThrow()
         {
             var data = "txid:46bdfcc6c953ba3e9a12456e3bd75ff887c9ba50051b3c58113eebffa35d7df4";
 
@@ -164,6 +177,17 @@ namespace Ztm.WebApi.Tests
                 "status",
                 () => this.subject.AddHistoryAsync(
                     Guid.NewGuid(), null, data, CancellationToken.None
+                )
+            );
+        }
+
+        [Fact]
+        public async Task AddHistoryAsync_WithNullData_ShouldThrow()
+        {
+            await Assert.ThrowsAsync<ArgumentNullException>(
+                "data",
+                () => this.subject.AddHistoryAsync(
+                    Guid.NewGuid(), CallbackResult.StatusSuccess, null, CancellationToken.None
                 )
             );
         }

@@ -17,6 +17,11 @@ namespace Ztm.WebApi
 
         public SqlCallbackRepository(IMainDatabaseFactory db)
         {
+            if (db == null)
+            {
+                throw new ArgumentNullException(nameof(db));
+            }
+
             this.db = db;
         }
 
@@ -54,7 +59,7 @@ namespace Ztm.WebApi
             using (var db = this.db.CreateDbContext())
             using (var dbtx = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken))
             {
-                var update = await db.WebApiCallbacks.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+                var update = await db.WebApiCallbacks.FindAsync(new object[]{ id }, cancellationToken);
 
                 if (update == null)
                 {
@@ -72,8 +77,7 @@ namespace Ztm.WebApi
         {
             using (var db = this.db.CreateDbContext())
             {
-                var callback = await db.WebApiCallbacks.SingleOrDefaultAsync(c => c.Id == id, cancellationToken);
-
+                var callback = await db.WebApiCallbacks.FindAsync(new object[]{ id }, cancellationToken);
                 return callback == null ? null : ToDomain(callback);
             }
         }
@@ -83,6 +87,11 @@ namespace Ztm.WebApi
             if (status == null)
             {
                 throw new ArgumentNullException(nameof(status));
+            }
+
+            if (data == null)
+            {
+                throw new ArgumentNullException(nameof(data));
             }
 
             using (var db = this.db.CreateDbContext())
