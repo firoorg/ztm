@@ -46,11 +46,9 @@ namespace Ztm.WebApi
                     Url = url,
                 }, cancellationToken);
 
-                var webApiCallback = (WebApiCallback)callback.Entity;
-
                 await db.SaveChangesAsync(cancellationToken);
 
-                return ToDomain(webApiCallback);
+                return ToDomain(callback.Entity);
             }
         }
 
