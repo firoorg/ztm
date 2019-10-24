@@ -16,7 +16,7 @@ namespace Ztm.Data.Entity.Testing
 
             modelBuilder.Entity<WebApiCallback>(b =>
             {
-                b.Property(e => e.RequestIp).HasConversion(Converters.IPAddressToStringConverter);
+                b.Property(e => e.RegisteredIp).HasConversion(Converters.IPAddressToStringConverter);
                 b.Property(e => e.Url).HasConversion(Converters.UriToStringConverter);
             });
 
@@ -49,11 +49,6 @@ namespace Ztm.Data.Entity.Testing
             modelBuilder.Entity<Transaction>(b =>
             {
                 b.Property(e => e.Hash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
-            });
-
-            modelBuilder.Entity<WebApiCallback>(b =>
-            {
-                b.Property(e => e.TransactionId).HasConversion(Converters.UInt256ToBytesConverter);
             });
         }
     }

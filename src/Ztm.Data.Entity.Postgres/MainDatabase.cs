@@ -33,6 +33,11 @@ namespace Ztm.Data.Entity.Postgres
             {
                 b.Property(e => e.Url).HasConversion(Converters.UriToStringConverter);
             });
+
+            modelBuilder.Entity<WebApiCallbackHistory>(b =>
+            {
+                b.Property(e => e.Data).HasColumnType("jsonb");
+            });
         }
     }
 }

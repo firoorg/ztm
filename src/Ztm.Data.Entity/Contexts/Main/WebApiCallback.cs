@@ -1,15 +1,22 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
-using NBitcoin;
 
 namespace Ztm.Data.Entity.Contexts.Main
 {
     public sealed class WebApiCallback
     {
+        public WebApiCallback()
+        {
+            InvocationHistories = new SortedSet<WebApiCallbackHistory>();
+        }
+
         public Guid Id { get; set; }
-        public IPAddress RequestIp { get; set; }
-        public DateTime RequestTime { get; set; }
-        public uint256 TransactionId { get; set; }
+        public IPAddress RegisteredIp { get; set; }
+        public DateTime RegisteredTime { get; set; }
+        public bool Completed { get; set; }
         public Uri Url { get; set; }
+
+        public SortedSet<WebApiCallbackHistory> InvocationHistories { get; set; }
     }
 }

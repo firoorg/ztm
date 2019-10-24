@@ -21,6 +21,8 @@ namespace Ztm.Data.Entity.Contexts
 
         public DbSet<WebApiCallback> WebApiCallbacks { get; set; }
 
+        public DbSet<WebApiCallbackHistory> WebApiCallbackHistories { get; set; }
+
         protected virtual void ConfigureBlock(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Block>(b =>
@@ -121,13 +123,32 @@ namespace Ztm.Data.Entity.Contexts
             modelBuilder.Entity<WebApiCallback>(b =>
             {
                 b.Property(e => e.Id).IsRequired().ValueGeneratedNever();
-                b.Property(e => e.RequestIp).IsRequired();
-                b.Property(e => e.RequestTime).IsRequired();
-                b.Property(e => e.TransactionId);
+                b.Property(e => e.RegisteredIp).IsRequired();
+                b.Property(e => e.RegisteredTime).IsRequired();
+                b.Property(e => e.Completed).IsRequired();
                 b.Property(e => e.Url).IsRequired();
 
                 b.HasKey(e => e.Id);
-                b.HasIndex(e => e.TransactionId);
+            });
+        }
+
+        protected virtual void ConfigureWebApiCallbackHistory(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<WebApiCallbackHistory>(b =>
+            {
+                b.Property(e => e.Id).IsRequired().ValueGeneratedOnAdd();
+                b.Property(e => e.CallbackId).IsRequired();
+                b.Property(e => e.Status).IsRequired();
+                b.Property(e => e.InvokedTime).IsRequired();
+                b.Property(e => e.Data).IsRequired();
+
+                b.HasKey(e => e.Id);
+                b.HasIndex(e => e.CallbackId); // Intentionally add
+                b.HasOne(e => e.Callback)
+                 .WithMany(e => e.InvocationHistories)
+                 .HasForeignKey(e => e.CallbackId)
+                 .HasPrincipalKey(e => e.Id)
+                 .OnDelete(DeleteBehavior.Cascade);
             });
         }
 
@@ -139,6 +160,7 @@ namespace Ztm.Data.Entity.Contexts
             ConfigureOutput(modelBuilder);
             ConfigureTransaction(modelBuilder);
             ConfigureWebApiCallback(modelBuilder);
+            ConfigureWebApiCallbackHistory(modelBuilder);
         }
     }
 }
