@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using NBitcoin;
 using NSubstitute;
 using Xunit;
 using Ztm.Zcoin.NBitcoin;
@@ -20,6 +23,7 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
             this.blocks = Substitute.For<IBlocksStorage>();
             this.subject = new TestConfirmationWatcher(this.storage, this.blocks);
             this.subject.Confirm = Substitute.For<Func<Watch, ConfirmationType, int, CancellationToken, bool>>();
+            this.subject.CreateWatches = Substitute.For<Func<Block, int, CancellationToken, IEnumerable<Watch>>>();
         }
 
         [Fact]
@@ -32,36 +36,65 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         }
 
         [Fact]
-        public async Task BlockAddedAsync_WithWatchOnPreviousBlock_ShouldConfirmWithTwoConfirmation()
-        {
-            // Arrange.
-            var block0 = ZcoinNetworks.Instance.Regtest.GetGenesis();
-            var block1 = ZcoinNetworks.Instance.Regtest.Consensus.ConsensusFactory.CreateBlock();
-            var watch = new Watch(block0.GetHash());
-
-            this.storage.GetWatchesAsync(Arg.Any<CancellationToken>()).Returns(new[] { watch });
-            this.blocks.GetAsync(block0.GetHash(), Arg.Any<CancellationToken>()).Returns((block: block0, height: 0));
-            this.subject.Confirm(Arg.Any<Watch>(), Arg.Any<ConfirmationType>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
-
-            // Act.
-            using (var cancellationSource = new CancellationTokenSource())
-            {
-                await this.subject.BlockAddedAsync(block1, 1, cancellationSource.Token);
-
-                // Assert.
-                _ = this.storage.Received(1).GetWatchesAsync(cancellationSource.Token);
-                _ = this.blocks.Received(1).GetAsync(block0.GetHash(), CancellationToken.None);
-                this.subject.Confirm.Received(1)(watch, ConfirmationType.Confirmed, 2, CancellationToken.None);
-            }
-        }
-
-        [Fact]
-        public async Task BlockAddedAsync_ConfirmAsyncReturnTrue_ShouldRemoveThatWatch()
+        public async Task ExecuteAsync_HaveWatch_ShouldInvokeRequiredMethods()
         {
             // Arrange.
             var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
             var watch = new Watch(block.GetHash());
 
+            this.subject.CreateWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
+            this.storage.GetWatchesAsync(Arg.Any<CancellationToken>()).Returns(new[] { watch });
+            this.blocks.GetAsync(block.GetHash(), Arg.Any<CancellationToken>()).Returns((block: block, height: 0));
+            this.subject.Confirm(Arg.Any<Watch>(), Arg.Any<ConfirmationType>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(false);
+
+            // Act.
+            using (var cancellationSource = new CancellationTokenSource())
+            {
+                await this.subject.ExecuteAsync(block, 0, BlockEventType.Added, cancellationSource.Token);
+                await this.subject.ExecuteAsync(block, 0, BlockEventType.Removing, cancellationSource.Token);
+
+                // Assert.
+                _ = this.storage.Received(2).GetWatchesAsync(cancellationSource.Token);
+                _ = this.blocks.Received(2).GetAsync(block.GetHash(), CancellationToken.None);
+                this.subject.Confirm.Received(1)(watch, ConfirmationType.Confirmed, 1, CancellationToken.None);
+                this.subject.Confirm.Received(1)(watch, ConfirmationType.Unconfirming, 1, CancellationToken.None);
+                _ = this.storage.Received(1).RemoveWatchAsync(watch, WatchRemoveReason.BlockRemoved, CancellationToken.None);
+            }
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_WithWatchOnPreviousBlock_ShouldConfirmWithTwoConfirmation()
+        {
+            // Arrange.
+            var block0 = ZcoinNetworks.Instance.Regtest.GetGenesis();
+            var block1 = Block.CreateBlock(ZcoinNetworks.Instance.Regtest);
+            var watch = new Watch(block0.GetHash());
+
+            this.subject.CreateWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
+            this.storage.GetWatchesAsync(Arg.Any<CancellationToken>()).Returns(new[] { watch });
+            this.blocks.GetAsync(block0.GetHash(), Arg.Any<CancellationToken>()).Returns((block: block0, height: 0));
+            this.subject.Confirm(Arg.Any<Watch>(), Arg.Any<ConfirmationType>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(false);
+
+            // Act.
+            using (var cancellationSource = new CancellationTokenSource())
+            {
+                await this.subject.ExecuteAsync(block1, 1, BlockEventType.Added, cancellationSource.Token);
+                await this.subject.ExecuteAsync(block1, 1, BlockEventType.Removing, cancellationSource.Token);
+
+                // Assert.
+                this.subject.Confirm.Received(1)(watch, ConfirmationType.Confirmed, 2, CancellationToken.None);
+                this.subject.Confirm.Received(1)(watch, ConfirmationType.Unconfirming, 2, CancellationToken.None);
+            }
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_ConfirmAsyncReturnTrue_ShouldRemoveThatWatch()
+        {
+            // Arrange.
+            var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
+            var watch = new Watch(block.GetHash());
+
+            this.subject.CreateWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
             this.storage.GetWatchesAsync(Arg.Any<CancellationToken>()).Returns(new[] { watch });
             this.blocks.GetAsync(block.GetHash(), Arg.Any<CancellationToken>()).Returns((block: block, height: 0));
             this.subject.Confirm(watch, ConfirmationType.Confirmed, 1, Arg.Any<CancellationToken>()).Returns(true);
@@ -69,29 +102,21 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
             // Act.
             using (var cancellationSource = new CancellationTokenSource())
             {
-                await this.subject.BlockAddedAsync(block, 0, cancellationSource.Token);
+                await this.subject.ExecuteAsync(block, 0, BlockEventType.Added, cancellationSource.Token);
 
                 // Assert.
-                _ = this.storage.Received(1).GetWatchesAsync(cancellationSource.Token);
-                _ = this.blocks.Received(1).GetAsync(block.GetHash(), CancellationToken.None);
-                this.subject.Confirm.Received(1)(watch, ConfirmationType.Confirmed, 1, CancellationToken.None);
-
-                Assert.Equal(1, this.subject.RemovedWatches.Count);
-                Assert.Equal(watch, this.subject.RemovedWatches[0].watch);
-                Assert.Equal(WatchRemoveReason.Completed, this.subject.RemovedWatches[0].reason);
-                Assert.Equal(CancellationToken.None, this.subject.RemovedWatches[0].cancellationToken);
-
-                _ = this.storage.Received(1).RemoveWatchAsync(watch, CancellationToken.None);
+                _ = this.storage.Received(1).RemoveWatchAsync(watch, WatchRemoveReason.Completed, CancellationToken.None);
             }
         }
 
         [Fact]
-        public async Task BlockAddedAsync_ConfirmAsyncReturnFalse_ShouldKeepThatWatch()
+        public async Task ExecuteAsync_ConfirmAsyncReturnFalse_ShouldKeepThatWatch()
         {
             // Arrange.
             var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
             var watch = new Watch(block.GetHash());
 
+            this.subject.CreateWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
             this.storage.GetWatchesAsync(Arg.Any<CancellationToken>()).Returns(new[] { watch });
             this.blocks.GetAsync(block.GetHash(), Arg.Any<CancellationToken>()).Returns((block: block, height: 0));
             this.subject.Confirm(watch, ConfirmationType.Confirmed, 1, Arg.Any<CancellationToken>()).Returns(false);
@@ -99,104 +124,10 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
             // Act.
             using (var cancellationSource = new CancellationTokenSource())
             {
-                await this.subject.BlockAddedAsync(block, 0, cancellationSource.Token);
+                await this.subject.ExecuteAsync(block, 0, BlockEventType.Added, cancellationSource.Token);
 
                 // Assert.
-                _ = this.storage.Received(1).GetWatchesAsync(cancellationSource.Token);
-                _ = this.blocks.Received(1).GetAsync(block.GetHash(), CancellationToken.None);
-                this.subject.Confirm.Received(1)(watch, ConfirmationType.Confirmed, 1, CancellationToken.None);
-
-                Assert.Equal(0, this.subject.RemovedWatches.Count);
-
-                _ = this.storage.Received(0).RemoveWatchAsync(Arg.Any<Watch>(), Arg.Any<CancellationToken>());
-            }
-        }
-
-        [Fact]
-        public async Task BlockRemovingAsync_WithWatchOnPreviousBlock_ShouldUnconfirmWithTwoConfirmation()
-        {
-            // Arrange.
-            var block0 = ZcoinNetworks.Instance.Regtest.GetGenesis();
-            var block1 = ZcoinNetworks.Instance.Regtest.Consensus.ConsensusFactory.CreateBlock();
-            var watch = new Watch(block0.GetHash());
-
-            this.storage.GetWatchesAsync(Arg.Any<CancellationToken>()).Returns(new[] { watch });
-            this.blocks.GetAsync(block0.GetHash(), Arg.Any<CancellationToken>()).Returns((block: block0, height: 0));
-            this.subject.Confirm(Arg.Any<Watch>(), Arg.Any<ConfirmationType>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(false);
-
-            // Act.
-            using (var cancellationSource = new CancellationTokenSource())
-            {
-                await this.subject.BlockRemovingAsync(block1, 1, cancellationSource.Token);
-
-                // Assert.
-                _ = this.storage.Received(1).GetWatchesAsync(cancellationSource.Token);
-                _ = this.blocks.Received(1).GetAsync(block0.GetHash(), CancellationToken.None);
-                this.subject.Confirm.Received(1)(watch, ConfirmationType.Unconfirming, 2, CancellationToken.None);
-
-                Assert.Equal(0, this.subject.RemovedWatches.Count);
-
-                _ = this.storage.Received(0).RemoveWatchAsync(Arg.Any<Watch>(), Arg.Any<CancellationToken>());
-            }
-        }
-
-        [Fact]
-        public async Task BlockRemovingAsync_ConfirmAsyncReturnTrue_ShouldRemoveThatWatchWithCompletedReason()
-        {
-            // Arrange.
-            var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
-            var watch = new Watch(block.GetHash());
-
-            this.storage.GetWatchesAsync(Arg.Any<CancellationToken>()).Returns(new[] { watch });
-            this.blocks.GetAsync(block.GetHash(), Arg.Any<CancellationToken>()).Returns((block: block, height: 0));
-            this.subject.Confirm(watch, ConfirmationType.Unconfirming, 1, Arg.Any<CancellationToken>()).Returns(true);
-
-            // Act.
-            using (var cancellationSource = new CancellationTokenSource())
-            {
-                await this.subject.BlockRemovingAsync(block, 0, cancellationSource.Token);
-
-                // Assert.
-                _ = this.storage.Received(1).GetWatchesAsync(cancellationSource.Token);
-                _ = this.blocks.Received(1).GetAsync(block.GetHash(), CancellationToken.None);
-                this.subject.Confirm.Received(1)(watch, ConfirmationType.Unconfirming, 1, CancellationToken.None);
-
-                Assert.Equal(1, this.subject.RemovedWatches.Count);
-                Assert.Equal(watch, this.subject.RemovedWatches[0].watch);
-                Assert.Equal(WatchRemoveReason.Completed | WatchRemoveReason.BlockRemoved, this.subject.RemovedWatches[0].reason);
-                Assert.Equal(CancellationToken.None, this.subject.RemovedWatches[0].cancellationToken);
-
-                _ = this.storage.Received(1).RemoveWatchAsync(watch, CancellationToken.None);
-            }
-        }
-
-        [Fact]
-        public async Task BlockRemovingAsync_ConfirmAsyncReturnFalse_ShouldNotRemoveThatWatchWithCompletedReason()
-        {
-            // Arrange.
-            var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
-            var watch = new Watch(block.GetHash());
-
-            this.storage.GetWatchesAsync(Arg.Any<CancellationToken>()).Returns(new[] { watch });
-            this.blocks.GetAsync(block.GetHash(), Arg.Any<CancellationToken>()).Returns((block: block, height: 0));
-            this.subject.Confirm(Arg.Any<Watch>(), Arg.Any<ConfirmationType>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(false);
-
-            // Act.
-            using (var cancellationSource = new CancellationTokenSource())
-            {
-                await this.subject.BlockRemovingAsync(block, 0, cancellationSource.Token);
-
-                // Assert.
-                _ = this.storage.Received(1).GetWatchesAsync(cancellationSource.Token);
-                _ = this.blocks.Received(1).GetAsync(block.GetHash(), CancellationToken.None);
-                this.subject.Confirm.Received(1)(watch, ConfirmationType.Unconfirming, 1, CancellationToken.None);
-
-                Assert.Equal(1, this.subject.RemovedWatches.Count);
-                Assert.Equal(watch, this.subject.RemovedWatches[0].watch);
-                Assert.Equal(WatchRemoveReason.BlockRemoved, this.subject.RemovedWatches[0].reason);
-                Assert.Equal(CancellationToken.None, this.subject.RemovedWatches[0].cancellationToken);
-
-                _ = this.storage.Received(1).RemoveWatchAsync(watch, CancellationToken.None);
+                _ = this.storage.Received(0).RemoveWatchAsync(Arg.Any<Watch>(), Arg.Any<WatchRemoveReason>(), Arg.Any<CancellationToken>());
             }
         }
     }
