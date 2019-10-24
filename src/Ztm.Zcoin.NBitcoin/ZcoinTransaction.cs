@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using NBitcoin;
 
 namespace Ztm.Zcoin.NBitcoin
@@ -23,15 +24,7 @@ namespace Ztm.Zcoin.NBitcoin
         {
             get
             {
-                foreach (var txIn in Inputs)
-                {
-                    if (txIn.IsZerocoinSpend())
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
+                return Inputs.Any(txIn => txIn.IsZerocoinSpend());
             }
         }
 
@@ -39,16 +32,7 @@ namespace Ztm.Zcoin.NBitcoin
         {
             get
             {
-                foreach (var txIn in Inputs)
-                {
-                    if (txIn.IsSigmaSpend())
-                    {
-                        return true;
-                    }
-
-                }
-
-                return false;
+                return Inputs.Any(txIn => txIn.IsSigmaSpend());
             }
         }
 
@@ -56,15 +40,7 @@ namespace Ztm.Zcoin.NBitcoin
         {
             get
             {
-                foreach (var txIn in Inputs)
-                {
-                    if (txIn.IsZerocoinRemint())
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
+                return Inputs.Any(txIn => txIn.IsZerocoinRemint());
             }
         }
 
