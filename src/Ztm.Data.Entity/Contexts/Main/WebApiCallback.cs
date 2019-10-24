@@ -4,7 +4,7 @@ using System.Net;
 
 namespace Ztm.Data.Entity.Contexts.Main
 {
-    public class WebApiCallback
+    public sealed class WebApiCallback
     {
         public WebApiCallback()
         {

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Ztm.Zcoin.NBitcoin;
+using NBitcoin;
 
 namespace Ztm.Zcoin.Synchronization.Watchers
 {
@@ -30,7 +30,7 @@ namespace Ztm.Zcoin.Synchronization.Watchers
 
         protected override async Task<bool> ExecuteMatchedWatchAsync(
             T watch,
-            ZcoinBlock block,
+            Block block,
             int height,
             BlockEventType blockEventType,
             CancellationToken cancellationToken)
@@ -71,7 +71,7 @@ namespace Ztm.Zcoin.Synchronization.Watchers
         }
 
         protected override Task<IEnumerable<T>> GetWatchesAsync(
-            ZcoinBlock block,
+            Block block,
             int height,
             CancellationToken cancellationToken)
         {

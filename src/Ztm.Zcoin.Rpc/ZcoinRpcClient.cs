@@ -12,9 +12,9 @@ namespace Ztm.Zcoin.Rpc
 {
     public sealed class ZcoinRpcClient : IZcoinRpcClient
     {
-        readonly Ztm.Zcoin.NBitcoin.RPC.ZcoinRPCClient client;
+        readonly RPCClient client;
 
-        public ZcoinRpcClient(Ztm.Zcoin.NBitcoin.RPC.ZcoinRPCClient client)
+        public ZcoinRpcClient(RPCClient client)
         {
             if (client == null)
             {
@@ -28,7 +28,7 @@ namespace Ztm.Zcoin.Rpc
         {
         }
 
-        public async Task<ZcoinTransaction> CreateManagedTokenAsync(
+        public async Task<Transaction> CreateManagedTokenAsync(
             BitcoinAddress owner,
             TokenEcosystem ecosystem,
             TokenType type,
@@ -89,15 +89,15 @@ namespace Ztm.Zcoin.Rpc
                 description
             );
 
-            return ZcoinTransaction.Parse(resp.Result.Value<string>(), this.client.Network);
+            return Transaction.Parse(resp.Result.Value<string>(), this.client.Network);
         }
 
-        public Task<ZcoinBlock> GetBlockAsync(uint256 blockHash, CancellationToken cancellationToken)
+        public Task<Block> GetBlockAsync(uint256 blockHash, CancellationToken cancellationToken)
         {
             return this.client.GetBlockAsync(blockHash);
         }
 
-        public Task<ZcoinBlock> GetBlockAsync(int height, CancellationToken cancellationToken)
+        public Task<Block> GetBlockAsync(int height, CancellationToken cancellationToken)
         {
             return this.client.GetBlockAsync(height);
         }
@@ -154,7 +154,7 @@ namespace Ztm.Zcoin.Rpc
             };
         }
 
-        public async Task<ZcoinTransaction> GrantTokensAsync(
+        public async Task<Transaction> GrantTokensAsync(
             TokenId id,
             BitcoinAddress from,
             BitcoinAddress to,
@@ -197,7 +197,7 @@ namespace Ztm.Zcoin.Rpc
 
             var resp = await this.client.SendCommandAsync("exodus_sendgrant", args.ToArray());
 
-            return ZcoinTransaction.Parse(resp.Result.Value<string>(), this.client.Network);
+            return Transaction.Parse(resp.Result.Value<string>(), this.client.Network);
         }
 
         public async Task<IEnumerable<TokenInfo>> ListTokensAsync(CancellationToken cancellationToken)
@@ -216,7 +216,7 @@ namespace Ztm.Zcoin.Rpc
             }).ToArray();
         }
 
-        public Task<uint256> SendRawTransactionAsync(ZcoinTransaction tx, CancellationToken cancellationToken)
+        public Task<uint256> SendRawTransactionAsync(Transaction tx, CancellationToken cancellationToken)
         {
             if (tx == null)
             {

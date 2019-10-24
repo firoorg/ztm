@@ -3,7 +3,7 @@ using NBitcoin;
 
 namespace Ztm.Zcoin.NBitcoin
 {
-    public class ZcoinBlockHeader : BlockHeader
+    sealed class ZcoinBlockHeader : BlockHeader
     {
         static readonly DateTimeOffset GenesisBlockTime = DateTimeOffset.FromUnixTimeSeconds(1414776286);
 

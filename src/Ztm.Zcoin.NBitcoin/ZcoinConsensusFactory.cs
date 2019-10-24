@@ -3,48 +3,38 @@ using NBitcoin;
 
 namespace Ztm.Zcoin.NBitcoin
 {
-    public abstract class ZcoinConsensusFactory : ConsensusFactory
+    sealed class ZcoinConsensusFactory : ConsensusFactory
     {
-        protected ZcoinConsensusFactory()
+        public ZcoinConsensusFactory(DateTimeOffset mtpSwitchTime)
         {
+            MtpSwitchTime = mtpSwitchTime;
         }
+
+        public DateTimeOffset MtpSwitchTime { get; }
 
         public override Block CreateBlock()
         {
-            return new ZcoinBlock(this, CreateBlockHeader());
+            return new ZcoinBlock(this, (ZcoinBlockHeader)CreateBlockHeader());
         }
 
-        public override abstract BlockHeader CreateBlockHeader();
+        public override BlockHeader CreateBlockHeader()
+        {
+            return new ZcoinBlockHeader(MtpSwitchTime);
+        }
 
         public override Transaction CreateTransaction()
         {
-            return new ZcoinTransaction();
+            return new ZcoinTransaction(this);
         }
 
-        public TxIn CreateTxIn()
+        public override TxIn CreateTxIn()
         {
-            return new ZcoinTxIn();
+            return new ZcoinTxIn(this);
         }
 
         public override TxOut CreateTxOut()
         {
-            return new ZcoinTxOut();
-        }
-
-        public override bool TryCreateNew(Type type, out IBitcoinSerializable result)
-        {
-            if (base.TryCreateNew(type, out result))
-            {
-                return true;
-            }
-
-            if (typeof(TxIn).IsAssignableFrom(type))
-            {
-                result = CreateTxIn();
-                return true;
-            }
-
-            return false;
+            return new ZcoinTxOut(this);
         }
     }
 }

@@ -1,9 +1,9 @@
 using System;
 using System.Threading.Tasks;
 using NBitcoin;
+using NBitcoin.RPC;
 using NBitcoin.Tests;
 using Xunit;
-using Ztm.Zcoin.NBitcoin.RPC;
 using Ztm.Zcoin.Testing;
 
 namespace Ztm.Zcoin.NBitcoin.Tests
@@ -12,13 +12,13 @@ namespace Ztm.Zcoin.NBitcoin.Tests
     {
         readonly NodeBuilder builder;
         readonly CoreNode node;
-        readonly ZcoinRPCClient rpc;
+        readonly RPCClient rpc;
 
         public RpcTests()
         {
             this.builder = NodeBuilderFactory.CreateNodeBuilder(GetType().Name);
             this.node = this.builder.CreateNode(true);
-            this.rpc = new ZcoinRPCClient(node.GetRPCAuth(), node.RPCUri, node.Network); node.CreateRPCClient();
+            this.rpc = node.CreateRPCClient();
         }
 
         public void Dispose()

@@ -6,7 +6,6 @@ using NBitcoin;
 using NBitcoin.Tests;
 using Xunit;
 using Ztm.Zcoin.NBitcoin;
-using Ztm.Zcoin.NBitcoin.RPC;
 using Ztm.Zcoin.Testing;
 
 namespace Ztm.Zcoin.Rpc.Tests
@@ -30,9 +29,7 @@ namespace Ztm.Zcoin.Rpc.Tests
                 this.node = this.nodes.CreateNode();
                 this.nodes.StartAll();
 
-                this.subject = new ZcoinRpcClient(
-                    new ZcoinRPCClient(this.node.GetRPCAuth(), this.node.RPCUri, this.node.Network)
-                );
+                this.subject = new ZcoinRpcClient(this.node.CreateRPCClient());
             }
             catch
             {

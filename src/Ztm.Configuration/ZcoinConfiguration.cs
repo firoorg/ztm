@@ -28,6 +28,8 @@ namespace Ztm.Configuration
     {
         public TokenId Id { get; set; }
         public TokenType Type { get; set; }
+        public BitcoinAddressConfiguration Issuer { get; set; }
+        public BitcoinAddressConfiguration Distributor { get; set; }
     }
 
     public class ZcoinZeroMqConfiguration

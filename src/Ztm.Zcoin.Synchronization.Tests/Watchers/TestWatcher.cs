@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading;
 using System.Threading.Tasks;
-using Ztm.Zcoin.NBitcoin;
+using NBitcoin;
 using Ztm.Zcoin.Synchronization.Watchers;
 
 namespace Ztm.Zcoin.Synchronization.Tests.Watchers
@@ -14,26 +14,26 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         {
         }
 
-        public Func<ZcoinBlock, int, CancellationToken, IEnumerable<Watch>> CreateWatches { get; set; }
+        public Func<Block, int, CancellationToken, IEnumerable<Watch>> CreateWatches { get; set; }
 
-        public Func<Watch, ZcoinBlock, int, BlockEventType, CancellationToken, bool> ExecuteMatchedWatch { get; set; }
+        public Func<Watch, Block, int, BlockEventType, CancellationToken, bool> ExecuteMatchedWatch { get; set; }
 
-        public Func<ZcoinBlock, int, CancellationToken, IEnumerable<Watch>> GetWatches { get; set; }
+        public Func<Block, int, CancellationToken, IEnumerable<Watch>> GetWatches { get; set; }
 
         public IList<(Watch watch, WatchRemoveReason reason, CancellationToken cancellationToken)> RemovedWatches { get; } = new Collection<(Watch watch, WatchRemoveReason reason, CancellationToken cancellationToken)>();
 
-        public Task BlockAddedAsync(ZcoinBlock block, int height, CancellationToken cancellationToken)
+        public Task BlockAddedAsync(Block block, int height, CancellationToken cancellationToken)
         {
             return ((IBlockListener)this).BlockAddedAsync(block, height, cancellationToken);
         }
 
-        public Task BlockRemovingAsync(ZcoinBlock block, int height, CancellationToken cancellationToken)
+        public Task BlockRemovingAsync(Block block, int height, CancellationToken cancellationToken)
         {
             return ((IBlockListener)this).BlockRemovingAsync(block, height, cancellationToken);
         }
 
         protected override Task<IEnumerable<Watch>> CreateWatchesAsync(
-            ZcoinBlock block,
+            Block block,
             int height,
             CancellationToken cancellationToken)
         {
@@ -42,7 +42,7 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
 
         protected override Task<bool> ExecuteMatchedWatchAsync(
             Watch watch,
-            ZcoinBlock block,
+            Block block,
             int height,
             BlockEventType blockEventType,
             CancellationToken cancellationToken)
@@ -51,7 +51,7 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         }
 
         protected override Task<IEnumerable<Watch>> GetWatchesAsync(
-            ZcoinBlock block,
+            Block block,
             int height,
             CancellationToken cancellationToken)
         {
