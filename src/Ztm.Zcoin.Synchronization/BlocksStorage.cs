@@ -34,7 +34,7 @@ namespace Ztm.Zcoin.Synchronization
             this.zcoinNetwork = ZcoinNetworks.Instance.GetNetwork(config.GetZcoinSection().Network.Type);
         }
 
-        public async Task AddAsync(ZcoinBlock block, int height, CancellationToken cancellationToken)
+        public async Task AddAsync(Block block, int height, CancellationToken cancellationToken)
         {
             if (block == null)
             {
@@ -71,7 +71,7 @@ namespace Ztm.Zcoin.Synchronization
             }
         }
 
-        public async Task<(ZcoinBlock block, int height)> GetAsync(uint256 hash, CancellationToken cancellationToken)
+        public async Task<(Block block, int height)> GetAsync(uint256 hash, CancellationToken cancellationToken)
         {
             Ztm.Data.Entity.Contexts.Main.Block data, previous;
 
@@ -98,7 +98,7 @@ namespace Ztm.Zcoin.Synchronization
             return (block: ToDomain(data, previous), height: data.Height);
         }
 
-        public async Task<ZcoinBlock> GetAsync(int height, CancellationToken cancellationToken)
+        public async Task<Block> GetAsync(int height, CancellationToken cancellationToken)
         {
             Ztm.Data.Entity.Contexts.Main.Block data, previous;
 
@@ -126,7 +126,7 @@ namespace Ztm.Zcoin.Synchronization
             return ToDomain(data, previous);
         }
 
-        public async Task<ZcoinBlock> GetFirstAsync(CancellationToken cancellationToken)
+        public async Task<Block> GetFirstAsync(CancellationToken cancellationToken)
         {
             Ztm.Data.Entity.Contexts.Main.Block data;
 
@@ -143,7 +143,7 @@ namespace Ztm.Zcoin.Synchronization
             return ToDomain(data);
         }
 
-        public async Task<(ZcoinBlock block, int height)> GetLastAsync(CancellationToken cancellationToken)
+        public async Task<(Block block, int height)> GetLastAsync(CancellationToken cancellationToken)
         {
             Ztm.Data.Entity.Contexts.Main.Block data, previous;
 
@@ -167,7 +167,7 @@ namespace Ztm.Zcoin.Synchronization
             return (block: ToDomain(data, previous), height: data.Height);
         }
 
-        public async Task<ZcoinTransaction> GetTransactionAsync(uint256 hash, CancellationToken cancellationToken)
+        public async Task<Transaction> GetTransactionAsync(uint256 hash, CancellationToken cancellationToken)
         {
             Ztm.Data.Entity.Contexts.Main.Transaction row;
 
@@ -229,9 +229,9 @@ namespace Ztm.Zcoin.Synchronization
             }
         }
 
-        ZcoinBlock ToDomain(Ztm.Data.Entity.Contexts.Main.Block data, Ztm.Data.Entity.Contexts.Main.Block previous = null)
+        Block ToDomain(Ztm.Data.Entity.Contexts.Main.Block data, Ztm.Data.Entity.Contexts.Main.Block previous = null)
         {
-            var block = ZcoinBlock.CreateBlock(this.zcoinNetwork);
+            var block = Block.CreateBlock(this.zcoinNetwork);
 
             // Block properties.
             block.Header.Version = data.Version;
@@ -277,40 +277,34 @@ namespace Ztm.Zcoin.Synchronization
             return block;
         }
 
-        ZcoinTransaction ToDomain(Ztm.Data.Entity.Contexts.Main.Transaction entity)
+        Transaction ToDomain(Ztm.Data.Entity.Contexts.Main.Transaction entity)
         {
             // Common properties.
-            var domain = new ZcoinTransaction()
-            {
-                Version = (uint)entity.Version,
-                LockTime = (uint)entity.LockTime
-            };
+            var domain = Transaction.Create(this.zcoinNetwork);
+
+            domain.Version = (uint)entity.Version;
+            domain.LockTime = (uint)entity.LockTime;
 
             // Outputs.
             foreach (var output in entity.Outputs)
             {
-                domain.Outputs.Add(new ZcoinTxOut()
-                {
-                    ScriptPubKey = output.Script,
-                    Value = output.Value
-                });
+                domain.Outputs.Add(output.Value, output.Script);
             }
 
             // Inputs.
             foreach (var input in entity.Inputs)
             {
-                domain.Inputs.Add(new ZcoinTxIn()
-                {
-                    Sequence = (uint)input.Sequence,
-                    PrevOut = new OutPoint(input.OutputHash, (uint)input.OutputIndex),
-                    ScriptSig = input.Script
-                });
+                domain.Inputs.Add(
+                    outpoint: new OutPoint(input.OutputHash, (uint)input.OutputIndex),
+                    scriptSig: input.Script,
+                    sequence: (uint)input.Sequence
+                );
             }
 
             return domain;
         }
 
-        Ztm.Data.Entity.Contexts.Main.Block ToEntity(ZcoinBlock block, int height)
+        Ztm.Data.Entity.Contexts.Main.Block ToEntity(Block block, int height)
         {
             var header = block.Header;
 
@@ -361,7 +355,7 @@ namespace Ztm.Zcoin.Synchronization
 
                 if (!transactions.TryGetValue(hash, out tx))
                 {
-                    tx = ToEntity((ZcoinTransaction)block.Transactions[i]);
+                    tx = ToEntity(block.Transactions[i]);
                     transactions.Add(hash, tx);
 
                     blockTx.Transaction = tx;
@@ -374,7 +368,7 @@ namespace Ztm.Zcoin.Synchronization
             return entity;
         }
 
-        Ztm.Data.Entity.Contexts.Main.Transaction ToEntity(ZcoinTransaction tx)
+        Ztm.Data.Entity.Contexts.Main.Transaction ToEntity(Transaction tx)
         {
             var entity = new Ztm.Data.Entity.Contexts.Main.Transaction()
             {

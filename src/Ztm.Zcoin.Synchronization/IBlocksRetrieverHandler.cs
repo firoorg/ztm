@@ -1,6 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Ztm.Zcoin.NBitcoin;
+using NBitcoin;
 
 namespace Ztm.Zcoin.Synchronization
 {
@@ -8,6 +8,6 @@ namespace Ztm.Zcoin.Synchronization
     {
         Task<int> GetBlockHintAsync(CancellationToken cancellationToken);
 
-        Task<int> ProcessBlockAsync(ZcoinBlock block, int height, CancellationToken cancellationToken);
+        Task<int> ProcessBlockAsync(Block block, int height, CancellationToken cancellationToken);
     }
 }

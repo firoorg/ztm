@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Ztm.Zcoin.NBitcoin;
+using NBitcoin;
 
 namespace Ztm.Zcoin.Synchronization.Watchers
 {
@@ -22,19 +22,19 @@ namespace Ztm.Zcoin.Synchronization.Watchers
         }
 
         protected abstract Task<IEnumerable<T>> CreateWatchesAsync(
-            ZcoinBlock block,
+            Block block,
             int height,
             CancellationToken cancellationToken);
 
         protected abstract Task<bool> ExecuteMatchedWatchAsync(
             T watch,
-            ZcoinBlock block,
+            Block block,
             int height,
             BlockEventType blockEventType,
             CancellationToken cancellationToken);
 
         protected abstract Task<IEnumerable<T>> GetWatchesAsync(
-            ZcoinBlock block,
+            Block block,
             int height,
             CancellationToken cancellationToken);
 
@@ -49,7 +49,7 @@ namespace Ztm.Zcoin.Synchronization.Watchers
         }
 
         async Task ExecuteWatchesAsync(
-            ZcoinBlock block,
+            Block block,
             int height,
             BlockEventType blockEventType,
             CancellationToken cancellationToken)
@@ -85,7 +85,7 @@ namespace Ztm.Zcoin.Synchronization.Watchers
             }
         }
 
-        async Task IBlockListener.BlockAddedAsync(ZcoinBlock block, int height, CancellationToken cancellationToken)
+        async Task IBlockListener.BlockAddedAsync(Block block, int height, CancellationToken cancellationToken)
         {
             var watches = await CreateWatchesAsync(block, height, cancellationToken);
 
@@ -97,7 +97,7 @@ namespace Ztm.Zcoin.Synchronization.Watchers
             await ExecuteWatchesAsync(block, height, BlockEventType.Added, cancellationToken);
         }
 
-        async Task IBlockListener.BlockRemovingAsync(ZcoinBlock block, int height, CancellationToken cancellationToken)
+        async Task IBlockListener.BlockRemovingAsync(Block block, int height, CancellationToken cancellationToken)
         {
             await ExecuteWatchesAsync(block, height, BlockEventType.Removing, cancellationToken);
         }

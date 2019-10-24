@@ -10,7 +10,7 @@ namespace Ztm.Zcoin.Rpc
 {
     public interface IZcoinRpcClient : IDisposable
     {
-        Task<ZcoinTransaction> CreateManagedTokenAsync(
+        Task<Transaction> CreateManagedTokenAsync(
             BitcoinAddress owner,
             TokenEcosystem ecosystem,
             TokenType type,
@@ -22,9 +22,9 @@ namespace Ztm.Zcoin.Rpc
             string description,
             CancellationToken cancellationToken);
 
-        Task<ZcoinBlock> GetBlockAsync(uint256 blockHash, CancellationToken cancellationToken);
+        Task<Block> GetBlockAsync(uint256 blockHash, CancellationToken cancellationToken);
 
-        Task<ZcoinBlock> GetBlockAsync(int height, CancellationToken cancellationToken);
+        Task<Block> GetBlockAsync(int height, CancellationToken cancellationToken);
 
         Task<BlockHeader> GetBlockHeaderAsync(uint256 blockHash, CancellationToken cancellationToken);
 
@@ -36,7 +36,7 @@ namespace Ztm.Zcoin.Rpc
 
         Task<TokenGrantsInfo> GetTokenGrantsAsync(TokenId token, CancellationToken cancellationToken);
 
-        Task<ZcoinTransaction> GrantTokensAsync(
+        Task<Transaction> GrantTokensAsync(
             TokenId id,
             BitcoinAddress from,
             BitcoinAddress to,
@@ -46,7 +46,7 @@ namespace Ztm.Zcoin.Rpc
 
         Task<IEnumerable<TokenInfo>> ListTokensAsync(CancellationToken cancellationToken);
 
-        Task<uint256> SendRawTransactionAsync(ZcoinTransaction tx, CancellationToken cancellationToken);
+        Task<uint256> SendRawTransactionAsync(Transaction tx, CancellationToken cancellationToken);
 
         Task<uint256> SendToAddressAsync(
             BitcoinAddress address,
