@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Net;
 using System.Threading;
@@ -60,15 +59,13 @@ namespace Ztm.WebApi
             {
                 var update = await db.WebApiCallbacks.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
-                if (update == null)
+                if (update != null)
                 {
-                    throw new KeyNotFoundException($"Id {id} is not found");
+                    update.Completed = true;
+
+                    await db.SaveChangesAsync();
+                    dbtx.Commit();
                 }
-
-                update.Completed = true;
-
-                await db.SaveChangesAsync();
-                dbtx.Commit();
             }
         }
 
@@ -89,15 +86,7 @@ namespace Ztm.WebApi
             }
 
             using (var db = this.db.CreateDbContext())
-            using (var dbtx = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken))
             {
-                var callback = await db.WebApiCallbacks.SingleOrDefaultAsync(c => c.Id == id, cancellationToken);
-
-                if (callback == null)
-                {
-                    throw new KeyNotFoundException($"Id {id} is not found");
-                }
-
                 await db.WebApiCallbackHistories.AddAsync(
                     new WebApiCallbackHistory
                     {
@@ -108,7 +97,6 @@ namespace Ztm.WebApi
                     }
                 );
                 await db.SaveChangesAsync(cancellationToken);
-                dbtx.Commit();
             }
         }
 

@@ -11,22 +11,6 @@ using Ztm.Data.Entity.Testing;
 
 namespace Ztm.WebApi.Tests
 {
-    sealed class TestCallbackResult : CallbackResult
-    {
-        public TestCallbackResult(string status, object data)
-        {
-            this.status = status;
-            this.data = data;
-        }
-
-        readonly string status;
-        readonly object data;
-
-        public override string Status => status;
-
-        public override object Data => data;
-    }
-
     public class SqlCallbackRepositoryTests : IDisposable
     {
         readonly SqlCallbackRepository subject;
@@ -102,13 +86,6 @@ namespace Ztm.WebApi.Tests
         }
 
         [Fact]
-        public async Task SetCompletedAsyc_WithNonexistentId_ShouldThrow()
-        {
-            await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => this.subject.SetCompletedAsyc(Guid.NewGuid(), CancellationToken.None));
-        }
-
-        [Fact]
         public async Task GetAsync_WithExistentId_ShouldSuccess()
         {
             // Act.
@@ -174,10 +151,9 @@ namespace Ztm.WebApi.Tests
             var histories = new List<WebApiCallbackHistory>();
             using (var db = this.dbFactory.CreateDbContext())
             {
-                await db.WebApiCallbackHistories.ForEachAsync(delegate(WebApiCallbackHistory history)
-                {
-                    histories.Add(history);
-                });
+                await db.WebApiCallbackHistories.ForEachAsync(
+                    history => histories.Add(history)
+                );
             }
 
             Assert.Equal(2, histories.Count);
@@ -194,17 +170,17 @@ namespace Ztm.WebApi.Tests
                 () => this.subject.AddHistoryAsync(Guid.NewGuid(), null, CancellationToken.None)
             );
         }
+    }
 
-        [Fact]
-        public async Task AddHistoryAsync_WithNonexistentId_ShouldThrow()
+    sealed class TestCallbackResult : CallbackResult
+    {
+        public TestCallbackResult(string status, object data)
         {
-            var data = "txid:46bdfcc6c953ba3e9a12456e3bd75ff887c9ba50051b3c58113eebffa35d7df4";
-            await Assert.ThrowsAsync<KeyNotFoundException>
-            (
-                () => this.subject.AddHistoryAsync(
-                    Guid.NewGuid(), new TestCallbackResult(CallbackResult.StatusUpdate, data), CancellationToken.None
-                )
-            );
+            this.Status = status;
+            this.Data = data;
         }
+
+        public override string Status { get; }
+        public override object Data { get; }
     }
 }

@@ -136,7 +136,7 @@ namespace Ztm.Data.Entity.Contexts
         {
             modelBuilder.Entity<WebApiCallbackHistory>(b =>
             {
-                b.Property(e => e.Id).ValueGeneratedOnAdd();
+                b.Property(e => e.Id).IsRequired().ValueGeneratedOnAdd();
                 b.Property(e => e.CallbackId).IsRequired();
                 b.Property(e => e.Status).IsRequired();
                 b.Property(e => e.InvokedTime).IsRequired();
