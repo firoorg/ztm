@@ -17,16 +17,11 @@ namespace Ztm.Zcoin.NBitcoin
             this.consensusFactory = consensusFactory;
         }
 
-        bool IsStartsWith(ZcoinOpCode opCode)
-        {
-            return scriptSig.Length > 0 && scriptSig.ToBytes(true)[0] == (byte)opCode;
-        }
-
         public bool IsZerocoinSpend
         {
             get
             {
-                return prevout.IsNull && IsStartsWith(ZcoinOpCode.ZerocoinSpend);
+                return prevout.IsNull && ScriptStartsWith(ZcoinOpCode.ZerocoinSpend);
             }
         }
 
@@ -36,7 +31,7 @@ namespace Ztm.Zcoin.NBitcoin
             {
                 return prevout.Hash == uint256.Zero
                     && prevout.N >= 1
-                    && IsStartsWith(ZcoinOpCode.SigmaSpend);
+                    && ScriptStartsWith(ZcoinOpCode.SigmaSpend);
             }
         }
 
@@ -44,13 +39,18 @@ namespace Ztm.Zcoin.NBitcoin
         {
             get
             {
-                return prevout.IsNull && IsStartsWith(ZcoinOpCode.ZerocoinToSigmaRemint);
+                return prevout.IsNull && ScriptStartsWith(ZcoinOpCode.ZerocoinToSigmaRemint);
             }
         }
 
         public override ConsensusFactory GetConsensusFactory()
         {
             return this.consensusFactory;
+        }
+
+        bool ScriptStartsWith(ZcoinOpCode opCode)
+        {
+            return scriptSig.Length > 0 && scriptSig.ToBytes(true)[0] == (byte)opCode;
         }
     }
 }
