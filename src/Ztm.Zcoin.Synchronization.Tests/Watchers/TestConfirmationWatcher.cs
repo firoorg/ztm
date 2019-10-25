@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
@@ -9,48 +7,21 @@ using Ztm.Zcoin.Synchronization.Watchers;
 
 namespace Ztm.Zcoin.Synchronization.Tests.Watchers
 {
-    class TestConfirmationWatcher : ConfirmationWatcher<Watch>
+    sealed class TestConfirmationWatcher : ConfirmationWatcher<Watch>
     {
-        public TestConfirmationWatcher(IConfirmationWatcherStorage<Watch> storage, IBlocksStorage blocks)
-            : base(storage, blocks)
+        public TestConfirmationWatcher(IConfirmationWatcherHandler<Watch> handler, IBlocksStorage blocks)
+            : base(handler, blocks)
         {
         }
 
-        public Func<Watch, ConfirmationType, int, CancellationToken, bool> Confirm { get; set; }
-
-        public IList<(Watch watch, WatchRemoveReason reason, CancellationToken cancellationToken)> RemovedWatches { get; } = new Collection<(Watch watch, WatchRemoveReason reason, CancellationToken cancellationToken)>();
-
-        public Task BlockAddedAsync(Block block, int height, CancellationToken cancellationToken)
-        {
-            return ((IBlockListener)this).BlockAddedAsync(block, height, cancellationToken);
-        }
-
-        public Task BlockRemovingAsync(Block block, int height, CancellationToken cancellationToken)
-        {
-            return ((IBlockListener)this).BlockRemovingAsync(block, height, cancellationToken);
-        }
-
-        protected override Task<bool> ConfirmAsync(
-            Watch watch,
-            ConfirmationType type,
-            int confirmation,
-            CancellationToken cancellationToken)
-        {
-            return Task.FromResult(Confirm(watch, type, confirmation, cancellationToken));
-        }
+        public Func<Block, int, CancellationToken, IEnumerable<Watch>> CreateWatches { get; set; }
 
         protected override Task<IEnumerable<Watch>> CreateWatchesAsync(
             Block block,
             int height,
             CancellationToken cancellationToken)
         {
-            return Task.FromResult(Enumerable.Empty<Watch>());
-        }
-
-        protected override Task RemoveWatchAsync(Watch watch, WatchRemoveReason reason, CancellationToken cancellationToken)
-        {
-            RemovedWatches.Add((watch, reason, cancellationToken));
-            return base.RemoveWatchAsync(watch, reason, cancellationToken);
+            return Task.FromResult(CreateWatches(block, height, cancellationToken));
         }
     }
 }

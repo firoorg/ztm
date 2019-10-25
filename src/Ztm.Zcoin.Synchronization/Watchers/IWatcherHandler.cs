@@ -4,10 +4,10 @@ using System.Threading.Tasks;
 
 namespace Ztm.Zcoin.Synchronization.Watchers
 {
-    public interface IWatcherStorage<T> where T : Watch
+    public interface IWatcherHandler<T> where T : Watch
     {
         Task AddWatchesAsync(IEnumerable<T> watches, CancellationToken cancellationToken);
 
-        Task RemoveWatchAsync(T watch, CancellationToken cancellationToken);
+        Task RemoveWatchAsync(T watch, WatchRemoveReason reason, CancellationToken cancellationToken);
     }
 }

@@ -7,18 +7,73 @@ using NBitcoin;
 
 namespace Ztm.Zcoin.Synchronization.Watchers
 {
-    public abstract class Watcher<T> : IBlockListener where T : Watch
+    public abstract class Watcher<T> where T : Watch
     {
-        readonly IWatcherStorage<T> storage;
+        readonly IWatcherHandler<T> handler;
 
-        protected Watcher(IWatcherStorage<T> storage)
+        protected Watcher(IWatcherHandler<T> handler)
         {
-            if (storage == null)
+            if (handler == null)
             {
-                throw new ArgumentNullException(nameof(storage));
+                throw new ArgumentNullException(nameof(handler));
             }
 
-            this.storage = storage;
+            this.handler = handler;
+        }
+
+        public async Task ExecuteAsync(
+            Block block,
+            int height,
+            BlockEventType eventType,
+            CancellationToken cancellationToken)
+        {
+            IEnumerable<T> watches;
+
+            if (block == null)
+            {
+                throw new ArgumentNullException(nameof(block));
+            }
+
+            // First, inspect block and create new watches.
+            if (eventType == BlockEventType.Added)
+            {
+                watches = await CreateWatchesAsync(block, height, cancellationToken);
+
+                if (watches.Any())
+                {
+                    await this.handler.AddWatchesAsync(watches, cancellationToken);
+                }
+            }
+
+            // Load watches that match with the block and execute it.
+            foreach (var watch in await GetWatchesAsync(block, height, cancellationToken))
+            {
+                var success = await ExecuteMatchedWatchAsync(
+                    watch,
+                    block,
+                    height,
+                    eventType,
+                    CancellationToken.None
+                );
+
+                // Determine if we need to remove watch.
+                var removeReason = WatchRemoveReason.None;
+
+                if (success)
+                {
+                    removeReason |= WatchRemoveReason.Completed;
+                }
+
+                if (eventType == BlockEventType.Removing && watch.StartBlock == block.GetHash())
+                {
+                    removeReason |= WatchRemoveReason.BlockRemoved;
+                }
+
+                if (removeReason != WatchRemoveReason.None)
+                {
+                    await this.handler.RemoveWatchAsync(watch, removeReason, CancellationToken.None);
+                }
+            }
         }
 
         protected abstract Task<IEnumerable<T>> CreateWatchesAsync(
@@ -37,69 +92,5 @@ namespace Ztm.Zcoin.Synchronization.Watchers
             Block block,
             int height,
             CancellationToken cancellationToken);
-
-        protected virtual Task RemoveWatchAsync(T watch, WatchRemoveReason reason, CancellationToken cancellationToken)
-        {
-            if (watch == null)
-            {
-                throw new ArgumentNullException(nameof(watch));
-            }
-
-            return this.storage.RemoveWatchAsync(watch, cancellationToken);
-        }
-
-        async Task ExecuteWatchesAsync(
-            Block block,
-            int height,
-            BlockEventType blockEventType,
-            CancellationToken cancellationToken)
-        {
-            // Load watches that match with the block and execute it.
-            foreach (var watch in await GetWatchesAsync(block, height, cancellationToken))
-            {
-                var success = await ExecuteMatchedWatchAsync(
-                    watch,
-                    block,
-                    height,
-                    blockEventType,
-                    CancellationToken.None
-                );
-
-                // Determine if we need to remove watch.
-                var removeReason = WatchRemoveReason.None;
-
-                if (success)
-                {
-                    removeReason |= WatchRemoveReason.Completed;
-                }
-
-                if (blockEventType == BlockEventType.Removing && watch.StartBlock == block.GetHash())
-                {
-                    removeReason |= WatchRemoveReason.BlockRemoved;
-                }
-
-                if (removeReason != WatchRemoveReason.None)
-                {
-                    await RemoveWatchAsync(watch, removeReason, CancellationToken.None);
-                }
-            }
-        }
-
-        async Task IBlockListener.BlockAddedAsync(Block block, int height, CancellationToken cancellationToken)
-        {
-            var watches = await CreateWatchesAsync(block, height, cancellationToken);
-
-            if (watches.Any())
-            {
-                await this.storage.AddWatchesAsync(watches, CancellationToken.None);
-            }
-
-            await ExecuteWatchesAsync(block, height, BlockEventType.Added, cancellationToken);
-        }
-
-        async Task IBlockListener.BlockRemovingAsync(Block block, int height, CancellationToken cancellationToken)
-        {
-            await ExecuteWatchesAsync(block, height, BlockEventType.Removing, cancellationToken);
-        }
     }
 }
