@@ -9,16 +9,16 @@ namespace Ztm.Zcoin.Synchronization.Watchers
 {
     public abstract class Watcher<T> where T : Watch
     {
-        readonly IWatcherStorage<T> storage;
+        readonly IWatcherHandler<T> handler;
 
-        protected Watcher(IWatcherStorage<T> storage)
+        protected Watcher(IWatcherHandler<T> handler)
         {
-            if (storage == null)
+            if (handler == null)
             {
-                throw new ArgumentNullException(nameof(storage));
+                throw new ArgumentNullException(nameof(handler));
             }
 
-            this.storage = storage;
+            this.handler = handler;
         }
 
         public async Task ExecuteAsync(
@@ -41,7 +41,7 @@ namespace Ztm.Zcoin.Synchronization.Watchers
 
                 if (watches.Any())
                 {
-                    await this.storage.AddWatchesAsync(watches, cancellationToken);
+                    await this.handler.AddWatchesAsync(watches, cancellationToken);
                 }
             }
 
@@ -71,7 +71,7 @@ namespace Ztm.Zcoin.Synchronization.Watchers
 
                 if (removeReason != WatchRemoveReason.None)
                 {
-                    await this.storage.RemoveWatchAsync(watch, removeReason, CancellationToken.None);
+                    await this.handler.RemoveWatchAsync(watch, removeReason, CancellationToken.None);
                 }
             }
         }

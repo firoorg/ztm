@@ -13,13 +13,13 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
 {
     public sealed class WatcherTests
     {
-        readonly IWatcherStorage<Watch> storage;
+        readonly IWatcherHandler<Watch> handler;
         readonly TestWatcher subject;
 
         public WatcherTests()
         {
-            this.storage = Substitute.For<IWatcherStorage<Watch>>();
-            this.subject = new TestWatcher(this.storage);
+            this.handler = Substitute.For<IWatcherHandler<Watch>>();
+            this.subject = new TestWatcher(this.handler);
             this.subject.CreateWatches = Substitute.For<Func<Block, int, CancellationToken, IEnumerable<Watch>>>();
             this.subject.ExecuteMatchedWatch = Substitute.For<Func<Watch, Block, int, BlockEventType, CancellationToken, bool>>();
             this.subject.GetWatches = Substitute.For<Func<Block, int, CancellationToken, IEnumerable<Watch>>>();
@@ -28,7 +28,7 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         [Fact]
         public void Constructor_WithNullStorage_ShouldThrow()
         {
-            Assert.Throws<ArgumentNullException>("storage", () => new TestWatcher(null));
+            Assert.Throws<ArgumentNullException>("handler", () => new TestWatcher(null));
         }
 
         [Fact]
@@ -79,7 +79,7 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         }
 
         [Fact]
-        public async Task ExecuteAsync_CreateWatchesAsyncReturnEmptyList_ShouldNotAddToStorage()
+        public async Task ExecuteAsync_CreateWatchesAsyncReturnEmptyList_ShouldNotInvokeAddWatchesAsync()
         {
             // Arrange.
             var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
@@ -91,11 +91,11 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
             await this.subject.ExecuteAsync(block, 0, BlockEventType.Added, CancellationToken.None);
 
             // Assert.
-            _ = this.storage.Received(0).AddWatchesAsync(Arg.Any<IEnumerable<Watch>>(), Arg.Any<CancellationToken>());
+            _ = this.handler.Received(0).AddWatchesAsync(Arg.Any<IEnumerable<Watch>>(), Arg.Any<CancellationToken>());
         }
 
         [Fact]
-        public async Task ExecuteAsync_CreateWatchesAsyncReturnNonEmptyList_ShouldAddToStorage()
+        public async Task ExecuteAsync_CreateWatchesAsyncReturnNonEmptyList_ShouldInvokeAddWatchesAsync()
         {
             // Arrange.
             var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
@@ -110,7 +110,7 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
                 await this.subject.ExecuteAsync(block, 0, BlockEventType.Added, cancellationSource.Token);
 
                 // Assert.
-                _ = this.storage.Received(1).AddWatchesAsync(
+                _ = this.handler.Received(1).AddWatchesAsync(
                     Arg.Is<IEnumerable<Watch>>(l => l.SequenceEqual(new[] { watch })),
                     cancellationSource.Token
                 );
@@ -143,7 +143,7 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         }
 
         [Fact]
-        public async Task ExecuteAsync_ExecuteMatchedWatchAsyncReturnTrue_ShouldRemoveThatWatch()
+        public async Task ExecuteAsync_ExecuteMatchedWatchAsyncReturnTrue_ShouldInvokeRemoveWatchAsync()
         {
             // Arrange.
             var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
@@ -160,12 +160,12 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
 
                 // Assert.
                 this.subject.ExecuteMatchedWatch.Received(1)(watch, block, 0, BlockEventType.Added, CancellationToken.None);
-                _ = this.storage.Received(1).RemoveWatchAsync(watch, WatchRemoveReason.Completed, CancellationToken.None);
+                _ = this.handler.Received(1).RemoveWatchAsync(watch, WatchRemoveReason.Completed, CancellationToken.None);
             }
         }
 
         [Fact]
-        public async Task ExecuteAsync_ExecuteMatchedWatchAsyncReturnFalse_ShouldKeepThatWatch()
+        public async Task ExecuteAsync_ExecuteMatchedWatchAsyncReturnFalse_ShouldNotInvokeRemoveWatchAsync()
         {
             // Arrange.
             var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
@@ -182,12 +182,12 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
 
                 // Assert.
                 this.subject.ExecuteMatchedWatch.Received(1)(watch, block, 0, BlockEventType.Added, CancellationToken.None);
-                _ = this.storage.Received(0).RemoveWatchAsync(Arg.Any<Watch>(), Arg.Any<WatchRemoveReason>(), Arg.Any<CancellationToken>());
+                _ = this.handler.Received(0).RemoveWatchAsync(Arg.Any<Watch>(), Arg.Any<WatchRemoveReason>(), Arg.Any<CancellationToken>());
             }
         }
 
         [Fact]
-        public async Task BlockRemovingAsync_WatchingOnRemovingBlock_ShouldRemoveThatWatch()
+        public async Task BlockRemovingAsync_WatchingOnRemovingBlock_ShouldInvokeRemoveWatchAsync()
         {
             // Arrange.
             var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
@@ -203,7 +203,7 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
 
                 // Assert.
                 this.subject.ExecuteMatchedWatch.Received(1)(watch, block, 0, BlockEventType.Removing, CancellationToken.None);
-                _ = this.storage.Received(1).RemoveWatchAsync(watch, WatchRemoveReason.BlockRemoved, CancellationToken.None);
+                _ = this.handler.Received(1).RemoveWatchAsync(watch, WatchRemoveReason.BlockRemoved, CancellationToken.None);
             }
         }
     }

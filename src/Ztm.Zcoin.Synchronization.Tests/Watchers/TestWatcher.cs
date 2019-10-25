@@ -7,9 +7,9 @@ using Ztm.Zcoin.Synchronization.Watchers;
 
 namespace Ztm.Zcoin.Synchronization.Tests.Watchers
 {
-    class TestWatcher : Watcher<Watch>
+    sealed class TestWatcher : Watcher<Watch>
     {
-        public TestWatcher(IWatcherStorage<Watch> storage) : base(storage)
+        public TestWatcher(IWatcherHandler<Watch> handler) : base(handler)
         {
         }
 
