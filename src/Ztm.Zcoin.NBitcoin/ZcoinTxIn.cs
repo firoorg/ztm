@@ -17,7 +17,7 @@ namespace Ztm.Zcoin.NBitcoin
             this.consensusFactory = consensusFactory;
         }
 
-        bool IsType(ZcoinOpCode opCode)
+        bool IsStartsWith(ZcoinOpCode opCode)
         {
             return scriptSig.Length > 0 && scriptSig.ToBytes(true)[0] == (byte)opCode;
         }
@@ -26,7 +26,7 @@ namespace Ztm.Zcoin.NBitcoin
         {
             get
             {
-                return prevout.IsNull && IsType(ZcoinOpCode.OpZerocoinSpend);
+                return prevout.IsNull && IsStartsWith(ZcoinOpCode.ZerocoinSpend);
             }
         }
 
@@ -36,7 +36,7 @@ namespace Ztm.Zcoin.NBitcoin
             {
                 return prevout.Hash == uint256.Zero
                     && prevout.N >= 1
-                    && IsType(ZcoinOpCode.OpSigmaSpend);
+                    && IsStartsWith(ZcoinOpCode.SigmaSpend);
             }
         }
 
@@ -44,7 +44,7 @@ namespace Ztm.Zcoin.NBitcoin
         {
             get
             {
-                return prevout.IsNull && IsType(ZcoinOpCode.OpZerocoinToSigmaRemint);
+                return prevout.IsNull && IsStartsWith(ZcoinOpCode.ZerocoinToSigmaRemint);
             }
         }
 
@@ -52,12 +52,5 @@ namespace Ztm.Zcoin.NBitcoin
         {
             return this.consensusFactory;
         }
-    }
-
-    enum ZcoinOpCode : byte
-    {
-        OpZerocoinSpend = 0xc2,
-        OpSigmaSpend = 0xc4,
-        OpZerocoinToSigmaRemint = 0xc8,
     }
 }
