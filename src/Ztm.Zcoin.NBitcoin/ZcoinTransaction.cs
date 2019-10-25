@@ -24,7 +24,7 @@ namespace Ztm.Zcoin.NBitcoin
         {
             get
             {
-                return Inputs.Any(txIn => txIn.IsZerocoinSpend());
+                return Inputs.All(txIn => txIn.IsZerocoinSpend());
             }
         }
 
@@ -32,7 +32,7 @@ namespace Ztm.Zcoin.NBitcoin
         {
             get
             {
-                return Inputs.Any(txIn => txIn.IsSigmaSpend());
+                return Inputs.All(txIn => txIn.IsSigmaSpend());
             }
         }
 
@@ -40,7 +40,7 @@ namespace Ztm.Zcoin.NBitcoin
         {
             get
             {
-                return Inputs.Any(txIn => txIn.IsZerocoinRemint());
+                return Inputs.All(txIn => txIn.IsZerocoinRemint());
             }
         }
 

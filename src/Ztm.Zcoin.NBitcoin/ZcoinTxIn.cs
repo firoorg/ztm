@@ -17,11 +17,16 @@ namespace Ztm.Zcoin.NBitcoin
             this.consensusFactory = consensusFactory;
         }
 
+        bool IsType(ZcoinOpCode opCode)
+        {
+            return scriptSig.Length > 0 && scriptSig.ToBytes(true)[0] == (byte)opCode;
+        }
+
         public bool IsZerocoinSpend
         {
             get
             {
-                return prevout.IsNull && scriptSig.Length > 0 && scriptSig.ToBytes()[0] == OpZerocoinSpend;
+                return prevout.IsNull && IsType(ZcoinOpCode.OpZerocoinSpend);
             }
         }
 
@@ -31,8 +36,7 @@ namespace Ztm.Zcoin.NBitcoin
             {
                 return prevout.Hash == uint256.Zero
                     && prevout.N >= 1
-                    && scriptSig.Length > 0
-                    && scriptSig.ToBytes()[0] == OpSigmaSpend;
+                    && IsType(ZcoinOpCode.OpSigmaSpend);
             }
         }
 
@@ -40,7 +44,7 @@ namespace Ztm.Zcoin.NBitcoin
         {
             get
             {
-                return prevout.IsNull && scriptSig.Length > 0 && scriptSig.ToBytes()[0] == OpZerocoinToSigmaRemint;
+                return prevout.IsNull && IsType(ZcoinOpCode.OpZerocoinToSigmaRemint);
             }
         }
 
@@ -48,9 +52,12 @@ namespace Ztm.Zcoin.NBitcoin
         {
             return this.consensusFactory;
         }
+    }
 
-        public static readonly byte OpZerocoinSpend = 0xc2;
-        public static readonly byte OpSigmaSpend = 0xc4;
-        public static readonly byte OpZerocoinToSigmaRemint = 0xc8;
+    enum ZcoinOpCode : byte
+    {
+        OpZerocoinSpend = 0xc2,
+        OpSigmaSpend = 0xc4,
+        OpZerocoinToSigmaRemint = 0xc8,
     }
 }
