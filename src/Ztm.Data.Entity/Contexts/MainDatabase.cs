@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Ztm.Data.Entity.Contexts.Main;
 
 namespace Ztm.Data.Entity.Contexts
@@ -23,144 +24,123 @@ namespace Ztm.Data.Entity.Contexts
 
         public DbSet<WebApiCallbackHistory> WebApiCallbackHistories { get; set; }
 
-        protected virtual void ConfigureBlock(ModelBuilder modelBuilder)
+        protected virtual void ConfigureBlock(EntityTypeBuilder<Block> builder)
         {
-            modelBuilder.Entity<Block>(b =>
-            {
-                b.Property(e => e.Height).IsRequired().ValueGeneratedNever();
-                b.Property(e => e.Hash).IsRequired();
-                b.Property(e => e.Version).IsRequired();
-                b.Property(e => e.Bits).IsRequired().HasConversion(Converters.TargetToInt64);
-                b.Property(e => e.Nonce).IsRequired();
-                b.Property(e => e.Time).IsRequired();
-                b.Property(e => e.MerkleRoot).IsRequired();
-                b.Property(e => e.MtpVersion);
-                b.Property(e => e.MtpHashValue);
-                b.Property(e => e.Reserved1);
-                b.Property(e => e.Reserved2);
+            builder.Property(e => e.Height).IsRequired().ValueGeneratedNever();
+            builder.Property(e => e.Hash).IsRequired();
+            builder.Property(e => e.Version).IsRequired();
+            builder.Property(e => e.Bits).IsRequired().HasConversion(Converters.TargetToInt64);
+            builder.Property(e => e.Nonce).IsRequired();
+            builder.Property(e => e.Time).IsRequired();
+            builder.Property(e => e.MerkleRoot).IsRequired();
+            builder.Property(e => e.MtpVersion);
+            builder.Property(e => e.MtpHashValue);
+            builder.Property(e => e.Reserved1);
+            builder.Property(e => e.Reserved2);
 
-                b.HasKey(e => e.Height);
-                b.HasAlternateKey(e => e.Hash);
-            });
+            builder.HasKey(e => e.Height);
+            builder.HasAlternateKey(e => e.Hash);
         }
 
-        protected virtual void ConfigureBlockTransaction(ModelBuilder modelBuilder)
+        protected virtual void ConfigureBlockTransaction(EntityTypeBuilder<BlockTransaction> builder)
         {
-            modelBuilder.Entity<BlockTransaction>(b =>
-            {
-                b.Property(e => e.BlockHash).IsRequired();
-                b.Property(e => e.TransactionHash).IsRequired();
-                b.Property(e => e.Index).IsRequired();
+            builder.Property(e => e.BlockHash).IsRequired();
+            builder.Property(e => e.TransactionHash).IsRequired();
+            builder.Property(e => e.Index).IsRequired();
 
-                b.HasKey(e => new { e.BlockHash, e.TransactionHash, e.Index });
-                b.HasIndex(e => e.TransactionHash);
-                b.HasOne(e => e.Block)
-                 .WithMany(e => e.Transactions)
-                 .HasForeignKey(e => e.BlockHash)
-                 .HasPrincipalKey(e => e.Hash)
-                 .OnDelete(DeleteBehavior.Cascade);
-                b.HasOne(e => e.Transaction)
-                 .WithMany(e => e.Blocks)
-                 .HasForeignKey(e => e.TransactionHash)
-                 .HasPrincipalKey(e => e.Hash)
-                 .OnDelete(DeleteBehavior.Restrict);
-            });
+            builder.HasKey(e => new { e.BlockHash, e.TransactionHash, e.Index });
+            builder.HasIndex(e => e.TransactionHash);
+            builder.HasOne(e => e.Block)
+             .WithMany(e => e.Transactions)
+             .HasForeignKey(e => e.BlockHash)
+             .HasPrincipalKey(e => e.Hash)
+             .OnDelete(DeleteBehavior.Cascade);
+            builder.HasOne(e => e.Transaction)
+             .WithMany(e => e.Blocks)
+             .HasForeignKey(e => e.TransactionHash)
+             .HasPrincipalKey(e => e.Hash)
+             .OnDelete(DeleteBehavior.Restrict);
         }
 
-        protected virtual void ConfigureInput(ModelBuilder modelBuilder)
+        protected virtual void ConfigureInput(EntityTypeBuilder<Input> builder)
         {
-            modelBuilder.Entity<Input>(b =>
-            {
-                b.Property(e => e.TransactionHash).IsRequired();
-                b.Property(e => e.Index).IsRequired();
-                b.Property(e => e.OutputHash).IsRequired();
-                b.Property(e => e.OutputIndex).IsRequired();
-                b.Property(e => e.Script).IsRequired().HasConversion(Converters.ScriptToBytesConverter);
-                b.Property(e => e.Sequence).IsRequired();
+            builder.Property(e => e.TransactionHash).IsRequired();
+            builder.Property(e => e.Index).IsRequired();
+            builder.Property(e => e.OutputHash).IsRequired();
+            builder.Property(e => e.OutputIndex).IsRequired();
+            builder.Property(e => e.Script).IsRequired().HasConversion(Converters.ScriptToBytesConverter);
+            builder.Property(e => e.Sequence).IsRequired();
 
-                b.HasKey(e => new { e.TransactionHash, e.Index });
-                b.HasIndex(e => new { e.OutputHash, e.OutputIndex });
-                b.HasOne(e => e.Transaction)
-                 .WithMany(e => e.Inputs)
-                 .HasForeignKey(e => e.TransactionHash)
-                 .HasPrincipalKey(e => e.Hash)
-                 .OnDelete(DeleteBehavior.Cascade);
-            });
+            builder.HasKey(e => new { e.TransactionHash, e.Index });
+            builder.HasIndex(e => new { e.OutputHash, e.OutputIndex });
+            builder.HasOne(e => e.Transaction)
+             .WithMany(e => e.Inputs)
+             .HasForeignKey(e => e.TransactionHash)
+             .HasPrincipalKey(e => e.Hash)
+             .OnDelete(DeleteBehavior.Cascade);
         }
 
-        protected virtual void ConfigureOutput(ModelBuilder modelBuilder)
+        protected virtual void ConfigureOutput(EntityTypeBuilder<Output> builder)
         {
-            modelBuilder.Entity<Output>(b =>
-            {
-                b.Property(e => e.TransactionHash).IsRequired();
-                b.Property(e => e.Index).IsRequired();
-                b.Property(e => e.Value).IsRequired();
-                b.Property(e => e.Script).IsRequired().HasConversion(Converters.ScriptToBytesConverter);
+            builder.Property(e => e.TransactionHash).IsRequired();
+            builder.Property(e => e.Index).IsRequired();
+            builder.Property(e => e.Value).IsRequired();
+            builder.Property(e => e.Script).IsRequired().HasConversion(Converters.ScriptToBytesConverter);
 
-                b.HasKey(e => new { e.TransactionHash, e.Index });
-                b.HasOne(e => e.Transaction)
-                 .WithMany(e => e.Outputs)
-                 .HasForeignKey(e => e.TransactionHash)
-                 .HasPrincipalKey(e => e.Hash)
-                 .OnDelete(DeleteBehavior.Cascade);
-            });
+            builder.HasKey(e => new { e.TransactionHash, e.Index });
+            builder.HasOne(e => e.Transaction)
+             .WithMany(e => e.Outputs)
+             .HasForeignKey(e => e.TransactionHash)
+             .HasPrincipalKey(e => e.Hash)
+             .OnDelete(DeleteBehavior.Cascade);
         }
 
-        protected virtual void ConfigureTransaction(ModelBuilder modelBuilder)
+        protected virtual void ConfigureTransaction(EntityTypeBuilder<Transaction> builder)
         {
-            modelBuilder.Entity<Transaction>(b =>
-            {
-                b.Property(e => e.Hash).IsRequired();
-                b.Property(e => e.Version).IsRequired();
-                b.Property(e => e.LockTime).IsRequired();
+            builder.Property(e => e.Hash).IsRequired();
+            builder.Property(e => e.Version).IsRequired();
+            builder.Property(e => e.LockTime).IsRequired();
 
-                b.HasKey(e => e.Hash);
-            });
+            builder.HasKey(e => e.Hash);
         }
 
-        protected virtual void ConfigureWebApiCallback(ModelBuilder modelBuilder)
+        protected virtual void ConfigureWebApiCallback(EntityTypeBuilder<WebApiCallback> builder)
         {
-            modelBuilder.Entity<WebApiCallback>(b =>
-            {
-                b.Property(e => e.Id).IsRequired().ValueGeneratedNever();
-                b.Property(e => e.RegisteredIp).IsRequired();
-                b.Property(e => e.RegisteredTime).IsRequired();
-                b.Property(e => e.Completed).IsRequired();
-                b.Property(e => e.Url).IsRequired();
+            builder.Property(e => e.Id).IsRequired().ValueGeneratedNever();
+            builder.Property(e => e.RegisteredIp).IsRequired();
+            builder.Property(e => e.RegisteredTime).IsRequired();
+            builder.Property(e => e.Completed).IsRequired();
+            builder.Property(e => e.Url).IsRequired();
 
-                b.HasKey(e => e.Id);
-            });
+            builder.HasKey(e => e.Id);
         }
 
-        protected virtual void ConfigureWebApiCallbackHistory(ModelBuilder modelBuilder)
+        protected virtual void ConfigureWebApiCallbackHistory(EntityTypeBuilder<WebApiCallbackHistory> builder)
         {
-            modelBuilder.Entity<WebApiCallbackHistory>(b =>
-            {
-                b.Property(e => e.Id).IsRequired().ValueGeneratedOnAdd();
-                b.Property(e => e.CallbackId).IsRequired();
-                b.Property(e => e.Status).IsRequired();
-                b.Property(e => e.InvokedTime).IsRequired();
-                b.Property(e => e.Data).IsRequired();
+            builder.Property(e => e.Id).IsRequired().ValueGeneratedOnAdd();
+            builder.Property(e => e.CallbackId).IsRequired();
+            builder.Property(e => e.Status).IsRequired();
+            builder.Property(e => e.InvokedTime).IsRequired();
+            builder.Property(e => e.Data).IsRequired();
 
-                b.HasKey(e => e.Id);
-                b.HasIndex(e => e.CallbackId); // Intentionally add
-                b.HasOne(e => e.Callback)
-                 .WithMany(e => e.InvocationHistories)
-                 .HasForeignKey(e => e.CallbackId)
-                 .HasPrincipalKey(e => e.Id)
-                 .OnDelete(DeleteBehavior.Cascade);
-            });
+            builder.HasKey(e => e.Id);
+            builder.HasIndex(e => e.CallbackId); // Intentionally add
+            builder.HasOne(e => e.Callback)
+             .WithMany(e => e.InvocationHistories)
+             .HasForeignKey(e => e.CallbackId)
+             .HasPrincipalKey(e => e.Id)
+             .OnDelete(DeleteBehavior.Cascade);
         }
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        protected sealed override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            ConfigureBlock(modelBuilder);
-            ConfigureBlockTransaction(modelBuilder);
-            ConfigureInput(modelBuilder);
-            ConfigureOutput(modelBuilder);
-            ConfigureTransaction(modelBuilder);
-            ConfigureWebApiCallback(modelBuilder);
-            ConfigureWebApiCallbackHistory(modelBuilder);
+            modelBuilder.Entity<Block>(ConfigureBlock);
+            modelBuilder.Entity<BlockTransaction>(ConfigureBlockTransaction);
+            modelBuilder.Entity<Input>(ConfigureInput);
+            modelBuilder.Entity<Output>(ConfigureOutput);
+            modelBuilder.Entity<Transaction>(ConfigureTransaction);
+            modelBuilder.Entity<WebApiCallback>(ConfigureWebApiCallback);
+            modelBuilder.Entity<WebApiCallbackHistory>(ConfigureWebApiCallbackHistory);
         }
     }
 }
