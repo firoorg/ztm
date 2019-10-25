@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using NBitcoin;
 
 namespace Ztm.Zcoin.NBitcoin
@@ -18,6 +19,43 @@ namespace Ztm.Zcoin.NBitcoin
             this.consensusFactory = consensusFactory;
         }
         #pragma warning restore CS0618
+
+        public bool IsZerocoinSpend
+        {
+            get
+            {
+                return Inputs.All(txIn => txIn.IsZerocoinSpend());
+            }
+        }
+
+        public bool IsSigmaSpend
+        {
+            get
+            {
+                return Inputs.All(txIn => txIn.IsSigmaSpend());
+            }
+        }
+
+        public bool IsZerocoinRemint
+        {
+            get
+            {
+                return Inputs.All(txIn => txIn.IsZerocoinRemint());
+            }
+        }
+
+        public override bool IsCoinBase
+        {
+            get
+            {
+                if (IsZerocoinSpend || IsSigmaSpend || IsZerocoinRemint)
+                {
+                    return false;
+                }
+
+                return base.IsCoinBase;
+            }
+        }
 
         public override ConsensusFactory GetConsensusFactory()
         {
