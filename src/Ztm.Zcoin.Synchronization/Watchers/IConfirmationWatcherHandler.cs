@@ -4,14 +4,14 @@ using System.Threading.Tasks;
 
 namespace Ztm.Zcoin.Synchronization.Watchers
 {
-    public interface IConfirmationWatcherHandler<T> : IWatcherHandler<T> where T : Watch
+    public interface IConfirmationWatcherHandler<TWatch, TContext> : IWatcherHandler<TWatch, TContext> where TWatch : Watch<TContext>
     {
         Task<bool> ConfirmationUpdateAsync(
-            T watch,
+            TWatch watch,
             int confirmation,
             ConfirmationType type,
             CancellationToken cancellationToken);
 
-        Task<IEnumerable<T>> GetCurrentWatchesAsync(CancellationToken cancellationToken);
+        Task<IEnumerable<TWatch>> GetCurrentWatchesAsync(CancellationToken cancellationToken);
     }
 }

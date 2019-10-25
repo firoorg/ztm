@@ -7,19 +7,19 @@ using Ztm.Zcoin.Synchronization.Watchers;
 
 namespace Ztm.Zcoin.Synchronization.Tests.Watchers
 {
-    sealed class TestWatcher : Watcher<Watch>
+    sealed class TestWatcher : Watcher<Watch<object>, object>
     {
-        public TestWatcher(IWatcherHandler<Watch> handler) : base(handler)
+        public TestWatcher(IWatcherHandler<Watch<object>, object> handler) : base(handler)
         {
         }
 
-        public Func<Block, int, CancellationToken, IEnumerable<Watch>> CreateWatches { get; set; }
+        public Func<Block, int, CancellationToken, IEnumerable<Watch<object>>> CreateWatches { get; set; }
 
-        public Func<Watch, Block, int, BlockEventType, CancellationToken, bool> ExecuteMatchedWatch { get; set; }
+        public Func<Watch<object>, Block, int, BlockEventType, CancellationToken, bool> ExecuteMatchedWatch { get; set; }
 
-        public Func<Block, int, CancellationToken, IEnumerable<Watch>> GetWatches { get; set; }
+        public Func<Block, int, CancellationToken, IEnumerable<Watch<object>>> GetWatches { get; set; }
 
-        protected override Task<IEnumerable<Watch>> CreateWatchesAsync(
+        protected override Task<IEnumerable<Watch<object>>> CreateWatchesAsync(
             Block block,
             int height,
             CancellationToken cancellationToken)
@@ -28,7 +28,7 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         }
 
         protected override Task<bool> ExecuteMatchedWatchAsync(
-            Watch watch,
+            Watch<object> watch,
             Block block,
             int height,
             BlockEventType blockEventType,
@@ -37,7 +37,7 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
             return Task.FromResult(ExecuteMatchedWatch(watch, block, height, blockEventType, cancellationToken));
         }
 
-        protected override Task<IEnumerable<Watch>> GetWatchesAsync(
+        protected override Task<IEnumerable<Watch<object>>> GetWatchesAsync(
             Block block,
             int height,
             CancellationToken cancellationToken)

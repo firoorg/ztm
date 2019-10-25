@@ -6,12 +6,14 @@ using NBitcoin;
 
 namespace Ztm.Zcoin.Synchronization.Watchers
 {
-    public abstract class ConfirmationWatcher<T> : Watcher<T> where T : Watch
+    public abstract class ConfirmationWatcher<TWatch, TContext> : Watcher<TWatch, TContext>
+        where TWatch : Watch<TContext>
     {
-        readonly IConfirmationWatcherHandler<T> handler;
+        readonly IConfirmationWatcherHandler<TWatch, TContext> handler;
         readonly IBlocksStorage blocks;
 
-        protected ConfirmationWatcher(IConfirmationWatcherHandler<T> handler, IBlocksStorage blocks) : base(handler)
+        protected ConfirmationWatcher(IConfirmationWatcherHandler<TWatch, TContext> handler, IBlocksStorage blocks)
+            : base(handler)
         {
             if (blocks == null)
             {
@@ -23,7 +25,7 @@ namespace Ztm.Zcoin.Synchronization.Watchers
         }
 
         protected override async Task<bool> ExecuteMatchedWatchAsync(
-            T watch,
+            TWatch watch,
             Block block,
             int height,
             BlockEventType blockEventType,
@@ -64,7 +66,7 @@ namespace Ztm.Zcoin.Synchronization.Watchers
             return await this.handler.ConfirmationUpdateAsync(watch, confirmation, confirmationType, cancellationToken);
         }
 
-        protected override Task<IEnumerable<T>> GetWatchesAsync(
+        protected override Task<IEnumerable<TWatch>> GetWatchesAsync(
             Block block,
             int height,
             CancellationToken cancellationToken)
