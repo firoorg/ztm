@@ -1,20 +1,21 @@
 using System;
 using Xunit;
+using Ztm.Zcoin.NBitcoin.Exodus;
 
-namespace Ztm.Zcoin.NBitcoin.Tests
+namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
 {
-    public class TokenAmountTests
+    public sealed class PropertyAmountTests
     {
         [Fact]
         public void IsValid_WithDefaultInstance_ShouldFalse()
         {
-            Assert.False(default(TokenAmount).IsValid);
+            Assert.False(default(PropertyAmount).IsValid);
         }
 
         [Fact]
         public void Type_WithDefaultInstance_ShouldThrow()
         {
-            Assert.Throws<InvalidOperationException>(() => default(TokenAmount).Type);
+            Assert.Throws<InvalidOperationException>(() => default(PropertyAmount).Type);
         }
 
         [Fact]
@@ -22,7 +23,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         {
             Assert.Throws<ArgumentOutOfRangeException>(
                 "value",
-                () => TokenAmount.Divisible(-1)
+                () => PropertyAmount.Divisible(-1)
             );
         }
 
@@ -31,7 +32,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         {
             Assert.Throws<ArgumentOutOfRangeException>(
                 "value",
-                () => TokenAmount.Divisible(0)
+                () => PropertyAmount.Divisible(0)
             );
         }
 
@@ -40,7 +41,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         {
             Assert.Throws<ArgumentOutOfRangeException>(
                 "value",
-                () => TokenAmount.Divisible(92233720368.54775808m)
+                () => PropertyAmount.Divisible(92233720368.54775808m)
             );
         }
 
@@ -49,7 +50,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         {
             Assert.Throws<ArgumentOutOfRangeException>(
                 "value",
-                () => TokenAmount.Divisible(0.000000001m)
+                () => PropertyAmount.Divisible(0.000000001m)
             );
         }
 
@@ -60,10 +61,10 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         [InlineData("92233720368.54775807")]
         public void Divisible_WithValidValue_ShouldSuccess(string value)
         {
-            var amount = TokenAmount.Divisible(decimal.Parse(value));
+            var amount = PropertyAmount.Divisible(decimal.Parse(value));
 
             Assert.True(amount.IsValid);
-            Assert.Equal(TokenType.Divisible, amount.Type);
+            Assert.Equal(PropertyType.Divisible, amount.Type);
             Assert.Equal(value, amount.ToString());
         }
 
@@ -72,7 +73,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         {
             Assert.Throws<ArgumentOutOfRangeException>(
                 "value",
-                () => TokenAmount.Indivisible(-1)
+                () => PropertyAmount.Indivisible(-1)
             );
         }
 
@@ -81,17 +82,17 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         {
             Assert.Throws<ArgumentOutOfRangeException>(
                 "value",
-                () => TokenAmount.Indivisible(0)
+                () => PropertyAmount.Indivisible(0)
             );
         }
 
         [Fact]
         public void Indivisible_WithPositiveValue_ShouldSuccess()
         {
-            var amount = TokenAmount.Indivisible(90000);
+            var amount = PropertyAmount.Indivisible(90000);
 
             Assert.True(amount.IsValid);
-            Assert.Equal(TokenType.Indivisible, amount.Type);
+            Assert.Equal(PropertyType.Indivisible, amount.Type);
             Assert.Equal("90000", amount.ToString());
         }
 
@@ -100,20 +101,20 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         {
             Assert.Throws<ArgumentNullException>(
                 "s",
-                () => TokenAmount.Parse(null)
+                () => PropertyAmount.Parse(null)
             );
         }
 
         [Fact]
         public void Parse_WithNegative_ShouldThrow()
         {
-            Assert.Throws<FormatException>(() => TokenAmount.Parse("-1"));
+            Assert.Throws<FormatException>(() => PropertyAmount.Parse("-1"));
         }
 
         [Fact]
         public void Parse_WithZero_ShouldReturnInvalid()
         {
-            var amount = TokenAmount.Parse("0");
+            var amount = PropertyAmount.Parse("0");
 
             Assert.False(amount.IsValid);
         }
@@ -121,13 +122,13 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         [Fact]
         public void Parse_WithDivisibleValueExceedLimit_ShouldThrow()
         {
-            Assert.Throws<FormatException>(() => TokenAmount.Parse("92233720368.54775808"));
+            Assert.Throws<FormatException>(() => PropertyAmount.Parse("92233720368.54775808"));
         }
 
         [Fact]
         public void Parse_WithDivisibleValueTooMuchPrecision_ShouldThrow()
         {
-            Assert.Throws<FormatException>(() => TokenAmount.Parse("0.000000001"));
+            Assert.Throws<FormatException>(() => PropertyAmount.Parse("0.000000001"));
         }
 
         [Theory]
@@ -137,17 +138,17 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         [InlineData("92233720368.54775807")]
         public void Parse_WithValidDivisibleValue_ShouldSuccess(string value)
         {
-            var amount = TokenAmount.Parse(value);
+            var amount = PropertyAmount.Parse(value);
 
             Assert.True(amount.IsValid);
-            Assert.Equal(TokenType.Divisible, amount.Type);
+            Assert.Equal(PropertyType.Divisible, amount.Type);
             Assert.Equal(value, amount.ToString());
         }
 
         [Fact]
         public void Parse_WithIndivisibleValueExceedLimit_ShouldThrow()
         {
-            Assert.Throws<FormatException>(() => TokenAmount.Parse("9223372036854775808"));
+            Assert.Throws<FormatException>(() => PropertyAmount.Parse("9223372036854775808"));
         }
 
         [Theory]
@@ -155,17 +156,17 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         [InlineData("9223372036854775807")]
         public void Parse_WithValidIndivisibleValue_ShouldSuccess(string value)
         {
-            var amount = TokenAmount.Parse(value);
+            var amount = PropertyAmount.Parse(value);
 
             Assert.True(amount.IsValid);
-            Assert.Equal(TokenType.Indivisible, amount.Type);
+            Assert.Equal(PropertyType.Indivisible, amount.Type);
             Assert.Equal(value, amount.ToString());
         }
 
         [Fact]
         public void ToString_WithDefaultInstance_ShouldReturnEmptyString()
         {
-            Assert.Empty(default(TokenAmount).ToString());
+            Assert.Empty(default(PropertyAmount).ToString());
         }
     }
 }

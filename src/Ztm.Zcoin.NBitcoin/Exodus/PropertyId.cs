@@ -1,14 +1,14 @@
 using System;
 using System.ComponentModel;
 
-namespace Ztm.Zcoin.NBitcoin
+namespace Ztm.Zcoin.NBitcoin.Exodus
 {
-    [TypeConverter(typeof(TokenIdConverter))]
-    public struct TokenId
+    [TypeConverter(typeof(PropertyIdConverter))]
+    public struct PropertyId
     {
         readonly uint value;
 
-        public TokenId(long value)
+        public PropertyId(long value)
         {
             if (value <= 0 || value > uint.MaxValue)
             {
@@ -22,11 +22,11 @@ namespace Ztm.Zcoin.NBitcoin
 
         public long Value => IsValid ? this.value : throw new InvalidOperationException("The identifier is not valid.");
 
-        public static TokenId Parse(string s)
+        public static PropertyId Parse(string s)
         {
             try
             {
-                return new TokenId(long.Parse(s));
+                return new PropertyId(long.Parse(s));
             }
             catch (Exception ex) when (ex is ArgumentOutOfRangeException || ex is OverflowException)
             {
@@ -36,17 +36,12 @@ namespace Ztm.Zcoin.NBitcoin
 
         public override string ToString()
         {
-            if (!IsValid)
-            {
-                return "";
-            }
-
-            return this.value.ToString();
+            return IsValid ? this.value.ToString() : "";
         }
 
-        public static implicit operator TokenId(long value)
+        public static implicit operator PropertyId(long value)
         {
-            return new TokenId(value);
+            return new PropertyId(value);
         }
     }
 }

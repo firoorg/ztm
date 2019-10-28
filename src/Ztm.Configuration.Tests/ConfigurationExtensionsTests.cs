@@ -4,10 +4,11 @@ using Microsoft.Extensions.Configuration;
 using NBitcoin;
 using Xunit;
 using Ztm.Zcoin.NBitcoin;
+using Ztm.Zcoin.NBitcoin.Exodus;
 
 namespace Ztm.Configuration.Tests
 {
-    public class ConfigurationExtensionsTests
+    public sealed class ConfigurationExtensionsTests
     {
         readonly IConfiguration config;
 
@@ -22,10 +23,10 @@ namespace Ztm.Configuration.Tests
                 {"Zcoin:Rpc:Address", "http://127.0.0.1:8888"},
                 {"Zcoin:Rpc:UserName", "root"},
                 {"Zcoin:Rpc:Password", "abc"},
-                {"Zcoin:Token:Id", "1"},
-                {"Zcoin:Token:Type", "Divisible"},
-                {"Zcoin:Token:Issuer", "Mainnet:a8ULhhDgfdSiXJhSZVdhb8EuDc6R3ogsaM"},
-                {"Zcoin:Token:Distributor", "Testnet:TEDC38GBncNgtd2pVXeDhLeUGwJmXsiJBA"},
+                {"Zcoin:Property:Id", "1"},
+                {"Zcoin:Property:Type", "Divisible"},
+                {"Zcoin:Property:Issuer", "Mainnet:a8ULhhDgfdSiXJhSZVdhb8EuDc6R3ogsaM"},
+                {"Zcoin:Property:Distributor", "Testnet:TEDC38GBncNgtd2pVXeDhLeUGwJmXsiJBA"},
                 {"Zcoin:ZeroMq:Address", "tcp://127.0.0.1:5555"}
             });
 
@@ -51,12 +52,12 @@ namespace Ztm.Configuration.Tests
             Assert.Equal(new Uri("http://127.0.0.1:8888"), parsed.Rpc.Address);
             Assert.Equal("root", parsed.Rpc.UserName);
             Assert.Equal("abc", parsed.Rpc.Password);
-            Assert.Equal(1, parsed.Token.Id);
-            Assert.Equal(TokenType.Divisible, parsed.Token.Type);
-            Assert.Equal(NetworkType.Mainnet, parsed.Token.Issuer.Type);
-            Assert.Equal(BitcoinAddress.Create("a8ULhhDgfdSiXJhSZVdhb8EuDc6R3ogsaM", ZcoinNetworks.Instance.Mainnet), parsed.Token.Issuer.Address);
-            Assert.Equal(NetworkType.Testnet, parsed.Token.Distributor.Type);
-            Assert.Equal(BitcoinAddress.Create("TEDC38GBncNgtd2pVXeDhLeUGwJmXsiJBA", ZcoinNetworks.Instance.Testnet), parsed.Token.Distributor.Address);
+            Assert.Equal(1, parsed.Property.Id);
+            Assert.Equal(PropertyType.Divisible, parsed.Property.Type);
+            Assert.Equal(NetworkType.Mainnet, parsed.Property.Issuer.Type);
+            Assert.Equal(BitcoinAddress.Create("a8ULhhDgfdSiXJhSZVdhb8EuDc6R3ogsaM", ZcoinNetworks.Instance.Mainnet), parsed.Property.Issuer.Address);
+            Assert.Equal(NetworkType.Testnet, parsed.Property.Distributor.Type);
+            Assert.Equal(BitcoinAddress.Create("TEDC38GBncNgtd2pVXeDhLeUGwJmXsiJBA", ZcoinNetworks.Instance.Testnet), parsed.Property.Distributor.Address);
             Assert.Equal("tcp://127.0.0.1:5555", parsed.ZeroMq.Address);
         }
     }

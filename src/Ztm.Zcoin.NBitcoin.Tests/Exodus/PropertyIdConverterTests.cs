@@ -1,15 +1,16 @@
 using System;
 using Xunit;
+using Ztm.Zcoin.NBitcoin.Exodus;
 
-namespace Ztm.Zcoin.NBitcoin.Tests
+namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
 {
-    public class TokenIdConverterTests
+    public sealed class PropertyIdConverterTests
     {
-        readonly TokenIdConverter subject;
+        readonly PropertyIdConverter subject;
 
-        public TokenIdConverterTests()
+        public PropertyIdConverterTests()
         {
-            this.subject = new TokenIdConverter();
+            this.subject = new PropertyIdConverter();
         }
 
         [Theory]
@@ -23,7 +24,6 @@ namespace Ztm.Zcoin.NBitcoin.Tests
 
         [Theory]
         [InlineData(typeof(string))]
-        [InlineData(typeof(uint))]
         [InlineData(typeof(long))]
         public void CanConvertTo_WithSupportedType_ShouldReturnTrue(Type type)
         {
@@ -39,7 +39,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         [InlineData(4294967295L, "4294967295")]
         public void ConvertFrom_WithValidValue_ShouldSuccess(object value, string expected)
         {
-            var id = (TokenId)this.subject.ConvertFrom(value);
+            var id = (PropertyId)this.subject.ConvertFrom(value);
 
             Assert.True(id.IsValid);
             Assert.Equal(expected, id.ToString());
@@ -69,23 +69,22 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         {
             Assert.Throws<ArgumentNullException>(
                 "destinationType",
-                () => this.subject.ConvertTo(null, null, new TokenId(1), null)
+                () => this.subject.ConvertTo(null, null, new PropertyId(1), null)
             );
         }
 
         [Fact]
         public void ConvertTo_WithInvalidValue_ShouldThrow()
         {
-            Assert.Throws<NotSupportedException>(() => this.subject.ConvertTo(default(TokenId), typeof(string)));
+            Assert.Throws<NotSupportedException>(() => this.subject.ConvertTo(default(PropertyId), typeof(string)));
         }
 
         [Theory]
         [InlineData(1L, typeof(string), "1")]
-        [InlineData(1000L, typeof(uint), 1000U)]
         [InlineData(10000L, typeof(long), 10000L)]
         public void ConvertTo_WithSupportedType_ShouldSuccess(long id, Type type, object expected)
         {
-            var converted = this.subject.ConvertTo(new TokenId(id), type);
+            var converted = this.subject.ConvertTo(new PropertyId(id), type);
 
             Assert.Equal(expected, converted);
         }

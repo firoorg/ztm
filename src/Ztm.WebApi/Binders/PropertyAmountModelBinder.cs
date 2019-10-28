@@ -3,22 +3,22 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Configuration;
 using Ztm.Configuration;
-using Ztm.Zcoin.NBitcoin;
+using Ztm.Zcoin.NBitcoin.Exodus;
 
 namespace Ztm.WebApi.Binders
 {
-    public class TokenAmountModelBinder : IModelBinder
+    public sealed class PropertyAmountModelBinder : IModelBinder
     {
-        readonly ZcoinTokenConfiguration config;
+        readonly ZcoinPropertyConfiguration config;
 
-        public TokenAmountModelBinder(IConfiguration config)
+        public PropertyAmountModelBinder(IConfiguration config)
         {
             if (config == null)
             {
                 throw new ArgumentNullException(nameof(config));
             }
 
-            this.config = config.GetZcoinSection().Token;
+            this.config = config.GetZcoinSection().Property;
         }
 
         public Task BindModelAsync(ModelBindingContext bindingContext)
@@ -48,17 +48,17 @@ namespace Ztm.WebApi.Binders
 
             // Convert to domain object. We cannot use TokenAmount.Parse because we want to allow user to specify
             // integer for divisible.
-            TokenAmount model;
+            PropertyAmount model;
 
             try
             {
                 switch (this.config.Type)
                 {
-                    case TokenType.Divisible:
-                        model = TokenAmount.Divisible(decimal.Parse(value));
+                    case PropertyType.Divisible:
+                        model = PropertyAmount.Divisible(decimal.Parse(value));
                         break;
-                    case TokenType.Indivisible:
-                        model = TokenAmount.Indivisible(long.Parse(value));
+                    case PropertyType.Indivisible:
+                        model = PropertyAmount.Indivisible(long.Parse(value));
                         break;
                     default:
                         throw new InvalidOperationException("The configuration for binder is not valid.");

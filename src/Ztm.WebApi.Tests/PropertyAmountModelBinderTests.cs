@@ -7,31 +7,31 @@ using Microsoft.Extensions.Configuration;
 using NSubstitute;
 using Xunit;
 using Ztm.WebApi.Binders;
-using Ztm.Zcoin.NBitcoin;
+using Ztm.Zcoin.NBitcoin.Exodus;
 
 namespace Ztm.WebApi.Tests
 {
-    public class TokenAmountModelBinderTests
+    public sealed class PropertyAmountModelBinderTests
     {
         readonly IConfiguration divisibleConfig, indivisibleConfig;
         readonly IValueProvider values;
         readonly ModelMetadata meta;
         readonly ModelBindingContext context;
 
-        public TokenAmountModelBinderTests()
+        public PropertyAmountModelBinderTests()
         {
             this.divisibleConfig = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string>()
             {
-                {"Zcoin:Token:Type", "Divisible"}
+                {"Zcoin:Property:Type", "Divisible"}
             }).Build();
 
             this.indivisibleConfig = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string>()
             {
-                {"Zcoin:Token:Type", "Indivisible"}
+                {"Zcoin:Property:Type", "Indivisible"}
             }).Build();
 
             this.values = Substitute.For<IValueProvider>();
-            this.meta = Substitute.ForPartsOf<ModelMetadata>(ModelMetadataIdentity.ForType(typeof(TokenAmount)));
+            this.meta = Substitute.ForPartsOf<ModelMetadata>(ModelMetadataIdentity.ForType(typeof(PropertyAmount)));
             this.context = Substitute.ForPartsOf<ModelBindingContext>();
             this.context.ModelMetadata.Returns(this.meta);
             this.context.ModelState.Returns(new ModelStateDictionary());
@@ -41,7 +41,7 @@ namespace Ztm.WebApi.Tests
         [Fact]
         public async Task BindModelAsync_WithNullBindingContext_ShouldThrow()
         {
-            var subject = new TokenAmountModelBinder(this.divisibleConfig);
+            var subject = new PropertyAmountModelBinder(this.divisibleConfig);
 
             await Assert.ThrowsAsync<ArgumentNullException>(
                 "bindingContext",
@@ -53,7 +53,7 @@ namespace Ztm.WebApi.Tests
         public async Task BindModelAsync_NoSubmittedValue_ShouldFail()
         {
             // Arrange.
-            var subject = new TokenAmountModelBinder(this.divisibleConfig);
+            var subject = new PropertyAmountModelBinder(this.divisibleConfig);
 
             this.context.ModelName.Returns("Amount");
             this.values.GetValue("Amount").Returns(ValueProviderResult.None);
@@ -71,7 +71,7 @@ namespace Ztm.WebApi.Tests
         public async Task BindModelAsync_WithEmptySubmittedValue_ShouldFail(string value)
         {
             // Arrange.
-            var subject = new TokenAmountModelBinder(this.divisibleConfig);
+            var subject = new PropertyAmountModelBinder(this.divisibleConfig);
 
             this.context.ModelName.Returns("Amount");
             this.values.GetValue("Amount").Returns(new ValueProviderResult(new[] { value }));
@@ -92,7 +92,7 @@ namespace Ztm.WebApi.Tests
         public async Task BindModelAsync_WithValidDivisibleValue_ShouldSuccess(string value, string expected)
         {
             // Arrange.
-            var subject = new TokenAmountModelBinder(this.divisibleConfig);
+            var subject = new PropertyAmountModelBinder(this.divisibleConfig);
 
             this.context.ModelName.Returns("Amount");
             this.values.GetValue("Amount").Returns(new ValueProviderResult(new[] { value }));
@@ -101,11 +101,11 @@ namespace Ztm.WebApi.Tests
             await subject.BindModelAsync(context);
 
             // Assert.
-            var model = (TokenAmount)context.Result.Model;
+            var model = (PropertyAmount)context.Result.Model;
 
             Assert.True(context.Result.IsModelSet);
             Assert.True(model.IsValid);
-            Assert.Equal(TokenType.Divisible, model.Type);
+            Assert.Equal(PropertyType.Divisible, model.Type);
             Assert.Equal(expected, model.ToString());
             Assert.Equal(value, this.context.ModelState["Amount"].RawValue);
         }
@@ -118,7 +118,7 @@ namespace Ztm.WebApi.Tests
         public async Task BindModelAsync_WithInvalidDivisibleValue_ShouldFail(string value)
         {
             // Arrange.
-            var subject = new TokenAmountModelBinder(this.divisibleConfig);
+            var subject = new PropertyAmountModelBinder(this.divisibleConfig);
 
             this.context.ModelName.Returns("Amount");
             this.values.GetValue("Amount").Returns(new ValueProviderResult(new[] { value }));
@@ -138,7 +138,7 @@ namespace Ztm.WebApi.Tests
         public async Task BindModelAsync_WithValidIndivisibleValue_ShouldSuccess(string value)
         {
             // Arrange.
-            var subject = new TokenAmountModelBinder(this.indivisibleConfig);
+            var subject = new PropertyAmountModelBinder(this.indivisibleConfig);
 
             this.context.ModelName.Returns("Amount");
             this.values.GetValue("Amount").Returns(new ValueProviderResult(new[] { value }));
@@ -147,11 +147,11 @@ namespace Ztm.WebApi.Tests
             await subject.BindModelAsync(context);
 
             // Assert.
-            var model = (TokenAmount)context.Result.Model;
+            var model = (PropertyAmount)context.Result.Model;
 
             Assert.True(context.Result.IsModelSet);
             Assert.True(model.IsValid);
-            Assert.Equal(TokenType.Indivisible, model.Type);
+            Assert.Equal(PropertyType.Indivisible, model.Type);
             Assert.Equal(value, model.ToString());
             Assert.Equal(value, this.context.ModelState["Amount"].RawValue);
         }
@@ -164,7 +164,7 @@ namespace Ztm.WebApi.Tests
         public async Task BindModelAsync_WithInvalidIndivisibleValue_ShouldFail(string value)
         {
             // Arrange.
-            var subject = new TokenAmountModelBinder(this.indivisibleConfig);
+            var subject = new PropertyAmountModelBinder(this.indivisibleConfig);
 
             this.context.ModelName.Returns("Amount");
             this.values.GetValue("Amount").Returns(new ValueProviderResult(new[] { value }));
