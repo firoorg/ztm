@@ -2,9 +2,9 @@ using System;
 using System.ComponentModel;
 using System.Globalization;
 
-namespace Ztm.Zcoin.NBitcoin
+namespace Ztm.Zcoin.NBitcoin.Exodus
 {
-    public sealed class TokenIdConverter : TypeConverter
+    public sealed class PropertyIdConverter : TypeConverter
     {
         public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType)
         {
@@ -20,9 +20,7 @@ namespace Ztm.Zcoin.NBitcoin
 
         public override bool CanConvertTo(ITypeDescriptorContext context, Type destinationType)
         {
-            if (destinationType == typeof(string) ||
-                destinationType == typeof(uint) ||
-                destinationType == typeof(long))
+            if (destinationType == typeof(string) || destinationType == typeof(long))
             {
                 return true;
             }
@@ -45,51 +43,53 @@ namespace Ztm.Zcoin.NBitcoin
             {
                 try
                 {
-                    return TokenId.Parse(s);
+                    return PropertyId.Parse(s);
                 }
                 catch (FormatException ex)
                 {
-                    throw new NotSupportedException($"Cannot convert {s} to {typeof(TokenId)}.", ex);
+                    throw new NotSupportedException($"Cannot convert {s} to {typeof(PropertyId)}.", ex);
                 }
             }
             else if (value is long n)
             {
                 try
                 {
-                    return new TokenId(n);
+                    return new PropertyId(n);
                 }
                 catch (ArgumentOutOfRangeException ex)
                 {
-                    throw new NotSupportedException($"Cannot convert {n} to {typeof(TokenId)}.", ex);
+                    throw new NotSupportedException($"Cannot convert {n} to {typeof(PropertyId)}.", ex);
                 }
             }
             else
             {
-                throw new NotSupportedException($"Don't know how to convert {value.GetType()} to {typeof(TokenId)}.");
+                throw new NotSupportedException(
+                    $"Don't know how to convert {value.GetType()} to {typeof(PropertyId)}."
+                );
             }
         }
 
-        public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)
+        public override object ConvertTo(
+            ITypeDescriptorContext context,
+            CultureInfo culture,
+            object value,
+            Type destinationType)
         {
             if (destinationType == null)
             {
                 throw new ArgumentNullException(nameof(destinationType));
             }
 
-            var id = (TokenId)value;
+            var id = (PropertyId)value;
 
             if (!id.IsValid)
             {
-                throw new NotSupportedException($"Cannot convert invalid {typeof(TokenId)}.");
+                throw new NotSupportedException($"Cannot convert invalid {typeof(PropertyId)}.");
             }
 
             if (destinationType == typeof(string))
             {
                 return id.ToString();
-            }
-            else if (destinationType == typeof(uint))
-            {
-                return (uint)id.Value;
             }
             else if (destinationType == typeof(long))
             {
@@ -97,7 +97,9 @@ namespace Ztm.Zcoin.NBitcoin
             }
             else
             {
-                throw new NotSupportedException($"Don't know how to convert {typeof(TokenId)} to {destinationType}.");
+                throw new NotSupportedException(
+                    $"Don't know how to convert {typeof(PropertyId)} to {destinationType}."
+                );
             }
         }
     }

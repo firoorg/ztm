@@ -4,17 +4,17 @@ using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using NBitcoin.RPC;
-using Ztm.Zcoin.NBitcoin;
+using Ztm.Zcoin.NBitcoin.Exodus;
 
 namespace Ztm.Zcoin.Rpc
 {
     public interface IZcoinRpcClient : IDisposable
     {
-        Task<Transaction> CreateManagedTokenAsync(
+        Task<Transaction> CreateManagedPropertyAsync(
             BitcoinAddress owner,
-            TokenEcosystem ecosystem,
-            TokenType type,
-            TokenId? currentId,
+            Ecosystem ecosystem,
+            PropertyType type,
+            PropertyId? currentId,
             string category,
             string subcategory,
             string name,
@@ -34,17 +34,17 @@ namespace Ztm.Zcoin.Rpc
 
         Task<BitcoinAddress> GetNewAddressAsync(CancellationToken cancellationToken);
 
-        Task<TokenGrantsInfo> GetTokenGrantsAsync(TokenId token, CancellationToken cancellationToken);
+        Task<PropertyGrantsInfo> GetPropertyGrantsAsync(PropertyId id, CancellationToken cancellationToken);
 
-        Task<Transaction> GrantTokensAsync(
-            TokenId id,
+        Task<Transaction> GrantPropertyAsync(
+            PropertyId id,
             BitcoinAddress from,
             BitcoinAddress to,
-            TokenAmount amount,
+            PropertyAmount amount,
             string note,
             CancellationToken cancellationToken);
 
-        Task<IEnumerable<TokenInfo>> ListTokensAsync(CancellationToken cancellationToken);
+        Task<IEnumerable<PropertyInfo>> ListPropertiesAsync(CancellationToken cancellationToken);
 
         Task<uint256> SendRawTransactionAsync(Transaction tx, CancellationToken cancellationToken);
 

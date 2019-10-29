@@ -2,9 +2,9 @@ using System;
 using System.ComponentModel;
 using System.Globalization;
 
-namespace Ztm.Zcoin.NBitcoin
+namespace Ztm.Zcoin.NBitcoin.Exodus
 {
-    public sealed class TokenAmountConverter : TypeConverter
+    public sealed class PropertyAmountConverter : TypeConverter
     {
         public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType)
         {
@@ -42,48 +42,51 @@ namespace Ztm.Zcoin.NBitcoin
             {
                 try
                 {
-                    return TokenAmount.Parse(s);
+                    return PropertyAmount.Parse(s);
                 }
                 catch (Exception ex) when (ex is FormatException || ex is OverflowException)
                 {
-                    throw new NotSupportedException($"Cannot convert {value} to {typeof(TokenAmount)}", ex);
+                    throw new NotSupportedException($"Cannot convert {s} to {typeof(PropertyAmount)}.", ex);
                 }
             }
             else if (value is long n)
             {
                 try
                 {
-                    return TokenAmount.Indivisible(n);
+                    return PropertyAmount.Indivisible(n);
                 }
                 catch (ArgumentOutOfRangeException ex)
                 {
-                    throw new NotSupportedException($"Cannot convert {value} to {typeof(TokenAmount)}", ex);
+                    throw new NotSupportedException($"Cannot convert {n} to {typeof(PropertyAmount)}.", ex);
                 }
             }
             else if (value is decimal d)
             {
                 try
                 {
-                    return TokenAmount.Divisible(d);
+                    return PropertyAmount.Divisible(d);
                 }
                 catch (ArgumentOutOfRangeException ex)
                 {
-                    throw new NotSupportedException($"Cannot convert {value} to {typeof(TokenAmount)}", ex);
+                    throw new NotSupportedException($"Cannot convert {d} to {typeof(PropertyAmount)}.", ex);
                 }
             }
             else
             {
-                throw new NotSupportedException($"Don't know how to convert {value.GetType()} to {typeof(TokenAmount)}.");
+                throw new NotSupportedException(
+                    $"Don't know how to convert {value.GetType()} to {typeof(PropertyAmount)}."
+                );
             }
         }
 
         public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)
         {
-            if (!((TokenAmount)value).IsValid)
+            if (!((PropertyAmount)value).IsValid)
             {
                 throw new NotSupportedException("The value is not valid.");
             }
 
+            // We supported only string.
             return base.ConvertTo(context, culture, value, destinationType);
         }
 
@@ -91,10 +94,10 @@ namespace Ztm.Zcoin.NBitcoin
         {
             return new StandardValuesCollection(new[]
             {
-                TokenAmount.MinDivisible,
-                TokenAmount.MinIndivisible,
-                TokenAmount.MaxDivisible,
-                TokenAmount.MaxIndivisible
+                PropertyAmount.MinDivisible,
+                PropertyAmount.MinIndivisible,
+                PropertyAmount.MaxDivisible,
+                PropertyAmount.MaxIndivisible
             });
         }
 

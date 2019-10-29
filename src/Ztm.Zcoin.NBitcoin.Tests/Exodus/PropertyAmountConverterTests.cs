@@ -1,15 +1,16 @@
 using System;
 using Xunit;
+using Ztm.Zcoin.NBitcoin.Exodus;
 
 namespace Ztm.Zcoin.NBitcoin.Tests
 {
-    public class TokenAmountConverterTests
+    public sealed class PropertyAmountConverterTests
     {
-        readonly TokenAmountConverter subject;
+        readonly PropertyAmountConverter subject;
 
-        public TokenAmountConverterTests()
+        public PropertyAmountConverterTests()
         {
-            this.subject = new TokenAmountConverter();
+            this.subject = new PropertyAmountConverter();
         }
 
         [Fact]
@@ -55,13 +56,13 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         }
 
         [Theory]
-        [InlineData("0.00000001", TokenType.Divisible)]
-        [InlineData("10000.10000000", TokenType.Divisible)]
-        [InlineData("9999.99999999", TokenType.Divisible)]
-        [InlineData("5000", TokenType.Indivisible)]
-        public void ConvertFrom_WithValidString_ShouldSuccess(string value, TokenType type)
+        [InlineData("0.00000001", PropertyType.Divisible)]
+        [InlineData("10000.10000000", PropertyType.Divisible)]
+        [InlineData("9999.99999999", PropertyType.Divisible)]
+        [InlineData("5000", PropertyType.Indivisible)]
+        public void ConvertFrom_WithValidString_ShouldSuccess(string value, PropertyType type)
         {
-            var amount = (TokenAmount)this.subject.ConvertFromString(value);
+            var amount = (PropertyAmount)this.subject.ConvertFromString(value);
 
             Assert.True(amount.IsValid);
             Assert.Equal(type, amount.Type);
@@ -86,7 +87,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         [InlineData("0")]
         public void ConvertFrom_WithStringZero_ShouldReturnInvalidAmount(string value)
         {
-            var amount = (TokenAmount)this.subject.ConvertFromString(value);
+            var amount = (PropertyAmount)this.subject.ConvertFromString(value);
 
             Assert.False(amount.IsValid);
         }
@@ -98,11 +99,11 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         [InlineData(long.MaxValue)]
         public void ConvertFrom_WithValidInteger_ShouldSuccess(object value)
         {
-            var amount = (TokenAmount)this.subject.ConvertFrom(value);
-            var expected = TokenAmount.Indivisible(value is int ? (int)value : (long)value);
+            var amount = (PropertyAmount)this.subject.ConvertFrom(value);
+            var expected = PropertyAmount.Indivisible(value is int ? (int)value : (long)value);
 
             Assert.True(amount.IsValid);
-            Assert.Equal(TokenType.Indivisible, amount.Type);
+            Assert.Equal(PropertyType.Indivisible, amount.Type);
             Assert.Equal(expected.ToString(), amount.ToString());
         }
 
@@ -123,11 +124,11 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         [InlineData(10000.99999999d)]
         public void ConvertFrom_WithValidFloatingPoint_ShouldSuccess(object value)
         {
-            var amount = (TokenAmount)this.subject.ConvertFrom(value);
-            var expected = TokenAmount.Divisible(value is float ? (decimal)(float)value : (decimal)(double)value);
+            var amount = (PropertyAmount)this.subject.ConvertFrom(value);
+            var expected = PropertyAmount.Divisible(value is float ? (decimal)(float)value : (decimal)(double)value);
 
             Assert.True(amount.IsValid);
-            Assert.Equal(TokenType.Divisible, amount.Type);
+            Assert.Equal(PropertyType.Divisible, amount.Type);
             Assert.Equal(expected.ToString(), amount.ToString());
         }
 
@@ -149,10 +150,10 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         [InlineData("92233720368.54775807")]
         public void ConvertFrom_WithValidDecimal_ShouldSuccess(string value)
         {
-            var amount = (TokenAmount)this.subject.ConvertFrom(decimal.Parse(value));
+            var amount = (PropertyAmount)this.subject.ConvertFrom(decimal.Parse(value));
 
             Assert.True(amount.IsValid);
-            Assert.Equal(TokenType.Divisible, amount.Type);
+            Assert.Equal(PropertyType.Divisible, amount.Type);
             Assert.Equal(value, amount.ToString());
         }
 
@@ -169,13 +170,13 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         [Fact]
         public void ConvertTo_WithDefaultInstance_ShouldThrow()
         {
-            Assert.Throws<NotSupportedException>(() => this.subject.ConvertToString(default(TokenAmount)));
+            Assert.Throws<NotSupportedException>(() => this.subject.ConvertToString(default(PropertyAmount)));
         }
 
         [Fact]
         public void ConvertTo_WithValidValueAndTargetIsString_ShouldSuccess()
         {
-            var converted = this.subject.ConvertToString(TokenAmount.Divisible(1));
+            var converted = this.subject.ConvertToString(PropertyAmount.Divisible(1));
 
             Assert.Equal("1.00000000", converted);
         }
@@ -187,7 +188,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests
 
             var values = this.subject.GetStandardValues();
 
-            foreach (TokenAmount amount in values)
+            foreach (PropertyAmount amount in values)
             {
                 Assert.True(amount.IsValid);
             }

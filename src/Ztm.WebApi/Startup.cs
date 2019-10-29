@@ -57,7 +57,7 @@ namespace Ztm.WebApi
 
         void ConfigureMvc(MvcOptions options)
         {
-            options.ModelBinderProviders.Insert(0, new TokenAmountModelBinderProvider());
+            options.ModelBinderProviders.Insert(0, new PropertyAmountModelBinderProvider());
         }
 
         IZcoinRpcClientFactory CreateZcoinRpcClientFactory(IServiceProvider provider)

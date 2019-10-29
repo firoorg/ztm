@@ -1,11 +1,11 @@
 using System;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
-using Ztm.Zcoin.NBitcoin;
+using Ztm.Zcoin.NBitcoin.Exodus;
 
 namespace Ztm.WebApi.Binders
 {
-    public class TokenAmountModelBinderProvider : IModelBinderProvider
+    public sealed class PropertyAmountModelBinderProvider : IModelBinderProvider
     {
         public IModelBinder GetBinder(ModelBinderProviderContext context)
         {
@@ -14,9 +14,9 @@ namespace Ztm.WebApi.Binders
                 throw new ArgumentNullException(nameof(context));
             }
 
-            if (context.Metadata.ModelType == typeof(TokenAmount))
+            if (context.Metadata.ModelType == typeof(PropertyAmount))
             {
-                return new BinderTypeModelBinder(typeof(TokenAmountModelBinder));
+                return new BinderTypeModelBinder(typeof(PropertyAmountModelBinder));
             }
 
             return null;

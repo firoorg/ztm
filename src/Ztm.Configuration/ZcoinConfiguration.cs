@@ -1,6 +1,6 @@
 using System;
 using NBitcoin;
-using Ztm.Zcoin.NBitcoin;
+using Ztm.Zcoin.NBitcoin.Exodus;
 
 namespace Ztm.Configuration
 {
@@ -8,7 +8,7 @@ namespace Ztm.Configuration
     {
         public ZcoinNetworkConfiguration Network { get; set; }
         public ZcoinRpcConfiguration Rpc { get; set; }
-        public ZcoinTokenConfiguration Token { get; set; }
+        public ZcoinPropertyConfiguration Property { get; set; }
         public ZcoinZeroMqConfiguration ZeroMq { get; set; }
     }
 
@@ -24,10 +24,10 @@ namespace Ztm.Configuration
         public string Password { get; set; }
     }
 
-    public class ZcoinTokenConfiguration
+    public class ZcoinPropertyConfiguration
     {
-        public TokenId Id { get; set; }
-        public TokenType Type { get; set; }
+        public PropertyId Id { get; set; }
+        public PropertyType Type { get; set; }
         public BitcoinAddressConfiguration Issuer { get; set; }
         public BitcoinAddressConfiguration Distributor { get; set; }
     }

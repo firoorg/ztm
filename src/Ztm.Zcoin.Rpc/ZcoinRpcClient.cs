@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using NBitcoin;
 using NBitcoin.RPC;
 using Newtonsoft.Json.Linq;
-using Ztm.Zcoin.NBitcoin;
+using Ztm.Zcoin.NBitcoin.Exodus;
 
 namespace Ztm.Zcoin.Rpc
 {
@@ -28,11 +28,11 @@ namespace Ztm.Zcoin.Rpc
         {
         }
 
-        public async Task<Transaction> CreateManagedTokenAsync(
+        public async Task<Transaction> CreateManagedPropertyAsync(
             BitcoinAddress owner,
-            TokenEcosystem ecosystem,
-            TokenType type,
-            TokenId? currentId,
+            Ecosystem ecosystem,
+            PropertyType type,
+            PropertyId? currentId,
             string category,
             string subcategory,
             string name,
@@ -47,7 +47,7 @@ namespace Ztm.Zcoin.Rpc
 
             if (currentId.HasValue && !currentId.Value.IsValid)
             {
-                throw new ArgumentException("The value is not valid token identifier.", nameof(currentId));
+                throw new ArgumentException("The value is not a valid property identifier.", nameof(currentId));
             }
 
             if (category == null)
@@ -79,9 +79,9 @@ namespace Ztm.Zcoin.Rpc
             var resp = await this.client.SendCommandAsync(
                 "exodus_sendissuancemanaged",
                 owner.ToString(),
-                (byte)ecosystem,
-                (ushort)type,
-                currentId.HasValue ? currentId.Value.Value : 0,
+                ToNative(ecosystem),
+                ToNative(type),
+                currentId.HasValue ? ToNative(currentId.Value) : 0U,
                 category,
                 subcategory,
                 name,
@@ -122,49 +122,49 @@ namespace Ztm.Zcoin.Rpc
             return this.client.GetNewAddressAsync();
         }
 
-        public async Task<TokenGrantsInfo> GetTokenGrantsAsync(TokenId token, CancellationToken cancellationToken)
+        public async Task<PropertyGrantsInfo> GetPropertyGrantsAsync(PropertyId id, CancellationToken cancellationToken)
         {
-            if (!token.IsValid)
+            if (!id.IsValid)
             {
-                throw new ArgumentException("The value is not valid token identifier.", nameof(token));
+                throw new ArgumentException("The value is not a valid property identifier.", nameof(id));
             }
 
-            var resp = await this.client.SendCommandAsync("exodus_getgrants", token.Value);
-            var totalTokens = TokenAmount.Parse(resp.Result.Value<string>("totaltokens"));
+            var resp = await this.client.SendCommandAsync("exodus_getgrants", ToNative(id));
+            var totalTokens = PropertyAmount.Parse(resp.Result.Value<string>("totaltokens"));
 
-            return new TokenGrantsInfo()
+            return new PropertyGrantsInfo()
             {
                 Id = resp.Result.Value<long>("propertyid"),
                 Name = resp.Result.Value<string>("name"),
                 Issuer = BitcoinAddress.Create(resp.Result.Value<string>("issuer"), this.client.Network),
                 CreationTransaction = uint256.Parse(resp.Result.Value<string>("creationtxid")),
-                TotalTokens = totalTokens.IsValid ? (TokenAmount?)totalTokens : null,
+                TotalTokens = totalTokens.IsValid ? (PropertyAmount?)totalTokens : null,
                 Histories = ((JArray)resp.Result["issuances"]).Select(i =>
                 {
                     var grant = i.Value<string>("grant");
                     var revoke = i.Value<string>("revoke");
 
-                    return new TokenGrantHistory()
+                    return new PropertyGrantHistory()
                     {
-                        Type = (grant != null) ? TokenGrantType.Grant : TokenGrantType.Revoke,
+                        Type = (grant != null) ? PropertyGrantType.Grant : PropertyGrantType.Revoke,
                         Transaction = uint256.Parse(i.Value<string>("txid")),
-                        Amount = TokenAmount.Parse(grant ?? revoke)
+                        Amount = PropertyAmount.Parse(grant ?? revoke)
                     };
                 }).ToArray()
             };
         }
 
-        public async Task<Transaction> GrantTokensAsync(
-            TokenId id,
+        public async Task<Transaction> GrantPropertyAsync(
+            PropertyId id,
             BitcoinAddress from,
             BitcoinAddress to,
-            TokenAmount amount,
+            PropertyAmount amount,
             string note,
             CancellationToken cancellationToken)
         {
             if (!id.IsValid)
             {
-                throw new ArgumentException("The value is not valid token identifier.", nameof(id));
+                throw new ArgumentException("The value is not a valid property identifier.", nameof(id));
             }
 
             if (from == null)
@@ -179,14 +179,14 @@ namespace Ztm.Zcoin.Rpc
 
             if (!amount.IsValid)
             {
-                throw new ArgumentException("The value is not valid token amount.", nameof(amount));
+                throw new ArgumentException("The value is not a valid property amount.", nameof(amount));
             }
 
             var args = new List<object>()
             {
                 from.ToString(),
                 to.ToString(),
-                id.Value,
+                ToNative(id),
                 amount.ToString()
             };
 
@@ -200,11 +200,11 @@ namespace Ztm.Zcoin.Rpc
             return Transaction.Parse(resp.Result.Value<string>(), this.client.Network);
         }
 
-        public async Task<IEnumerable<TokenInfo>> ListTokensAsync(CancellationToken cancellationToken)
+        public async Task<IEnumerable<PropertyInfo>> ListPropertiesAsync(CancellationToken cancellationToken)
         {
             var resp = await this.client.SendCommandAsync("exodus_listproperties");
 
-            return ((JArray)resp.Result).Select(i => new TokenInfo()
+            return ((JArray)resp.Result).Select(i => new PropertyInfo()
             {
                 Id = i.Value<long>("propertyid"),
                 Name = i.Value<string>("name"),
@@ -212,7 +212,7 @@ namespace Ztm.Zcoin.Rpc
                 Subcategory = i.Value<string>("subcategory"),
                 Url = i.Value<string>("url"),
                 Description = i.Value<string>("data"),
-                Type = i.Value<bool>("divisible") ? TokenType.Divisible : TokenType.Indivisible
+                Type = i.Value<bool>("divisible") ? PropertyType.Divisible : PropertyType.Indivisible
             }).ToArray();
         }
 
@@ -241,6 +241,37 @@ namespace Ztm.Zcoin.Rpc
                 commentTo,
                 subtractFeeFromAmount
             );
+        }
+
+        static byte ToNative(Ecosystem ecosystem)
+        {
+            switch (ecosystem)
+            {
+                case Ecosystem.Main:
+                    return 1;
+                case Ecosystem.Test:
+                    return 2;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(ecosystem), ecosystem, "The value is not valid.");
+            }
+        }
+
+        static uint ToNative(PropertyId id)
+        {
+            return (uint)id.Value;
+        }
+
+        static ushort ToNative(PropertyType type)
+        {
+            switch (type)
+            {
+                case PropertyType.Indivisible:
+                    return 1;
+                case PropertyType.Divisible:
+                    return 2;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(type), type, "The value is not valid.");
+            }
         }
     }
 }

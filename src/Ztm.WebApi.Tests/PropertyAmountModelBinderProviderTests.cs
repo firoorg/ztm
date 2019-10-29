@@ -4,22 +4,22 @@ using Microsoft.AspNetCore.Mvc.ModelBinding.Metadata;
 using NSubstitute;
 using Xunit;
 using Ztm.WebApi.Binders;
-using Ztm.Zcoin.NBitcoin;
+using Ztm.Zcoin.NBitcoin.Exodus;
 
 namespace Ztm.WebApi.Tests
 {
-    public class TokenAmountModelBinderProviderTests
+    public sealed class PropertyAmountModelBinderProviderTests
     {
         readonly ModelMetadata meta;
         readonly ModelBinderProviderContext context;
-        readonly TokenAmountModelBinderProvider subject;
+        readonly PropertyAmountModelBinderProvider subject;
 
-        public TokenAmountModelBinderProviderTests()
+        public PropertyAmountModelBinderProviderTests()
         {
-            this.meta = Substitute.ForPartsOf<ModelMetadata>(ModelMetadataIdentity.ForType(typeof(TokenAmount)));
+            this.meta = Substitute.ForPartsOf<ModelMetadata>(ModelMetadataIdentity.ForType(typeof(PropertyAmount)));
             this.context = Substitute.ForPartsOf<ModelBinderProviderContext>();
             this.context.Metadata.Returns(this.meta);
-            this.subject = new TokenAmountModelBinderProvider();
+            this.subject = new PropertyAmountModelBinderProvider();
         }
 
         [Fact]

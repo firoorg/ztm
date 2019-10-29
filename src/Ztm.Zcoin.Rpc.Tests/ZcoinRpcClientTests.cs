@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using NBitcoin;
 using NBitcoin.Tests;
 using Xunit;
-using Ztm.Zcoin.NBitcoin;
+using Ztm.Zcoin.NBitcoin.Exodus;
 using Ztm.Zcoin.Testing;
 
 namespace Ztm.Zcoin.Rpc.Tests
@@ -44,14 +44,14 @@ namespace Ztm.Zcoin.Rpc.Tests
         }
 
         [Fact]
-        public async Task CreateManagedTokenAsync_PassNullForOwner_ShouldThrow()
+        public async Task CreateManagedPropertyAsync_PassNullForOwner_ShouldThrow()
         {
             await Assert.ThrowsAsync<ArgumentNullException>(
                 "owner",
-                () => this.subject.CreateManagedTokenAsync(
+                () => this.subject.CreateManagedPropertyAsync(
                     null,
-                    TokenEcosystem.Main,
-                    TokenType.Divisible,
+                    Ecosystem.Main,
+                    PropertyType.Divisible,
                     null,
                     "Company",
                     "Private",
@@ -64,17 +64,17 @@ namespace Ztm.Zcoin.Rpc.Tests
         }
 
         [Fact]
-        public async Task CreateManagedTokenAsync_PassInvalidTokenId_ShouldThrow()
+        public async Task CreateManagedPropertyAsync_PassInvalidTokenId_ShouldThrow()
         {
             var owner = await this.subject.GetNewAddressAsync(CancellationToken.None);
 
             await Assert.ThrowsAsync<ArgumentException>(
                 "currentId",
-                () => this.subject.CreateManagedTokenAsync(
+                () => this.subject.CreateManagedPropertyAsync(
                     owner,
-                    TokenEcosystem.Main,
-                    TokenType.Divisible,
-                    default(TokenId),
+                    Ecosystem.Main,
+                    PropertyType.Divisible,
+                    default(PropertyId),
                     "Company",
                     "Private",
                     "Satang Corporation",
@@ -86,16 +86,16 @@ namespace Ztm.Zcoin.Rpc.Tests
         }
 
         [Fact]
-        public async Task CreateManagedTokenAsync_PassNullForCategory_ShouldThrow()
+        public async Task CreateManagedPropertyAsync_PassNullForCategory_ShouldThrow()
         {
             var owner = await this.subject.GetNewAddressAsync(CancellationToken.None);
 
             await Assert.ThrowsAsync<ArgumentNullException>(
                 "category",
-                () => this.subject.CreateManagedTokenAsync(
+                () => this.subject.CreateManagedPropertyAsync(
                     owner,
-                    TokenEcosystem.Main,
-                    TokenType.Divisible,
+                    Ecosystem.Main,
+                    PropertyType.Divisible,
                     null,
                     null,
                     "Private",
@@ -108,16 +108,16 @@ namespace Ztm.Zcoin.Rpc.Tests
         }
 
         [Fact]
-        public async Task CreateManagedTokenAsync_PassNullForSubcategory_ShouldThrow()
+        public async Task CreateManagedPropertyAsync_PassNullForSubcategory_ShouldThrow()
         {
             var owner = await this.subject.GetNewAddressAsync(CancellationToken.None);
 
             await Assert.ThrowsAsync<ArgumentNullException>(
                 "subcategory",
-                () => this.subject.CreateManagedTokenAsync(
+                () => this.subject.CreateManagedPropertyAsync(
                     owner,
-                    TokenEcosystem.Main,
-                    TokenType.Divisible,
+                    Ecosystem.Main,
+                    PropertyType.Divisible,
                     null,
                     "Company",
                     null,
@@ -130,16 +130,16 @@ namespace Ztm.Zcoin.Rpc.Tests
         }
 
         [Fact]
-        public async Task CreateManagedTokenAsync_PassNullForName_ShouldThrow()
+        public async Task CreateManagedPropertyAsync_PassNullForName_ShouldThrow()
         {
             var owner = await this.subject.GetNewAddressAsync(CancellationToken.None);
 
             await Assert.ThrowsAsync<ArgumentNullException>(
                 "name",
-                () => this.subject.CreateManagedTokenAsync(
+                () => this.subject.CreateManagedPropertyAsync(
                     owner,
-                    TokenEcosystem.Main,
-                    TokenType.Divisible,
+                    Ecosystem.Main,
+                    PropertyType.Divisible,
                     null,
                     "Company",
                     "Private",
@@ -152,16 +152,16 @@ namespace Ztm.Zcoin.Rpc.Tests
         }
 
         [Fact]
-        public async Task CreateManagedTokenAsync_PassNullForUrl_ShouldThrow()
+        public async Task CreateManagedPropertyAsync_PassNullForUrl_ShouldThrow()
         {
             var owner = await this.subject.GetNewAddressAsync(CancellationToken.None);
 
             await Assert.ThrowsAsync<ArgumentNullException>(
                 "url",
-                () => this.subject.CreateManagedTokenAsync(
+                () => this.subject.CreateManagedPropertyAsync(
                     owner,
-                    TokenEcosystem.Main,
-                    TokenType.Divisible,
+                    Ecosystem.Main,
+                    PropertyType.Divisible,
                     null,
                     "Company",
                     "Private",
@@ -174,16 +174,16 @@ namespace Ztm.Zcoin.Rpc.Tests
         }
 
         [Fact]
-        public async Task CreateManagedTokenAsync_PassNullForDescription_ShouldThrow()
+        public async Task CreateManagedPropertyAsync_PassNullForDescription_ShouldThrow()
         {
             var owner = await this.subject.GetNewAddressAsync(CancellationToken.None);
 
             await Assert.ThrowsAsync<ArgumentNullException>(
                 "description",
-                () => this.subject.CreateManagedTokenAsync(
+                () => this.subject.CreateManagedPropertyAsync(
                     owner,
-                    TokenEcosystem.Main,
-                    TokenType.Divisible,
+                    Ecosystem.Main,
+                    PropertyType.Divisible,
                     null,
                     "Company",
                     "Private",
@@ -196,7 +196,7 @@ namespace Ztm.Zcoin.Rpc.Tests
         }
 
         [Fact]
-        public async Task CreateManagedTokenAsync_WithValidParams_ShouldSuccess()
+        public async Task CreateManagedPropertyAsync_WithValidParams_ShouldSuccess()
         {
             // Arrange.
             var owner = await this.subject.GetNewAddressAsync(CancellationToken.None);
@@ -206,10 +206,10 @@ namespace Ztm.Zcoin.Rpc.Tests
             this.node.Generate(1);
 
             // Act.
-            var tx = await this.subject.CreateManagedTokenAsync(
+            var tx = await this.subject.CreateManagedPropertyAsync(
                 owner,
-                TokenEcosystem.Main,
-                TokenType.Indivisible,
+                Ecosystem.Main,
+                PropertyType.Indivisible,
                 null,
                 "Company",
                 "Private",
@@ -224,16 +224,16 @@ namespace Ztm.Zcoin.Rpc.Tests
             this.node.Generate(1);
 
             // Assert.
-            var tokens = await this.subject.ListTokensAsync(CancellationToken.None);
+            var props = await this.subject.ListPropertiesAsync(CancellationToken.None);
 
-            Assert.Equal(3, tokens.Count());
-            Assert.Equal(3, tokens.Last().Id.Value);
-            Assert.Equal("Satang Corporation", tokens.Last().Name);
-            Assert.Equal("Company", tokens.Last().Category);
-            Assert.Equal("Private", tokens.Last().Subcategory);
-            Assert.Equal("https://satang.com", tokens.Last().Url);
-            Assert.Equal("Provides cryptocurrency solutions.", tokens.Last().Description);
-            Assert.Equal(TokenType.Indivisible, tokens.Last().Type);
+            Assert.Equal(3, props.Count());
+            Assert.Equal(3, props.Last().Id.Value);
+            Assert.Equal("Satang Corporation", props.Last().Name);
+            Assert.Equal("Company", props.Last().Category);
+            Assert.Equal("Private", props.Last().Subcategory);
+            Assert.Equal("https://satang.com", props.Last().Url);
+            Assert.Equal("Provides cryptocurrency solutions.", props.Last().Description);
+            Assert.Equal(PropertyType.Indivisible, props.Last().Type);
         }
 
         [Fact]
@@ -245,16 +245,16 @@ namespace Ztm.Zcoin.Rpc.Tests
         }
 
         [Fact]
-        public async Task GetTokenGrantsAsync_WithInvalidId_ShouldThrow()
+        public async Task GetPropertyGrantsAsync_WithInvalidId_ShouldThrow()
         {
             await Assert.ThrowsAsync<ArgumentException>(
-                "token",
-                () => this.subject.GetTokenGrantsAsync(default(TokenId), CancellationToken.None)
+                "id",
+                () => this.subject.GetPropertyGrantsAsync(default(PropertyId), CancellationToken.None)
             );
         }
 
         [Fact]
-        public async Task GetTokenGrantsAsync_WithEmptyHistories_ShouldSuccess()
+        public async Task GetPropertyGrantsAsync_WithEmptyHistories_ShouldSuccess()
         {
             // Arrange.
             var owner = await this.subject.GetNewAddressAsync(CancellationToken.None);
@@ -263,10 +263,10 @@ namespace Ztm.Zcoin.Rpc.Tests
             await this.subject.SendToAddressAsync(owner, Money.Coins(30), null, null, false, CancellationToken.None);
             this.node.Generate(1);
 
-            var tx = await this.subject.CreateManagedTokenAsync(
+            var tx = await this.subject.CreateManagedPropertyAsync(
                 owner,
-                TokenEcosystem.Main,
-                TokenType.Indivisible,
+                Ecosystem.Main,
+                PropertyType.Indivisible,
                 null,
                 "Company",
                 "Private",
@@ -281,7 +281,7 @@ namespace Ztm.Zcoin.Rpc.Tests
             this.node.Generate(1);
 
             // Act.
-            var info = await this.subject.GetTokenGrantsAsync(3, CancellationToken.None);
+            var info = await this.subject.GetPropertyGrantsAsync(3, CancellationToken.None);
 
             // Assert.
             Assert.Equal(3, info.Id.Value);
@@ -293,18 +293,18 @@ namespace Ztm.Zcoin.Rpc.Tests
         }
 
         [Fact]
-        public async Task GrantTokensAsync_WithInvalidId_ShouldThrow()
+        public async Task GrantPropertyAsync_WithInvalidId_ShouldThrow()
         {
             var owner = await this.subject.GetNewAddressAsync(CancellationToken.None);
             var to = BitcoinAddress.Create("TG3Pnw5xPZQS8JXMVa3F9WjUFfUqXKsqAz", this.node.Network);
 
             await Assert.ThrowsAsync<ArgumentException>(
                 "id",
-                () => this.subject.GrantTokensAsync(
-                    default(TokenId),
+                () => this.subject.GrantPropertyAsync(
+                    default(PropertyId),
                     owner,
                     to,
-                    TokenAmount.Indivisible(100),
+                    PropertyAmount.Indivisible(100),
                     null,
                     CancellationToken.None
                 )
@@ -312,17 +312,17 @@ namespace Ztm.Zcoin.Rpc.Tests
         }
 
         [Fact]
-        public async Task GrantTokensAsync_WithNullFrom_ShouldThrow()
+        public async Task GrantPropertyAsync_WithNullFrom_ShouldThrow()
         {
             var to = BitcoinAddress.Create("TG3Pnw5xPZQS8JXMVa3F9WjUFfUqXKsqAz", this.node.Network);
 
             await Assert.ThrowsAsync<ArgumentNullException>(
                 "from",
-                () => this.subject.GrantTokensAsync(
+                () => this.subject.GrantPropertyAsync(
                     3,
                     null,
                     to,
-                    TokenAmount.Indivisible(100),
+                    PropertyAmount.Indivisible(100),
                     null,
                     CancellationToken.None
                 )
@@ -330,17 +330,17 @@ namespace Ztm.Zcoin.Rpc.Tests
         }
 
         [Fact]
-        public async Task GrantTokensAsync_WithNullTo_ShouldThrow()
+        public async Task GrantPropertyAsync_WithNullTo_ShouldThrow()
         {
             var owner = await this.subject.GetNewAddressAsync(CancellationToken.None);
 
             await Assert.ThrowsAsync<ArgumentNullException>(
                 "to",
-                () => this.subject.GrantTokensAsync(
+                () => this.subject.GrantPropertyAsync(
                     3,
                     owner,
                     null,
-                    TokenAmount.Indivisible(100),
+                    PropertyAmount.Indivisible(100),
                     null,
                     CancellationToken.None
                 )
@@ -348,18 +348,18 @@ namespace Ztm.Zcoin.Rpc.Tests
         }
 
         [Fact]
-        public async Task GrantTokensAsync_WithInvalidAmount_ShouldThrow()
+        public async Task GrantPropertyAsync_WithInvalidAmount_ShouldThrow()
         {
             var owner = await this.subject.GetNewAddressAsync(CancellationToken.None);
             var to = BitcoinAddress.Create("TG3Pnw5xPZQS8JXMVa3F9WjUFfUqXKsqAz", this.node.Network);
 
             await Assert.ThrowsAsync<ArgumentException>(
                 "amount",
-                () => this.subject.GrantTokensAsync(
+                () => this.subject.GrantPropertyAsync(
                     3,
                     owner,
                     to,
-                    default(TokenAmount),
+                    default(PropertyAmount),
                     null,
                     CancellationToken.None
                 )
@@ -367,7 +367,7 @@ namespace Ztm.Zcoin.Rpc.Tests
         }
 
         [Fact]
-        public async Task GrantTokensAsync_WithValidParameters_ShouldSuccess()
+        public async Task GrantPropertyAsync_WithValidParameters_ShouldSuccess()
         {
             // Arrange.
             var owner = await this.subject.GetNewAddressAsync(CancellationToken.None);
@@ -376,10 +376,10 @@ namespace Ztm.Zcoin.Rpc.Tests
             await this.subject.SendToAddressAsync(owner, Money.Coins(30), null, null, false, CancellationToken.None);
             this.node.Generate(1);
 
-            var createTx = await this.subject.CreateManagedTokenAsync(
+            var createTx = await this.subject.CreateManagedPropertyAsync(
                 owner,
-                TokenEcosystem.Main,
-                TokenType.Indivisible,
+                Ecosystem.Main,
+                PropertyType.Indivisible,
                 null,
                 "Company",
                 "Private",
@@ -394,11 +394,11 @@ namespace Ztm.Zcoin.Rpc.Tests
             this.node.Generate(1);
 
             // Act.
-            var grantTx = await this.subject.GrantTokensAsync(
+            var grantTx = await this.subject.GrantPropertyAsync(
                 3,
                 owner,
                 owner,
-                TokenAmount.Indivisible(1000),
+                PropertyAmount.Indivisible(1000),
                 null,
                 CancellationToken.None);
 
@@ -407,7 +407,7 @@ namespace Ztm.Zcoin.Rpc.Tests
             this.node.Generate(1);
 
             // Assert.
-            var info = await this.subject.GetTokenGrantsAsync(3, CancellationToken.None);
+            var info = await this.subject.GetPropertyGrantsAsync(3, CancellationToken.None);
 
             Assert.Equal(3, info.Id.Value);
             Assert.Equal("Satang Corporation", info.Name);
@@ -416,33 +416,33 @@ namespace Ztm.Zcoin.Rpc.Tests
             Assert.Equal("1000", info.TotalTokens.Value.ToString());
             Assert.Single(info.Histories);
 
-            Assert.Equal(TokenGrantType.Grant, info.Histories.First().Type);
+            Assert.Equal(PropertyGrantType.Grant, info.Histories.First().Type);
             Assert.Equal(grantTx.GetHash(), info.Histories.First().Transaction);
             Assert.Equal("1000", info.Histories.First().Amount.ToString());
         }
 
         [Fact]
-        public async Task ListTokensAsync_WithExodusEnabled_ShouldSuccess()
+        public async Task ListPropertiesAsync_WithExodusEnabled_ShouldSuccess()
         {
-            var tokens = await this.subject.ListTokensAsync(CancellationToken.None);
+            var props = await this.subject.ListPropertiesAsync(CancellationToken.None);
 
-            Assert.Equal(2, tokens.Count());
+            Assert.Equal(2, props.Count());
 
-            Assert.Equal(1, tokens.First().Id.Value);
-            Assert.Equal("Exodus", tokens.First().Name);
-            Assert.Equal("N/A", tokens.First().Category);
-            Assert.Equal("N/A", tokens.First().Subcategory);
-            Assert.Equal("https://www.zcoin.io", tokens.First().Url);
-            Assert.Equal("Exodus serve as the binding between Zcoin, smart properties and contracts created on the Exodus Layer.", tokens.First().Description);
-            Assert.Equal(TokenType.Divisible, tokens.First().Type);
+            Assert.Equal(1, props.First().Id.Value);
+            Assert.Equal("Exodus", props.First().Name);
+            Assert.Equal("N/A", props.First().Category);
+            Assert.Equal("N/A", props.First().Subcategory);
+            Assert.Equal("https://www.zcoin.io", props.First().Url);
+            Assert.Equal("Exodus serve as the binding between Zcoin, smart properties and contracts created on the Exodus Layer.", props.First().Description);
+            Assert.Equal(PropertyType.Divisible, props.First().Type);
 
-            Assert.Equal(2, tokens.Last().Id.Value);
-            Assert.Equal("Test Exodus", tokens.Last().Name);
-            Assert.Equal("N/A", tokens.Last().Category);
-            Assert.Equal("N/A", tokens.Last().Subcategory);
-            Assert.Equal("https://www.zcoin.io", tokens.Last().Url);
-            Assert.Equal("Test Exodus serve as the binding between Zcoin, smart properties and contracts created on the Exodus Layer.", tokens.Last().Description);
-            Assert.Equal(TokenType.Divisible, tokens.Last().Type);
+            Assert.Equal(2, props.Last().Id.Value);
+            Assert.Equal("Test Exodus", props.Last().Name);
+            Assert.Equal("N/A", props.Last().Category);
+            Assert.Equal("N/A", props.Last().Subcategory);
+            Assert.Equal("https://www.zcoin.io", props.Last().Url);
+            Assert.Equal("Test Exodus serve as the binding between Zcoin, smart properties and contracts created on the Exodus Layer.", props.Last().Description);
+            Assert.Equal(PropertyType.Divisible, props.Last().Type);
         }
 
         [Fact]

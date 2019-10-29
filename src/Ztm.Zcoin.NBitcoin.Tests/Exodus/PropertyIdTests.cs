@@ -1,9 +1,10 @@
 using System;
 using Xunit;
+using Ztm.Zcoin.NBitcoin.Exodus;
 
-namespace Ztm.Zcoin.NBitcoin.Tests
+namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
 {
-    public class TokenIdTests
+    public sealed class PropertyIdTests
     {
         [Theory]
         [InlineData(-1)]
@@ -13,14 +14,14 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         {
             Assert.Throws<ArgumentOutOfRangeException>(
                 "value",
-                () => new TokenId(value)
+                () => new PropertyId(value)
             );
         }
 
         [Fact]
         public void Constructor_WithValidValue_ShoulSuccess()
         {
-            var id = new TokenId(1);
+            var id = new PropertyId(1);
 
             Assert.True(id.IsValid);
             Assert.Equal(1, id.Value);
@@ -30,19 +31,19 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         [Fact]
         public void IsValid_WithDefaultInstance_ShouldFalse()
         {
-            Assert.False(default(TokenId).IsValid);
+            Assert.False(default(PropertyId).IsValid);
         }
 
         [Fact]
         public void Value_WithDefaultInstance_ShouldThrow()
         {
-            Assert.Throws<InvalidOperationException>(() => default(TokenId).Value);
+            Assert.Throws<InvalidOperationException>(() => default(PropertyId).Value);
         }
 
         [Fact]
         public void Parse_WithNull_ShouldThrow()
         {
-            Assert.Throws<ArgumentNullException>("s", () => TokenId.Parse(null));
+            Assert.Throws<ArgumentNullException>("s", () => PropertyId.Parse(null));
         }
 
         [Theory]
@@ -50,7 +51,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         [InlineData("4294967295")]
         public void Parse_WithValidString_ShouldSuccess(string value)
         {
-            var id = TokenId.Parse(value);
+            var id = PropertyId.Parse(value);
 
             Assert.True(id.IsValid);
             Assert.Equal(value, id.ToString());
@@ -64,13 +65,13 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         [InlineData("9223372036854775808")]
         public void Parse_WithInvalidString_ShouldThrow(string value)
         {
-            Assert.Throws<FormatException>(() => TokenId.Parse(value));
+            Assert.Throws<FormatException>(() => PropertyId.Parse(value));
         }
 
         [Fact]
         public void ToString_WithDefaultInstance_ShouldReturnEmptyString()
         {
-            var s = default(TokenId).ToString();
+            var s = default(PropertyId).ToString();
 
             Assert.Empty(s);
         }

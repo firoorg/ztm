@@ -1,6 +1,6 @@
 namespace Ztm.Zcoin.Rpc
 {
-    public enum TokenGrantType
+    public enum PropertyGrantType
     {
         Grant,
         Revoke
