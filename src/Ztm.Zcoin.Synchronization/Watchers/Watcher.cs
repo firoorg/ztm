@@ -7,11 +7,11 @@ using NBitcoin;
 
 namespace Ztm.Zcoin.Synchronization.Watchers
 {
-    public abstract class Watcher<T> where T : Watch
+    public abstract class Watcher<TWatch, TContext> where TWatch : Watch<TContext>
     {
-        readonly IWatcherHandler<T> handler;
+        readonly IWatcherHandler<TWatch, TContext> handler;
 
-        protected Watcher(IWatcherHandler<T> handler)
+        protected Watcher(IWatcherHandler<TWatch, TContext> handler)
         {
             if (handler == null)
             {
@@ -27,7 +27,7 @@ namespace Ztm.Zcoin.Synchronization.Watchers
             BlockEventType eventType,
             CancellationToken cancellationToken)
         {
-            IEnumerable<T> watches;
+            IEnumerable<TWatch> watches;
 
             if (block == null)
             {
@@ -76,19 +76,19 @@ namespace Ztm.Zcoin.Synchronization.Watchers
             }
         }
 
-        protected abstract Task<IEnumerable<T>> CreateWatchesAsync(
+        protected abstract Task<IEnumerable<TWatch>> CreateWatchesAsync(
             Block block,
             int height,
             CancellationToken cancellationToken);
 
         protected abstract Task<bool> ExecuteMatchedWatchAsync(
-            T watch,
+            TWatch watch,
             Block block,
             int height,
             BlockEventType blockEventType,
             CancellationToken cancellationToken);
 
-        protected abstract Task<IEnumerable<T>> GetWatchesAsync(
+        protected abstract Task<IEnumerable<TWatch>> GetWatchesAsync(
             Block block,
             int height,
             CancellationToken cancellationToken);

@@ -13,16 +13,16 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
 {
     public sealed class WatcherTests
     {
-        readonly IWatcherHandler<Watch> handler;
+        readonly IWatcherHandler<Watch<object>, object> handler;
         readonly TestWatcher subject;
 
         public WatcherTests()
         {
-            this.handler = Substitute.For<IWatcherHandler<Watch>>();
+            this.handler = Substitute.For<IWatcherHandler<Watch<object>, object>>();
             this.subject = new TestWatcher(this.handler);
-            this.subject.CreateWatches = Substitute.For<Func<Block, int, CancellationToken, IEnumerable<Watch>>>();
-            this.subject.ExecuteMatchedWatch = Substitute.For<Func<Watch, Block, int, BlockEventType, CancellationToken, bool>>();
-            this.subject.GetWatches = Substitute.For<Func<Block, int, CancellationToken, IEnumerable<Watch>>>();
+            this.subject.CreateWatches = Substitute.For<Func<Block, int, CancellationToken, IEnumerable<Watch<object>>>>();
+            this.subject.ExecuteMatchedWatch = Substitute.For<Func<Watch<object>, Block, int, BlockEventType, CancellationToken, bool>>();
+            this.subject.GetWatches = Substitute.For<Func<Block, int, CancellationToken, IEnumerable<Watch<object>>>>();
         }
 
         [Fact]
@@ -45,8 +45,8 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
             // Arrange.
             var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
 
-            this.subject.CreateWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
-            this.subject.GetWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
+            this.subject.CreateWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch<object>>());
+            this.subject.GetWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch<object>>());
 
             // Act.
             using (var cancellationSource = new CancellationTokenSource())
@@ -64,8 +64,8 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
             // Arrange.
             var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
 
-            this.subject.CreateWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
-            this.subject.GetWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
+            this.subject.CreateWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch<object>>());
+            this.subject.GetWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch<object>>());
 
             // Act.
             using (var cancellationSource = new CancellationTokenSource())
@@ -84,14 +84,14 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
             // Arrange.
             var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
 
-            this.subject.CreateWatches(block, 0, Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
-            this.subject.GetWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
+            this.subject.CreateWatches(block, 0, Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch<object>>());
+            this.subject.GetWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch<object>>());
 
             // Act.
             await this.subject.ExecuteAsync(block, 0, BlockEventType.Added, CancellationToken.None);
 
             // Assert.
-            _ = this.handler.Received(0).AddWatchesAsync(Arg.Any<IEnumerable<Watch>>(), Arg.Any<CancellationToken>());
+            _ = this.handler.Received(0).AddWatchesAsync(Arg.Any<IEnumerable<Watch<object>>>(), Arg.Any<CancellationToken>());
         }
 
         [Fact]
@@ -99,10 +99,10 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         {
             // Arrange.
             var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
-            var watch = new Watch(block.GetHash());
+            var watch = new Watch<object>(null, block.GetHash());
 
             this.subject.CreateWatches(block, 0, Arg.Any<CancellationToken>()).Returns(new[] { watch });
-            this.subject.GetWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
+            this.subject.GetWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch<object>>());
 
             // Act.
             using (var cancellationSource = new CancellationTokenSource())
@@ -111,7 +111,7 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
 
                 // Assert.
                 _ = this.handler.Received(1).AddWatchesAsync(
-                    Arg.Is<IEnumerable<Watch>>(l => l.SequenceEqual(new[] { watch })),
+                    Arg.Is<IEnumerable<Watch<object>>>(l => l.SequenceEqual(new[] { watch })),
                     cancellationSource.Token
                 );
             }
@@ -123,8 +123,8 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
             // Arrange.
             var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
 
-            this.subject.CreateWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
-            this.subject.GetWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
+            this.subject.CreateWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch<object>>());
+            this.subject.GetWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch<object>>());
 
             // Act.
             using (var cancellationSource = new CancellationTokenSource())
@@ -133,7 +133,7 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
 
                 // Assert.
                 this.subject.ExecuteMatchedWatch.Received(0)(
-                    Arg.Any<Watch>(),
+                    Arg.Any<Watch<object>>(),
                     Arg.Any<Block>(),
                     Arg.Any<int>(),
                     Arg.Any<BlockEventType>(),
@@ -147,9 +147,9 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         {
             // Arrange.
             var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
-            var watch = new Watch(block.GetHash());
+            var watch = new Watch<object>(null, block.GetHash());
 
-            this.subject.CreateWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
+            this.subject.CreateWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch<object>>());
             this.subject.GetWatches(block, 0, Arg.Any<CancellationToken>()).Returns(new[] { watch });
             this.subject.ExecuteMatchedWatch(watch, block, 0, BlockEventType.Added, Arg.Any<CancellationToken>()).Returns(true);
 
@@ -169,9 +169,9 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         {
             // Arrange.
             var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
-            var watch = new Watch(block.GetHash());
+            var watch = new Watch<object>(null, block.GetHash());
 
-            this.subject.CreateWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch>());
+            this.subject.CreateWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch<object>>());
             this.subject.GetWatches(block, 0, Arg.Any<CancellationToken>()).Returns(new[] { watch });
             this.subject.ExecuteMatchedWatch(watch, block, 0, BlockEventType.Added, Arg.Any<CancellationToken>()).Returns(false);
 
@@ -182,7 +182,7 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
 
                 // Assert.
                 this.subject.ExecuteMatchedWatch.Received(1)(watch, block, 0, BlockEventType.Added, CancellationToken.None);
-                _ = this.handler.Received(0).RemoveWatchAsync(Arg.Any<Watch>(), Arg.Any<WatchRemoveReason>(), Arg.Any<CancellationToken>());
+                _ = this.handler.Received(0).RemoveWatchAsync(Arg.Any<Watch<object>>(), Arg.Any<WatchRemoveReason>(), Arg.Any<CancellationToken>());
             }
         }
 
@@ -191,10 +191,10 @@ namespace Ztm.Zcoin.Synchronization.Tests.Watchers
         {
             // Arrange.
             var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
-            var watch = new Watch(block.GetHash());
+            var watch = new Watch<object>(null, block.GetHash());
 
             this.subject.GetWatches(block, 0, Arg.Any<CancellationToken>()).Returns(new[] { watch });
-            this.subject.ExecuteMatchedWatch(Arg.Any<Watch>(), Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<BlockEventType>(), Arg.Any<CancellationToken>()).Returns(false);
+            this.subject.ExecuteMatchedWatch(Arg.Any<Watch<object>>(), Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<BlockEventType>(), Arg.Any<CancellationToken>()).Returns(false);
 
             // Act.
             using (var cancellationSource = new CancellationTokenSource())

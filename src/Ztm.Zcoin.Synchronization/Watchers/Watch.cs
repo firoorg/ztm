@@ -3,27 +3,32 @@ using NBitcoin;
 
 namespace Ztm.Zcoin.Synchronization.Watchers
 {
-    public class Watch
+    public class Watch<T>
     {
-        public Watch(uint256 startBlock) : this(startBlock, DateTime.Now)
+        public Watch(T context, uint256 startBlock)
+            : this(context, startBlock, DateTime.Now)
         {
         }
 
-        public Watch(uint256 startBlock, DateTime startTime) : this(startBlock, startTime, Guid.NewGuid())
+        public Watch(T context, uint256 startBlock, DateTime startTime)
+            : this(context, startBlock, startTime, Guid.NewGuid())
         {
         }
 
-        public Watch(uint256 startBlock, DateTime startTime, Guid id)
+        public Watch(T context, uint256 startBlock, DateTime startTime, Guid id)
         {
             if (startBlock == null)
             {
                 throw new ArgumentNullException(nameof(startBlock));
             }
 
+            Context = context;
             StartBlock = startBlock;
             StartTime = startTime;
             Id = id;
         }
+
+        public T Context { get; }
 
         public Guid Id { get; }
 
@@ -33,14 +38,14 @@ namespace Ztm.Zcoin.Synchronization.Watchers
 
         public override bool Equals(object obj)
         {
-            var other = obj as Watch;
+            var other = obj as Watch<T>;
 
             if (other == null || other.GetType() != GetType())
             {
                 return false;
             }
 
-            return other.Id == Id && other.StartBlock == StartBlock && other.StartTime == StartTime;
+            return other.Id == Id;
         }
 
         public override int GetHashCode()
