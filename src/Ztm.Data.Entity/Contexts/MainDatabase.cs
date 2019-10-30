@@ -4,8 +4,11 @@ using Ztm.Data.Entity.Contexts.Main;
 
 namespace Ztm.Data.Entity.Contexts
 {
+    /// <summary>
+    /// Represents the application main database.
+    /// </summary>
     /// <remark>
-    /// Add all configurations explicitly and ignore EF conventions
+    /// Adds all configurations explicitly and ignores EF conventions.
     /// </remark>
     public class MainDatabase : DbContext
     {
