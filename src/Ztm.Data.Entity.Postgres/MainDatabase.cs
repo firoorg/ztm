@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Ztm.Data.Entity.Contexts.Main;
 using Npgsql;
 using Npgsql.TypeMapping;
@@ -25,19 +26,18 @@ namespace Ztm.Data.Entity.Postgres
         {
         }
 
-        protected override void ConfigureWebApiCallback(ModelBuilder modelBuilder)
+        protected override void ConfigureWebApiCallback(EntityTypeBuilder<WebApiCallback> builder)
         {
-            base.ConfigureWebApiCallback(modelBuilder);
+            base.ConfigureWebApiCallback(builder);
 
-            modelBuilder.Entity<WebApiCallback>(b =>
-            {
-                b.Property(e => e.Url).HasConversion(Converters.UriToStringConverter);
-            });
+            builder.Property(e => e.Url).HasConversion(Converters.UriToStringConverter);
+        }
 
-            modelBuilder.Entity<WebApiCallbackHistory>(b =>
-            {
-                b.Property(e => e.Data).HasColumnType("jsonb");
-            });
+        protected override void ConfigureWebApiCallbackHistory(EntityTypeBuilder<WebApiCallbackHistory> builder)
+        {
+            base.ConfigureWebApiCallbackHistory(builder);
+
+            builder.Property(e => e.Data).HasColumnType("jsonb");
         }
     }
 }

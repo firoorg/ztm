@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Ztm.Data.Entity.Contexts;
 using Ztm.Data.Entity.Contexts.Main;
 
@@ -10,46 +11,53 @@ namespace Ztm.Data.Entity.Testing
         {
         }
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        protected override void ConfigureWebApiCallback(EntityTypeBuilder<WebApiCallback> builder)
         {
-            base.OnModelCreating(modelBuilder);
+            base.ConfigureWebApiCallback(builder);
 
-            modelBuilder.Entity<WebApiCallback>(b =>
-            {
-                b.Property(e => e.RegisteredIp).HasConversion(Converters.IPAddressToStringConverter);
-                b.Property(e => e.Url).HasConversion(Converters.UriToStringConverter);
-            });
+            builder.Property(e => e.RegisteredIp).HasConversion(Converters.IPAddressToStringConverter);
+            builder.Property(e => e.Url).HasConversion(Converters.UriToStringConverter);
+        }
 
-            modelBuilder.Entity<Block>(b =>
-            {
-                b.Property(e => e.Hash).HasConversion(Converters.UInt256ToBytesConverter);
-                b.Property(e => e.MerkleRoot).HasConversion(Converters.UInt256ToBytesConverter);
-                b.Property(e => e.MtpHashValue).HasConversion(Converters.UInt256ToBytesConverter);
-                b.Property(e => e.Reserved1).HasConversion(Converters.UInt256ToBytesConverter);
-                b.Property(e => e.Reserved2).HasConversion(Converters.UInt256ToBytesConverter);
-            });
+        protected override void ConfigureBlock(EntityTypeBuilder<Block> builder)
+        {
+            base.ConfigureBlock(builder);
 
-            modelBuilder.Entity<BlockTransaction>(b =>
-            {
-                b.Property(e => e.BlockHash).HasConversion(Converters.UInt256ToBytesConverter);
-                b.Property(e => e.TransactionHash).HasConversion(Converters.UInt256ToBytesConverter);
-            });
+            builder.Property(e => e.Hash).HasConversion(Converters.UInt256ToBytesConverter);
+            builder.Property(e => e.MerkleRoot).HasConversion(Converters.UInt256ToBytesConverter);
+            builder.Property(e => e.MtpHashValue).HasConversion(Converters.UInt256ToBytesConverter);
+            builder.Property(e => e.Reserved1).HasConversion(Converters.UInt256ToBytesConverter);
+            builder.Property(e => e.Reserved2).HasConversion(Converters.UInt256ToBytesConverter);
+        }
 
-            modelBuilder.Entity<Input>(b =>
-            {
-                b.Property(e => e.TransactionHash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
-                b.Property(e => e.OutputHash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
-            });
+        protected override void ConfigureBlockTransaction(EntityTypeBuilder<BlockTransaction> builder)
+        {
+            base.ConfigureBlockTransaction(builder);
 
-            modelBuilder.Entity<Output>(b =>
-            {
-                b.Property(e => e.TransactionHash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
-            });
+            builder.Property(e => e.BlockHash).HasConversion(Converters.UInt256ToBytesConverter);
+            builder.Property(e => e.TransactionHash).HasConversion(Converters.UInt256ToBytesConverter);
+        }
 
-            modelBuilder.Entity<Transaction>(b =>
-            {
-                b.Property(e => e.Hash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
-            });
+        protected override void ConfigureInput(EntityTypeBuilder<Input> builder)
+        {
+            base.ConfigureInput(builder);
+
+            builder.Property(e => e.TransactionHash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
+            builder.Property(e => e.OutputHash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
+        }
+
+        protected override void ConfigureOutput(EntityTypeBuilder<Output> builder)
+        {
+            base.ConfigureOutput(builder);
+
+            builder.Property(e => e.TransactionHash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
+        }
+
+        protected override void ConfigureTransaction(EntityTypeBuilder<Transaction> builder)
+        {
+            base.ConfigureTransaction(builder);
+
+            builder.Property(e => e.Hash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
         }
     }
 }
