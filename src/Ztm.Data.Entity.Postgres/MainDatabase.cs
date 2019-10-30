@@ -29,12 +29,14 @@ namespace Ztm.Data.Entity.Postgres
         protected override void ConfigureWebApiCallback(EntityTypeBuilder<WebApiCallback> builder)
         {
             base.ConfigureWebApiCallback(builder);
+
             builder.Property(e => e.Url).HasConversion(Converters.UriToStringConverter);
         }
 
         protected override void ConfigureWebApiCallbackHistory(EntityTypeBuilder<WebApiCallbackHistory> builder)
         {
             base.ConfigureWebApiCallbackHistory(builder);
+
             builder.Property(e => e.Data).HasColumnType("jsonb");
         }
     }

@@ -4,6 +4,9 @@ using Ztm.Data.Entity.Contexts.Main;
 
 namespace Ztm.Data.Entity.Contexts
 {
+    /// <remark>
+    /// Add all configurations explicitly and ignore EF conventions
+    /// </remark>
     public class MainDatabase : DbContext
     {
         public MainDatabase(DbContextOptions<MainDatabase> options) : base(options)
@@ -51,15 +54,15 @@ namespace Ztm.Data.Entity.Contexts
             builder.HasKey(e => new { e.BlockHash, e.TransactionHash, e.Index });
             builder.HasIndex(e => e.TransactionHash);
             builder.HasOne(e => e.Block)
-             .WithMany(e => e.Transactions)
-             .HasForeignKey(e => e.BlockHash)
-             .HasPrincipalKey(e => e.Hash)
-             .OnDelete(DeleteBehavior.Cascade);
+                   .WithMany(e => e.Transactions)
+                   .HasForeignKey(e => e.BlockHash)
+                   .HasPrincipalKey(e => e.Hash)
+                   .OnDelete(DeleteBehavior.Cascade);
             builder.HasOne(e => e.Transaction)
-             .WithMany(e => e.Blocks)
-             .HasForeignKey(e => e.TransactionHash)
-             .HasPrincipalKey(e => e.Hash)
-             .OnDelete(DeleteBehavior.Restrict);
+                   .WithMany(e => e.Blocks)
+                   .HasForeignKey(e => e.TransactionHash)
+                   .HasPrincipalKey(e => e.Hash)
+                   .OnDelete(DeleteBehavior.Restrict);
         }
 
         protected virtual void ConfigureInput(EntityTypeBuilder<Input> builder)
@@ -74,10 +77,10 @@ namespace Ztm.Data.Entity.Contexts
             builder.HasKey(e => new { e.TransactionHash, e.Index });
             builder.HasIndex(e => new { e.OutputHash, e.OutputIndex });
             builder.HasOne(e => e.Transaction)
-             .WithMany(e => e.Inputs)
-             .HasForeignKey(e => e.TransactionHash)
-             .HasPrincipalKey(e => e.Hash)
-             .OnDelete(DeleteBehavior.Cascade);
+                   .WithMany(e => e.Inputs)
+                   .HasForeignKey(e => e.TransactionHash)
+                   .HasPrincipalKey(e => e.Hash)
+                   .OnDelete(DeleteBehavior.Cascade);
         }
 
         protected virtual void ConfigureOutput(EntityTypeBuilder<Output> builder)
@@ -89,10 +92,10 @@ namespace Ztm.Data.Entity.Contexts
 
             builder.HasKey(e => new { e.TransactionHash, e.Index });
             builder.HasOne(e => e.Transaction)
-             .WithMany(e => e.Outputs)
-             .HasForeignKey(e => e.TransactionHash)
-             .HasPrincipalKey(e => e.Hash)
-             .OnDelete(DeleteBehavior.Cascade);
+                   .WithMany(e => e.Outputs)
+                   .HasForeignKey(e => e.TransactionHash)
+                   .HasPrincipalKey(e => e.Hash)
+                   .OnDelete(DeleteBehavior.Cascade);
         }
 
         protected virtual void ConfigureTransaction(EntityTypeBuilder<Transaction> builder)
@@ -124,12 +127,12 @@ namespace Ztm.Data.Entity.Contexts
             builder.Property(e => e.Data).IsRequired();
 
             builder.HasKey(e => e.Id);
-            builder.HasIndex(e => e.CallbackId); // Intentionally add
+            builder.HasIndex(e => e.CallbackId);
             builder.HasOne(e => e.Callback)
-             .WithMany(e => e.InvocationHistories)
-             .HasForeignKey(e => e.CallbackId)
-             .HasPrincipalKey(e => e.Id)
-             .OnDelete(DeleteBehavior.Cascade);
+                   .WithMany(e => e.InvocationHistories)
+                   .HasForeignKey(e => e.CallbackId)
+                   .HasPrincipalKey(e => e.Id)
+                   .OnDelete(DeleteBehavior.Cascade);
         }
 
         protected sealed override void OnModelCreating(ModelBuilder modelBuilder)
