@@ -30,6 +30,8 @@ namespace Ztm.Data.Entity.Contexts
 
         public DbSet<WebApiCallbackHistory> WebApiCallbackHistories { get; set; }
 
+        public DbSet<TransactionConfirmationWatch> TransactionConfirmationWatches { get; set; }
+
         protected virtual void ConfigureBlock(EntityTypeBuilder<Block> builder)
         {
             builder.Property(e => e.Height).IsRequired().ValueGeneratedNever();
@@ -138,6 +140,25 @@ namespace Ztm.Data.Entity.Contexts
                    .OnDelete(DeleteBehavior.Cascade);
         }
 
+        protected virtual void ConfigureTransactionConfirmationWatch(
+            EntityTypeBuilder<TransactionConfirmationWatch> builder)
+        {
+            builder.Property(e => e.CallbackId).IsRequired();
+            builder.Property(e => e.Transaction).IsRequired();
+            builder.Property(e => e.Confirmation).IsRequired();
+            builder.Property(e => e.Due).IsRequired();
+            builder.Property(e => e.SuccessData).IsRequired();
+            builder.Property(e => e.TimeoutData).IsRequired();
+
+            builder.HasKey(e => e.Id);
+            builder.HasIndex(e => e.CallbackId);
+            builder.HasOne(e => e.Callback)
+                   .WithMany()
+                   .HasForeignKey(e => e.CallbackId)
+                   .HasPrincipalKey(e => e.Id)
+                   .OnDelete(DeleteBehavior.Cascade);
+        }
+
         protected sealed override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Block>(ConfigureBlock);
@@ -147,6 +168,7 @@ namespace Ztm.Data.Entity.Contexts
             modelBuilder.Entity<Transaction>(ConfigureTransaction);
             modelBuilder.Entity<WebApiCallback>(ConfigureWebApiCallback);
             modelBuilder.Entity<WebApiCallbackHistory>(ConfigureWebApiCallbackHistory);
+            modelBuilder.Entity<TransactionConfirmationWatch>(ConfigureTransactionConfirmationWatch);
         }
     }
 }

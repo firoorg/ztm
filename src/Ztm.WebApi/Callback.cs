@@ -29,5 +29,30 @@ namespace Ztm.WebApi
         public DateTime RegisteredTime { get; }
         public bool Completed { get; }
         public Uri Url { get; }
+
+        public int CompareTo(Callback other)
+        {
+            if (other == null)
+            {
+                return 1;
+            }
+
+            return Id.CompareTo(other.Id);
+        }
+
+        public override bool Equals(object other)
+        {
+            if (other == null || other.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return CompareTo((Callback)other) == 0;
+        }
+
+        public override int GetHashCode()
+        {
+            return Id.GetHashCode();
+        }
     }
 }

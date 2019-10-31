@@ -112,8 +112,13 @@ namespace Ztm.WebApi
             };
         }
 
-        static Callback ToDomain(WebApiCallback callback)
+        public static Callback ToDomain(WebApiCallback callback)
         {
+            if (callback == null)
+            {
+                throw new ArgumentNullException(nameof(callback));
+            }
+
             return new Callback(
                 callback.Id,
                 callback.RegisteredIp,
