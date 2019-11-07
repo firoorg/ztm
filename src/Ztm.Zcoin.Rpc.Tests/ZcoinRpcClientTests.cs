@@ -64,28 +64,6 @@ namespace Ztm.Zcoin.Rpc.Tests
         }
 
         [Fact]
-        public async Task CreateManagedPropertyAsync_PassInvalidTokenId_ShouldThrow()
-        {
-            var owner = await this.subject.GetNewAddressAsync(CancellationToken.None);
-
-            await Assert.ThrowsAsync<ArgumentException>(
-                "currentId",
-                () => this.subject.CreateManagedPropertyAsync(
-                    owner,
-                    Ecosystem.Main,
-                    PropertyType.Divisible,
-                    default(PropertyId),
-                    "Company",
-                    "Private",
-                    "Satang Corporation",
-                    "https://satang.com",
-                    "Provides cryptocurrency solutions.",
-                    CancellationToken.None
-                )
-            );
-        }
-
-        [Fact]
         public async Task CreateManagedPropertyAsync_PassNullForCategory_ShouldThrow()
         {
             var owner = await this.subject.GetNewAddressAsync(CancellationToken.None);
@@ -245,11 +223,11 @@ namespace Ztm.Zcoin.Rpc.Tests
         }
 
         [Fact]
-        public async Task GetPropertyGrantsAsync_WithInvalidId_ShouldThrow()
+        public async Task GetPropertyGrantsAsync_WithNullProperty_ShouldThrow()
         {
-            await Assert.ThrowsAsync<ArgumentException>(
-                "id",
-                () => this.subject.GetPropertyGrantsAsync(default(PropertyId), CancellationToken.None)
+            await Assert.ThrowsAsync<ArgumentNullException>(
+                "property",
+                () => this.subject.GetPropertyGrantsAsync(null, CancellationToken.None)
             );
         }
 
@@ -281,30 +259,33 @@ namespace Ztm.Zcoin.Rpc.Tests
             this.node.Generate(1);
 
             // Act.
-            var info = await this.subject.GetPropertyGrantsAsync(3, CancellationToken.None);
+            var info = await this.subject.GetPropertyGrantsAsync(
+                new Property(new PropertyId(3), PropertyType.Indivisible),
+                CancellationToken.None
+            );
 
             // Assert.
             Assert.Equal(3, info.Id.Value);
             Assert.Equal("Satang Corporation", info.Name);
             Assert.Equal(owner, info.Issuer);
             Assert.Equal(tx.GetHash(), info.CreationTransaction);
-            Assert.Null(info.TotalTokens);
+            Assert.Equal(PropertyAmount.Zero, info.TotalTokens);
             Assert.Empty(info.Histories);
         }
 
         [Fact]
-        public async Task GrantPropertyAsync_WithInvalidId_ShouldThrow()
+        public async Task GrantPropertyAsync_WithNullProperty_ShouldThrow()
         {
             var owner = await this.subject.GetNewAddressAsync(CancellationToken.None);
             var to = BitcoinAddress.Create("TG3Pnw5xPZQS8JXMVa3F9WjUFfUqXKsqAz", this.node.Network);
 
-            await Assert.ThrowsAsync<ArgumentException>(
-                "id",
+            await Assert.ThrowsAsync<ArgumentNullException>(
+                "property",
                 () => this.subject.GrantPropertyAsync(
-                    default(PropertyId),
+                    null,
                     owner,
                     to,
-                    PropertyAmount.Indivisible(100),
+                    new PropertyAmount(100),
                     null,
                     CancellationToken.None
                 )
@@ -319,10 +300,10 @@ namespace Ztm.Zcoin.Rpc.Tests
             await Assert.ThrowsAsync<ArgumentNullException>(
                 "from",
                 () => this.subject.GrantPropertyAsync(
-                    3,
+                    new Property(new PropertyId(3), PropertyType.Indivisible),
                     null,
                     to,
-                    PropertyAmount.Indivisible(100),
+                    new PropertyAmount(100),
                     null,
                     CancellationToken.None
                 )
@@ -337,10 +318,10 @@ namespace Ztm.Zcoin.Rpc.Tests
             await Assert.ThrowsAsync<ArgumentNullException>(
                 "to",
                 () => this.subject.GrantPropertyAsync(
-                    3,
+                    new Property(new PropertyId(3), PropertyType.Indivisible),
                     owner,
                     null,
-                    PropertyAmount.Indivisible(100),
+                    new PropertyAmount(100),
                     null,
                     CancellationToken.None
                 )
@@ -353,13 +334,13 @@ namespace Ztm.Zcoin.Rpc.Tests
             var owner = await this.subject.GetNewAddressAsync(CancellationToken.None);
             var to = BitcoinAddress.Create("TG3Pnw5xPZQS8JXMVa3F9WjUFfUqXKsqAz", this.node.Network);
 
-            await Assert.ThrowsAsync<ArgumentException>(
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
                 "amount",
                 () => this.subject.GrantPropertyAsync(
-                    3,
+                    new Property(new PropertyId(3), PropertyType.Indivisible),
                     owner,
                     to,
-                    default(PropertyAmount),
+                    PropertyAmount.Zero,
                     null,
                     CancellationToken.None
                 )
@@ -393,12 +374,14 @@ namespace Ztm.Zcoin.Rpc.Tests
 
             this.node.Generate(1);
 
+            var property = new Property(new PropertyId(3), PropertyType.Indivisible);
+
             // Act.
             var grantTx = await this.subject.GrantPropertyAsync(
-                3,
+                property,
                 owner,
                 owner,
-                PropertyAmount.Indivisible(1000),
+                new PropertyAmount(1000),
                 null,
                 CancellationToken.None);
 
@@ -407,18 +390,18 @@ namespace Ztm.Zcoin.Rpc.Tests
             this.node.Generate(1);
 
             // Assert.
-            var info = await this.subject.GetPropertyGrantsAsync(3, CancellationToken.None);
+            var info = await this.subject.GetPropertyGrantsAsync(property, CancellationToken.None);
 
             Assert.Equal(3, info.Id.Value);
             Assert.Equal("Satang Corporation", info.Name);
             Assert.Equal(owner, info.Issuer);
             Assert.Equal(createTx.GetHash(), info.CreationTransaction);
-            Assert.Equal("1000", info.TotalTokens.Value.ToString());
+            Assert.Equal("1000", info.TotalTokens.ToString(property.Type));
             Assert.Single(info.Histories);
 
             Assert.Equal(PropertyGrantType.Grant, info.Histories.First().Type);
             Assert.Equal(grantTx.GetHash(), info.Histories.First().Transaction);
-            Assert.Equal("1000", info.Histories.First().Amount.ToString());
+            Assert.Equal("1000", info.Histories.First().Amount.ToString(property.Type));
         }
 
         [Fact]

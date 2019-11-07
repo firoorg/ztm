@@ -4,7 +4,7 @@ using System.ComponentModel;
 namespace Ztm.Zcoin.NBitcoin.Exodus
 {
     [TypeConverter(typeof(PropertyIdConverter))]
-    public struct PropertyId
+    public sealed class PropertyId
     {
         readonly uint value;
 
@@ -12,15 +12,13 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
         {
             if (value <= 0 || value > uint.MaxValue)
             {
-                throw new ArgumentOutOfRangeException(nameof(value), "The value is not valid.");
+                throw new ArgumentOutOfRangeException(nameof(value), value, "The value is not valid.");
             }
 
             this.value = (uint)value;
         }
 
-        public bool IsValid => this.value != 0;
-
-        public long Value => IsValid ? this.value : throw new InvalidOperationException("The identifier is not valid.");
+        public long Value => this.value;
 
         public static PropertyId Parse(string s)
         {
@@ -34,14 +32,44 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
             }
         }
 
-        public override string ToString()
+        public override bool Equals(object obj)
         {
-            return IsValid ? this.value.ToString() : "";
+            if (obj == null || obj.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return ((PropertyId)obj).value == this.value;
         }
 
-        public static implicit operator PropertyId(long value)
+        public override int GetHashCode()
         {
-            return new PropertyId(value);
+            return this.value.GetHashCode();
+        }
+
+        public override string ToString()
+        {
+            return this.value.ToString();
+        }
+
+        public static bool operator==(PropertyId first, PropertyId second)
+        {
+            if (ReferenceEquals(first, second))
+            {
+                return true;
+            }
+
+            if (ReferenceEquals(first, null)) // Don't use == here due to it will recursive.
+            {
+                return false;
+            }
+
+            return first.Equals(second);
+        }
+
+        public static bool operator!=(PropertyId first, PropertyId second)
+        {
+            return !(first == second);
         }
     }
 }

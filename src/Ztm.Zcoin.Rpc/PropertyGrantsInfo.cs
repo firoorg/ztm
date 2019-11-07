@@ -10,7 +10,7 @@ namespace Ztm.Zcoin.Rpc
         public string Name { get; set; }
         public BitcoinAddress Issuer { get; set; }
         public uint256 CreationTransaction { get; set; }
-        public PropertyAmount? TotalTokens { get; set; }
+        public PropertyAmount TotalTokens { get; set; }
         public IEnumerable<PropertyGrantHistory> Histories { get; set; }
     }
 }
