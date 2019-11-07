@@ -268,7 +268,7 @@ namespace Ztm.WebApi.Tests
             );
 
             var received = await this.subject.GetCurrentWatchesAsync(CancellationToken.None);
-            Assert.Equal(1, received.Count());
+            Assert.Single(received);
             Assert.Equal(watches[0].Id, received.First().Id);
         }
 

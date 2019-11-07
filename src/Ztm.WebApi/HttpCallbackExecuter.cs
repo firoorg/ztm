@@ -10,11 +10,11 @@ namespace Ztm.WebApi
 {
     public class HttpCallbackExecuter : ICallbackExecuter
     {
-        readonly IHttpClientFactory clientFactory;
+        readonly HttpClient client;
 
-        public HttpCallbackExecuter(IHttpClientFactory clientFactory)
+        public HttpCallbackExecuter(HttpClient client)
         {
-            this.clientFactory = clientFactory;
+            this.client = client;
         }
 
         public async Task<bool> Execute(Guid id, Uri url, CallbackResult result, CancellationToken cancellationToken)
@@ -31,7 +31,6 @@ namespace Ztm.WebApi
             var content = JsonConvert.SerializeObject(result.Data);
             request.Content = new StringContent(content, Encoding.UTF8, "application/json");
 
-            var client = this.clientFactory.CreateClient();
             var response = await client.SendAsync(request);
 
             switch(response.StatusCode)

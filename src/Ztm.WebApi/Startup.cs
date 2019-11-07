@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net.Http;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -30,6 +31,15 @@ namespace Ztm.WebApi
 
             // Database Services.
             services.AddSingleton<IMainDatabaseFactory, MainDatabaseFactory>();
+
+            // Transaction Confirmation Watcher.
+            services.AddHttpClient<ICallbackExecuter, HttpCallbackExecuter>();
+            services.AddTransient<ICallbackRepository, SqlCallbackRepository>();
+            services.AddTransient<
+                ITransactionConfirmationWatchRepository<TransactionConfirmationCallbackResult>,
+                SqlTransactionConfirmationWatchRepository<TransactionConfirmationCallbackResult>>();
+            services.AddHostedService<TransactionConfirmationWatcher>();
+            services.AddSingleton<IBlockListener, TransactionConfirmationWatcher>();
 
             // Zcoin Interface Services.
             services.AddSingleton<IZcoinRpcClientFactory>(CreateZcoinRpcClientFactory);
