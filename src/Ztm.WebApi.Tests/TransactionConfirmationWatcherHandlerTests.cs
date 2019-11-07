@@ -99,11 +99,13 @@ namespace Ztm.WebApi.Tests
             );
 
             _ = this.callbackExecuter.Received(1).Execute(
+                Arg.Any<Guid>(),
                 this.defaultUrl,
                 Arg.Is<TransactionConfirmationCallbackResult>
                 (
                     result => result == builder.timeoutData
-                )
+                ),
+                Arg.Any<CancellationToken>()
             );
 
             _ = this.callbackRepository.Received(1).AddHistoryAsync
@@ -140,11 +142,13 @@ namespace Ztm.WebApi.Tests
 
             // Assert.
             _ = this.callbackExecuter.Received(2).Execute(
+                Arg.Any<Guid>(),
                 this.defaultUrl,
                 Arg.Is<TransactionConfirmationCallbackResult>
                 (
                     result => result == builder.timeoutData
-                )
+                ),
+                Arg.Any<CancellationToken>()
             );
         }
 
@@ -257,8 +261,10 @@ namespace Ztm.WebApi.Tests
             Assert.False(result);
 
             _ = this.callbackExecuter.Received(0).Execute(
+                Arg.Any<Guid>(),
                 Arg.Any<Uri>(),
-                Arg.Any<TransactionConfirmationCallbackResult>()
+                Arg.Any<TransactionConfirmationCallbackResult>(),
+                Arg.Any<CancellationToken>()
             );
 
             var received = await this.subject.GetCurrentWatchesAsync(CancellationToken.None);
@@ -292,11 +298,13 @@ namespace Ztm.WebApi.Tests
 
             // Assert.
             _ = this.callbackExecuter.Received(1).Execute(
+                Arg.Any<Guid>(),
                 Arg.Any<Uri>(),
                 Arg.Is<TransactionConfirmationCallbackResult>
                 (
                     result => result.Status == CallbackResult.StatusSuccess
-                )
+                ),
+                Arg.Any<CancellationToken>()
             );
         }
 
@@ -328,11 +336,13 @@ namespace Ztm.WebApi.Tests
 
             // Assert.
             _ = this.callbackExecuter.Received(1).Execute(
+                Arg.Any<Guid>(),
                 Arg.Any<Uri>(),
                 Arg.Is<TransactionConfirmationCallbackResult>
                 (
                     result => result.Status == CallbackResult.StatusSuccess
-                )
+                ),
+                Arg.Any<CancellationToken>()
             );
         }
 
@@ -364,11 +374,13 @@ namespace Ztm.WebApi.Tests
 
             // Assert.
             _ = this.callbackExecuter.Received(1).Execute(
+                Arg.Any<Guid>(),
                 Arg.Any<Uri>(),
                 Arg.Is<TransactionConfirmationCallbackResult>
                 (
                     result => result.Status == CallbackResult.StatusError
-                )
+                ),
+                Arg.Any<CancellationToken>()
             );
         }
 
@@ -397,11 +409,13 @@ namespace Ztm.WebApi.Tests
 
             // Assert.
             _ = this.callbackExecuter.Received(1).Execute(
+                Arg.Any<Guid>(),
                 Arg.Any<Uri>(),
                 Arg.Is<TransactionConfirmationCallbackResult>
                 (
                     result => result.Status == CallbackResult.StatusError
-                )
+                ),
+                Arg.Any<CancellationToken>()
             );
         }
 
@@ -479,11 +493,13 @@ namespace Ztm.WebApi.Tests
             Assert.Equal(1, retrievedCount);
 
             _ = this.callbackExecuter.Received(1).Execute(
+                Arg.Any<Guid>(),
                 Arg.Any<Uri>(),
                 Arg.Is<TransactionConfirmationCallbackResult>
                 (
                     result => result.Status == CallbackResult.StatusError
-                )
+                ),
+                Arg.Any<CancellationToken>()
             );
         }
 

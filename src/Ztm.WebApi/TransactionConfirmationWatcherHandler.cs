@@ -217,7 +217,7 @@ namespace Ztm.WebApi
 
         async Task Execute(Callback callback, TransactionConfirmationCallbackResult payload, CancellationToken cancellationToken)
         {
-            await this.callbackExecuter.Execute(callback.Url, payload);
+            await this.callbackExecuter.Execute(callback.Id, callback.Url, payload, cancellationToken);
             await callbackRepository.AddHistoryAsync(callback.Id, payload, cancellationToken);
             await callbackRepository.SetCompletedAsyc(callback.Id, cancellationToken);
         }

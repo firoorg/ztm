@@ -37,7 +37,7 @@ namespace Ztm.WebApi
             );
         }
 
-        public async Task AddTransactionAsync(
+        public Task<ConfirmContext> AddTransactionAsync(
             uint256 transaction,
             int confirmation,
             TimeSpan timeout,
@@ -47,7 +47,7 @@ namespace Ztm.WebApi
             TransactionConfirmationCallbackResult timeoutData,
             CancellationToken cancellationToken)
         {
-            await this.handler.AddTransactionAsync
+            return this.handler.AddTransactionAsync
             (
                 transaction,
                 confirmation,

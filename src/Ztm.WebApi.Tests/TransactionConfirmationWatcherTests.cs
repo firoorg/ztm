@@ -122,8 +122,10 @@ namespace Ztm.WebApi.Tests
                 .Received(1)
                 .Execute
                 (
+                    Arg.Any<Guid>(),
                     Arg.Any<Uri>(),
-                    Arg.Is<TransactionConfirmationCallbackResult>(r => r.Status == CallbackResult.StatusError)
+                    Arg.Is<TransactionConfirmationCallbackResult>(r => r.Status == CallbackResult.StatusError),
+                    Arg.Any<CancellationToken>()
                 );
         }
 
@@ -131,6 +133,8 @@ namespace Ztm.WebApi.Tests
         public async Task AddTransactionAsync_AndPushBlockWhichContainTransaction_TimerShouldBeStopped()
         {
             // Arrange.
+            await this.Initialize(CancellationToken.None);
+
             var (block, _) = GenerateBlock();
             block.AddTransaction(Transaction.Create(ZcoinNetworks.Instance.Regtest));
 
@@ -152,6 +156,8 @@ namespace Ztm.WebApi.Tests
         public async Task AddTransactionAsync_AndPushUntilRequiredConfirmation_ShouldCallSuccess()
         {
             // Arrange.
+            await this.Initialize(CancellationToken.None);
+
             var (block, _) = GenerateBlock();
             block.AddTransaction(Transaction.Create(ZcoinNetworks.Instance.Regtest));
 
@@ -178,11 +184,13 @@ namespace Ztm.WebApi.Tests
                 .Received(1)
                 .Execute
                 (
+                    Arg.Any<Guid>(),
                     Arg.Any<Uri>(),
                     Arg.Is<TransactionConfirmationCallbackResult>
                     (
                         r => r.Status == CallbackResult.StatusSuccess
-                    )
+                    ),
+                    Arg.Any<CancellationToken>()
                 );
         }
 
@@ -190,6 +198,8 @@ namespace Ztm.WebApi.Tests
         public async Task AddTransactionAsync_AndBlocksAreRemove_TimerShouldBeResume()
         {
             // Arrange.
+            await this.Initialize(CancellationToken.None);
+
             var (block, _) = GenerateBlock();
             block.AddTransaction(Transaction.Create(ZcoinNetworks.Instance.Regtest));
 
@@ -209,11 +219,13 @@ namespace Ztm.WebApi.Tests
                 .Received(1)
                 .Execute
                 (
+                    Arg.Any<Guid>(),
                     Arg.Any<Uri>(),
                     Arg.Is<TransactionConfirmationCallbackResult>
                     (
                         r => r.Status == CallbackResult.StatusError
-                    )
+                    ),
+                    Arg.Any<CancellationToken>()
                 );
         }
 
