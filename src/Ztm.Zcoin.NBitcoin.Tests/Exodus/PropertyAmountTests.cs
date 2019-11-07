@@ -309,5 +309,77 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
 
             Assert.True(first > second);
         }
+
+        [Theory]
+        [InlineData(-2L, -1L)]
+        [InlineData(-1L, 0L)]
+        [InlineData(0L, 1L)]
+        public void LessThanOrEqual_WithLess_ShouldReturnTrue(long left, long right)
+        {
+            var first = new PropertyAmount(left);
+            var second = new PropertyAmount(right);
+
+            Assert.True(first <= second);
+        }
+
+        [Theory]
+        [InlineData(-1L)]
+        [InlineData(0L)]
+        [InlineData(1L)]
+        public void LessThanOrEqual_WithSame_ShouldReturnTrue(long value)
+        {
+            var first = new PropertyAmount(value);
+            var second = new PropertyAmount(value);
+
+            Assert.True(first <= second);
+        }
+
+        [Theory]
+        [InlineData(-1L, -2L)]
+        [InlineData(0L, -1L)]
+        [InlineData(1L, 0L)]
+        public void LessThanOrEqual_WithGreater_ShouldReturnFalse(long left, long right)
+        {
+            var first = new PropertyAmount(left);
+            var second = new PropertyAmount(right);
+
+            Assert.False(first <= second);
+        }
+
+        [Theory]
+        [InlineData(-2L, -1L)]
+        [InlineData(-1L, 0L)]
+        [InlineData(0L, 1L)]
+        public void GreaterThanOrEqual_WithLess_ShouldReturnFalse(long left, long right)
+        {
+            var first = new PropertyAmount(left);
+            var second = new PropertyAmount(right);
+
+            Assert.False(first >= second);
+        }
+
+        [Theory]
+        [InlineData(-1L)]
+        [InlineData(0L)]
+        [InlineData(1L)]
+        public void GreaterThanOrEqual_WithSame_ShouldReturnTrue(long value)
+        {
+            var first = new PropertyAmount(value);
+            var second = new PropertyAmount(value);
+
+            Assert.True(first >= second);
+        }
+
+        [Theory]
+        [InlineData(-1L, -2L)]
+        [InlineData(0L, -1L)]
+        [InlineData(1L, 0L)]
+        public void GreaterThanOrEqual_WithGreater_ShouldReturnTrue(long left, long right)
+        {
+            var first = new PropertyAmount(left);
+            var second = new PropertyAmount(right);
+
+            Assert.True(first >= second);
+        }
     }
 }

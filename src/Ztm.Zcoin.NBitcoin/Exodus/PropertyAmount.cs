@@ -122,5 +122,15 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
         {
             return first.value > second.value;
         }
+
+        public static bool operator<=(PropertyAmount first, PropertyAmount second)
+        {
+            return first.value <= second.value;
+        }
+
+        public static bool operator>=(PropertyAmount first, PropertyAmount second)
+        {
+            return first.value >= second.value;
+        }
     }
 }
