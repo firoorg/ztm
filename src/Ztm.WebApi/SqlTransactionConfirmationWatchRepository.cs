@@ -64,7 +64,7 @@ namespace Ztm.WebApi
 
                 await db.SaveChangesAsync(cancellationToken);
 
-                return ToDomain(watch.Entity);
+                return ToDomain(watch.Entity, callback);
             }
         }
 
@@ -92,7 +92,9 @@ namespace Ztm.WebApi
             }
         }
 
-        static TransactionConfirmationWatch<TCallbackResult> ToDomain(Ztm.Data.Entity.Contexts.Main.TransactionConfirmationWatch watch)
+        static TransactionConfirmationWatch<TCallbackResult> ToDomain(
+            Ztm.Data.Entity.Contexts.Main.TransactionConfirmationWatch watch,
+            Callback callback = null)
         {
             return new TransactionConfirmationWatch<TCallbackResult>(
                 watch.Id,
@@ -101,7 +103,9 @@ namespace Ztm.WebApi
                 DateTime.SpecifyKind(watch.Due, DateTimeKind.Utc),
                 JsonConvert.DeserializeObject<TCallbackResult>(watch.SuccessData),
                 JsonConvert.DeserializeObject<TCallbackResult>(watch.TimeoutData),
-                watch.Callback == null ? null : SqlCallbackRepository.ToDomain(watch.Callback)
+                callback != null
+                    ? callback
+                    : watch.Callback == null ? null : SqlCallbackRepository.ToDomain(watch.Callback)
             );
         }
     }
