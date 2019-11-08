@@ -74,10 +74,21 @@ namespace Ztm.WebApi.Tests
         {
             // Arrange.
             var builder = new WatchArgsBuilder();
+            builder.timeout = TimeSpan.FromMilliseconds(500);
+
+            this.callbackExecuter
+                .Execute
+                (
+                    Arg.Any<Guid>(),
+                    Arg.Any<Uri>(),
+                    Arg.Any<CallbackResult>(),
+                    Arg.Any<CancellationToken>()
+                )
+                .Returns(true);
 
             // Act.
             await builder.Call(this.subject.AddTransactionAsync);
-            Thread.Sleep(TimeSpan.FromSeconds(3));
+            Thread.Sleep(TimeSpan.FromMilliseconds(1000));
 
             // Assert.
             _ = this.callbackRepository.Received(1).AddAsync
@@ -116,6 +127,34 @@ namespace Ztm.WebApi.Tests
             );
 
             _ = this.callbackRepository.Received(1).SetCompletedAsyc
+            (
+                Arg.Any<Guid>(),
+                Arg.Any<CancellationToken>()
+            );
+        }
+
+        [Fact]
+        public async void AddTransactionAsync_AndFailToExecuteCallback_CompletedFlagShouldNotBeSet()
+        {
+            // Arrange.
+            var builder = new WatchArgsBuilder();
+            builder.timeout = TimeSpan.FromMilliseconds(500);
+
+            // Act.
+            await builder.Call(this.subject.AddTransactionAsync);
+            Thread.Sleep(TimeSpan.FromMilliseconds(1000));
+
+            // Assert.
+            _ = this.callbackExecuter.Received(1)
+                .Execute
+                (
+                    Arg.Any<Guid>(),
+                    Arg.Any<Uri>(),
+                    Arg.Any<CallbackResult>(),
+                    Arg.Any<CancellationToken>()
+                );
+
+            _ = this.callbackRepository.Received(0).SetCompletedAsyc
             (
                 Arg.Any<Guid>(),
                 Arg.Any<CancellationToken>()

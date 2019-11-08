@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -22,7 +23,7 @@ namespace Ztm.WebApi
         readonly ReaderWriterLockSlim timerLock;
         Dictionary<uint256, Dictionary<Guid, Tuple<Ztm.Threading.Timer, ConfirmContext>>> timers;
 
-        Dictionary<Guid, TransactionWatch<ConfirmContext>> watches;
+        ConcurrentDictionary<Guid, TransactionWatch<ConfirmContext>> watches;
 
         public TransactionConfirmationWatcherHandler(
             ICallbackRepository callbackRepository,
@@ -50,7 +51,7 @@ namespace Ztm.WebApi
 
             timerLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
             timers = new Dictionary<uint256, Dictionary<Guid, Tuple<Threading.Timer, ConfirmContext>>>();
-            watches = new Dictionary<Guid, TransactionWatch<ConfirmContext>>();
+            watches = new ConcurrentDictionary<Guid, TransactionWatch<ConfirmContext>>();
         }
 
         public async Task Initialize(CancellationToken cancellationToken)
@@ -294,17 +295,17 @@ namespace Ztm.WebApi
 
             foreach (var watch in watches)
             {
-                this.watches.Add(watch.Context.Id, watch);
+                this.watches.AddOrReplace(watch.Context.Id, watch);
             }
 
-            return Task.Delay(0);
+            return Task.FromResult(0);
         }
 
         public Task RemoveWatchAsync(TransactionWatch<ConfirmContext> watch, WatchRemoveReason reason, CancellationToken cancellationToken)
         {
-            this.watches.Remove(watch.Context.Id);
+            this.watches.Remove(watch.Context.Id, out var transactionWatch);
 
-            return Task.Delay(0);
+            return Task.FromResult(0);
         }
     }
 }
