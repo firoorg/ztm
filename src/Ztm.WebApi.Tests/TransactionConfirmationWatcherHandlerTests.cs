@@ -497,7 +497,7 @@ namespace Ztm.WebApi.Tests
                 builder.url, builder.callbackUrl, CancellationToken.None
             );
 
-            var watch = await this.watchRepository.AddAsync
+            _ = await this.watchRepository.AddAsync
             (
                 builder.transaction, builder.confirmation, builder.timeout, builder.successData, builder.timeoutData, callback, CancellationToken.None
             );
@@ -512,7 +512,7 @@ namespace Ztm.WebApi.Tests
                 this.defaultUrl
             );
 
-            var completedWatch = await this.watchRepository.AddAsync
+            _ = await this.watchRepository.AddAsync
             (
                 builder.transaction, builder.confirmation, builder.timeout, builder.successData, builder.timeoutData, completedCallback, CancellationToken.None
             );

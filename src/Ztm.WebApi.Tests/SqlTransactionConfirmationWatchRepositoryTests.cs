@@ -105,8 +105,6 @@ namespace Ztm.WebApi.Tests
             var timeoutResult = new TestCallbackResult(CallbackResult.StatusError, "timeout");
             var timeout = TimeSpan.FromMinutes(5);
 
-            var expectedDueAfter = DateTime.UtcNow.Add(timeout);
-
             var watch = await this.subject.AddAsync(transaction, 10, timeout,
                 successResult, timeoutResult, this.defaultCallback, CancellationToken.None);
 

@@ -19,25 +19,22 @@ namespace Ztm.WebApi
 
         public async Task<bool> Execute(Guid id, Uri url, CallbackResult result, CancellationToken cancellationToken)
         {
-            var request = new HttpRequestMessage
-            (
-                HttpMethod.Post,
-                url
-            );
-
-            request.Headers.Add("X-Callback-ID", id.ToString());
-            request.Headers.Add("X-Callback-Status", result.Status);
-
             var content = JsonConvert.SerializeObject(result.Data);
-            request.Content = new StringContent(content, Encoding.UTF8, "application/json");
 
-            var response = await client.SendAsync(request);
-
-            switch(response.StatusCode)
+            using (var request = new HttpRequestMessage(HttpMethod.Post, url))
             {
-            case HttpStatusCode.OK:
-            case HttpStatusCode.Accepted:
-                return true;
+                request.Headers.Add("X-Callback-ID", id.ToString());
+                request.Headers.Add("X-Callback-Status", result.Status);
+                request.Content = new StringContent(content, Encoding.UTF8, "application/json");
+
+                var response = await client.SendAsync(request);
+
+                switch(response.StatusCode)
+                {
+                case HttpStatusCode.OK:
+                case HttpStatusCode.Accepted:
+                    return true;
+                }
             }
 
             return false;

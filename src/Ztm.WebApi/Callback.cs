@@ -3,7 +3,7 @@ using System.Net;
 
 namespace Ztm.WebApi
 {
-    public class Callback
+    public class Callback : IComparable<Callback>
     {
         public Callback(Guid id, IPAddress registeredIp, DateTime registeredTime, bool completed, Uri url)
         {

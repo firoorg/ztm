@@ -21,9 +21,9 @@ namespace Ztm.WebApi
         readonly ICallbackExecuter callbackExecuter;
 
         readonly ReaderWriterLockSlim timerLock;
-        Dictionary<uint256, Dictionary<Guid, Tuple<Ztm.Threading.Timer, ConfirmContext>>> timers;
+        readonly Dictionary<uint256, Dictionary<Guid, Tuple<Ztm.Threading.Timer, ConfirmContext>>> timers;
 
-        ConcurrentDictionary<Guid, TransactionWatch<ConfirmContext>> watches;
+        readonly ConcurrentDictionary<Guid, TransactionWatch<ConfirmContext>> watches;
 
         public TransactionConfirmationWatcherHandler(
             ICallbackRepository callbackRepository,
@@ -56,13 +56,11 @@ namespace Ztm.WebApi
 
         public async Task Initialize(CancellationToken cancellationToken)
         {
-            var watches = await this.watchRepository.ListAsync(cancellationToken);
-            foreach (var watch in watches)
+            var allWatches = await this.watchRepository.ListAsync(cancellationToken);
+
+            foreach (var watch in allWatches.Where(w => !w.Callback.Completed))
             {
-                if (!watch.Callback.Completed)
-                {
-                    TimerSetup(watch);
-                }
+                TimerSetup(watch);
             }
         }
 
@@ -174,14 +172,12 @@ namespace Ztm.WebApi
             timerLock.EnterWriteLock();
             try
             {
-                if (timers.ContainsKey(transaction))
+                if (timers.TryGetValue(transaction, out var txTimers))
                 {
-                    var txTimers = timers[transaction];
-                    if (txTimers.ContainsKey(id))
+                    if (txTimers.TryGetValue(id, out var timer))
                     {
-                        var timer = txTimers[id].Item1;
-                        await timer.StopAsync(CancellationToken.None);
-                        if (timer.ElapsedCount == 0) // Not Timeout
+                        await timer.Item1.StopAsync(CancellationToken.None);
+                        if (timer.Item1.ElapsedCount == 0) // Not Timeout
                         {
                             RemoveTimer(transaction, id);
                             return true;
@@ -228,16 +224,17 @@ namespace Ztm.WebApi
 
         public async Task<bool> ConfirmationUpdateAsync(TransactionWatch<ConfirmContext> watch, int confirmation, ConfirmationType type, CancellationToken cancellationToken)
         {
-            if (type == ConfirmationType.Unconfirming)
+            switch (type)
             {
+            case ConfirmationType.Unconfirming:
                 if (confirmation == 1)
                 {
                     ResumeTimer(watch.Context);
                     return false;
                 }
-            }
-            else
-            {
+                break;
+
+            case ConfirmationType.Confirmed:
                 if (confirmation == 1)
                 {
                     if (!(await StopTimer(watch.TransactionId, watch.Context.Id)))
@@ -251,6 +248,11 @@ namespace Ztm.WebApi
                     await Confirm(watch);
                     return true;
                 }
+
+                break;
+
+            default:
+                throw new NotSupportedException($"{nameof(ConfirmationType)} is not supported");
             }
 
             return false;
@@ -262,9 +264,9 @@ namespace Ztm.WebApi
 
             try
             {
-                if (timers.ContainsKey(tx.GetHash()))
+                if (timers.TryGetValue(tx.GetHash(), out var txTimers))
                 {
-                    return Task.FromResult(timers[tx.GetHash()].Select(t => t.Value.Item2));
+                    return Task.FromResult(txTimers.Select(t => t.Value.Item2));
                 }
             }
             finally
