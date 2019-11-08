@@ -3,16 +3,12 @@ using NBitcoin;
 
 namespace Ztm.Zcoin.NBitcoin.Exodus
 {
-    public class SimpleSendTransaction : ExodusTransaction
+    public class SimpleSendV0 : ExodusTransaction
     {
         public const int StaticId = 0;
-        public const int StaticVersion = 0;
 
-        public SimpleSendTransaction(
-            BitcoinAddress sender,
-            BitcoinAddress receiver,
-            PropertyId property,
-            PropertyAmount amount) : base(sender, receiver)
+        public SimpleSendV0(BitcoinAddress sender, BitcoinAddress receiver, PropertyId property, PropertyAmount amount)
+            : base(sender, receiver)
         {
             if (sender == null)
             {
@@ -39,6 +35,6 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
 
         public PropertyId Property { get; }
 
-        public override int Version => StaticVersion;
+        public override int Version => 0;
     }
 }

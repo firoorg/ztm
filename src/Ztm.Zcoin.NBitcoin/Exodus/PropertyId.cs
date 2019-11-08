@@ -6,11 +6,14 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
     [TypeConverter(typeof(PropertyIdConverter))]
     public sealed class PropertyId
     {
+        public const long MaxValue = uint.MaxValue;
+        public const long MinValue = 1;
+
         readonly uint value;
 
         public PropertyId(long value)
         {
-            if (value <= 0 || value > uint.MaxValue)
+            if (value < MinValue || value > uint.MaxValue)
             {
                 throw new ArgumentOutOfRangeException(nameof(value), value, "The value is not valid.");
             }

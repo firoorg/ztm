@@ -5,14 +5,14 @@ using Ztm.Zcoin.NBitcoin.Exodus;
 
 namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
 {
-    public sealed class SimpleSendTransactionTests
+    public sealed class SimpleSendV0Tests
     {
         readonly BitcoinAddress sender;
         readonly BitcoinAddress receiver;
         readonly PropertyId property;
         readonly PropertyAmount amount;
 
-        public SimpleSendTransactionTests()
+        public SimpleSendV0Tests()
         {
             this.sender = BitcoinAddress.Create("TQmbucVmyc8YWrxA8YcirCdJwcFLYK9PPH", ZcoinNetworks.Instance.Regtest);
             this.receiver = BitcoinAddress.Create("THMdcCZXJvUGMHo4BVumsPvPQbzr87Wah7", ZcoinNetworks.Instance.Regtest);
@@ -25,7 +25,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
         {
             Assert.Throws<ArgumentNullException>(
                 "sender",
-                () => new SimpleSendTransaction(null, this.receiver, this.property, this.amount)
+                () => new SimpleSendV0(null, this.receiver, this.property, this.amount)
             );
         }
 
@@ -34,7 +34,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
         {
             Assert.Throws<ArgumentNullException>(
                 "property",
-                () => new SimpleSendTransaction(this.sender, this.receiver, null, this.amount)
+                () => new SimpleSendV0(this.sender, this.receiver, null, this.amount)
             );
         }
 
@@ -47,17 +47,17 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
 
             Assert.Throws<ArgumentOutOfRangeException>(
                 "amount",
-                () => new SimpleSendTransaction(this.sender, this.receiver, this.property, amount)
+                () => new SimpleSendV0(this.sender, this.receiver, this.property, amount)
             );
         }
 
         [Fact]
         public void Constructor_WithValidArguments_ShouldSuccess()
         {
-            var tx = new SimpleSendTransaction(this.sender, this.receiver, this.property, this.amount);
+            var tx = new SimpleSendV0(this.sender, this.receiver, this.property, this.amount);
 
-            Assert.Equal(SimpleSendTransaction.StaticId, tx.Id);
-            Assert.Equal(SimpleSendTransaction.StaticVersion, tx.Version);
+            Assert.Equal(SimpleSendV0.StaticId, tx.Id);
+            Assert.Equal(0, tx.Version);
             Assert.Equal(this.sender, tx.Sender);
             Assert.Equal(this.receiver, tx.Receiver);
             Assert.Equal(this.property, tx.Property);
