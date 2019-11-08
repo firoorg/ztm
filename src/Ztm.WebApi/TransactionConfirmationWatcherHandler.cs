@@ -172,16 +172,13 @@ namespace Ztm.WebApi
             timerLock.EnterWriteLock();
             try
             {
-                if (timers.TryGetValue(transaction, out var txTimers))
+                if (timers.TryGetValue(transaction, out var txTimers) && txTimers.TryGetValue(id, out var timer))
                 {
-                    if (txTimers.TryGetValue(id, out var timer))
+                    await timer.Item1.StopAsync(CancellationToken.None);
+                    if (timer.Item1.ElapsedCount == 0)
                     {
-                        await timer.Item1.StopAsync(CancellationToken.None);
-                        if (timer.Item1.ElapsedCount == 0) // Not Timeout
-                        {
-                            RemoveTimer(transaction, id);
-                            return true;
-                        }
+                        RemoveTimer(transaction, id);
+                        return true;
                     }
                 }
             }
@@ -235,12 +232,9 @@ namespace Ztm.WebApi
                 break;
 
             case ConfirmationType.Confirmed:
-                if (confirmation == 1)
+                if (confirmation == 1 && !(await StopTimer(watch.TransactionId, watch.Context.Id)))
                 {
-                    if (!(await StopTimer(watch.TransactionId, watch.Context.Id)))
-                    {
-                        return false;
-                    }
+                    return false;
                 }
 
                 if (confirmation == watch.Context.Confirmation)
