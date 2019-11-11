@@ -38,7 +38,6 @@ namespace Ztm.WebApi
             IBlocksStorage blocks,
             ICallbackExecuter callbackExecuter)
         {
-            // TODO: check null
             if (callbackRepository == null)
             {
                 throw new ArgumentNullException(nameof(callbackRepository));
@@ -84,26 +83,6 @@ namespace Ztm.WebApi
             }
         }
 
-        public async Task StopAllTimers(CancellationToken cancellationToken)
-        {
-            timerLock.EnterWriteLock();
-
-            try
-            {
-                foreach (var timerSet in timers)
-                {
-                    foreach (var timer in timerSet.Value)
-                    {
-                        await timer.Value.Item1.StopAsync(cancellationToken);
-                    }
-                }
-            }
-            finally
-            {
-                timerLock.ExitWriteLock();
-            }
-        }
-
         public async Task<ConfirmContext> AddTransactionAsync(
             uint256 transaction,
             int confirmation,
@@ -135,6 +114,28 @@ namespace Ztm.WebApi
             TimerSetup(watch);
 
             return watch;
+        }
+
+        // Timers handling
+
+        public async Task StopAllTimers(CancellationToken cancellationToken)
+        {
+            timerLock.EnterWriteLock();
+
+            try
+            {
+                foreach (var timerSet in timers)
+                {
+                    foreach (var timer in timerSet.Value)
+                    {
+                        await timer.Value.Item1.StopAsync(cancellationToken);
+                    }
+                }
+            }
+            finally
+            {
+                timerLock.ExitWriteLock();
+            }
         }
 
         void TimerSetup(TransactionConfirmationWatch<TransactionConfirmationCallbackResult> watch)
@@ -239,6 +240,8 @@ namespace Ztm.WebApi
             }
         }
 
+        // IBlockListener
+
         public Task BlockAddedAsync(Block block, int height, CancellationToken cancellationToken)
         {
             return this.watcher.ExecuteAsync(block, height, BlockEventType.Added, cancellationToken);
@@ -249,7 +252,7 @@ namespace Ztm.WebApi
             return this.watcher.ExecuteAsync(block, height, BlockEventType.Removing, cancellationToken);
         }
 
-        // IHostedService section
+        // IHostedService
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
@@ -261,7 +264,7 @@ namespace Ztm.WebApi
             return this.StopAllTimers(cancellationToken);
         }
 
-        // ITransactionConfirmationWatcherHandler section
+        // ITransactionConfirmationWatcherHandler
 
         Task IWatcherHandler<TransactionWatch<ConfirmContext>, ConfirmContext>.AddWatchesAsync(IEnumerable<TransactionWatch<ConfirmContext>> watches, CancellationToken cancellationToken)
         {
