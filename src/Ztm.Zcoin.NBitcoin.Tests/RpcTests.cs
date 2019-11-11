@@ -8,7 +8,7 @@ using Ztm.Zcoin.Testing;
 
 namespace Ztm.Zcoin.NBitcoin.Tests
 {
-    public class RpcTests : IDisposable
+    public sealed class RpcTests : IDisposable
     {
         readonly NodeBuilder builder;
         readonly CoreNode node;
@@ -31,7 +31,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         {
             var caps = await this.rpc.ScanRPCCapabilitiesAsync();
 
-            Assert.Equal(130710, caps.Version);
+            Assert.True(caps.Version > 0);
             Assert.True(caps.SupportGetNetworkInfo);
             Assert.False(caps.SupportScanUTXOSet);
             Assert.False(caps.SupportSignRawTransactionWith);
