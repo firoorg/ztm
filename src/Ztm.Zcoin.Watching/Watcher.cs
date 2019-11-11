@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 
-namespace Ztm.Zcoin.Synchronization.Watchers
+namespace Ztm.Zcoin.Watching
 {
     public abstract class Watcher<TWatch, TContext> where TWatch : Watch<TContext>
     {

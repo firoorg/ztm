@@ -1,9 +1,8 @@
 using System;
 using NBitcoin;
 using Xunit;
-using Ztm.Zcoin.Synchronization.Watchers;
 
-namespace Ztm.Zcoin.Synchronization.Tests.Watchers
+namespace Ztm.Zcoin.Watching.Tests
 {
     public sealed class TransactionWatchTests
     {

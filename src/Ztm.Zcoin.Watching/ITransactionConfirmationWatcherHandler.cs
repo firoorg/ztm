@@ -3,9 +3,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 
-namespace Ztm.Zcoin.Synchronization.Watchers
+namespace Ztm.Zcoin.Watching
 {
-    public interface ITransactionConfirmationWatcherHandler<TContext> : IConfirmationWatcherHandler<TransactionWatch<TContext>, TContext>
+    public interface ITransactionConfirmationWatcherHandler<TContext> :
+        IConfirmationWatcherHandler<TransactionWatch<TContext>, TContext>
     {
         Task<IEnumerable<TContext>> CreateContextsAsync(Transaction tx, CancellationToken cancellationToken);
     }
