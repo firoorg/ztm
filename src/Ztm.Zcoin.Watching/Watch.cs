@@ -1,7 +1,7 @@
 using System;
 using NBitcoin;
 
-namespace Ztm.Zcoin.Synchronization.Watchers
+namespace Ztm.Zcoin.Watching
 {
     public class Watch<T>
     {

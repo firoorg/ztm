@@ -3,15 +3,18 @@ using System.Collections.ObjectModel;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
+using Ztm.Zcoin.Synchronization;
 
-namespace Ztm.Zcoin.Synchronization.Watchers
+namespace Ztm.Zcoin.Watching
 {
-    public sealed class TransactionConfirmationWatcher<TContext> : ConfirmationWatcher<TransactionWatch<TContext>, TContext>
+    public sealed class TransactionConfirmationWatcher<TContext> :
+        ConfirmationWatcher<TransactionWatch<TContext>, TContext>
     {
         readonly ITransactionConfirmationWatcherHandler<TContext> handler;
 
-        public TransactionConfirmationWatcher(ITransactionConfirmationWatcherHandler<TContext> handler, IBlocksStorage blocks)
-            : base(handler, blocks)
+        public TransactionConfirmationWatcher(
+            ITransactionConfirmationWatcherHandler<TContext> handler,
+            IBlocksStorage blocks) : base(handler, blocks)
         {
             this.handler = handler;
         }

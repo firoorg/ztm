@@ -7,9 +7,8 @@ using NBitcoin;
 using NSubstitute;
 using Xunit;
 using Ztm.Zcoin.NBitcoin;
-using Ztm.Zcoin.Synchronization.Watchers;
 
-namespace Ztm.Zcoin.Synchronization.Tests.Watchers
+namespace Ztm.Zcoin.Watching.Tests
 {
     public sealed class WatcherTests
     {
