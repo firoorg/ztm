@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
+using Ztm.Zcoin.Synchronization;
 
-namespace Ztm.Zcoin.Synchronization.Watchers
+namespace Ztm.Zcoin.Watching
 {
     public abstract class ConfirmationWatcher<TWatch, TContext> : Watcher<TWatch, TContext>
         where TWatch : Watch<TContext>

@@ -3,14 +3,15 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
-using Ztm.Zcoin.Synchronization.Watchers;
+using Ztm.Zcoin.Synchronization;
 
-namespace Ztm.Zcoin.Synchronization.Tests.Watchers
+namespace Ztm.Zcoin.Watching.Tests
 {
     sealed class TestConfirmationWatcher : ConfirmationWatcher<Watch<object>, object>
     {
-        public TestConfirmationWatcher(IConfirmationWatcherHandler<Watch<object>, object> handler, IBlocksStorage blocks)
-            : base(handler, blocks)
+        public TestConfirmationWatcher(
+            IConfirmationWatcherHandler<Watch<object>, object> handler,
+            IBlocksStorage blocks) : base(handler, blocks)
         {
         }
 

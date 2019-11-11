@@ -1,6 +1,6 @@
 using System;
 
-namespace Ztm.Zcoin.Synchronization.Watchers
+namespace Ztm.Zcoin.Watching
 {
     [Flags]
     public enum WatchRemoveReason
