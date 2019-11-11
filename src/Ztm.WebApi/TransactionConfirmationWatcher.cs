@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using NBitcoin;
 using Ztm.Zcoin.Synchronization;
-using Ztm.Zcoin.Synchronization.Watchers;
+using Ztm.Zcoin.Watching;
 
 namespace Ztm.WebApi
 {
@@ -14,7 +14,7 @@ namespace Ztm.WebApi
 
     public sealed class TransactionConfirmationWatcher : IHostedService, IBlockListener
     {
-        readonly Ztm.Zcoin.Synchronization.Watchers.TransactionConfirmationWatcher<ConfirmContext> watcher;
+        readonly Ztm.Zcoin.Watching.TransactionConfirmationWatcher<ConfirmContext> watcher;
         readonly TransactionConfirmationWatcherHandler handler;
 
         public TransactionConfirmationWatcher(
@@ -30,7 +30,7 @@ namespace Ztm.WebApi
                 callbackExecuter
             );
 
-            this.watcher = new Zcoin.Synchronization.Watchers.TransactionConfirmationWatcher<ConfirmContext>
+            this.watcher = new Zcoin.Watching.TransactionConfirmationWatcher<ConfirmContext>
             (
                 handler,
                 blocks

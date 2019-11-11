@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using Ztm.Threading;
-using Ztm.Zcoin.Synchronization.Watchers;
+using Ztm.Zcoin.Watching;
 
 namespace Ztm.WebApi
 {

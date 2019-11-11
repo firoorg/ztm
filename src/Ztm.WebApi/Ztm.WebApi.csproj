@@ -18,6 +18,7 @@
     <ProjectReference Include="..\Ztm.Configuration\Ztm.Configuration.csproj" />
     <ProjectReference Include="..\Ztm.Data.Entity\Ztm.Data.Entity.csproj" />
     <ProjectReference Include="..\Ztm.Data.Entity.Postgres\Ztm.Data.Entity.Postgres.csproj" />
+    <ProjectReference Include="..\Ztm.Zcoin.Watching\Ztm.Zcoin.Watching.csproj" />
   </ItemGroup>
 
 </Project>

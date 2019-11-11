@@ -8,7 +8,7 @@ using NBitcoin;
 using NSubstitute;
 using Xunit;
 using Ztm.Zcoin.NBitcoin;
-using Ztm.Zcoin.Synchronization.Watchers;
+using Ztm.Zcoin.Watching;
 
 namespace Ztm.WebApi.Tests
 {
