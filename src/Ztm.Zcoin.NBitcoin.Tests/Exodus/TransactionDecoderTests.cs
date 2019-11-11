@@ -92,7 +92,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
         [InlineData(15)]
         public void Decode_SimpleSendV0WithTooShortData_ShouldThrow(int length)
         {
-            var payload = new byte[length - 4];
+            var payload = new byte[length - 4]; // Just a payload for simple send, not including version and type.
             byte[] data;
 
             using (var stream = new MemoryStream(payload))
