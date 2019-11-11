@@ -6,7 +6,7 @@ using NBitcoin;
 
 namespace Ztm.Zcoin.NBitcoin.Exodus
 {
-    public sealed class TransactionDecoder : ITransactionDecoder
+    public sealed class TransactionEncoder : ITransactionEncoder
     {
         public ExodusTransaction Decode(BitcoinAddress sender, BitcoinAddress receiver, byte[] data)
         {

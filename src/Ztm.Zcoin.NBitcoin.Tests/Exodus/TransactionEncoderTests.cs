@@ -8,17 +8,17 @@ using Ztm.Zcoin.NBitcoin.Exodus;
 
 namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
 {
-    public sealed class TransactionDecoderTests
+    public sealed class TransactionEncoderTests
     {
         readonly BitcoinAddress sender;
         readonly BitcoinAddress receiver;
-        readonly TransactionDecoder subject;
+        readonly TransactionEncoder subject;
 
-        public TransactionDecoderTests()
+        public TransactionEncoderTests()
         {
             this.sender = BitcoinAddress.Create("TQmbucVmyc8YWrxA8YcirCdJwcFLYK9PPH", ZcoinNetworks.Instance.Regtest);
             this.receiver = BitcoinAddress.Create("THMdcCZXJvUGMHo4BVumsPvPQbzr87Wah7", ZcoinNetworks.Instance.Regtest);
-            this.subject = new TransactionDecoder();
+            this.subject = new TransactionEncoder();
         }
 
         [Fact]
