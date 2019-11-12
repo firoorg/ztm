@@ -18,6 +18,7 @@ namespace Ztm.WebApi.Tests
 
     public sealed class TransactionConfirmationWatcherTests : IDisposable
     {
+        readonly IBlockListener blockListener;
         readonly TransactionConfirmationWatcher subject;
         readonly ITransactionConfirmationWatcherHandler<ConfirmContext> handler;
 
@@ -49,6 +50,7 @@ namespace Ztm.WebApi.Tests
                 this.blockStorage,
                 this.callbackExecuter
             );
+            this.blockListener = this.subject;
 
             this.defaultUrl = new Uri("http://zcoin.io");
 
@@ -151,7 +153,7 @@ namespace Ztm.WebApi.Tests
             await builder.Call(this.subject.AddTransactionAsync);
 
             // Act.
-            await this.subject.BlockAddedAsync(block, 1, CancellationToken.None);
+            await this.blockListener.BlockAddedAsync(block, 1, CancellationToken.None);
             Thread.Sleep(TimeSpan.FromSeconds(1));
 
             // Assert.
@@ -175,13 +177,13 @@ namespace Ztm.WebApi.Tests
             await builder.Call(this.subject.AddTransactionAsync);
 
             // Act.
-            await this.subject.BlockAddedAsync(block, 1, CancellationToken.None);
+            await this.blockListener.BlockAddedAsync(block, 1, CancellationToken.None);
             for (var i = 0; i < 9; i++)
             {
                 int height;
                 (block, height) = GenerateBlock();
 
-                await this.subject.BlockAddedAsync(block, height, CancellationToken.None);
+                await this.blockListener.BlockAddedAsync(block, height, CancellationToken.None);
             }
             Thread.Sleep(TimeSpan.FromMilliseconds(1));
 
@@ -216,8 +218,8 @@ namespace Ztm.WebApi.Tests
             await builder.Call(this.subject.AddTransactionAsync);
 
             // Act.
-            await this.subject.BlockAddedAsync(block, 1, CancellationToken.None);
-            await this.subject.BlockRemovingAsync(block, 1, CancellationToken.None);
+            await this.blockListener.BlockAddedAsync(block, 1, CancellationToken.None);
+            await this.blockListener.BlockRemovingAsync(block, 1, CancellationToken.None);
             Thread.Sleep(TimeSpan.FromMilliseconds(1000));
 
             // Assert.
@@ -696,7 +698,7 @@ namespace Ztm.WebApi.Tests
             );
 
 
-            await localWatcher.Initialize(CancellationToken.None);
+            await localWatcher.StartAsync(CancellationToken.None);
             var retrievedCount = (await localHandler.CreateContextsAsync(tx, CancellationToken.None)).Count();
             Thread.Sleep(TimeSpan.FromSeconds(2));
 
