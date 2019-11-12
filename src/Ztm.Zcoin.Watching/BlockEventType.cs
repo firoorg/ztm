@@ -1,4 +1,4 @@
-namespace Ztm.Zcoin.Synchronization.Watchers
+namespace Ztm.Zcoin.Watching
 {
     public enum BlockEventType
     {

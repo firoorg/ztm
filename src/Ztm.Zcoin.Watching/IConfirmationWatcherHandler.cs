@@ -2,9 +2,10 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Ztm.Zcoin.Synchronization.Watchers
+namespace Ztm.Zcoin.Watching
 {
-    public interface IConfirmationWatcherHandler<TWatch, TContext> : IWatcherHandler<TWatch, TContext> where TWatch : Watch<TContext>
+    public interface IConfirmationWatcherHandler<TWatch, TContext> : IWatcherHandler<TWatch, TContext>
+        where TWatch : Watch<TContext>
     {
         Task<bool> ConfirmationUpdateAsync(
             TWatch watch,

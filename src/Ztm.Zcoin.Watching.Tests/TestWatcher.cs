@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
-using Ztm.Zcoin.Synchronization.Watchers;
 
-namespace Ztm.Zcoin.Synchronization.Tests.Watchers
+namespace Ztm.Zcoin.Watching.Tests
 {
     sealed class TestWatcher : Watcher<Watch<object>, object>
     {
