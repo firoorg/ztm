@@ -1,5 +1,6 @@
 using NBitcoin;
 using Xunit;
+using Ztm.Zcoin.NBitcoin.Exodus;
 
 namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
 {
@@ -37,6 +38,40 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
             var tx = new TestExodusTransaction(null, receiver);
 
             Assert.Same(receiver, tx.Receiver);
+        }
+
+        [Theory]
+        [InlineData(ExodusTransaction.MinId)]
+        [InlineData(ExodusTransaction.MaxId)]
+        public void IsValidId_WithValidId_ShouldReturnTrue(int id)
+        {
+            Assert.True(ExodusTransaction.IsValidId(id));
+        }
+
+        [Theory]
+        [InlineData(int.MinValue)]
+        [InlineData(-1)]
+        [InlineData(65536)]
+        public void IsValidId_WithInvalidId_ShouldReturnFalse(int id)
+        {
+            Assert.False(ExodusTransaction.IsValidId(id));
+        }
+
+        [Theory]
+        [InlineData(ExodusTransaction.MinVersion)]
+        [InlineData(ExodusTransaction.MaxVersion)]
+        public void IsValidVersion_WithValidVersion_ShouldReturnTrue(int version)
+        {
+            Assert.True(ExodusTransaction.IsValidVersion(version));
+        }
+
+        [Theory]
+        [InlineData(int.MinValue)]
+        [InlineData(-1)]
+        [InlineData(65536)]
+        public void IsValidVersion_WithInvalidVersion_ShouldReturnFalse(int version)
+        {
+            Assert.False(ExodusTransaction.IsValidVersion(version));
         }
     }
 }
