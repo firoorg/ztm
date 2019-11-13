@@ -135,101 +135,6 @@ namespace Ztm.WebApi
             }
         }
 
-        Task IBlockListener.BlockAddedAsync(Block block, int height, CancellationToken cancellationToken)
-        {
-            return this.watcher.ExecuteAsync(block, height, BlockEventType.Added, cancellationToken);
-        }
-
-        Task IBlockListener.BlockRemovingAsync(Block block, int height, CancellationToken cancellationToken)
-        {
-            return this.watcher.ExecuteAsync(block, height, BlockEventType.Removing, cancellationToken);
-        }
-
-        Task<IEnumerable<ConfirmContext>> ITransactionConfirmationWatcherHandler<ConfirmContext>.CreateContextsAsync(Transaction tx, CancellationToken cancellationToken)
-        {
-            timerLock.EnterReadLock();
-
-            try
-            {
-                if (timers.TryGetValue(tx.GetHash(), out var txTimers))
-                {
-                    return Task.FromResult(txTimers.Select(t => t.Value.Item2));
-                }
-            }
-            finally
-            {
-                timerLock.ExitReadLock();
-            }
-
-            return Task.FromResult((IEnumerable<ConfirmContext>)(new Collection<ConfirmContext>()));
-        }
-
-        async Task<bool> IConfirmationWatcherHandler<TransactionWatch<ConfirmContext>, ConfirmContext>.ConfirmationUpdateAsync(TransactionWatch<ConfirmContext> watch, int confirmation, ConfirmationType type, CancellationToken cancellationToken)
-        {
-            switch (type)
-            {
-            case ConfirmationType.Unconfirming:
-                if (confirmation == 1)
-                {
-                    ResumeTimer(watch.Context);
-                    return false;
-                }
-                break;
-
-            case ConfirmationType.Confirmed:
-                if (confirmation == 1 && !(await StopTimer(watch.TransactionId, watch.Context.Id)))
-                {
-                    return false;
-                }
-
-                if (confirmation == watch.Context.Confirmation)
-                {
-                    await Confirm(watch);
-                    return true;
-                }
-
-                break;
-
-            default:
-                throw new NotSupportedException($"{nameof(ConfirmationType)} is not supported");
-            }
-
-            return false;
-        }
-
-        Task<IEnumerable<TransactionWatch<ConfirmContext>>> IConfirmationWatcherHandler<TransactionWatch<ConfirmContext>, ConfirmContext>.GetCurrentWatchesAsync(CancellationToken cancellationToken)
-        {
-            var watches = new Collection<TransactionWatch<ConfirmContext>>();
-            foreach (var watch in this.watches)
-            {
-                watches.Add(watch.Value);
-            }
-
-            return Task.FromResult(watches.AsEnumerable());
-        }
-
-        Task IWatcherHandler<TransactionWatch<ConfirmContext>, ConfirmContext>.AddWatchesAsync(IEnumerable<TransactionWatch<ConfirmContext>> watches, CancellationToken cancellationToken)
-        {
-            if (watches == null)
-            {
-                throw new ArgumentNullException(nameof(watches));
-            }
-
-            foreach (var watch in watches)
-            {
-                this.watches.AddOrReplace(watch.Context.Id, watch);
-            }
-
-            return Task.FromResult(0);
-        }
-
-        Task IWatcherHandler<TransactionWatch<ConfirmContext>, ConfirmContext>.RemoveWatchAsync(TransactionWatch<ConfirmContext> watch, WatchRemoveReason reason, CancellationToken cancellationToken)
-        {
-            this.watches.Remove(watch.Context.Id, out var transactionWatch);
-
-            return Task.FromResult(0);
-        }
-
         void TimerSetup(TransactionConfirmationWatch<TransactionConfirmationCallbackResult> watch)
         {
             var timer = new Ztm.Threading.Timer();
@@ -330,6 +235,101 @@ namespace Ztm.WebApi
             {
                 await callbackRepository.SetCompletedAsyc(callback.Id, cancellationToken);
             }
+        }
+
+        Task IBlockListener.BlockAddedAsync(Block block, int height, CancellationToken cancellationToken)
+        {
+            return this.watcher.ExecuteAsync(block, height, BlockEventType.Added, cancellationToken);
+        }
+
+        Task IBlockListener.BlockRemovingAsync(Block block, int height, CancellationToken cancellationToken)
+        {
+            return this.watcher.ExecuteAsync(block, height, BlockEventType.Removing, cancellationToken);
+        }
+
+        Task<IEnumerable<ConfirmContext>> ITransactionConfirmationWatcherHandler<ConfirmContext>.CreateContextsAsync(Transaction tx, CancellationToken cancellationToken)
+        {
+            timerLock.EnterReadLock();
+
+            try
+            {
+                if (timers.TryGetValue(tx.GetHash(), out var txTimers))
+                {
+                    return Task.FromResult(txTimers.Select(t => t.Value.Item2));
+                }
+            }
+            finally
+            {
+                timerLock.ExitReadLock();
+            }
+
+            return Task.FromResult((IEnumerable<ConfirmContext>)(new Collection<ConfirmContext>()));
+        }
+
+        async Task<bool> IConfirmationWatcherHandler<TransactionWatch<ConfirmContext>, ConfirmContext>.ConfirmationUpdateAsync(TransactionWatch<ConfirmContext> watch, int confirmation, ConfirmationType type, CancellationToken cancellationToken)
+        {
+            switch (type)
+            {
+            case ConfirmationType.Unconfirming:
+                if (confirmation == 1)
+                {
+                    ResumeTimer(watch.Context);
+                    return false;
+                }
+                break;
+
+            case ConfirmationType.Confirmed:
+                if (confirmation == 1 && !(await StopTimer(watch.TransactionId, watch.Context.Id)))
+                {
+                    return false;
+                }
+
+                if (confirmation == watch.Context.Confirmation)
+                {
+                    await Confirm(watch);
+                    return true;
+                }
+
+                break;
+
+            default:
+                throw new NotSupportedException($"{nameof(ConfirmationType)} is not supported");
+            }
+
+            return false;
+        }
+
+        Task<IEnumerable<TransactionWatch<ConfirmContext>>> IConfirmationWatcherHandler<TransactionWatch<ConfirmContext>, ConfirmContext>.GetCurrentWatchesAsync(CancellationToken cancellationToken)
+        {
+            var watches = new Collection<TransactionWatch<ConfirmContext>>();
+            foreach (var watch in this.watches)
+            {
+                watches.Add(watch.Value);
+            }
+
+            return Task.FromResult(watches.AsEnumerable());
+        }
+
+        Task IWatcherHandler<TransactionWatch<ConfirmContext>, ConfirmContext>.AddWatchesAsync(IEnumerable<TransactionWatch<ConfirmContext>> watches, CancellationToken cancellationToken)
+        {
+            if (watches == null)
+            {
+                throw new ArgumentNullException(nameof(watches));
+            }
+
+            foreach (var watch in watches)
+            {
+                this.watches.AddOrReplace(watch.Context.Id, watch);
+            }
+
+            return Task.FromResult(0);
+        }
+
+        Task IWatcherHandler<TransactionWatch<ConfirmContext>, ConfirmContext>.RemoveWatchAsync(TransactionWatch<ConfirmContext> watch, WatchRemoveReason reason, CancellationToken cancellationToken)
+        {
+            this.watches.Remove(watch.Context.Id, out var transactionWatch);
+
+            return Task.FromResult(0);
         }
     }
 }
