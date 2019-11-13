@@ -55,10 +55,10 @@ namespace Ztm.WebApi.Binders
                 switch (this.config.Type)
                 {
                     case PropertyType.Divisible:
-                        model = PropertyAmount.Divisible(decimal.Parse(value));
+                        model = PropertyAmount.FromDivisible(decimal.Parse(value));
                         break;
                     case PropertyType.Indivisible:
-                        model = PropertyAmount.Indivisible(long.Parse(value));
+                        model = new PropertyAmount(long.Parse(value));
                         break;
                     default:
                         throw new InvalidOperationException("The configuration for binder is not valid.");

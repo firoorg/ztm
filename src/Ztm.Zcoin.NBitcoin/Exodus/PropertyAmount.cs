@@ -4,104 +4,133 @@ using System.ComponentModel;
 namespace Ztm.Zcoin.NBitcoin.Exodus
 {
     [TypeConverter(typeof(PropertyAmountConverter))]
-    public struct PropertyAmount
+    public struct PropertyAmount : IEquatable<PropertyAmount>
     {
-        public static readonly PropertyAmount MaxDivisible = PropertyAmount.Divisible(92233720368.54775807m);
-
-        public static readonly PropertyAmount MaxIndivisible = PropertyAmount.Indivisible(long.MaxValue);
-
-        public static readonly PropertyAmount MinDivisible = PropertyAmount.Divisible(0.00000001m);
-
-        public static readonly PropertyAmount MinIndivisible = PropertyAmount.Indivisible(1);
+        public static readonly PropertyAmount MinusOne = new PropertyAmount(-1);
+        public static readonly PropertyAmount One = new PropertyAmount(1);
+        public static readonly PropertyAmount Zero = new PropertyAmount(0);
 
         readonly long value;
-        readonly PropertyType type;
 
-        private PropertyAmount(long value, PropertyType type)
+        public PropertyAmount(long value)
         {
             this.value = value;
-            this.type = type;
         }
 
-        public bool IsValid => this.value > 0;
+        public decimal Divisible => this.value / 100000000m;
 
-        public PropertyType Type => IsValid
-            ? this.type
-            : throw new InvalidOperationException("The amount is not valid.");
+        public long Indivisible => this.value;
 
-        public static PropertyAmount Divisible(decimal value)
+        public static PropertyAmount FromDivisible(decimal value)
         {
-            if (value <= 0m || value > 92233720368.54775807m || (value % 0.00000001m) != 0m)
+            if (value % 0.00000001m != 0m)
             {
-                throw new ArgumentOutOfRangeException(nameof(value), "The value is not valid.");
+                throw new ArgumentException("The value has too much precision.", nameof(value));
             }
 
-            value *= 100000000;
+            value *= 100000000m;
 
-            return new PropertyAmount((long)value, PropertyType.Divisible);
-        }
-
-        public static PropertyAmount Indivisible(long value)
-        {
-            if (value <= 0)
+            if (value < long.MinValue || value > long.MaxValue)
             {
-                throw new ArgumentOutOfRangeException(nameof(value), "The value is not valid.");
+                throw new ArgumentException("The value is not valid.", nameof(value));
             }
 
-            return new PropertyAmount(value, PropertyType.Indivisible);
+            return new PropertyAmount((long)value);
         }
 
+        /// <summary>
+        /// Convert a string that represents property amount.
+        /// </summary>
+        /// <param name="s">
+        /// The string to convert. The value will be treated as divisible if it contains a period; otherwise it will be
+        /// treated as indivisible.
+        /// </param>
+        /// <exception cref="ArgumentException">
+        /// <paramref name="s"/> is <c>null</c>.
+        /// </exception>
+        /// <exception cref="FormatException">
+        /// <paramref name="s"/> is not in the correct format.
+        /// </exception>
+        /// <exception cref="OverflowException">
+        /// <paramref name="s"/> is less than minimum or greater than maximum value.
+        /// </exception>
         public static PropertyAmount Parse(string s)
         {
-            // Convert string to decimal first.
-            var amount = decimal.Parse(s);
-
-            if (amount < 0)
-            {
-                throw new FormatException("The string is not valid.");
-            }
-            else if (amount == 0)
-            {
-                return default(PropertyAmount);
-            }
+            // Convert string to decimal first. We use decimal to be able to support both divisible and indivisible.
+            var value = decimal.Parse(s);
 
             // Determine type. We need to check if there is a period in the string instead of modulo due to '1.0' will
             // be treated as indivisible.
-            var type = (s.IndexOf('.') != -1) ? PropertyType.Divisible : PropertyType.Indivisible;
-
-            if (type == PropertyType.Divisible)
+            if (s.IndexOf('.') != -1)
             {
-                if (amount > 92233720368.54775807m || (amount % 0.00000001m) != 0m)
+                if (value % 0.00000001m != 0m)
                 {
-                    throw new FormatException("The string is not valid.");
+                    throw new FormatException("Too much precision.");
                 }
 
-                amount *= 100000000;
-            }
-            else if (amount > long.MaxValue)
-            {
-                throw new FormatException("The string is not valid.");
+                value *= 100000000m;
             }
 
-            return new PropertyAmount((long)amount, type);
+            if (value < long.MinValue || value > long.MaxValue)
+            {
+                throw new OverflowException("The value is not in the valid range.");
+            }
+
+            return new PropertyAmount((long)value);
         }
 
-        public override string ToString()
+        public bool Equals(PropertyAmount other)
         {
-            if (!IsValid)
+            return this.value == other.value;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null || obj.GetType() != GetType())
             {
-                return "";
+                return false;
             }
 
-            switch (this.type)
+            return Equals((PropertyAmount)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return this.value.GetHashCode();
+        }
+
+        public string ToString(PropertyType type)
+        {
+            // Don't override Object.ToString() due to we want it to return invalid amount.
+            switch (type)
             {
                 case PropertyType.Divisible:
-                    return ((decimal)this.value / 100000000).ToString("0.00000000");
+                    return (this.value / 100000000m).ToString("0.00000000");
                 case PropertyType.Indivisible:
                     return this.value.ToString();
                 default:
-                    throw new InvalidOperationException($"Property type {this.type} is not valid.");
+                    throw new ArgumentException("The value is not valid.", nameof(type));
             }
+        }
+
+        public static bool operator<(PropertyAmount first, PropertyAmount second)
+        {
+            return first.value < second.value;
+        }
+
+        public static bool operator>(PropertyAmount first, PropertyAmount second)
+        {
+            return first.value > second.value;
+        }
+
+        public static bool operator<=(PropertyAmount first, PropertyAmount second)
+        {
+            return first.value <= second.value;
+        }
+
+        public static bool operator>=(PropertyAmount first, PropertyAmount second)
+        {
+            return first.value >= second.value;
         }
     }
 }
