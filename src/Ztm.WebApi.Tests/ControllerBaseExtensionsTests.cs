@@ -3,9 +3,8 @@ using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Xunit;
-using Ztm.WebApi.Controllers;
 
-namespace Ztm.WebApi.Tests.Controllers
+namespace Ztm.WebApi.Tests
 {
     public sealed class ControllerBaseExtensionsTests
     {
@@ -45,12 +44,11 @@ namespace Ztm.WebApi.Tests.Controllers
             // Arrange.
             this.subject.HttpContext.Request.Headers.Add(CallbackUrlKey, invalidUrl);
 
-            // Act.
-            var success = this.subject.TryGetCallbackUrl(out var url);
-
-            // Assert.
-            Assert.False(success);
-            Assert.Null(url);
+            // Act & Assert.
+            Assert.Throws<InvalidCallbackUrlException>
+            (
+                () => this.subject.TryGetCallbackUrl(out var url)
+            );
         }
 
         [Fact]

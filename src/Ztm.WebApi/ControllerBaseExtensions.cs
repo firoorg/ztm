@@ -2,7 +2,7 @@ using System;
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Ztm.WebApi.Controllers
+namespace Ztm.WebApi
 {
     public static class ControllerBaseExtensions
     {
@@ -22,9 +22,12 @@ namespace Ztm.WebApi.Controllers
                     {
                         return true;
                     }
+
+                    throw new InvalidCallbackUrlException(rawUrl);
                 }
                 catch (UriFormatException)
                 {
+                    throw new InvalidCallbackUrlException(rawUrl);
                 }
             }
 

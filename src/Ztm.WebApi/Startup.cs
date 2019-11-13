@@ -58,6 +58,7 @@ namespace Ztm.WebApi
         void ConfigureMvc(MvcOptions options)
         {
             options.ModelBinderProviders.Insert(0, new PropertyAmountModelBinderProvider());
+            options.Filters.Add(new HttpResponseExceptionFilter());
         }
 
         IZcoinRpcClientFactory CreateZcoinRpcClientFactory(IServiceProvider provider)
