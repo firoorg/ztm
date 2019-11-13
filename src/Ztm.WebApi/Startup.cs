@@ -4,29 +4,39 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using NBitcoin;
 using NBitcoin.RPC;
 using Ztm.Configuration;
 using Ztm.Data.Entity.Contexts;
 using Ztm.Data.Entity.Postgres;
 using Ztm.WebApi.Binders;
+using Ztm.Zcoin.NBitcoin;
 using Ztm.Zcoin.Rpc;
 using Ztm.Zcoin.Synchronization;
 
 namespace Ztm.WebApi
 {
-    public class Startup
+    public sealed class Startup
     {
-        public Startup(IConfiguration configuration)
-        {
-            Configuration = configuration;
-        }
+        readonly IConfiguration config;
 
-        public IConfiguration Configuration { get; }
+        public Startup(IConfiguration config)
+        {
+            if (config == null)
+            {
+                throw new ArgumentNullException(nameof(config));
+            }
+
+            this.config = config;
+        }
 
         public void ConfigureServices(IServiceCollection services)
         {
             // ASP.NET Services.
             services.AddMvc(ConfigureMvc).SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+
+            // Fundamentals Services.
+            services.AddSingleton<Network>(CreateZcoinNetwork);
 
             // Database Services.
             services.AddSingleton<IMainDatabaseFactory, MainDatabaseFactory>();
@@ -57,12 +67,21 @@ namespace Ztm.WebApi
 
         void ConfigureMvc(MvcOptions options)
         {
+            // Custom Model Binders.
+            options.ModelBinderProviders.Insert(0, new BitcoinAddressModelBinderProvider());
             options.ModelBinderProviders.Insert(0, new PropertyAmountModelBinderProvider());
+        }
+
+        Network CreateZcoinNetwork(IServiceProvider provider)
+        {
+            var config = this.config.GetZcoinSection();
+
+            return ZcoinNetworks.Instance.GetNetwork(config.Network.Type);
         }
 
         IZcoinRpcClientFactory CreateZcoinRpcClientFactory(IServiceProvider provider)
         {
-            var config = Configuration.GetZcoinSection();
+            var config = this.config.GetZcoinSection();
 
             return new ZcoinRpcClientFactory(
                 config.Rpc.Address,
