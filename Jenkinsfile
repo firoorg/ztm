@@ -1,5 +1,6 @@
 node {
     withEnv(["PUBLISH=${env.WORKSPACE}/build"]) {
+        def commit = null
         def base = null
 
         stage('Setup') {
@@ -7,9 +8,14 @@ node {
             checkout scm
             sh 'git clean -d -f -f -q -x'
 
-            // get base commit hash
-            base = sh (
-                script: "git rev-list --parents -n 1 ${env.GIT_COMMIT}",
+            // get commits hash
+            commit = sh(
+                script: 'git rev-parse HEAD',
+                returnStdout: true
+            ).trim()
+
+            base = sh(
+                script: "git rev-list --parents -n 1 ${commit}",
                 returnStdout: true
             ).trim().split('\\s+')[2]
         }
