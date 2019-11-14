@@ -4,8 +4,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
+using NBitcoin.DataEncoders;
 using NBitcoin.RPC;
 using Newtonsoft.Json.Linq;
+using Ztm.Zcoin.NBitcoin;
 using Ztm.Zcoin.NBitcoin.Exodus;
 
 namespace Ztm.Zcoin.Rpc
@@ -13,8 +15,9 @@ namespace Ztm.Zcoin.Rpc
     public sealed class ZcoinRpcClient : IZcoinRpcClient
     {
         readonly RPCClient client;
+        readonly ITransactionEncoder encoder;
 
-        public ZcoinRpcClient(RPCClient client)
+        public ZcoinRpcClient(RPCClient client, ITransactionEncoder encoder)
         {
             if (client == null)
             {
@@ -22,6 +25,7 @@ namespace Ztm.Zcoin.Rpc
             }
 
             this.client = client;
+            this.encoder = encoder;
         }
 
         public void Dispose()
@@ -239,14 +243,16 @@ namespace Ztm.Zcoin.Rpc
             }).ToArray();
         }
 
-        public Task<uint256> SendRawTransactionAsync(Transaction tx, CancellationToken cancellationToken)
+        public async Task<Transaction> SendRawTransactionAsync(Transaction tx, CancellationToken cancellationToken)
         {
             if (tx == null)
             {
                 throw new ArgumentNullException(nameof(tx));
             }
 
-            return this.client.SendRawTransactionAsync(tx);
+            await this.client.SendRawTransactionAsync(tx);
+
+            return await ExtractExodusTransactionAync(tx);
         }
 
         public Task<uint256> SendToAddressAsync(
@@ -352,6 +358,74 @@ namespace Ztm.Zcoin.Rpc
                 default:
                     throw new ArgumentOutOfRangeException(nameof(type), type, "The value is not valid.");
             }
+        }
+
+        class TransactionInfomation
+        {
+            public uint256 TxId;
+            public Money Fee;
+            public BitcoinAddress SendingAddress;
+            public BitcoinAddress ReferenceAddress;
+            public bool IsMine;
+            public int Version;
+            public int TypeInt;
+            public string Type;
+        }
+
+        async Task<TransactionInfomation> DecodeTransactionAsync(Transaction transaction)
+        {
+            var args = new List<object>()
+            {
+                transaction.ToHex(),
+            };
+
+            // Invoke RPC.
+            var resp = await this.client.SendCommandAsync("exodus_decodetransaction", args.ToArray());
+            var rawRefAddress = resp.Result.Value<string>("referenceaddress");
+
+            return new TransactionInfomation{
+                TxId = uint256.Parse(resp.Result.Value<string>("txid")),
+                Fee = Money.Parse(resp.Result.Value<string>("fee")),
+                SendingAddress = BitcoinAddress.Create(resp.Result.Value<string>("sendingaddress"), this.client.Network),
+                ReferenceAddress = (rawRefAddress == null || rawRefAddress == string.Empty)
+                    ? null : BitcoinAddress.Create(resp.Result.Value<string>("referenceaddress"), this.client.Network),
+                IsMine = resp.Result.Value<bool>("ismine"),
+                Version = resp.Result.Value<int>("version"),
+                TypeInt = resp.Result.Value<int>("type_int"),
+                Type = resp.Result.Value<string>("type")
+            };
+        }
+
+        async Task<(string Payload, int PayloadSize)> GetPayloadAsync(Transaction transaction)
+        {
+            var resp = await this.client.SendCommandAsync("exodus_getpayload", new object[]{transaction.GetHash()});
+
+            var payload = resp.Result.Value<string>("payload");
+            var payloadSize = resp.Result.Value<int>("payloadsize");
+
+            return (payload, payloadSize);
+        }
+
+        async Task<Transaction> ExtractExodusTransactionAync(Transaction transaction)
+        {
+            var infomation = await DecodeTransactionAsync(transaction);
+            var payload = await GetPayloadAsync(transaction);
+
+            ExodusTransaction tx;
+
+            try
+            {
+                tx = this.encoder.Decode(infomation.SendingAddress, infomation.ReferenceAddress, Encoders.Hex.DecodeData(payload.Payload));
+            }
+            catch (TransactionFieldException)
+            {
+                tx = null;
+            }
+
+            #pragma warning disable CS0618
+            transaction.SetExodusTransaction(tx);
+            #pragma warning restore CS0618
+            return transaction;
         }
     }
 }

@@ -16,7 +16,9 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         [Fact]
         public void SetExodusTransaction_WithNull_ShouldNotThrow()
         {
+            #pragma warning disable CS0618
             this.subject.SetExodusTransaction(null);
+            #pragma warning restore CS0618
         }
 
         [Fact]
@@ -36,7 +38,9 @@ namespace Ztm.Zcoin.NBitcoin.Tests
             var exodusTx = new SimpleSendV0(address, address, propertyId, amount);
 
             // Act.
+            #pragma warning disable CS0618
             this.subject.SetExodusTransaction(exodusTx);
+            #pragma warning restore CS0618
             var retrieved = this.subject.GetExodusTransaction();
 
             // Assert.

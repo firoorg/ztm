@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -11,6 +11,7 @@ using Ztm.Data.Entity.Contexts;
 using Ztm.Data.Entity.Postgres;
 using Ztm.WebApi.Binders;
 using Ztm.Zcoin.NBitcoin;
+using Ztm.Zcoin.NBitcoin.Exodus;
 using Ztm.Zcoin.Rpc;
 using Ztm.Zcoin.Synchronization;
 
@@ -45,6 +46,9 @@ namespace Ztm.WebApi
             services.AddSingleton<IZcoinRpcClientFactory>(CreateZcoinRpcClientFactory);
             services.AddTransient<IBlocksRetriever, BlocksRetriever>();
             services.AddSingleton<IBlocksStorage, BlocksStorage>();
+
+            // Transaction Encoder Services.
+            services.AddTransactionEncoder();
 
             // Background Services.
             services.AddHostedService<BlocksSynchronizer>();
@@ -86,7 +90,8 @@ namespace Ztm.WebApi
             return new ZcoinRpcClientFactory(
                 config.Rpc.Address,
                 config.Network.Type,
-                RPCCredentialString.Parse($"{config.Rpc.UserName}:{config.Rpc.Password}")
+                RPCCredentialString.Parse($"{config.Rpc.UserName}:{config.Rpc.Password}"),
+                (ITransactionEncoder)provider.GetRequiredService(typeof(ITransactionEncoder))
             );
         }
     }

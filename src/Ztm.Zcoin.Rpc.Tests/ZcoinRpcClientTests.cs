@@ -4,8 +4,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using NBitcoin.Tests;
+using NSubstitute;
 using Xunit;
 using Ztm.Testing;
+using Ztm.Zcoin.NBitcoin;
 using Ztm.Zcoin.NBitcoin.Exodus;
 using Ztm.Zcoin.Testing;
 
@@ -13,6 +15,7 @@ namespace Ztm.Zcoin.Rpc.Tests
 {
     public sealed class ZcoinRpcClientTests : IDisposable
     {
+        readonly ITransactionEncoder encoder;
         readonly NodeBuilder nodes;
         readonly CoreNode node;
         readonly ZcoinRpcClient subject;
@@ -30,7 +33,9 @@ namespace Ztm.Zcoin.Rpc.Tests
                 this.node = this.nodes.CreateNode();
                 this.nodes.StartAll();
 
-                this.subject = new ZcoinRpcClient(this.node.CreateRPCClient());
+                this.encoder = Substitute.For<ITransactionEncoder>();
+
+                this.subject = new ZcoinRpcClient(this.node.CreateRPCClient(), this.encoder);
             }
             catch
             {
@@ -213,6 +218,11 @@ namespace Ztm.Zcoin.Rpc.Tests
             Assert.Equal("https://satang.com", props.Last().Url);
             Assert.Equal("Provides cryptocurrency solutions.", props.Last().Description);
             Assert.Equal(PropertyType.Indivisible, props.Last().Type);
+
+            this.encoder.Received(1).Decode(
+                Arg.Any<BitcoinAddress>(),
+                Arg.Any<BitcoinAddress>(),
+                Arg.Any<byte[]>());
         }
 
         [Fact]
@@ -436,6 +446,84 @@ namespace Ztm.Zcoin.Rpc.Tests
                 "tx",
                 () => this.subject.SendRawTransactionAsync(null, CancellationToken.None)
             );
+        }
+
+        [Fact]
+        public async Task SendRawTransactionAsync_WithValidExodusTransaction_ShouldGetExodusTransaction()
+        {
+            // Arrange.
+            var owner = await this.subject.GetNewAddressAsync(CancellationToken.None);
+
+            this.node.Generate(101);
+            await this.subject.SendToAddressAsync(owner, Money.Coins(30), null, null, false, CancellationToken.None);
+            this.node.Generate(1);
+
+            var createTx = await this.subject.CreateManagedPropertyAsync(
+                owner,
+                Ecosystem.Main,
+                PropertyType.Indivisible,
+                null,
+                "Company",
+                "Private",
+                "Satang Corporation",
+                "https://satang.com",
+                "Provides cryptocurrency solutions.",
+                CancellationToken.None
+            );
+
+            var exodusTx = new TestExodusTransaction(null, null);
+
+            this.encoder.Decode(
+                Arg.Any<BitcoinAddress>(),
+                Arg.Any<BitcoinAddress>(),
+                Arg.Any<byte[]>()
+            ).Returns(exodusTx);
+
+            // Act.
+            var tx = await this.subject.SendRawTransactionAsync(createTx, CancellationToken.None);
+
+            // Assert.
+            this.encoder.Received(1).Decode(Arg.Any<BitcoinAddress>(), Arg.Any<BitcoinAddress>(), Arg.Any<byte[]>());
+            Assert.Equal(exodusTx, tx.GetExodusTransaction());
+        }
+
+        [Fact]
+        public async Task SendRawTransactionAsync_WithUnsupportedType_ShouldNotThrowAndSetNull()
+        {
+            // Arrange.
+            var owner = await this.subject.GetNewAddressAsync(CancellationToken.None);
+
+            this.node.Generate(101);
+            await this.subject.SendToAddressAsync(owner, Money.Coins(30), null, null, false, CancellationToken.None);
+            this.node.Generate(1);
+
+            var createTx = await this.subject.CreateManagedPropertyAsync(
+                owner,
+                Ecosystem.Main,
+                PropertyType.Indivisible,
+                null,
+                "Company",
+                "Private",
+                "Satang Corporation",
+                "https://satang.com",
+                "Provides cryptocurrency solutions.",
+                CancellationToken.None
+            );
+
+            var exodusTx = new TestExodusTransaction(null, null);
+
+            this.encoder
+                .When(e => e.Decode(Arg.Any<BitcoinAddress>(), Arg.Any<BitcoinAddress>(), Arg.Any<byte[]>()))
+                .Do(e => {throw new TransactionFieldException(
+                    TransactionFieldException.TypeField,
+                    "The value is unknown transaction type.");});
+
+            // Act.
+            var tx = await this.subject.SendRawTransactionAsync(createTx, CancellationToken.None);
+
+            // Assert.
+            this.encoder.Received(1).Decode(Arg.Any<BitcoinAddress>(), Arg.Any<BitcoinAddress>(), Arg.Any<byte[]>());
+            Assert.Null(tx.GetExodusTransaction());
         }
 
         [Fact]
@@ -691,6 +779,26 @@ namespace Ztm.Zcoin.Rpc.Tests
                     Property = new Property(new PropertyId(lastId), this.PropertyType)
                 };
             }
+        }
+
+        sealed class TestExodusTransaction : ExodusTransaction
+        {
+            public TestExodusTransaction(BitcoinAddress sender, BitcoinAddress receiver) : base(sender, receiver)
+            {
+                Id = 1;
+                Version = 1;
+            }
+
+            public TestExodusTransaction(BitcoinAddress sender, BitcoinAddress receiver, int id, int version)
+                : base(sender, receiver)
+            {
+                Id = id;
+                Version = version;
+            }
+
+            public override int Id { get; }
+
+            public override int Version { get; }
         }
     }
 }
