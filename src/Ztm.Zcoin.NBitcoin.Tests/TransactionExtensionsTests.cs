@@ -1,0 +1,46 @@
+using NBitcoin;
+using Xunit;
+using Ztm.Zcoin.NBitcoin.Exodus;
+
+namespace Ztm.Zcoin.NBitcoin.Tests
+{
+    public sealed class TransactionExtensionsTests
+    {
+        readonly Transaction subject;
+
+        public TransactionExtensionsTests()
+        {
+            this.subject = Transaction.Parse(ZcoinTransactionData.ZerocoinRemint, ZcoinNetworks.Instance.Regtest);
+        }
+
+        [Fact]
+        public void SetExodusTransaction_WithNull_ShouldNotThrow()
+        {
+            this.subject.SetExodusTransaction(null);
+        }
+
+        [Fact]
+        public void GetExodusTransaction_WithUnsetValue_ShouldRetreiveNull()
+        {
+            Assert.Null(this.subject.GetExodusTransaction());
+        }
+
+        [Fact]
+        public void SetAndGetExodusTransaction_WithValidTransaction_ShouldRetreiveSameTx()
+        {
+            // Arrange.
+            var address = BitcoinAddress.Create("TG3Pnw5xPZQS8JXMVa3F9WjUFfUqXKsqAz", ZcoinNetworks.Instance.Regtest);
+            var propertyId = new PropertyId(3);
+            var amount = new PropertyAmount(10);
+
+            var exodusTx = new SimpleSendV0(address, address, propertyId, amount);
+
+            // Act.
+            this.subject.SetExodusTransaction(exodusTx);
+            var retrieved = this.subject.GetExodusTransaction();
+
+            // Assert.
+            Assert.Same(exodusTx, retrieved);
+        }
+    }
+}

@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using NBitcoin;
+using Ztm.Zcoin.NBitcoin.Exodus;
 
 namespace Ztm.Zcoin.NBitcoin
 {
@@ -61,5 +62,7 @@ namespace Ztm.Zcoin.NBitcoin
         {
             return this.consensusFactory;
         }
+
+        public ExodusTransaction ExodusTransaction { get; set; }
     }
 }
