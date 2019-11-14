@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using NBitcoin.RPC;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Ztm.Zcoin.NBitcoin.Exodus;
 
@@ -115,6 +116,41 @@ namespace Ztm.Zcoin.Rpc
         public Task<BitcoinAddress> GetNewAddressAsync(CancellationToken cancellationToken)
         {
             return this.client.GetNewAddressAsync();
+        }
+
+        class BalanceDetail
+        {
+            public string Balance { get; set; }
+            public string Reserved { get; set; }
+        }
+
+        public async Task<(PropertyAmount Balance, PropertyAmount Reserved)> GetPropertyBalanceAsync(
+            BitcoinAddress address,
+            Property property,
+            CancellationToken cancellationToken)
+        {
+            if (address == null)
+            {
+                throw new ArgumentNullException(nameof(address));
+            }
+
+            if (property == null)
+            {
+                throw new ArgumentNullException(nameof(property));
+            }
+
+            var resp = await this.client.SendCommandAsync("exodus_getbalance", address.ToString(), property.Id.Value);
+            var balanceDetail = JsonConvert.DeserializeObject<BalanceDetail>(resp.ResultString);
+
+            var balance = property.Type == PropertyType.Divisible
+                ? PropertyAmount.FromDivisible(Convert.ToDecimal(balanceDetail.Balance))
+                : new PropertyAmount(Convert.ToInt64(balanceDetail.Balance));
+
+            var reserved = property.Type == PropertyType.Divisible
+                ? PropertyAmount.FromDivisible(Convert.ToDecimal(balanceDetail.Reserved))
+                : new PropertyAmount(Convert.ToInt64(balanceDetail.Reserved));
+
+            return (balance, reserved);
         }
 
         public async Task<PropertyGrantsInfo> GetPropertyGrantsAsync(
@@ -239,6 +275,62 @@ namespace Ztm.Zcoin.Rpc
                 commentTo,
                 subtractFeeFromAmount
             );
+        }
+
+        public async Task<Transaction> SendAsync(
+            BitcoinAddress from,
+            BitcoinAddress to,
+            Property property,
+            PropertyAmount amount,
+            BitcoinAddress redeemAddress,
+            Money referenceAmount,
+            CancellationToken cancellation)
+        {
+            if (from == null)
+            {
+                throw new ArgumentNullException(nameof(from));
+            }
+
+            if (to == null)
+            {
+                throw new ArgumentNullException(nameof(to));
+            }
+
+            if (property == null)
+            {
+                throw new ArgumentNullException(nameof(property));
+            }
+
+            if (amount < PropertyAmount.One)
+            {
+                throw new ArgumentOutOfRangeException(nameof(amount), amount, "The value is less than one.");
+            }
+
+            var args = new List<object>()
+            {
+                from.ToString(),
+                to.ToString(),
+                ToNative(property.Id),
+                amount.ToString(property.Type),
+            };
+
+            if (redeemAddress != null) {
+                args.Add(redeemAddress.ToString());
+
+                if (referenceAmount != null)
+                {
+                    if (referenceAmount < Money.Zero)
+                    {
+                        throw new ArgumentOutOfRangeException(nameof(referenceAmount), amount, "The value is less than zero.");
+                    }
+                    args.Add(referenceAmount.ToString());
+                }
+            }
+
+            // Invoke RPC.
+            var resp = await this.client.SendCommandAsync("exodus_send", args.ToArray());
+
+            return Transaction.Parse(resp.Result.Value<string>(), this.client.Network);
         }
 
         static byte ToNative(Ecosystem ecosystem)
