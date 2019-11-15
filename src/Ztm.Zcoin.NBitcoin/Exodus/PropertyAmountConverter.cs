@@ -11,9 +11,17 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
             if (sourceType == typeof(string) ||
                 sourceType == typeof(int) ||
                 sourceType == typeof(long) ||
-                sourceType == typeof(float) ||
-                sourceType == typeof(double) ||
                 sourceType == typeof(decimal))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public override bool CanConvertTo(ITypeDescriptorContext context, Type destinationType)
+        {
+            if (destinationType == typeof(long) || destinationType == typeof(decimal))
             {
                 return true;
             }
@@ -28,12 +36,6 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
             {
                 case int i:
                     value = (long)i;
-                    break;
-                case float f:
-                    value = (decimal)f;
-                    break;
-                case double d:
-                    value = (decimal)d;
                     break;
             }
 
@@ -51,22 +53,15 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
             }
             else if (value is long n)
             {
-                try
-                {
-                    return PropertyAmount.Indivisible(n);
-                }
-                catch (ArgumentOutOfRangeException ex)
-                {
-                    throw new NotSupportedException($"Cannot convert {n} to {typeof(PropertyAmount)}.", ex);
-                }
+                return new PropertyAmount(n);
             }
             else if (value is decimal d)
             {
                 try
                 {
-                    return PropertyAmount.Divisible(d);
+                    return PropertyAmount.FromDivisible(d);
                 }
-                catch (ArgumentOutOfRangeException ex)
+                catch (ArgumentException ex)
                 {
                     throw new NotSupportedException($"Cannot convert {d} to {typeof(PropertyAmount)}.", ex);
                 }
@@ -79,31 +74,31 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
             }
         }
 
-        public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)
+        public override object ConvertTo(
+            ITypeDescriptorContext context,
+            CultureInfo culture,
+            object value,
+            Type destinationType)
         {
-            if (!((PropertyAmount)value).IsValid)
+            if (destinationType == null)
             {
-                throw new NotSupportedException("The value is not valid.");
+                throw new ArgumentNullException(nameof(destinationType));
             }
 
-            // We supported only string.
-            return base.ConvertTo(context, culture, value, destinationType);
-        }
+            var amount = (PropertyAmount)value;
 
-        public override StandardValuesCollection GetStandardValues(ITypeDescriptorContext context)
-        {
-            return new StandardValuesCollection(new[]
+            if (destinationType == typeof(long))
             {
-                PropertyAmount.MinDivisible,
-                PropertyAmount.MinIndivisible,
-                PropertyAmount.MaxDivisible,
-                PropertyAmount.MaxIndivisible
-            });
-        }
-
-        public override bool GetStandardValuesSupported(ITypeDescriptorContext context)
-        {
-            return true;
+                return amount.Indivisible;
+            }
+            else if (destinationType == typeof(decimal))
+            {
+                return amount.Divisible;
+            }
+            else
+            {
+                throw new NotSupportedException($"Don't know how to convert {value.GetType()} to {destinationType}.");
+            }
         }
     }
 }

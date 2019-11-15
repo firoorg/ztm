@@ -104,15 +104,11 @@ namespace Ztm.WebApi.Tests.Binders
             var model = (PropertyAmount)context.Result.Model;
 
             Assert.True(context.Result.IsModelSet);
-            Assert.True(model.IsValid);
-            Assert.Equal(PropertyType.Divisible, model.Type);
-            Assert.Equal(expected, model.ToString());
+            Assert.Equal(expected, model.ToString(PropertyType.Divisible));
             Assert.Equal(value, this.context.ModelState["Amount"].RawValue);
         }
 
         [Theory]
-        [InlineData("-0.00000001")]
-        [InlineData("0")]
         [InlineData("0.100000001")]
         [InlineData("92233720368.54775808")]
         public async Task BindModelAsync_WithInvalidDivisibleValue_ShouldFail(string value)
@@ -150,16 +146,12 @@ namespace Ztm.WebApi.Tests.Binders
             var model = (PropertyAmount)context.Result.Model;
 
             Assert.True(context.Result.IsModelSet);
-            Assert.True(model.IsValid);
-            Assert.Equal(PropertyType.Indivisible, model.Type);
-            Assert.Equal(value, model.ToString());
+            Assert.Equal(value, model.ToString(PropertyType.Indivisible));
             Assert.Equal(value, this.context.ModelState["Amount"].RawValue);
         }
 
         [Theory]
         [InlineData("-9223372036854775809")]
-        [InlineData("-1")]
-        [InlineData("0")]
         [InlineData("9223372036854775808")]
         public async Task BindModelAsync_WithInvalidIndivisibleValue_ShouldFail(string value)
         {
