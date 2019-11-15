@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
@@ -15,6 +14,7 @@ using Ztm.Zcoin.Watching;
 namespace Ztm.WebApi
 {
     using ConfirmContext = TransactionConfirmationWatch<TransactionConfirmationCallbackResult>;
+    using Timer = Ztm.Threading.Timer;
 
     public sealed class TransactionConfirmationWatcher : IHostedService, IBlockListener, ITransactionConfirmationWatcherHandler<ConfirmContext>
     {
@@ -27,7 +27,7 @@ namespace Ztm.WebApi
 
         // State recorders
         readonly ReaderWriterLockSlim timerLock;
-        readonly Dictionary<uint256, Dictionary<Guid, Tuple<Ztm.Threading.Timer, ConfirmContext>>> timers;
+        readonly Dictionary<uint256, Dictionary<Guid, Tuple<Timer, ConfirmContext>>> timers;
 
         readonly ConcurrentDictionary<Guid, TransactionWatch<ConfirmContext>> watches;
 
@@ -67,7 +67,7 @@ namespace Ztm.WebApi
                 blocks
             );
 
-            timerLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
+            this.timerLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
             timers = new Dictionary<uint256, Dictionary<Guid, Tuple<Threading.Timer, ConfirmContext>>>();
             watches = new ConcurrentDictionary<Guid, TransactionWatch<ConfirmContext>>();
         }
@@ -76,18 +76,40 @@ namespace Ztm.WebApi
             uint256 transaction,
             int confirmation,
             TimeSpan timeout,
-            IPAddress registeringIp,
-            Uri callbackUrl,
+            Callback callback,
             TransactionConfirmationCallbackResult successData,
             TransactionConfirmationCallbackResult timeoutData,
             CancellationToken cancellationToken)
         {
-            var callback = await this.callbackRepository.AddAsync
-            (
-                registeringIp,
-                callbackUrl,
-                cancellationToken
-            );
+            if (transaction == null)
+            {
+                throw new ArgumentNullException(nameof(transaction));
+            }
+
+            if (confirmation < 1)
+            {
+                throw new ArgumentOutOfRangeException("Confirmation is less than zero");
+            }
+
+            if (!Timer.IsValidDuration(timeout))
+            {
+                throw new ArgumentOutOfRangeException("Timeout is invalid duration");
+            }
+
+            if (callback == null)
+            {
+                throw new ArgumentNullException(nameof(callback));
+            }
+
+            if (successData == null)
+            {
+                throw new ArgumentNullException(nameof(successData));
+            }
+
+            if (timeoutData == null)
+            {
+                throw new ArgumentNullException(nameof(timeoutData));
+            }
 
             var watch = await this.watchRepository.AddAsync
             (
@@ -100,7 +122,7 @@ namespace Ztm.WebApi
                 cancellationToken
             );
 
-            TimerSetup(watch);
+            SetupTimer(watch);
 
             return watch;
         }
@@ -111,13 +133,13 @@ namespace Ztm.WebApi
 
             foreach (var watch in allWatches.Where(w => !w.Callback.Completed))
             {
-                TimerSetup(watch);
+                SetupTimer(watch);
             }
         }
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
-            timerLock.EnterWriteLock();
+            this.timerLock.EnterWriteLock();
 
             try
             {
@@ -131,15 +153,15 @@ namespace Ztm.WebApi
             }
             finally
             {
-                timerLock.ExitWriteLock();
+                this.timerLock.ExitWriteLock();
             }
         }
 
-        void TimerSetup(TransactionConfirmationWatch<TransactionConfirmationCallbackResult> watch)
+        void SetupTimer(TransactionConfirmationWatch<TransactionConfirmationCallbackResult> watch)
         {
-            var timer = new Ztm.Threading.Timer();
+            var timer = new Timer();
 
-            timerLock.EnterWriteLock();
+            this.timerLock.EnterWriteLock();
 
             try
             {
@@ -155,7 +177,7 @@ namespace Ztm.WebApi
             }
             finally
             {
-                timerLock.ExitWriteLock();
+                this.timerLock.ExitWriteLock();
             }
         }
 
@@ -169,7 +191,7 @@ namespace Ztm.WebApi
 
         void RemoveTimer(uint256 transaction, Guid id)
         {
-            timerLock.EnterWriteLock();
+            this.timerLock.EnterWriteLock();
 
             try
             {
@@ -181,13 +203,13 @@ namespace Ztm.WebApi
             }
             finally
             {
-                timerLock.ExitWriteLock();
+                this.timerLock.ExitWriteLock();
             }
         }
 
         async Task<bool> StopTimer(uint256 transaction, Guid id)
         {
-            timerLock.EnterWriteLock();
+            this.timerLock.EnterWriteLock();
             try
             {
                 if (timers.TryGetValue(transaction, out var txTimers) && txTimers.TryGetValue(id, out var timer))
@@ -202,7 +224,7 @@ namespace Ztm.WebApi
             }
             finally
             {
-                timerLock.ExitWriteLock();
+                this.timerLock.ExitWriteLock();
             }
 
             return false;
@@ -210,15 +232,15 @@ namespace Ztm.WebApi
 
         void ResumeTimer(ConfirmContext watch)
         {
-            timerLock.EnterWriteLock();
+            this.timerLock.EnterWriteLock();
 
             try
             {
-                TimerSetup(watch);
+                SetupTimer(watch);
             }
             finally
             {
-                timerLock.EnterWriteLock();
+                this.timerLock.EnterWriteLock();
             }
         }
 
@@ -249,7 +271,7 @@ namespace Ztm.WebApi
 
         Task<IEnumerable<ConfirmContext>> ITransactionConfirmationWatcherHandler<ConfirmContext>.CreateContextsAsync(Transaction tx, CancellationToken cancellationToken)
         {
-            timerLock.EnterReadLock();
+            this.timerLock.EnterReadLock();
 
             try
             {
@@ -260,7 +282,7 @@ namespace Ztm.WebApi
             }
             finally
             {
-                timerLock.ExitReadLock();
+                this.timerLock.ExitReadLock();
             }
 
             return Task.FromResult((IEnumerable<ConfirmContext>)(new Collection<ConfirmContext>()));
