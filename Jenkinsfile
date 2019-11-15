@@ -57,14 +57,14 @@ node {
             def mainDb = "${buildTag}-db-main"
             def zcoind = "${buildTag}-zcoind"
 
-            writeFile('docker-compose.yml', compose)
+            writeFile(file: 'docker-compose.yml', text: compose)
 
             withEnv(["ZTM_MAIN_DATABASE_CONTAINER=${mainDb}", "ZTM_ZCOIND_CONTAINER=${zcoind}", "ZTM_DOCKER_NETWORK=${net}"]) {
                 sh 'docker-compose up -d'
             }
 
             // modify ztm's configurations
-            def conf = readJSON("${publish}/appsettings.json")
+            def conf = readJSON(file: "${publish}/appsettings.json")
 
             conf.Logging.LogLevel.Default = 'Information'
             conf.Database.Main.ConnectionString = "Host=${mainDb};Database=postgres;Username=postgres"
