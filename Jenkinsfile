@@ -1,9 +1,7 @@
-import java.nio.file.Paths
-
 node {
-    def workspace = Paths.get(env.WORKSPACE)
-    def workspaceId = workspace.getFileName()
-    def publish = workspace.resolve('build')
+    def workspace = env.WORKSPACE
+    def buildTag = env.BUILD_TAG
+    def publish = "${workspace}/build"
     def compose = null
 
     stage('Setup') {
@@ -52,14 +50,14 @@ node {
     stage('E2E Test') {
         // create an isolated network for e2e tests
         def net = sh(
-            script: "docker network create ${workspaceId}",
+            script: "docker network create ${buildTag}",
             returnStdout: true
         ).trim()
 
         try {
             // spawn external services
-            def mainDb = "${workspaceId}-db-main"
-            def zcoind = "${workspaceId}-zcoind"
+            def mainDb = "${buildTag}-db-main"
+            def zcoind = "${buildTag}-zcoind"
 
             writeFile('docker-compose.yml', compose)
 
@@ -68,7 +66,7 @@ node {
             }
 
             // modify ztm's configurations
-            def conf = readJSON(publish.resolve('appsettings.json'))
+            def conf = readJSON("${publish}/appsettings.json")
 
             conf.Logging.LogLevel.Default = 'Information'
             conf.Database.Main.ConnectionString = "Host=${mainDb};Database=postgres;Username=postgres"
@@ -78,13 +76,13 @@ node {
 
             writeJSON(
                 json: conf,
-                file: publish.resolve('appsettings.json'),
+                file: "${publish}/appsettings.json",
                 pretty: 2
             )
 
             try {
                 // start ztm
-                def ztm = docker.image('alpine:latest').run("--network=${net}", "${publish.resolve('Ztm.WebApi')} --urls=http://*:5000")
+                def ztm = docker.image('alpine:latest').run("--network=${net}", "${publish}/Ztm.WebApi --urls=http://*:5000")
 
                 try {
                     // environment is ready, start e2e tests
