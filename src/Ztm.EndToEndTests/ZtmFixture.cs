@@ -27,7 +27,7 @@ namespace Ztm.EndToEndTests
             {
                 throw new InvalidOperationException("No ZTM_PORT environment variable is set.", ex);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is FormatException || ex is OverflowException)
             {
                 throw new InvalidOperationException("ZTM_PORT environment variable have invalid value.", ex);
             }
