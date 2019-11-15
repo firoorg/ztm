@@ -186,12 +186,15 @@ namespace Ztm.WebApi
             }
         }
 
-        async void OnTimeout(object sender, TimerElapsedEventArgs e)
+        void OnTimeout(object sender, TimerElapsedEventArgs e)
         {
-            var watch = await watchRepository.GetAsync((Guid)e.Context, CancellationToken.None);
+            e.RegisterBackgroundTask(async cancellationToken =>
+            {
+                var watch = await watchRepository.GetAsync((Guid)e.Context, cancellationToken);
 
-            await Execute(watch.Callback, watch.Timeout, CancellationToken.None);
-            RemoveTimer(watch.Transaction, watch.Id);
+                await ExecuteCallbackAsync(watch.Callback, watch.Timeout, cancellationToken);
+                RemoveTimer(watch.Transaction, watch.Id);
+            });
         }
 
         void RemoveTimer(uint256 transaction, Guid id)
@@ -217,7 +220,7 @@ namespace Ztm.WebApi
             this.timerLock.EnterWriteLock();
             try
             {
-                if (timers.TryGetValue(transaction, out var txTimers) && txTimers.TryGetValue(id, out var timer))
+                if (this.timers.TryGetValue(transaction, out var txTimers) && txTimers.TryGetValue(id, out var timer))
                 {
                     await timer.Item1.StopAsync(CancellationToken.None);
                     if (timer.Item1.ElapsedCount == 0)
@@ -264,17 +267,17 @@ namespace Ztm.WebApi
         {
             var watchObject = await this.watchRepository.GetAsync(watch.Context, CancellationToken.None);
 
-            await Execute(watchObject.Callback, watchObject.Success, CancellationToken.None);
+            await ExecuteCallbackAsync(watchObject.Callback, watchObject.Success, CancellationToken.None);
             RemoveTimer(watch.TransactionId, watch.Context);
         }
 
-        async Task Execute(Callback callback, TransactionConfirmationCallbackResult payload, CancellationToken cancellationToken)
+        async Task ExecuteCallbackAsync(Callback callback, TransactionConfirmationCallbackResult payload, CancellationToken cancellationToken)
         {
-            await callbackRepository.AddHistoryAsync(callback.Id, payload, cancellationToken);
+            await this.callbackRepository.AddHistoryAsync(callback.Id, payload, cancellationToken);
 
             if (await this.callbackExecuter.Execute(callback.Id, callback.Url, payload, cancellationToken))
             {
-                await callbackRepository.SetCompletedAsyc(callback.Id, cancellationToken);
+                await this.callbackRepository.SetCompletedAsyc(callback.Id, cancellationToken);
             }
         }
 
@@ -294,9 +297,9 @@ namespace Ztm.WebApi
 
             try
             {
-                if (timers.TryGetValue(tx.GetHash(), out var txTimers))
+                if (this.timers.TryGetValue(tx.GetHash(), out var txTimers))
                 {
-                    return Task.FromResult(txTimers.Select(t => t.Key));
+                    return Task.FromResult((IEnumerable<Guid>)txTimers.Select(t => t.Key).ToList());
                 }
             }
             finally
@@ -304,7 +307,7 @@ namespace Ztm.WebApi
                 this.timerLock.ExitReadLock();
             }
 
-            return Task.FromResult((IEnumerable<Guid>)(new Collection<Guid>()));
+            return Task.FromResult(Enumerable.Empty<Guid>());
         }
 
         async Task<bool> IConfirmationWatcherHandler<TransactionWatch<Guid>, Guid>.ConfirmationUpdateAsync(TransactionWatch<Guid> watch, int confirmation, ConfirmationType type, CancellationToken cancellationToken)
