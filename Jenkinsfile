@@ -7,23 +7,21 @@ node {
     stage('Setup') {
         // checkout source
         checkout scm
-        sh 'git clean -d -f -f -q -x' // we need to clean workspace due to Jenkins did not do it
 
-        def commit = sh(
+        // revert untrusted files to the base version and backup it before we execute any untrusted code so the attacker
+        // don't have a chance to put a malicious content
+        def latest = sh(
             script: 'git rev-parse HEAD',
             returnStdout: true
         ).trim()
 
-        def base = sh(
-            script: "git rev-list --parents -n 1 ${commit}",
-            returnStdout: true
-        ).trim().split('\\s+')[2]
-
-        // revert untrusted files to the base version and backup it before we execute any untrusted code so the attacker
-        // don't have a chance to put a malicious content
-        sh "git checkout ${base} docker-compose.yml"
+        sh "git checkout ${env.CHANGE_TARGET}"
 
         compose = readFile('docker-compose.yml')
+
+        // switch back to latest commit
+        sh "git checkout ${latest}"
+        sh 'git clean -d -f -f -q -x'
     }
 
     // build, run unit tests and publish application
