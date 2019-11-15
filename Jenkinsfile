@@ -32,6 +32,11 @@ node {
 
             stage('Publish') {
                 sh "dotnet publish -o \"${env.PUBLISH}\" -r linux-musl-x64 -c Release src/Ztm.WebApi"
+
+                // we need a dummy value for ZTM_MAIN_DATABASE just to let the code pass, it does not use when we
+                // generate script
+                withEnv(['ZTM_MAIN_DATABASE=Host=127.0.0.1;Database=postgres;Username=postgres']) {
+                }
                 sh "dotnet ef migrations script -o \"${env.PUBLISH}/Ztm.Data.Entity.Postgres.sql\" -i -p src/Ztm.Data.Entity.Postgres"
             }
         }
