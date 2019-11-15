@@ -14,13 +14,12 @@ using Ztm.Zcoin.Watching;
 namespace Ztm.WebApi.Tests
 {
     using WatchRepository = ITransactionConfirmationWatchRepository<TransactionConfirmationCallbackResult>;
-    using ConfirmContext = TransactionConfirmationWatch<TransactionConfirmationCallbackResult>;
 
     public sealed class TransactionConfirmationWatcherTests : IDisposable
     {
         readonly IBlockListener blockListener;
         readonly TransactionConfirmationWatcher subject;
-        readonly ITransactionConfirmationWatcherHandler<ConfirmContext> handler;
+        readonly ITransactionConfirmationWatcherHandler<Guid> handler;
 
         readonly ICallbackRepository callbackRepository;
         readonly WatchRepository watchRepository;
@@ -452,10 +451,10 @@ namespace Ztm.WebApi.Tests
             var watch1 = await builder.Call(this.subject.AddTransactionAsync);
             var watch2 = await builder.Call(this.subject.AddTransactionAsync);
 
-            var ids = new List<TransactionWatch<ConfirmContext>>()
+            var ids = new List<TransactionWatch<Guid>>()
             {
-                new TransactionWatch<ConfirmContext>(watch1, uint256.Zero, uint256.Zero),
-                new TransactionWatch<ConfirmContext>(watch2, uint256.Zero, uint256.Zero),
+                new TransactionWatch<Guid>(watch1.Id, uint256.Zero, uint256.Zero),
+                new TransactionWatch<Guid>(watch2.Id, uint256.Zero, uint256.Zero),
             };
 
             // Act.
@@ -480,10 +479,10 @@ namespace Ztm.WebApi.Tests
             var watch1 = await builder.Call(this.subject.AddTransactionAsync);
             var watch2 = await builder.Call(this.subject.AddTransactionAsync);
 
-            var watches = new List<TransactionWatch<ConfirmContext>>()
+            var watches = new List<TransactionWatch<Guid>>()
             {
-                new TransactionWatch<ConfirmContext>(watch1, uint256.Zero, uint256.Zero),
-                new TransactionWatch<ConfirmContext>(watch2, uint256.Zero, uint256.Zero),
+                new TransactionWatch<Guid>(watch1.Id, uint256.Zero, uint256.Zero),
+                new TransactionWatch<Guid>(watch2.Id, uint256.Zero, uint256.Zero),
             };
 
             await this.handler.AddWatchesAsync(watches, CancellationToken.None);
@@ -493,8 +492,8 @@ namespace Ztm.WebApi.Tests
 
             // Assert.
             Assert.Equal(2, received.Count());
-            Assert.Contains(received, w => w.Context == watch1);
-            Assert.Contains(received, w => w.Context == watch2);
+            Assert.Contains(received, w => w.Context == watch1.Id);
+            Assert.Contains(received, w => w.Context == watch2.Id);
         }
 
         [Fact]
@@ -513,9 +512,9 @@ namespace Ztm.WebApi.Tests
             builder.timeout = TimeSpan.FromSeconds(1);
             var watch = await builder.Call(this.subject.AddTransactionAsync);
 
-            var watches = new List<TransactionWatch<ConfirmContext>>()
+            var watches = new List<TransactionWatch<Guid>>()
             {
-                new TransactionWatch<ConfirmContext>(watch, uint256.Zero, builder.transaction),
+                new TransactionWatch<Guid>(watch.Id, uint256.Zero, builder.transaction),
             };
 
             await this.handler.AddWatchesAsync(watches, CancellationToken.None);
@@ -549,9 +548,9 @@ namespace Ztm.WebApi.Tests
             builder.confirmation = 10;
             var watch = await builder.Call(this.subject.AddTransactionAsync);
 
-            var watches = new List<TransactionWatch<ConfirmContext>>()
+            var watches = new List<TransactionWatch<Guid>>()
             {
-                new TransactionWatch<ConfirmContext>(watch, uint256.Zero, builder.transaction),
+                new TransactionWatch<Guid>(watch.Id, uint256.Zero, builder.transaction),
             };
 
             await this.handler.AddWatchesAsync(watches, CancellationToken.None);
@@ -586,9 +585,9 @@ namespace Ztm.WebApi.Tests
             builder.confirmation = 10;
             var watch = await builder.Call(this.subject.AddTransactionAsync);
 
-            var watches = new List<TransactionWatch<ConfirmContext>>()
+            var watches = new List<TransactionWatch<Guid>>()
             {
-                new TransactionWatch<ConfirmContext>(watch, uint256.Zero, builder.transaction),
+                new TransactionWatch<Guid>(watch.Id, uint256.Zero, builder.transaction),
             };
 
             await this.handler.AddWatchesAsync(watches, CancellationToken.None);
@@ -624,9 +623,9 @@ namespace Ztm.WebApi.Tests
             builder.confirmation = 10;
             var watch = await builder.Call(this.subject.AddTransactionAsync);
 
-            var watches = new List<TransactionWatch<ConfirmContext>>()
+            var watches = new List<TransactionWatch<Guid>>()
             {
-                new TransactionWatch<ConfirmContext>(watch, uint256.Zero, builder.transaction),
+                new TransactionWatch<Guid>(watch.Id, uint256.Zero, builder.transaction),
             };
 
             await this.handler.AddWatchesAsync(watches, CancellationToken.None);
@@ -652,7 +651,7 @@ namespace Ztm.WebApi.Tests
         }
 
         [Fact]
-        public async void ConfirmationUpdateAsync_WithUnconfirmWhenAlreadyTimeout_CallbackShouldBeCalled()
+        public async void ConfirmationUpdateAsync_WithRemainingTimeout_ShouldNotExecuteTimeoutImmediately()
         {
             // Arrange.
             var builder = new WatchArgsBuilder(this.callbackRepository);
@@ -661,20 +660,26 @@ namespace Ztm.WebApi.Tests
             builder.confirmation = 10;
             var watch = await builder.Call(this.subject.AddTransactionAsync);
 
-            var watches = new List<TransactionWatch<ConfirmContext>>()
+            var watches = new List<TransactionWatch<Guid>>()
             {
-                new TransactionWatch<ConfirmContext>(watch, uint256.Zero, builder.transaction),
+                new TransactionWatch<Guid>(watch.Id, uint256.Zero, builder.transaction),
             };
 
             await this.handler.AddWatchesAsync(watches, CancellationToken.None);
 
-            // Act.
+            // Act & Assert.
             await this.handler.ConfirmationUpdateAsync(watches[0], 1, ConfirmationType.Confirmed, CancellationToken.None);
             Thread.Sleep(TimeSpan.FromSeconds(2));
 
+            var updated = await this.watchRepository.GetAsync(watch.Id, CancellationToken.None);
+            Assert.True(updated.RemainingWaitingTime < TimeSpan.FromSeconds(1));
+
             await this.handler.ConfirmationUpdateAsync(watches[0], 1, ConfirmationType.Unconfirming, CancellationToken.None);
 
-            // Assert.
+            _ = this.callbackExecuter.Received(0);
+
+            Thread.Sleep(TimeSpan.FromSeconds(1));
+
             _ = this.callbackExecuter.Received(1).Execute(
                 Arg.Any<Guid>(),
                 Arg.Any<Uri>(),
@@ -696,9 +701,9 @@ namespace Ztm.WebApi.Tests
             builder.confirmation = 10;
             var watch = await builder.Call(this.subject.AddTransactionAsync);
 
-            var watches = new List<TransactionWatch<ConfirmContext>>()
+            var watches = new List<TransactionWatch<Guid>>()
             {
-                new TransactionWatch<ConfirmContext>(watch, uint256.Zero, builder.transaction),
+                new TransactionWatch<Guid>(watch.Id, uint256.Zero, builder.transaction),
             };
 
             await this.handler.AddWatchesAsync(watches, CancellationToken.None);
@@ -746,7 +751,7 @@ namespace Ztm.WebApi.Tests
             );
 
             // Act.
-            ITransactionConfirmationWatcherHandler<ConfirmContext> localHandler;
+            ITransactionConfirmationWatcherHandler<Guid> localHandler;
             TransactionConfirmationWatcher localWatcher;
 
             localHandler = localWatcher = new TransactionConfirmationWatcher
@@ -821,7 +826,8 @@ namespace Ztm.WebApi.Tests
                             Guid.NewGuid(),
                             info.ArgAt<uint256>(0),
                             info.ArgAt<int>(1),
-                            DateTime.UtcNow.Add(info.ArgAt<TimeSpan>(2)),
+                            info.ArgAt<TimeSpan>(2),
+                            info.ArgAt<TimeSpan>(2),
                             info.ArgAt<TransactionConfirmationCallbackResult>(3),
                             info.ArgAt<TransactionConfirmationCallbackResult>(4),
                             info.ArgAt<Callback>(5)
@@ -840,6 +846,19 @@ namespace Ztm.WebApi.Tests
                 this.watchRepository
                     .ListAsync(Arg.Any<CancellationToken>())
                     .Returns(info => mockedWatchs.Select(w => w.Value));
+
+                this.watchRepository
+                    .When(w => w.SetRemainingWaitingTimeAsync(Arg.Any<Guid>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>()))
+                    .Do(w => {
+                        var id = w.ArgAt<Guid>(0);
+                        var remaining = w.ArgAt<TimeSpan>(1);
+
+                        var old = mockedWatchs[id];
+
+                        mockedWatchs[id] = new TransactionConfirmationWatch<TransactionConfirmationCallbackResult>(
+                            old.Id, old.Transaction, old.Confirmation, old.WaitingTime, remaining,
+                            old.Success, old.Timeout, old.Callback);
+                    });
 
         }
 

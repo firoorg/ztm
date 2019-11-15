@@ -13,7 +13,7 @@ namespace Ztm.WebApi
         (
             uint256 transaction,
             int confirmation,
-            TimeSpan timeout,
+            TimeSpan unconfirmedWaitingTime,
             TCallbackResult successData,
             TCallbackResult timeoutData,
             Callback callback,
@@ -22,5 +22,6 @@ namespace Ztm.WebApi
 
         Task<TransactionConfirmationWatch<TCallbackResult>> GetAsync(Guid id, CancellationToken cancellationToken);
         Task<IEnumerable<TransactionConfirmationWatch<TCallbackResult>>> ListAsync(CancellationToken cancellationToken);
+        Task SetRemainingWaitingTimeAsync(Guid id, TimeSpan remainingTime, CancellationToken cancellationToken);
     }
 }

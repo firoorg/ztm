@@ -48,19 +48,18 @@ namespace Ztm.WebApi.Tests
             var transaction = uint256.Parse("008b3395991c7893bb8a82d8389a48ded863af914d9cc31711554bc97e4723c0");
             var successResult = new TestCallbackResult(CallbackResult.StatusSuccess, "success");
             var timeoutResult = new TestCallbackResult(CallbackResult.StatusError, "timeout");
-            var timeout = TimeSpan.FromMinutes(5);
-
-            var expectedDueAfter = DateTime.UtcNow.Add(timeout);
+            var waitingTime = TimeSpan.FromMinutes(5);
 
             // Act.
-            var watch = await this.subject.AddAsync(transaction, 10, timeout,
+            var watch = await this.subject.AddAsync(transaction, 10, waitingTime,
                 successResult, timeoutResult, this.defaultCallback, CancellationToken.None);
 
             // Assert.
             Assert.NotEqual(Guid.Empty, watch.Id);
             Assert.Equal(transaction, watch.Transaction);
             Assert.Equal(10, watch.Confirmation);
-            Assert.True(expectedDueAfter < watch.Due);
+            Assert.Equal(waitingTime, watch.WaitingTime);
+            Assert.Equal(waitingTime, watch.RemainingWaitingTime);
             Assert.Equal(successResult, watch.Success);
             Assert.Equal(timeoutResult, watch.Timeout);
         }
@@ -115,7 +114,8 @@ namespace Ztm.WebApi.Tests
             Assert.Equal(watch.Id, retrieved.Id);
             Assert.Equal(watch.Transaction, retrieved.Transaction);
             Assert.Equal(watch.Confirmation, retrieved.Confirmation);
-            Assert.Equal(watch.Due, retrieved.Due);
+            Assert.Equal(watch.WaitingTime, retrieved.WaitingTime);
+            Assert.Equal(watch.RemainingWaitingTime, retrieved.RemainingWaitingTime);
             Assert.Equal(watch.Success, retrieved.Success);
             Assert.Equal(watch.Timeout, retrieved.Timeout);
             Assert.Equal(this.defaultCallback, retrieved.Callback);
@@ -137,8 +137,6 @@ namespace Ztm.WebApi.Tests
             var successResult = new TestCallbackResult(CallbackResult.StatusSuccess, "success");
             var timeoutResult = new TestCallbackResult(CallbackResult.StatusError, "timeout");
 
-
-
             var watches = new List<TransactionConfirmationWatch<TestCallbackResult>>();
             watches.Add(await this.subject.AddAsync(transaction, 10, TimeSpan.FromMinutes(5),
                 successResult, timeoutResult, this.defaultCallback, CancellationToken.None));
@@ -158,7 +156,8 @@ namespace Ztm.WebApi.Tests
             Assert.Equal(watches[0].Id, retrieved[0].Id);
             Assert.Equal(watches[0].Transaction, retrieved[0].Transaction);
             Assert.Equal(watches[0].Confirmation, retrieved[0].Confirmation);
-            Assert.Equal(watches[0].Due, retrieved[0].Due);
+            Assert.Equal(watches[0].WaitingTime, retrieved[0].WaitingTime);
+            Assert.Equal(watches[0].RemainingWaitingTime, retrieved[0].RemainingWaitingTime);
             Assert.Equal(watches[0].Success, retrieved[0].Success);
             Assert.Equal(watches[0].Timeout, retrieved[0].Timeout);
             Assert.Equal(watches[0].Callback, retrieved[0].Callback);
@@ -171,6 +170,56 @@ namespace Ztm.WebApi.Tests
         public async Task ListAsync_WithEmptyList_ShouldReturnEmptyIEnumerable()
         {
             Assert.Empty(await this.subject.ListAsync(CancellationToken.None));
+        }
+
+        [Fact]
+        public void SetRemainingWaitingTimeAsync_WithNotExist_ShouldThrow()
+        {
+            _ = Assert.ThrowsAsync<KeyNotFoundException>(
+                () => this.subject.SetRemainingWaitingTimeAsync(Guid.NewGuid(), TimeSpan.FromDays(1), CancellationToken.None)
+            );
+        }
+
+        [Fact]
+        public async Task SetRemainingWaitingTimeAsync_WithValueLargerThanCurrent_ShouldThrow()
+        {
+            // Arrange.
+            await this.CreateDefaultCallback();
+
+            var transaction = uint256.Parse("008b3395991c7893bb8a82d8389a48ded863af914d9cc31711554bc97e4723c0");
+            var successResult = new TestCallbackResult(CallbackResult.StatusSuccess, "success");
+            var timeoutResult = new TestCallbackResult(CallbackResult.StatusError, "timeout");
+            var waitingTime = TimeSpan.FromMinutes(5);
+
+            var watch = await this.subject.AddAsync(transaction, 10, waitingTime,
+                successResult, timeoutResult, this.defaultCallback, CancellationToken.None);
+
+            // Assert.
+            _ = Assert.ThrowsAsync<ArgumentException>(
+                () => this.subject.SetRemainingWaitingTimeAsync(watch.Id, TimeSpan.FromMinutes(6), CancellationToken.None)
+            );
+        }
+
+        [Fact]
+        public async Task SetRemainingWaitingTimeAsync_WithValidTimeSpan_ShouldSuccess()
+        {
+            // Arrange.
+            await this.CreateDefaultCallback();
+
+            var transaction = uint256.Parse("008b3395991c7893bb8a82d8389a48ded863af914d9cc31711554bc97e4723c0");
+            var successResult = new TestCallbackResult(CallbackResult.StatusSuccess, "success");
+            var timeoutResult = new TestCallbackResult(CallbackResult.StatusError, "timeout");
+            var waitingTime = TimeSpan.FromMinutes(5);
+
+            var watch = await this.subject.AddAsync(transaction, 10, waitingTime,
+                successResult, timeoutResult, this.defaultCallback, CancellationToken.None);
+
+            // Act.
+            await this.subject.SetRemainingWaitingTimeAsync(watch.Id, TimeSpan.FromMinutes(4), CancellationToken.None);
+
+            // Assert.
+            var updated = await this.subject.GetAsync(watch.Id, CancellationToken.None);
+            Assert.Equal(TimeSpan.FromMinutes(4), updated.RemainingWaitingTime);
         }
 
         async Task CreateDefaultCallback()

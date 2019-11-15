@@ -9,7 +9,8 @@ namespace Ztm.Data.Entity.Contexts.Main
         public Guid CallbackId { get; set; }
         public uint256 Transaction { get; set; }
         public int Confirmation { get; set; }
-        public DateTime Due { get; set; }
+        public TimeSpan WaitingTime { get; set; }
+        public TimeSpan RemainingWaitingTime { get; set; }
         public string SuccessData { get; set; }
         public string TimeoutData { get; set; }
 

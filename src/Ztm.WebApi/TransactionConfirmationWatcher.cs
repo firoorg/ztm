@@ -16,9 +16,9 @@ namespace Ztm.WebApi
     using ConfirmContext = TransactionConfirmationWatch<TransactionConfirmationCallbackResult>;
     using Timer = Ztm.Threading.Timer;
 
-    public sealed class TransactionConfirmationWatcher : IHostedService, IBlockListener, ITransactionConfirmationWatcherHandler<ConfirmContext>
+    public sealed class TransactionConfirmationWatcher : IHostedService, IBlockListener, ITransactionConfirmationWatcherHandler<Guid>
     {
-        readonly Ztm.Zcoin.Watching.TransactionConfirmationWatcher<ConfirmContext> watcher;
+        readonly Ztm.Zcoin.Watching.TransactionConfirmationWatcher<Guid> watcher;
 
         // Providers
         readonly ICallbackRepository callbackRepository;
@@ -27,9 +27,11 @@ namespace Ztm.WebApi
 
         // State recorders
         readonly ReaderWriterLockSlim timerLock;
-        readonly Dictionary<uint256, Dictionary<Guid, Tuple<Timer, ConfirmContext>>> timers;
 
-        readonly ConcurrentDictionary<Guid, TransactionWatch<ConfirmContext>> watches;
+        // Dictionary from transaction to Dictionary from watch id to timer and confirmations.
+        readonly Dictionary<uint256, Dictionary<Guid, Tuple<Timer, int>>> timers;
+
+        readonly ConcurrentDictionary<Guid, TransactionWatch<Guid>> watches;
 
         public TransactionConfirmationWatcher(
             ICallbackRepository callbackRepository,
@@ -61,21 +63,21 @@ namespace Ztm.WebApi
             this.watchRepository = watchRepository;
             this.callbackExecuter = callbackExecuter;
 
-            this.watcher = new Zcoin.Watching.TransactionConfirmationWatcher<ConfirmContext>
+            this.watcher = new Zcoin.Watching.TransactionConfirmationWatcher<Guid>
             (
                 this,
                 blocks
             );
 
             this.timerLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
-            timers = new Dictionary<uint256, Dictionary<Guid, Tuple<Threading.Timer, ConfirmContext>>>();
-            watches = new ConcurrentDictionary<Guid, TransactionWatch<ConfirmContext>>();
+            timers = new Dictionary<uint256, Dictionary<Guid, Tuple<Timer, int>>>();
+            watches = new ConcurrentDictionary<Guid, TransactionWatch<Guid>>();
         }
 
         public async Task<ConfirmContext> AddTransactionAsync(
             uint256 transaction,
             int confirmation,
-            TimeSpan timeout,
+            TimeSpan unconfirmedWaitingTime,
             Callback callback,
             TransactionConfirmationCallbackResult successData,
             TransactionConfirmationCallbackResult timeoutData,
@@ -91,9 +93,9 @@ namespace Ztm.WebApi
                 throw new ArgumentOutOfRangeException("Confirmation is less than zero");
             }
 
-            if (!Timer.IsValidDuration(timeout))
+            if (!Timer.IsValidDuration(unconfirmedWaitingTime))
             {
-                throw new ArgumentOutOfRangeException("Timeout is invalid duration");
+                throw new ArgumentOutOfRangeException("UnconfirmedWaitingTime is invalid duration");
             }
 
             if (callback == null)
@@ -115,14 +117,14 @@ namespace Ztm.WebApi
             (
                 transaction,
                 confirmation,
-                timeout,
+                unconfirmedWaitingTime,
                 successData,
                 timeoutData,
                 callback,
                 cancellationToken
             );
 
-            SetupTimer(watch);
+            await SetupTimerAsync(watch.Id);
 
             return watch;
         }
@@ -133,7 +135,7 @@ namespace Ztm.WebApi
 
             foreach (var watch in allWatches.Where(w => !w.Callback.Completed))
             {
-                SetupTimer(watch);
+                await SetupTimerAsync(watch.Id);
             }
         }
 
@@ -147,7 +149,10 @@ namespace Ztm.WebApi
                 {
                     foreach (var timer in timerSet.Value)
                     {
-                        await timer.Value.Item1.StopAsync(cancellationToken);
+                        if (timer.Value.Item1.Status == TimerStatus.Started)
+                        {
+                            await timer.Value.Item1.StopAsync(cancellationToken);
+                        }
                     }
                 }
             }
@@ -157,23 +162,23 @@ namespace Ztm.WebApi
             }
         }
 
-        void SetupTimer(TransactionConfirmationWatch<TransactionConfirmationCallbackResult> watch)
+        async Task SetupTimerAsync(Guid id)
         {
             var timer = new Timer();
 
             this.timerLock.EnterWriteLock();
 
+            var watch = await this.watchRepository.GetAsync(id, CancellationToken.None);
             try
             {
                 if (!timers.ContainsKey(watch.Transaction))
                 {
-                    timers[watch.Transaction] = new Dictionary<Guid, Tuple<Threading.Timer, ConfirmContext>>();
+                    timers[watch.Transaction] = new Dictionary<Guid, Tuple<Timer, int>>();
                 }
 
-                timers[watch.Transaction][watch.Id] = new Tuple<Threading.Timer, ConfirmContext>(timer, watch);
+                timers[watch.Transaction][watch.Id] = new Tuple<Timer, int>(timer, watch.Confirmation);
                 timer.Elapsed += OnTimeout;
-                var due = watch.Due - DateTime.UtcNow;
-                timer.Start(due < TimeSpan.Zero ? TimeSpan.Zero : due, null, watch.Id);
+                timer.Start(watch.RemainingWaitingTime < TimeSpan.Zero ? TimeSpan.Zero : watch.RemainingWaitingTime, null, watch.Id);
             }
             finally
             {
@@ -217,7 +222,13 @@ namespace Ztm.WebApi
                     await timer.Item1.StopAsync(CancellationToken.None);
                     if (timer.Item1.ElapsedCount == 0)
                     {
-                        RemoveTimer(transaction, id);
+                        var watchData = await this.watchRepository.GetAsync(id, CancellationToken.None);
+
+                        await UpdateRemainingWaitingTimeAsync(
+                            id,
+                            watchData.RemainingWaitingTime - timer.Item1.ElapsedTime,
+                            CancellationToken.None);
+
                         return true;
                     }
                 }
@@ -230,13 +241,18 @@ namespace Ztm.WebApi
             return false;
         }
 
-        void ResumeTimer(ConfirmContext watch)
+        async Task UpdateRemainingWaitingTimeAsync(Guid id, TimeSpan remainingWaitingTime, CancellationToken cancellationToken)
+        {
+            await this.watchRepository.SetRemainingWaitingTimeAsync(id, remainingWaitingTime, cancellationToken);
+        }
+
+        async Task ResumeTimerAsync(Guid id)
         {
             this.timerLock.EnterWriteLock();
 
             try
             {
-                SetupTimer(watch);
+                await SetupTimerAsync(id);
             }
             finally
             {
@@ -244,9 +260,12 @@ namespace Ztm.WebApi
             }
         }
 
-        async Task Confirm(TransactionWatch<ConfirmContext> watch)
+        async Task ConfirmAsync(TransactionWatch<Guid> watch)
         {
-            await Execute(watch.Context.Callback, watch.Context.Success, CancellationToken.None);
+            var watchObject = await this.watchRepository.GetAsync(watch.Context, CancellationToken.None);
+
+            await Execute(watchObject.Callback, watchObject.Success, CancellationToken.None);
+            RemoveTimer(watch.TransactionId, watch.Context);
         }
 
         async Task Execute(Callback callback, TransactionConfirmationCallbackResult payload, CancellationToken cancellationToken)
@@ -269,7 +288,7 @@ namespace Ztm.WebApi
             return this.watcher.ExecuteAsync(block, height, BlockEventType.Removing, cancellationToken);
         }
 
-        Task<IEnumerable<ConfirmContext>> ITransactionConfirmationWatcherHandler<ConfirmContext>.CreateContextsAsync(Transaction tx, CancellationToken cancellationToken)
+        Task<IEnumerable<Guid>> ITransactionConfirmationWatcherHandler<Guid>.CreateContextsAsync(Transaction tx, CancellationToken cancellationToken)
         {
             this.timerLock.EnterReadLock();
 
@@ -277,7 +296,7 @@ namespace Ztm.WebApi
             {
                 if (timers.TryGetValue(tx.GetHash(), out var txTimers))
                 {
-                    return Task.FromResult(txTimers.Select(t => t.Value.Item2));
+                    return Task.FromResult(txTimers.Select(t => t.Key));
                 }
             }
             finally
@@ -285,31 +304,41 @@ namespace Ztm.WebApi
                 this.timerLock.ExitReadLock();
             }
 
-            return Task.FromResult((IEnumerable<ConfirmContext>)(new Collection<ConfirmContext>()));
+            return Task.FromResult((IEnumerable<Guid>)(new Collection<Guid>()));
         }
 
-        async Task<bool> IConfirmationWatcherHandler<TransactionWatch<ConfirmContext>, ConfirmContext>.ConfirmationUpdateAsync(TransactionWatch<ConfirmContext> watch, int confirmation, ConfirmationType type, CancellationToken cancellationToken)
+        async Task<bool> IConfirmationWatcherHandler<TransactionWatch<Guid>, Guid>.ConfirmationUpdateAsync(TransactionWatch<Guid> watch, int confirmation, ConfirmationType type, CancellationToken cancellationToken)
         {
             switch (type)
             {
             case ConfirmationType.Unconfirming:
                 if (confirmation == 1)
                 {
-                    ResumeTimer(watch.Context);
+                    await ResumeTimerAsync(watch.Context);
                     return false;
                 }
                 break;
 
             case ConfirmationType.Confirmed:
-                if (confirmation == 1 && !(await StopTimer(watch.TransactionId, watch.Context.Id)))
+                if (confirmation == 1 && !(await StopTimer(watch.TransactionId, watch.Context)))
                 {
                     return false;
                 }
 
-                if (confirmation == watch.Context.Confirmation)
+                this.timerLock.EnterUpgradeableReadLock();
+                try
                 {
-                    await Confirm(watch);
-                    return true;
+                    var requiredConfirmations = this.timers[watch.TransactionId][watch.Context].Item2;
+
+                    if (confirmation == requiredConfirmations)
+                    {
+                        await ConfirmAsync(watch);
+                        return true;
+                    }
+                }
+                finally
+                {
+                    this.timerLock.ExitUpgradeableReadLock();
                 }
 
                 break;
@@ -321,9 +350,9 @@ namespace Ztm.WebApi
             return false;
         }
 
-        Task<IEnumerable<TransactionWatch<ConfirmContext>>> IConfirmationWatcherHandler<TransactionWatch<ConfirmContext>, ConfirmContext>.GetCurrentWatchesAsync(CancellationToken cancellationToken)
+        Task<IEnumerable<TransactionWatch<Guid>>> IConfirmationWatcherHandler<TransactionWatch<Guid>, Guid>.GetCurrentWatchesAsync(CancellationToken cancellationToken)
         {
-            var watches = new Collection<TransactionWatch<ConfirmContext>>();
+            var watches = new Collection<TransactionWatch<Guid>>();
             foreach (var watch in this.watches)
             {
                 watches.Add(watch.Value);
@@ -332,7 +361,7 @@ namespace Ztm.WebApi
             return Task.FromResult(watches.AsEnumerable());
         }
 
-        Task IWatcherHandler<TransactionWatch<ConfirmContext>, ConfirmContext>.AddWatchesAsync(IEnumerable<TransactionWatch<ConfirmContext>> watches, CancellationToken cancellationToken)
+        Task IWatcherHandler<TransactionWatch<Guid>, Guid>.AddWatchesAsync(IEnumerable<TransactionWatch<Guid>> watches, CancellationToken cancellationToken)
         {
             if (watches == null)
             {
@@ -341,15 +370,15 @@ namespace Ztm.WebApi
 
             foreach (var watch in watches)
             {
-                this.watches.AddOrReplace(watch.Context.Id, watch);
+                this.watches.AddOrReplace(watch.Context, watch);
             }
 
             return Task.FromResult(0);
         }
 
-        Task IWatcherHandler<TransactionWatch<ConfirmContext>, ConfirmContext>.RemoveWatchAsync(TransactionWatch<ConfirmContext> watch, WatchRemoveReason reason, CancellationToken cancellationToken)
+        Task IWatcherHandler<TransactionWatch<Guid>, Guid>.RemoveWatchAsync(TransactionWatch<Guid> watch, WatchRemoveReason reason, CancellationToken cancellationToken)
         {
-            this.watches.Remove(watch.Context.Id, out var transactionWatch);
+            this.watches.Remove(watch.Context, out var transactionWatch);
 
             return Task.FromResult(0);
         }

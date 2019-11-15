@@ -9,7 +9,8 @@ namespace Ztm.WebApi
             Guid id,
             uint256 transaction,
             int confirmation,
-            DateTime due,
+            TimeSpan waitingTime,
+            TimeSpan remainingWaitingTime,
             TCallbackResult success,
             TCallbackResult timeout,
             Callback callback)
@@ -17,7 +18,8 @@ namespace Ztm.WebApi
             this.Id = id;
             this.Transaction = transaction;
             this.Confirmation = confirmation;
-            this.Due = due;
+            this.WaitingTime = waitingTime;
+            this.RemainingWaitingTime = remainingWaitingTime;
             this.Success = success;
             this.Timeout = timeout;
             this.Callback = callback;
@@ -26,7 +28,8 @@ namespace Ztm.WebApi
         public Guid Id { get; }
         public uint256 Transaction { get; }
         public int Confirmation { get; }
-        public DateTime Due { get; }
+        public TimeSpan WaitingTime { get; }
+        public TimeSpan RemainingWaitingTime { get; }
         public TCallbackResult Success;
         public TCallbackResult Timeout;
         public Callback Callback { get; }

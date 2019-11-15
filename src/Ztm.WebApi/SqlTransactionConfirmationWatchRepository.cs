@@ -25,7 +25,7 @@ namespace Ztm.WebApi
         }
 
         public async Task<TransactionConfirmationWatch<TCallbackResult>> AddAsync(
-            uint256 transaction, int confirmation, TimeSpan timeout, TCallbackResult successData, TCallbackResult timeoutData, Callback callback, CancellationToken cancellationToken)
+            uint256 transaction, int confirmation, TimeSpan waitingTime, TCallbackResult successData, TCallbackResult timeoutData, Callback callback, CancellationToken cancellationToken)
         {
             if (transaction == null)
             {
@@ -57,7 +57,8 @@ namespace Ztm.WebApi
                         CallbackId = callback.Id,
                         Transaction = transaction,
                         Confirmation = confirmation,
-                        Due = DateTime.UtcNow.Add(timeout),
+                        WaitingTime = waitingTime,
+                        RemainingWaitingTime = waitingTime,
                         SuccessData = JsonConvert.SerializeObject(successData),
                         TimeoutData = JsonConvert.SerializeObject(timeoutData),
                     }, cancellationToken);
@@ -92,6 +93,30 @@ namespace Ztm.WebApi
             }
         }
 
+        public async Task SetRemainingWaitingTimeAsync(Guid id, TimeSpan remainingTime, CancellationToken cancellationToken)
+        {
+            using (var db = this.db.CreateDbContext())
+            {
+                var watch = await db.TransactionConfirmationWatches
+                    .Include(e => e.Callback)
+                    .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+
+                if (watch == null)
+                {
+                    throw new KeyNotFoundException("Watch id not found");
+                }
+
+                if (remainingTime > watch.RemainingWaitingTime)
+                {
+                    throw new ArgumentException("Remaining time must be not less than current remaining time");
+                }
+
+                watch.RemainingWaitingTime = remainingTime;
+
+                await db.SaveChangesAsync(cancellationToken);
+            }
+        }
+
         static TransactionConfirmationWatch<TCallbackResult> ToDomain(
             Ztm.Data.Entity.Contexts.Main.TransactionConfirmationWatch watch,
             Callback callback = null)
@@ -100,7 +125,8 @@ namespace Ztm.WebApi
                 watch.Id,
                 watch.Transaction,
                 watch.Confirmation,
-                DateTime.SpecifyKind(watch.Due, DateTimeKind.Utc),
+                watch.WaitingTime,
+                watch.RemainingWaitingTime,
                 JsonConvert.DeserializeObject<TCallbackResult>(watch.SuccessData),
                 JsonConvert.DeserializeObject<TCallbackResult>(watch.TimeoutData),
                 callback != null
