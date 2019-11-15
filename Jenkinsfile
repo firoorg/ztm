@@ -1,65 +1,102 @@
 node {
-    withEnv(["PUBLISH=${env.WORKSPACE}/build"]) {
-        def commit = null
-        def base = null
+    def workspace = Paths.get(env.WORKSPACE)
+    def workspaceId = workspace.getFileName()
+    def publish = workspace.resolve('build')
+    def compose = null
 
-        stage('Setup') {
-            // prepare workspace
-            checkout scm
-            sh 'git clean -d -f -f -q -x'
+    stage('Setup') {
+        // checkout source
+        checkout scm
+        sh 'git clean -d -f -f -q -x' // we need to clean workspace due to Jenkins did not do it
 
-            // get commits hash
-            commit = sh(
-                script: 'git rev-parse HEAD',
-                returnStdout: true
-            ).trim()
+        def commit = sh(
+            script: 'git rev-parse HEAD',
+            returnStdout: true
+        ).trim()
 
-            base = sh(
-                script: "git rev-list --parents -n 1 ${commit}",
-                returnStdout: true
-            ).trim().split('\\s+')[2]
+        def base = sh(
+            script: "git rev-list --parents -n 1 ${commit}",
+            returnStdout: true
+        ).trim().split('\\s+')[2]
+
+        // revert untrusted files to the base version and backup it before we execute any untrusted code so the attacker
+        // don't have a chance to put a malicious content
+        sh "git checkout ${base} docker-compose.yml"
+
+        compose = readFile('docker-compose.yml')
+    }
+
+    // build, run unit tests and publish application
+    docker.image('zcoinofficial/ztm-builder:latest').inside {
+        stage('Build') {
+            sh 'dotnet build src/Ztm.sln'
         }
 
-        docker.image('zcoinofficial/ztm-builder:latest').inside {
-            // build and run unit tests
-            stage('Build') {
-                sh 'dotnet build src/Ztm.sln'
-            }
-
-            stage('Unit Test') {
-                sh 'for p in src/*.Tests; do dotnet test $p; done;'
-            }
-
-            stage('Publish') {
-                sh "dotnet publish -o \"${env.PUBLISH}\" -r linux-musl-x64 -c Release src/Ztm.WebApi"
-
-                // we need a dummy value for ZTM_MAIN_DATABASE just to let the code pass, it does not use when we
-                // generate script
-                withEnv(['ZTM_MAIN_DATABASE=Host=127.0.0.1;Database=postgres;Username=postgres']) {
-                    sh "dotnet ef migrations script -o \"${env.PUBLISH}/Ztm.Data.Entity.Postgres.sql\" -i -p src/Ztm.Data.Entity.Postgres"
-                }
-            }
+        stage('Unit Test') {
+            sh 'for p in src/*.Tests; do dotnet test $p; done;'
         }
 
-        stage('E2E Test') {
-            // spawn container to run ztm first so the external services can join it network
-            def ztm = docker.image('alpine:latest').run()
+        stage('Publish') {
+            sh "dotnet publish -o \"${publish}\" -r linux-musl-x64 -c Release src/Ztm.WebApi"
+
+            // we need a dummy value for ZTM_MAIN_DATABASE just to let the code pass, it does not use when we
+            // generate script
+            withEnv(['ZTM_MAIN_DATABASE=Host=127.0.0.1;Database=postgres;Username=postgres']) {
+                sh "dotnet ef migrations script -o \"${publish}/Ztm.Data.Entity.Postgres.sql\" -i -p src/Ztm.Data.Entity.Postgres"
+            }
+        }
+    }
+
+    stage('E2E Test') {
+        // create an isolated network for e2e tests
+        def net = sh(
+            script: "docker network create ${workspaceId}",
+            returnStdout: true
+        ).trim()
+
+        try {
+            // spawn external services
+            def mainDb = "${workspaceId}-db-main"
+            def zcoind = "${workspaceId}-zcoind"
+
+            writeFile('docker-compose.yml', compose)
+
+            withEnv(["ZTM_MAIN_DATABASE_CONTAINER=${mainDb}", "ZTM_ZCOIND_CONTAINER=${zcoind}", "ZTM_DOCKER_NETWORK=${net}"]) {
+                sh 'docker-compose up -d'
+            }
+
+            // modify ztm's configurations
+            def conf = readJSON(publish.resolve('appsettings.json'))
+
+            conf.Logging.LogLevel.Default = 'Information'
+            conf.Database.Main.ConnectionString = "Host=${mainDb};Database=postgres;Username=postgres"
+            conf.Zcoin.Network.Type = 'Regtest'
+            conf.Zcoin.Rpc.Address = "http://${zcoind}:28888"
+            conf.Zcoin.ZeroMq.Address = "tcp://${zcoind}:28332"
+
+            writeJSON(
+                json: conf,
+                file: publish.resolve('appsettings.json'),
+                pretty: 2
+            )
 
             try {
-                // spwan external services
-                withEnv(["ZTM_DOCKER_NETWORK=container:${ztm.id}"]) {
-                    // we don't want to use the supplied version to prevent malicious input
-                    sh "git checkout ${base} docker-compose.yml"
-                    sh 'docker-compose up -d'
+                // start ztm
+                def ztm = docker.image('alpine:latest').run("--network=${net}", "${publish.resolve('Ztm.WebApi')} --urls=http://*:5000")
 
-                    try {
-                    } finally {
-                        sh 'docker-compose down'
+                try {
+                    // environment is ready, start e2e tests
+                    docker.image('zcoinofficial/ztm-builder:latest').inside("--network=${net} -e ZTM_HOST=${ztm.id} -e ZTM_PORT=5000") {
+                        sh 'dotnet test src/Ztm.EndToEndTests'
                     }
+                } finally {
+                    ztm.stop()
                 }
             } finally {
-                ztm.stop()
+                sh 'docker-compose down'
             }
+        } finally {
+            sh "docker network rm ${net}"
         }
     }
 }
