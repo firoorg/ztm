@@ -16,7 +16,7 @@ namespace Ztm.WebApi
     using ConfirmContext = TransactionConfirmationWatch<TransactionConfirmationCallbackResult>;
     using Timer = Ztm.Threading.Timer;
 
-    public sealed class TransactionConfirmationWatcher : IHostedService, IBlockListener, ITransactionConfirmationWatcherHandler<Guid>
+    public sealed class TransactionConfirmationWatcher : ITransactionConfirmationWatcher, IHostedService, IBlockListener, ITransactionConfirmationWatcherHandler<Guid>
     {
         readonly Ztm.Zcoin.Watching.TransactionConfirmationWatcher<Guid> watcher;
 
