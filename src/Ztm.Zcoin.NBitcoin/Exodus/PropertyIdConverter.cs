@@ -8,9 +8,7 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
     {
         public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType)
         {
-            if (sourceType == typeof(string) ||
-                sourceType == typeof(int) ||
-                sourceType == typeof(long))
+            if (sourceType == typeof(string) || sourceType == typeof(int) || sourceType == typeof(long))
             {
                 return true;
             }
@@ -81,11 +79,6 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
             }
 
             var id = (PropertyId)value;
-
-            if (!id.IsValid)
-            {
-                throw new NotSupportedException($"Cannot convert invalid {typeof(PropertyId)}.");
-            }
 
             if (destinationType == typeof(string))
             {

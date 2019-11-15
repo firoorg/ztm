@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26124.0
@@ -44,6 +44,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ztm.Zcoin.Watching", "Ztm.Zcoin.Watching\Ztm.Zcoin.Watching.csproj", "{230AF496-F0D8-43EF-BC93-386527CBC1C0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ztm.Zcoin.Watching.Tests", "Ztm.Zcoin.Watching.Tests\Ztm.Zcoin.Watching.Tests.csproj", "{171B6AB3-E2A8-438C-BD01-293DBB490A48}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ztm.Testing", "Ztm.Testing\Ztm.Testing.csproj", "{5E5F8B69-993F-4330-8582-542EC48C3B69}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ztm.EndToEndTests", "Ztm.EndToEndTests\Ztm.EndToEndTests.csproj", "{CE744874-4649-4133-B67E-C13CBEF59C5E}"
 EndProject
@@ -312,6 +314,18 @@ Global
 		{171B6AB3-E2A8-438C-BD01-293DBB490A48}.Release|x64.Build.0 = Release|Any CPU
 		{171B6AB3-E2A8-438C-BD01-293DBB490A48}.Release|x86.ActiveCfg = Release|Any CPU
 		{171B6AB3-E2A8-438C-BD01-293DBB490A48}.Release|x86.Build.0 = Release|Any CPU
+		{5E5F8B69-993F-4330-8582-542EC48C3B69}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5E5F8B69-993F-4330-8582-542EC48C3B69}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5E5F8B69-993F-4330-8582-542EC48C3B69}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5E5F8B69-993F-4330-8582-542EC48C3B69}.Debug|x64.Build.0 = Debug|Any CPU
+		{5E5F8B69-993F-4330-8582-542EC48C3B69}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5E5F8B69-993F-4330-8582-542EC48C3B69}.Debug|x86.Build.0 = Debug|Any CPU
+		{5E5F8B69-993F-4330-8582-542EC48C3B69}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5E5F8B69-993F-4330-8582-542EC48C3B69}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5E5F8B69-993F-4330-8582-542EC48C3B69}.Release|x64.ActiveCfg = Release|Any CPU
+		{5E5F8B69-993F-4330-8582-542EC48C3B69}.Release|x64.Build.0 = Release|Any CPU
+		{5E5F8B69-993F-4330-8582-542EC48C3B69}.Release|x86.ActiveCfg = Release|Any CPU
+		{5E5F8B69-993F-4330-8582-542EC48C3B69}.Release|x86.Build.0 = Release|Any CPU
 		{CE744874-4649-4133-B67E-C13CBEF59C5E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{CE744874-4649-4133-B67E-C13CBEF59C5E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CE744874-4649-4133-B67E-C13CBEF59C5E}.Debug|x64.ActiveCfg = Debug|Any CPU
