@@ -1,3 +1,5 @@
+import java.nio.file.Paths
+
 node {
     def workspace = Paths.get(env.WORKSPACE)
     def workspaceId = workspace.getFileName()
