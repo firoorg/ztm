@@ -15,7 +15,7 @@ node {
             returnStdout: true
         ).trim()
 
-        sh "git checkout ${env.CHANGE_TARGET}"
+        sh "git checkout origin/${env.CHANGE_TARGET}"
 
         compose = readFile('docker-compose.yml')
 
