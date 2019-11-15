@@ -80,7 +80,9 @@ node {
 
             try {
                 // start ztm
-                def ztm = docker.image('alpine:latest').run("--network=${net}", "${publish}/Ztm.WebApi --urls=http://*:5000")
+                def uid = sh(script: 'id -u', returnStdout: true).trim()
+                def gid = sh(script: 'id -g', returnStdout: true).trim()
+                def ztm = docker.image('alpine:latest').run("--user=${uid}:${gid} --network=${net} -v ${publish}:/opt/ztm:ro -w /opt/ztm", "/opt/ztm/Ztm.WebApi --urls=http://*:5000")
 
                 try {
                     // environment is ready, start e2e tests
