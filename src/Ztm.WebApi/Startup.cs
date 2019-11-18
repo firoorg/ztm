@@ -44,12 +44,11 @@ namespace Ztm.WebApi
         {
             if (env.IsDevelopment())
             {
-                app.UseDeveloperExceptionPage();
+                app.UseExceptionHandler("/error-development");
             }
             else
             {
-                app.UseHsts();
-                app.UseHttpsRedirection();
+                app.UseExceptionHandler("/error");
             }
 
             app.UseMvc();
@@ -58,7 +57,6 @@ namespace Ztm.WebApi
         void ConfigureMvc(MvcOptions options)
         {
             options.ModelBinderProviders.Insert(0, new PropertyAmountModelBinderProvider());
-            options.Filters.Add(new HttpResponseExceptionFilter());
         }
 
         IZcoinRpcClientFactory CreateZcoinRpcClientFactory(IServiceProvider provider)

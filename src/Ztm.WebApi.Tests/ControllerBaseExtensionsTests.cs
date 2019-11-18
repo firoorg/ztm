@@ -76,7 +76,32 @@ namespace Ztm.WebApi.Tests
                 this.subject.HttpContext.Response.Headers.TryGetValue(CallbackIdKey, out var retreived)
             );
             Assert.Equal(id.ToString(), retreived);
-            Assert.Equal(this.subject.HttpContext.Response.StatusCode, (int)HttpStatusCode.Accepted);
+        }
+
+        [Fact]
+        public void Accepted_WithNullCallback_ShouldThrow()
+        {
+            Assert.Throws<ArgumentNullException>(
+                "callback",
+                () => this.subject.AcceptedWithCallback((Callback)null)
+            );
+        }
+
+        [Fact]
+        public void Accepted_WithValidCallback_ShouldSuccess()
+        {
+            // Arrange.
+            var callback = new Callback(Guid.NewGuid(), IPAddress.Loopback, DateTime.UtcNow, false, new Uri("https://zcoin.io"));
+
+            // Act.
+            var result = this.subject.AcceptedWithCallback(callback);
+
+            // Assert.
+            Assert.True(
+                this.subject.HttpContext.Response.Headers.TryGetValue(CallbackIdKey, out var retreived)
+            );
+            Assert.Equal(callback.Id.ToString(), retreived);
+            Assert.Equal((int)HttpStatusCode.Accepted, result.StatusCode);
         }
     }
 

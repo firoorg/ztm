@@ -6,29 +6,28 @@ namespace Ztm.WebApi
 {
     public static class ControllerBaseExtensions
     {
-        readonly static string CallbackUrlKey = "X-Callback-URL";
-        readonly static string CallbackIdKey = "X-Callback-ID";
+        static readonly string CallbackUrlHeader = "X-Callback-URL";
+        static readonly string CallbackIdHeader = "X-Callback-ID";
 
         public static bool TryGetCallbackUrl(this ControllerBase controller, out Uri url)
         {
-            if (controller.HttpContext.Request.Headers.TryGetValue(CallbackUrlKey, out var rawUrl))
+            if (controller.Request.Headers.TryGetValue(CallbackUrlHeader, out var rawUrl))
             {
                 try
                 {
-                    url = new Uri(rawUrl);
-
-                    if (url.Scheme == Uri.UriSchemeHttp
-                        || url.Scheme == Uri.UriSchemeHttps)
-                    {
-                        return true;
-                    }
-
-                    throw new InvalidCallbackUrlException(rawUrl);
+                    url = new Uri(rawUrl, UriKind.Absolute);
                 }
-                catch (UriFormatException)
+                catch (UriFormatException ex)
                 {
-                    throw new InvalidCallbackUrlException(rawUrl);
+                    throw new InvalidCallbackUrlException(ex);
                 }
+
+                if (url.Scheme == Uri.UriSchemeHttp || url.Scheme == Uri.UriSchemeHttps)
+                {
+                    return true;
+                }
+
+                throw new InvalidCallbackUrlException();
             }
 
             url = null;
@@ -37,8 +36,18 @@ namespace Ztm.WebApi
 
         public static void SetCallbackId(this ControllerBase controller, Guid id)
         {
-            controller.HttpContext.Response.Headers.Add(CallbackIdKey, id.ToString());
-            controller.HttpContext.Response.StatusCode = (int)HttpStatusCode.Accepted;
+            controller.Response.Headers.Add(CallbackIdHeader, id.ToString());
+        }
+
+        public static AcceptedResult AcceptedWithCallback(this ControllerBase controller, Callback callback)
+        {
+            if (callback == null)
+            {
+                throw new ArgumentNullException(nameof(callback));
+            }
+
+            controller.SetCallbackId(callback.Id);
+            return controller.Accepted();
         }
     }
 }

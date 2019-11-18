@@ -1,24 +1,20 @@
+using System;
 using System.Net;
 
 namespace Ztm.WebApi
 {
     public sealed class InvalidCallbackUrlException : HttpResponseException
     {
-        public InvalidCallbackUrlException(string InvalidUrl)
+        static readonly string InvalidCallbackUrlTitle = "Invalid Callback Url";
+
+        public InvalidCallbackUrlException()
+            : base((int)HttpStatusCode.BadRequest, InvalidCallbackUrlTitle)
         {
-            this.InvalidUrl = InvalidUrl;
         }
 
-        public override int Status => (int)HttpStatusCode.BadRequest;
-
-        public override object Value
+        public InvalidCallbackUrlException(Exception ex)
+            : base((int)HttpStatusCode.BadRequest, InvalidCallbackUrlTitle, null, ex)
         {
-            get
-            {
-                return $"Callback Url `{this.InvalidUrl}` is invalid";
-            }
         }
-
-        readonly string InvalidUrl;
     }
 }
