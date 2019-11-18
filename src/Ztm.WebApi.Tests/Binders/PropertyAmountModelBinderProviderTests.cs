@@ -6,7 +6,7 @@ using Xunit;
 using Ztm.WebApi.Binders;
 using Ztm.Zcoin.NBitcoin.Exodus;
 
-namespace Ztm.WebApi.Tests
+namespace Ztm.WebApi.Tests.Binders
 {
     public sealed class PropertyAmountModelBinderProviderTests
     {
