@@ -147,12 +147,9 @@ namespace Ztm.WebApi
             {
                 foreach (var timerSet in timers)
                 {
-                    foreach (var timer in timerSet.Value)
+                    foreach (var timer in timerSet.Value.Where(t => t.Value.Item1.Status == TimerStatus.Started))
                     {
-                        if (timer.Value.Item1.Status == TimerStatus.Started)
-                        {
-                            await timer.Value.Item1.StopAsync(cancellationToken);
-                        }
+                        await timer.Value.Item1.StopAsync(cancellationToken);
                     }
                 }
             }
