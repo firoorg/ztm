@@ -9,17 +9,32 @@ namespace Ztm.WebApi.Controllers
     public class ErrorController : ControllerBase
     {
         [Route("/error-development")]
-        public ActionResult ErrorDevelopment([FromServices] IHostingEnvironment webHostEnvironment)
+        public ActionResult ErrorDevelopment()
         {
-            var feature = HttpContext.Features.Get<IExceptionHandlerPathFeature>();
-            var ex = feature?.Error;
-            var isHttpResponseException = ex is HttpResponseException;
+            var info = HttpContext.Features.Get<IExceptionHandlerPathFeature>();
+            var ex = info?.Error;
+
+            int status;
+            string title;
+
+            if (ex is ApiException)
+            {
+                var apiEx = (ApiException)ex;
+
+                status = apiEx.Status;
+                title = $"{apiEx.Title} : {ex.GetType().Name}";
+            }
+            else
+            {
+                status = (int)HttpStatusCode.InternalServerError;
+                title = ex.GetType().Name;
+            }
 
             var problemDetails = new ProblemDetails
             {
-                Status = isHttpResponseException ? ((HttpResponseException)ex).Status : (int)HttpStatusCode.InternalServerError,
-                Instance = feature?.Path,
-                Title = isHttpResponseException ? $"{((HttpResponseException)ex).Title} : {ex.GetType().Name}" : ex.GetType().Name,
+                Status = status,
+                Instance = info?.Path,
+                Title = title,
                 Detail = $"{ex.Message} : {ex.StackTrace}",
             };
 
@@ -27,17 +42,32 @@ namespace Ztm.WebApi.Controllers
         }
 
         [Route("/error")]
-        public ActionResult Error([FromServices] IHostingEnvironment webHostEnvironment)
+        public ActionResult Error()
         {
-            var feature = HttpContext.Features.Get<IExceptionHandlerPathFeature>();
-            var ex = feature?.Error;
-            var isHttpResponseException = ex is HttpResponseException;
+            var info = HttpContext.Features.Get<IExceptionHandlerPathFeature>();
+            var ex = info?.Error;
+
+            int status;
+            string title;
+
+            if (ex is ApiException)
+            {
+                var apiEx = (ApiException)ex;
+
+                status = apiEx.Status;
+                title = apiEx.Title;
+            }
+            else
+            {
+                status = (int)HttpStatusCode.InternalServerError;
+                title = "An error occurred.";
+            }
 
             var problemDetails = new ProblemDetails
             {
-                Status = isHttpResponseException ? ((HttpResponseException)ex).Status : (int)HttpStatusCode.InternalServerError,
-                Instance = feature?.Path,
-                Title = isHttpResponseException ? ((HttpResponseException)ex).Title : "An error occurred.",
+                Status = status,
+                Instance = info?.Path,
+                Title = title,
                 Detail = null,
             };
 

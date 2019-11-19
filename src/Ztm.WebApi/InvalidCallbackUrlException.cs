@@ -3,17 +3,22 @@ using System.Net;
 
 namespace Ztm.WebApi
 {
-    public sealed class InvalidCallbackUrlException : HttpResponseException
+    public sealed class InvalidCallbackUrlException : ApiException
     {
-        static readonly string InvalidCallbackUrlTitle = "Invalid Callback Url";
+        static readonly string StaticTitle = "Invalid Callback URL.";
 
         public InvalidCallbackUrlException()
-            : base((int)HttpStatusCode.BadRequest, InvalidCallbackUrlTitle)
+            : base((int)HttpStatusCode.BadRequest, StaticTitle)
         {
         }
 
-        public InvalidCallbackUrlException(Exception ex)
-            : base((int)HttpStatusCode.BadRequest, InvalidCallbackUrlTitle, null, ex)
+        public InvalidCallbackUrlException(string message)
+            : base((int)HttpStatusCode.BadRequest, StaticTitle, message)
+        {
+        }
+
+        public InvalidCallbackUrlException(string message, Exception inner)
+            : base((int)HttpStatusCode.BadRequest, StaticTitle, message, inner)
         {
         }
     }

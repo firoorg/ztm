@@ -19,7 +19,7 @@ namespace Ztm.WebApi
                 }
                 catch (UriFormatException ex)
                 {
-                    throw new InvalidCallbackUrlException(ex);
+                    throw new InvalidCallbackUrlException(null, ex);
                 }
 
                 if (url.Scheme == Uri.UriSchemeHttp || url.Scheme == Uri.UriSchemeHttps)
