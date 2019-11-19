@@ -423,7 +423,7 @@ namespace Ztm.Zcoin.Rpc
             }
 
             #pragma warning disable CS0618
-            transaction.SetExodusTransaction(tx);
+            transaction.SetExodusTransaction(tx); // lgtm[cs/call-to-obsolete-method]
             #pragma warning restore CS0618
             return transaction;
         }
