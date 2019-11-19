@@ -459,7 +459,7 @@ namespace Ztm.Zcoin.Rpc.Tests
         }
 
         [Fact]
-        public async Task SendAsync_WithNullAsRequiredArgs_ShouldThrow()
+        public async Task SendTokenAsync_WithNullAsRequiredArgs_ShouldThrow()
         {
             var from = TestAddress.Regtest1;
             var to = TestAddress.Regtest2;
@@ -469,22 +469,22 @@ namespace Ztm.Zcoin.Rpc.Tests
 
             await Assert.ThrowsAsync<ArgumentNullException>(
                 "from",
-                () => this.subject.SendAsync(null, to, property, amount, null, null, CancellationToken.None)
+                () => this.subject.SendTokenAsync(null, to, property, amount, null, null, CancellationToken.None)
             );
 
             await Assert.ThrowsAsync<ArgumentNullException>(
                 "to",
-                () => this.subject.SendAsync(from, null, property, amount, null, null, CancellationToken.None)
+                () => this.subject.SendTokenAsync(from, null, property, amount, null, null, CancellationToken.None)
             );
 
             await Assert.ThrowsAsync<ArgumentNullException>(
                 "property",
-                () => this.subject.SendAsync(from, to, null, amount, null, null, CancellationToken.None)
+                () => this.subject.SendTokenAsync(from, to, null, amount, null, null, CancellationToken.None)
             );
         }
 
         [Fact]
-        public async Task SendAsync_WithInvalidArgs_ShouldThrow()
+        public async Task SendTokenAsync_WithInvalidArgs_ShouldThrow()
         {
             var from = TestAddress.Regtest1;
             var to = TestAddress.Regtest2;
@@ -494,12 +494,12 @@ namespace Ztm.Zcoin.Rpc.Tests
 
             await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
                 "amount",
-                () => this.subject.SendAsync(from, to, property, PropertyAmount.Zero, null, null, CancellationToken.None)
+                () => this.subject.SendTokenAsync(from, to, property, PropertyAmount.Zero, null, null, CancellationToken.None)
             );
 
             await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
                 "referenceAmount",
-                () => this.subject.SendAsync(from, to, property, amount, redeemAddress, Money.Satoshis(-1), CancellationToken.None)
+                () => this.subject.SendTokenAsync(from, to, property, amount, redeemAddress, Money.Zero, CancellationToken.None)
             );
 
         }
@@ -516,7 +516,7 @@ namespace Ztm.Zcoin.Rpc.Tests
             var destination = await this.subject.GetNewAddressAsync(CancellationToken.None);
 
             // Act.
-            var rawTx = await this.subject.SendAsync(property.Owner, destination, property.Property, new PropertyAmount(10), null, null, CancellationToken.None);
+            var rawTx = await this.subject.SendTokenAsync(property.Owner, destination, property.Property, new PropertyAmount(10), null, null, CancellationToken.None);
             await this.subject.SendRawTransactionAsync(rawTx, CancellationToken.None);
             this.node.Generate(1);
 
@@ -524,8 +524,8 @@ namespace Ztm.Zcoin.Rpc.Tests
             var ownerBalance = await this.subject.GetPropertyBalanceAsync(property.Owner, property.Property, CancellationToken.None);
             var destinationBalance = await this.subject.GetPropertyBalanceAsync(destination, property.Property, CancellationToken.None);
 
-            Assert.Equal(new PropertyAmount(990), ownerBalance.Balance);
-            Assert.Equal(new PropertyAmount(10), destinationBalance.Balance);
+            Assert.Equal(new PropertyAmount(990), ownerBalance.balance);
+            Assert.Equal(new PropertyAmount(10), destinationBalance.balance);
         }
 
         [Fact]
@@ -564,8 +564,8 @@ namespace Ztm.Zcoin.Rpc.Tests
                 property.Owner, property.Property, CancellationToken.None);
 
             // Assert.
-            Assert.Equal(new PropertyAmount(1000), balance.Balance);
-            Assert.Equal(new PropertyAmount(0), balance.Reserved);
+            Assert.Equal(new PropertyAmount(1000), balance.balance);
+            Assert.Equal(new PropertyAmount(0), balance.reserved);
         }
 
         [Fact]
@@ -577,15 +577,15 @@ namespace Ztm.Zcoin.Rpc.Tests
             this.node.Generate(101);
             var property = await issuer.IssueManagedAsync();
 
-            await property.GrantAsync(new PropertyAmount(10_0000_0000));
+            await property.GrantAsync(PropertyAmount.FromDivisible(10));
 
             // Act.
             var balance = await this.subject.GetPropertyBalanceAsync(
                 property.Owner, property.Property, CancellationToken.None);
 
             // Assert.
-            Assert.Equal(PropertyAmount.FromDivisible(10), balance.Balance);
-            Assert.Equal(PropertyAmount.FromDivisible(0), balance.Reserved);
+            Assert.Equal(PropertyAmount.FromDivisible(10), balance.balance);
+            Assert.Equal(PropertyAmount.FromDivisible(0), balance.reserved);
         }
 
         class ManagedProperty
@@ -599,13 +599,13 @@ namespace Ztm.Zcoin.Rpc.Tests
                 this.client = client;
             }
 
-            public async Task GrantAsync(PropertyAmount propertyAmount)
+            public async Task GrantAsync(PropertyAmount amount)
             {
                 var grantTx = await this.client.GrantPropertyAsync(
                     this.Property,
                     this.Owner,
                     this.Owner,
-                    propertyAmount,
+                    amount,
                     null,
                     CancellationToken.None);
 
@@ -620,16 +620,6 @@ namespace Ztm.Zcoin.Rpc.Tests
 
         class PropertyIssuer
         {
-            public BitcoinAddress Owner { get; set; }
-            public Ecosystem Ecosystem { get; set; }
-            public PropertyType PropertyType { get; set; }
-            public Property PropertyCurrent { get; set; }
-            public string Catagory { get; set; }
-            public string SubCatagory { get; set; }
-            public string Name { get; set; }
-            public string Url { get; set; }
-            public string Description { get; set; }
-
             readonly CoreNode node;
             readonly ZcoinRpcClient client;
 
@@ -641,13 +631,23 @@ namespace Ztm.Zcoin.Rpc.Tests
                 this.Owner = null;
                 this.Ecosystem = Ecosystem.Main;
                 this.PropertyType = PropertyType.Indivisible;
-                this.PropertyCurrent = null;
-                this.Catagory = "Company";
-                this.SubCatagory = "Private";
+                this.CurrentProperty = null;
+                this.Category = "Company";
+                this.SubCategory = "Private";
                 this.Name = "Satang Corporation";
                 this.Url = "https://satang.com";
                 this.Description = "Provides cryptocurrency solutions.";
             }
+
+            public BitcoinAddress Owner { get; set; }
+            public Ecosystem Ecosystem { get; set; }
+            public PropertyType PropertyType { get; set; }
+            public Property CurrentProperty { get; set; }
+            public string Category { get; set; }
+            public string SubCategory { get; set; }
+            public string Name { get; set; }
+            public string Url { get; set; }
+            public string Description { get; set; }
 
             public async Task<ManagedProperty> IssueManagedAsync()
             {
@@ -670,9 +670,9 @@ namespace Ztm.Zcoin.Rpc.Tests
                     this.Owner,
                     this.Ecosystem,
                     this.PropertyType,
-                    this.PropertyCurrent,
-                    this.Catagory,
-                    this.SubCatagory,
+                    this.CurrentProperty,
+                    this.Category,
+                    this.SubCategory,
                     this.Name,
                     this.Url,
                     this.Description,

@@ -117,7 +117,7 @@ namespace Ztm.Zcoin.Rpc
             return this.client.GetNewAddressAsync();
         }
 
-        public async Task<(PropertyAmount Balance, PropertyAmount Reserved)> GetPropertyBalanceAsync(
+        public async Task<(PropertyAmount balance, PropertyAmount reserved)> GetPropertyBalanceAsync(
             BitcoinAddress address,
             Property property,
             CancellationToken cancellationToken)
@@ -136,15 +136,10 @@ namespace Ztm.Zcoin.Rpc
             var rawBalance = resp.Result.Value<string>("balance");
             var rawReserved = resp.Result.Value<string>("reserved");
 
-            var balance = property.Type == PropertyType.Divisible
-                ? PropertyAmount.FromDivisible(Convert.ToDecimal(rawBalance))
-                : new PropertyAmount(Convert.ToInt64(rawBalance));
+            var balance = PropertyAmount.Parse(rawBalance);
+            var reserved = PropertyAmount.Parse(rawReserved);
 
-            var reserved = property.Type == PropertyType.Divisible
-                ? PropertyAmount.FromDivisible(Convert.ToDecimal(rawReserved))
-                : new PropertyAmount(Convert.ToInt64(rawReserved));
-
-            return (balance, reserved);
+            return (balance: balance, reserved: reserved);
         }
 
         public async Task<PropertyGrantsInfo> GetPropertyGrantsAsync(
@@ -271,7 +266,7 @@ namespace Ztm.Zcoin.Rpc
             );
         }
 
-        public async Task<Transaction> SendAsync(
+        public async Task<Transaction> SendTokenAsync(
             BitcoinAddress from,
             BitcoinAddress to,
             Property property,
@@ -314,7 +309,7 @@ namespace Ztm.Zcoin.Rpc
 
                 if (referenceAmount != null)
                 {
-                    if (referenceAmount < Money.Zero)
+                    if (referenceAmount < Money.Satoshis(1))
                     {
                         throw new ArgumentOutOfRangeException(nameof(referenceAmount), amount, "The value is less than zero.");
                     }

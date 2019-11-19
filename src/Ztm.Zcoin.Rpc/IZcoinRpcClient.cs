@@ -34,7 +34,7 @@ namespace Ztm.Zcoin.Rpc
 
         Task<BitcoinAddress> GetNewAddressAsync(CancellationToken cancellationToken);
 
-        Task<(PropertyAmount Balance, PropertyAmount Reserved)> GetPropertyBalanceAsync(
+        Task<(PropertyAmount balance, PropertyAmount reserved)> GetPropertyBalanceAsync(
             BitcoinAddress address, Property property, CancellationToken cancellationToken);
 
         Task<PropertyGrantsInfo> GetPropertyGrantsAsync(Property property, CancellationToken cancellationToken);
@@ -59,7 +59,7 @@ namespace Ztm.Zcoin.Rpc
             bool subtractFeeFromAmount,
             CancellationToken cancellationToken);
 
-        Task<Transaction> SendAsync(
+        Task<Transaction> SendTokenAsync(
             BitcoinAddress from,
             BitcoinAddress to,
             Property property,
