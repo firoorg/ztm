@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using NBitcoin.RPC;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Ztm.Zcoin.NBitcoin.Exodus;
 
@@ -118,12 +117,6 @@ namespace Ztm.Zcoin.Rpc
             return this.client.GetNewAddressAsync();
         }
 
-        class BalanceDetail
-        {
-            public string Balance { get; set; }
-            public string Reserved { get; set; }
-        }
-
         public async Task<(PropertyAmount Balance, PropertyAmount Reserved)> GetPropertyBalanceAsync(
             BitcoinAddress address,
             Property property,
@@ -139,16 +132,17 @@ namespace Ztm.Zcoin.Rpc
                 throw new ArgumentNullException(nameof(property));
             }
 
-            var resp = await this.client.SendCommandAsync("exodus_getbalance", address.ToString(), property.Id.Value);
-            var balanceDetail = JsonConvert.DeserializeObject<BalanceDetail>(resp.ResultString);
+            var resp = await this.client.SendCommandAsync("exodus_getbalance", address.ToString(), ToNative(property.Id));
+            var rawBalance = resp.Result.Value<string>("balance");
+            var rawReserved = resp.Result.Value<string>("reserved");
 
             var balance = property.Type == PropertyType.Divisible
-                ? PropertyAmount.FromDivisible(Convert.ToDecimal(balanceDetail.Balance))
-                : new PropertyAmount(Convert.ToInt64(balanceDetail.Balance));
+                ? PropertyAmount.FromDivisible(Convert.ToDecimal(rawBalance))
+                : new PropertyAmount(Convert.ToInt64(rawBalance));
 
             var reserved = property.Type == PropertyType.Divisible
-                ? PropertyAmount.FromDivisible(Convert.ToDecimal(balanceDetail.Reserved))
-                : new PropertyAmount(Convert.ToInt64(balanceDetail.Reserved));
+                ? PropertyAmount.FromDivisible(Convert.ToDecimal(rawReserved))
+                : new PropertyAmount(Convert.ToInt64(rawReserved));
 
             return (balance, reserved);
         }
@@ -314,7 +308,8 @@ namespace Ztm.Zcoin.Rpc
                 amount.ToString(property.Type),
             };
 
-            if (redeemAddress != null) {
+            if (redeemAddress != null)
+            {
                 args.Add(redeemAddress.ToString());
 
                 if (referenceAmount != null)
@@ -323,7 +318,7 @@ namespace Ztm.Zcoin.Rpc
                     {
                         throw new ArgumentOutOfRangeException(nameof(referenceAmount), amount, "The value is less than zero.");
                     }
-                    args.Add(referenceAmount.ToString());
+                    args.Add(referenceAmount.ToDecimal(MoneyUnit.BTC).ToString());
                 }
             }
 

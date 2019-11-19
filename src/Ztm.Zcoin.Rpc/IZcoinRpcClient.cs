@@ -22,8 +22,6 @@ namespace Ztm.Zcoin.Rpc
             string description,
             CancellationToken cancellationToken);
 
-
-
         Task<Block> GetBlockAsync(uint256 blockHash, CancellationToken cancellationToken);
 
         Task<Block> GetBlockAsync(int height, CancellationToken cancellationToken);
@@ -68,6 +66,6 @@ namespace Ztm.Zcoin.Rpc
             PropertyAmount amount,
             BitcoinAddress redeemAddress,
             Money referenceAmount,
-            CancellationToken cancellation);
+            CancellationToken cancellationToken);
     }
 }
