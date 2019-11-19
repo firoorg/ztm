@@ -656,7 +656,7 @@ namespace Ztm.WebApi.Tests
             // Arrange.
             var builder = new WatchArgsBuilder(this.callbackRepository);
 
-            builder.timeout = TimeSpan.FromSeconds(1);
+            builder.timeout = TimeSpan.FromMilliseconds(500);
             builder.confirmation = 10;
             var watch = await builder.Call(this.subject.AddTransactionAsync);
 
@@ -678,7 +678,7 @@ namespace Ztm.WebApi.Tests
 
             _ = this.callbackExecuter.Received(0);
 
-            Thread.Sleep(TimeSpan.FromSeconds(1));
+            Thread.Sleep(TimeSpan.FromMilliseconds(1000));
 
             _ = this.callbackExecuter.Received(1).Execute(
                 Arg.Any<Guid>(),
