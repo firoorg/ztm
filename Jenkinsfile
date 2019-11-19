@@ -1,26 +1,28 @@
 node {
     def workspace = env.WORKSPACE
+    def targetBranch = env.CHANGE_TARGET
     def buildTag = env.BUILD_TAG
     def publish = "${workspace}/build"
-    def compose = null
+    def originalCompose = null
 
     stage('Setup') {
         // checkout source
         checkout scm
 
-        // revert untrusted files to the base version and backup it before we execute any untrusted code so the attacker
-        // don't have a chance to put a malicious content
-        def latest = sh(
-            script: 'git rev-parse HEAD',
-            returnStdout: true
-        ).trim()
+        if (targetBranch != null) {
+            // revert untrusted files to the base version and backup it before we execute any untrusted code so the
+            // attacker don't have a chance to put a malicious content
+            def latest = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
 
-        sh "git checkout origin/${env.CHANGE_TARGET}"
+            sh "git checkout origin/${targetBranch}"
 
-        compose = readFile('docker-compose.yml')
+            originalCompose = readFile('docker-compose.yml')
 
-        // switch back to latest commit
-        sh "git checkout ${latest}"
+            // switch back to latest commit
+            sh "git checkout ${latest}"
+        }
+
+        // Jenkins does not clean up workspace for us so we need to do by ourself
         sh 'git clean -d -f -f -q -x'
     }
 
@@ -57,7 +59,9 @@ node {
             def mainDb = "${buildTag}-db-main"
             def zcoind = "${buildTag}-zcoind"
 
-            writeFile(file: 'docker-compose.yml', text: compose)
+            if (originalCompose != null) {
+                writeFile(file: 'docker-compose.yml', text: originalCompose)
+            }
 
             withEnv(["ZTM_MAIN_DATABASE_CONTAINER=${mainDb}", "ZTM_ZCOIND_CONTAINER=${zcoind}", "ZTM_DOCKER_NETWORK=${net}"]) {
                 sh 'docker-compose up -d'
