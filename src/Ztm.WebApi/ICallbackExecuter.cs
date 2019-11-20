@@ -6,6 +6,6 @@ namespace Ztm.WebApi
 {
     public interface ICallbackExecuter
     {
-        Task<bool> Execute(Guid id, Uri url, CallbackResult result, CancellationToken cancellationToken);
+        Task Execute(Guid id, Uri url, CallbackResult result);
     }
 }

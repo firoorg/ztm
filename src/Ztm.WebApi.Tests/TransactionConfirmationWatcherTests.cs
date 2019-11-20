@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
@@ -178,11 +179,11 @@ namespace Ztm.WebApi.Tests
             // Arrange.
             await this.Initialize(CancellationToken.None);
             var builder = new WatchArgsBuilder(this.callbackRepository);
-            builder.timeout = TimeSpan.FromSeconds(1);
+            builder.timeout = TimeSpan.FromMilliseconds(500);
 
             // Act.
             await builder.Call(this.subject.AddTransactionAsync);
-            Thread.Sleep(TimeSpan.FromSeconds(2));
+            Thread.Sleep(TimeSpan.FromMilliseconds(1000));
 
             // Assert.
             _ = this.callbackExecuter
@@ -191,8 +192,7 @@ namespace Ztm.WebApi.Tests
                 (
                     Arg.Any<Guid>(),
                     Arg.Any<Uri>(),
-                    Arg.Is<TransactionConfirmationCallbackResult>(r => r.Status == CallbackResult.StatusError),
-                    Arg.Any<CancellationToken>()
+                    Arg.Is<TransactionConfirmationCallbackResult>(r => r.Status == CallbackResult.StatusError)
                 );
         }
 
@@ -256,8 +256,7 @@ namespace Ztm.WebApi.Tests
                     Arg.Is<TransactionConfirmationCallbackResult>
                     (
                         r => r.Status == CallbackResult.StatusSuccess
-                    ),
-                    Arg.Any<CancellationToken>()
+                    )
                 );
         }
 
@@ -291,8 +290,7 @@ namespace Ztm.WebApi.Tests
                     Arg.Is<TransactionConfirmationCallbackResult>
                     (
                         r => r.Status == CallbackResult.StatusError
-                    ),
-                    Arg.Any<CancellationToken>()
+                    )
                 );
         }
 
@@ -302,16 +300,6 @@ namespace Ztm.WebApi.Tests
             // Arrange.
             var builder = new WatchArgsBuilder(this.callbackRepository);
             builder.timeout = TimeSpan.FromMilliseconds(500);
-
-            this.callbackExecuter
-                .Execute
-                (
-                    Arg.Any<Guid>(),
-                    Arg.Any<Uri>(),
-                    Arg.Any<CallbackResult>(),
-                    Arg.Any<CancellationToken>()
-                )
-                .Returns(true);
 
             // Act.
             await builder.Call(this.subject.AddTransactionAsync);
@@ -342,8 +330,7 @@ namespace Ztm.WebApi.Tests
                 Arg.Is<TransactionConfirmationCallbackResult>
                 (
                     result => result == builder.timeoutData
-                ),
-                Arg.Any<CancellationToken>()
+                )
             );
 
             _ = this.callbackRepository.Received(1).AddHistoryAsync
@@ -367,18 +354,32 @@ namespace Ztm.WebApi.Tests
             var builder = new WatchArgsBuilder(this.callbackRepository);
             builder.timeout = TimeSpan.FromMilliseconds(500);
 
+            this.callbackExecuter
+                .When(
+                    w => w.Execute(
+                        Arg.Any<Guid>(),
+                        Arg.Any<Uri>(),
+                        Arg.Any<CallbackResult>())
+                )
+                .Do(
+                    w => {
+                        throw new HttpRequestException();
+                    }
+                );
+
             // Act.
             await builder.Call(this.subject.AddTransactionAsync);
             Thread.Sleep(TimeSpan.FromMilliseconds(1000));
 
             // Assert.
+            _ = this.watchRepository.Received(1).CompleteAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+
             _ = this.callbackExecuter.Received(1)
                 .Execute
                 (
                     Arg.Any<Guid>(),
                     Arg.Any<Uri>(),
-                    Arg.Any<CallbackResult>(),
-                    Arg.Any<CancellationToken>()
+                    Arg.Any<CallbackResult>()
                 );
 
             _ = this.callbackRepository.Received(0).SetCompletedAsyc
@@ -386,6 +387,36 @@ namespace Ztm.WebApi.Tests
                 Arg.Any<Guid>(),
                 Arg.Any<CancellationToken>()
             );
+        }
+
+        [Fact]
+        public async void AddTransactionAsync_AndSuccessToExecuteCallback_CompletedFlagShouldBeSet()
+        {
+            // Arrange.
+            var builder = new WatchArgsBuilder(this.callbackRepository);
+            builder.timeout = TimeSpan.FromMilliseconds(500);
+
+            // Act.
+            await builder.Call(this.subject.AddTransactionAsync);
+            Thread.Sleep(TimeSpan.FromMilliseconds(1000));
+
+            // Assert.
+            _ = this.watchRepository.Received(1).CompleteAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+
+            _ = this.callbackExecuter.Received(1)
+                .Execute
+                (
+                    Arg.Any<Guid>(),
+                    Arg.Any<Uri>(),
+                    Arg.Any<CallbackResult>()
+                );
+
+            _ = this.callbackRepository.Received(1)
+                .SetCompletedAsyc
+                (
+                    Arg.Any<Guid>(),
+                    Arg.Any<CancellationToken>()
+                );
         }
 
         [Fact]
@@ -413,8 +444,7 @@ namespace Ztm.WebApi.Tests
                 Arg.Is<TransactionConfirmationCallbackResult>
                 (
                     result => result == builder.timeoutData
-                ),
-                Arg.Any<CancellationToken>()
+                )
             );
         }
 
@@ -529,8 +559,7 @@ namespace Ztm.WebApi.Tests
             _ = this.callbackExecuter.Received(0).Execute(
                 Arg.Any<Guid>(),
                 Arg.Any<Uri>(),
-                Arg.Any<TransactionConfirmationCallbackResult>(),
-                Arg.Any<CancellationToken>()
+                Arg.Any<TransactionConfirmationCallbackResult>()
             );
 
             var received = await this.handler.GetCurrentWatchesAsync(CancellationToken.None);
@@ -569,8 +598,7 @@ namespace Ztm.WebApi.Tests
                 Arg.Is<TransactionConfirmationCallbackResult>
                 (
                     result => result.Status == CallbackResult.StatusSuccess
-                ),
-                Arg.Any<CancellationToken>()
+                )
             );
         }
 
@@ -607,8 +635,7 @@ namespace Ztm.WebApi.Tests
                 Arg.Is<TransactionConfirmationCallbackResult>
                 (
                     result => result.Status == CallbackResult.StatusSuccess
-                ),
-                Arg.Any<CancellationToken>()
+                )
             );
         }
 
@@ -645,8 +672,7 @@ namespace Ztm.WebApi.Tests
                 Arg.Is<TransactionConfirmationCallbackResult>
                 (
                     result => result.Status == CallbackResult.StatusError
-                ),
-                Arg.Any<CancellationToken>()
+                )
             );
         }
 
@@ -686,8 +712,7 @@ namespace Ztm.WebApi.Tests
                 Arg.Is<TransactionConfirmationCallbackResult>
                 (
                     result => result.Status == CallbackResult.StatusError
-                ),
-                Arg.Any<CancellationToken>()
+                )
             );
         }
 
@@ -745,10 +770,12 @@ namespace Ztm.WebApi.Tests
                 this.defaultUrl
             );
 
-            _ = await this.watchRepository.AddAsync
+            var watch = await this.watchRepository.AddAsync
             (
                 builder.transaction, builder.confirmation, builder.timeout, builder.successData, builder.timeoutData, completedCallback, CancellationToken.None
             );
+
+            await this.watchRepository.CompleteAsync(watch.Id, CancellationToken.None);
 
             // Act.
             ITransactionConfirmationWatcherHandler<Guid> localHandler;
@@ -761,7 +788,6 @@ namespace Ztm.WebApi.Tests
                 this.blockStorage,
                 this.callbackExecuter
             );
-
 
             await localWatcher.StartAsync(CancellationToken.None);
             var retrievedCount = (await localHandler.CreateContextsAsync(tx, CancellationToken.None)).Count();
@@ -776,8 +802,7 @@ namespace Ztm.WebApi.Tests
                 Arg.Is<TransactionConfirmationCallbackResult>
                 (
                     result => result.Status == CallbackResult.StatusError
-                ),
-                Arg.Any<CancellationToken>()
+                )
             );
         }
 
@@ -807,6 +832,28 @@ namespace Ztm.WebApi.Tests
             mockedWatchs = new Dictionary<Guid, TransactionConfirmationWatch<TransactionConfirmationCallbackResult>>();
 
             this.watchRepository
+                .When
+                (
+                    w => w.CompleteAsync(
+                        Arg.Any<Guid>(),
+                        Arg.Any<CancellationToken>()
+                    )
+                )
+                .Do
+                (
+                    w =>
+                    {
+                        var id = w.ArgAt<Guid>(0);
+
+                        var old = mockedWatchs[id];
+
+                        mockedWatchs[id] = new TransactionConfirmationWatch<TransactionConfirmationCallbackResult>(
+                            old.Id, old.Transaction, true, old.Confirmation, old.WaitingTime, old.RemainingWaitingTime,
+                            old.Success, old.Timeout, old.Callback);
+                    }
+                );
+
+            this.watchRepository
                 .AddAsync
                 (
                     Arg.Any<uint256>(),
@@ -825,6 +872,7 @@ namespace Ztm.WebApi.Tests
                         (
                             Guid.NewGuid(),
                             info.ArgAt<uint256>(0),
+                            false,
                             info.ArgAt<int>(1),
                             info.ArgAt<TimeSpan>(2),
                             info.ArgAt<TimeSpan>(2),
@@ -856,10 +904,9 @@ namespace Ztm.WebApi.Tests
                         var old = mockedWatchs[id];
 
                         mockedWatchs[id] = new TransactionConfirmationWatch<TransactionConfirmationCallbackResult>(
-                            old.Id, old.Transaction, old.Confirmation, old.WaitingTime, remaining,
+                            old.Id, old.Transaction, old.Completed, old.Confirmation, old.WaitingTime, remaining,
                             old.Success, old.Timeout, old.Callback);
                     });
-
         }
 
         void MockCallbackRepository()

@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
@@ -90,12 +91,12 @@ namespace Ztm.WebApi
 
             if (confirmation < 1)
             {
-                throw new ArgumentOutOfRangeException("Confirmation is less than zero");
+                throw new ArgumentOutOfRangeException(nameof(confirmation) ,"Confirmation is less than zero.");
             }
 
             if (!Timer.IsValidDuration(unconfirmedWaitingTime))
             {
-                throw new ArgumentOutOfRangeException("UnconfirmedWaitingTime is invalid duration");
+                throw new ArgumentOutOfRangeException(nameof(unconfirmedWaitingTime), "UnconfirmedWaitingTime is invalid duration.");
             }
 
             if (callback == null)
@@ -133,7 +134,7 @@ namespace Ztm.WebApi
         {
             var allWatches = await this.watchRepository.ListAsync(cancellationToken);
 
-            foreach (var watch in allWatches.Where(w => !w.Callback.Completed))
+            foreach (var watch in allWatches.Where(w => !w.Completed))
             {
                 await SetupTimerAsync(watch.Id);
             }
@@ -165,17 +166,30 @@ namespace Ztm.WebApi
 
             this.timerLock.EnterWriteLock();
 
-            var watch = await this.watchRepository.GetAsync(id, CancellationToken.None);
             try
             {
-                if (!timers.ContainsKey(watch.Transaction))
+                var watch = await this.watchRepository.GetAsync(id, CancellationToken.None);
+
+                Dictionary<Guid, Tuple<Timer, int>> timers;
+
+                if (!this.timers.TryGetValue(watch.Transaction, out timers))
                 {
-                    timers[watch.Transaction] = new Dictionary<Guid, Tuple<Timer, int>>();
+                    timers = new Dictionary<Guid, Tuple<Timer, int>>();
+                    this.timers.Add(watch.Transaction, timers);
                 }
 
-                timers[watch.Transaction][watch.Id] = new Tuple<Timer, int>(timer, watch.Confirmation);
-                timer.Elapsed += OnTimeout;
-                timer.Start(watch.RemainingWaitingTime < TimeSpan.Zero ? TimeSpan.Zero : watch.RemainingWaitingTime, null, watch.Id);
+                timers.Add(watch.Id, new Tuple<Timer, int>(timer, watch.Confirmation));
+
+                try
+                {
+                    timer.Elapsed += OnTimeout;
+                    timer.Start(watch.RemainingWaitingTime < TimeSpan.Zero ? TimeSpan.Zero : watch.RemainingWaitingTime, null, watch.Id);
+                }
+                catch (Exception)
+                {
+                    timers.Remove(watch.Id);
+                    throw;
+                }
             }
             finally
             {
@@ -189,6 +203,7 @@ namespace Ztm.WebApi
             {
                 var watch = await watchRepository.GetAsync((Guid)e.Context, cancellationToken);
 
+                await this.watchRepository.CompleteAsync((Guid)e.Context, cancellationToken);
                 await ExecuteCallbackAsync(watch.Callback, watch.Timeout, cancellationToken);
                 RemoveTimer(watch.Transaction, watch.Id);
             });
@@ -200,10 +215,21 @@ namespace Ztm.WebApi
 
             try
             {
-                timers[transaction].Remove(id);
-                if (timers[transaction].Count == 0)
+                if (!this.timers.TryGetValue(transaction, out var timers))
                 {
-                    timers.Remove(transaction);
+                    throw new KeyNotFoundException("Transaction is not found");
+                }
+
+                if (!timers.TryGetValue(id, out var timer))
+                {
+                    throw new KeyNotFoundException("Timer is not found");
+                }
+
+                timers.Remove(id);
+
+                if (timers.Count == 0)
+                {
+                    this.timers.Remove(transaction);
                 }
             }
             finally
@@ -252,6 +278,9 @@ namespace Ztm.WebApi
 
             try
             {
+                var watch = await watchRepository.GetAsync(id, CancellationToken.None);
+                RemoveTimer(watch.Transaction, id);
+
                 await SetupTimerAsync(id);
             }
             finally
@@ -260,21 +289,32 @@ namespace Ztm.WebApi
             }
         }
 
-        async Task ConfirmAsync(TransactionWatch<Guid> watch)
+        async Task ConfirmAsync(TransactionWatch<Guid> watch, CancellationToken cancellationToken)
         {
-            var watchObject = await this.watchRepository.GetAsync(watch.Context, CancellationToken.None);
+            var watchObject = await this.watchRepository.GetAsync(watch.Context, cancellationToken);
 
-            await ExecuteCallbackAsync(watchObject.Callback, watchObject.Success, CancellationToken.None);
-            RemoveTimer(watch.TransactionId, watch.Context);
+            try
+            {
+                await this.watchRepository.CompleteAsync(watch.Context, cancellationToken);
+                await ExecuteCallbackAsync(watchObject.Callback, watchObject.Success, cancellationToken);
+            }
+            finally
+            {
+                RemoveTimer(watch.TransactionId, watch.Context);
+            }
         }
 
         async Task ExecuteCallbackAsync(Callback callback, TransactionConfirmationCallbackResult payload, CancellationToken cancellationToken)
         {
             await this.callbackRepository.AddHistoryAsync(callback.Id, payload, cancellationToken);
 
-            if (await this.callbackExecuter.Execute(callback.Id, callback.Url, payload, cancellationToken))
+            try
             {
-                await this.callbackRepository.SetCompletedAsyc(callback.Id, cancellationToken);
+                await this.callbackExecuter.Execute(callback.Id, callback.Url, payload);
+                await this.callbackRepository.SetCompletedAsyc(callback.Id, CancellationToken.None);
+            }
+            catch (HttpRequestException) // lgtm[cs/empty-catch-block]
+            {
             }
         }
 
@@ -296,7 +336,7 @@ namespace Ztm.WebApi
             {
                 if (this.timers.TryGetValue(tx.GetHash(), out var txTimers))
                 {
-                    return Task.FromResult((IEnumerable<Guid>)txTimers.Select(t => t.Key).ToList());
+                    return Task.FromResult<IEnumerable<Guid>>(txTimers.Select(t => t.Key).ToList());
                 }
             }
             finally
@@ -332,7 +372,7 @@ namespace Ztm.WebApi
 
                     if (confirmation == requiredConfirmations)
                     {
-                        await ConfirmAsync(watch);
+                        await ConfirmAsync(watch, cancellationToken);
                         return true;
                     }
                 }

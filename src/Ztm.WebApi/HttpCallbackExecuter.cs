@@ -17,7 +17,7 @@ namespace Ztm.WebApi
             this.client = client;
         }
 
-        public async Task<bool> Execute(Guid id, Uri url, CallbackResult result, CancellationToken cancellationToken)
+        public async Task Execute(Guid id, Uri url, CallbackResult result)
         {
             var content = JsonConvert.SerializeObject(result.Data);
 
@@ -33,11 +33,11 @@ namespace Ztm.WebApi
                 {
                 case HttpStatusCode.OK:
                 case HttpStatusCode.Accepted:
-                    return true;
+                    return;
+                default:
+                    throw new HttpRequestException($"Callback Executing return invalid status ({response.StatusCode}).");
                 }
             }
-
-            return false;
         }
     }
 }

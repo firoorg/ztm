@@ -145,6 +145,7 @@ namespace Ztm.Data.Entity.Contexts
         {
             builder.Property(e => e.CallbackId).IsRequired();
             builder.Property(e => e.Transaction).IsRequired();
+            builder.Property(e => e.Completed).IsRequired();
             builder.Property(e => e.Confirmation).IsRequired();
             builder.Property(e => e.WaitingTime).IsRequired();
             builder.Property(e => e.RemainingWaitingTime).IsRequired();

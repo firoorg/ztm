@@ -8,6 +8,7 @@ namespace Ztm.WebApi
         public TransactionConfirmationWatch(
             Guid id,
             uint256 transaction,
+            bool completed,
             int confirmation,
             TimeSpan waitingTime,
             TimeSpan remainingWaitingTime,
@@ -17,6 +18,7 @@ namespace Ztm.WebApi
         {
             this.Id = id;
             this.Transaction = transaction;
+            this.Completed = completed;
             this.Confirmation = confirmation;
             this.WaitingTime = waitingTime;
             this.RemainingWaitingTime = remainingWaitingTime;
@@ -27,6 +29,7 @@ namespace Ztm.WebApi
 
         public Guid Id { get; }
         public uint256 Transaction { get; }
+        public bool Completed { get; }
         public int Confirmation { get; }
         public TimeSpan WaitingTime { get; }
         public TimeSpan RemainingWaitingTime { get; }
