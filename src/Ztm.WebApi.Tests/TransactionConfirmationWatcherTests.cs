@@ -66,7 +66,6 @@ namespace Ztm.WebApi.Tests
             }
         }
 
-
         async Task Initialize(CancellationToken cancellationToken)
         {
             await this.subject.StartAsync(cancellationToken);
@@ -640,44 +639,7 @@ namespace Ztm.WebApi.Tests
         }
 
         [Fact]
-        // Resume and Timeout
-        public async void ConfirmationUpdateAsync_WithUnconfirm_TimerShouldbeResume()
-        {
-            // Arrange.
-            var builder = new WatchArgsBuilder(this.callbackRepository);
-
-            builder.timeout = TimeSpan.FromSeconds(1);
-            builder.confirmation = 10;
-            var watch = await builder.Call(this.subject.AddTransactionAsync);
-
-            var watches = new List<TransactionWatch<Guid>>()
-            {
-                new TransactionWatch<Guid>(watch.Id, uint256.Zero, builder.transaction),
-            };
-
-            await this.handler.AddWatchesAsync(watches, CancellationToken.None);
-
-            // Act.
-            await this.handler.ConfirmationUpdateAsync(watches[0], 1, ConfirmationType.Confirmed, CancellationToken.None);
-            await this.handler.ConfirmationUpdateAsync(watches[0], 2, ConfirmationType.Confirmed, CancellationToken.None);
-            await this.handler.ConfirmationUpdateAsync(watches[0], 2, ConfirmationType.Unconfirming, CancellationToken.None);
-            await this.handler.ConfirmationUpdateAsync(watches[0], 1, ConfirmationType.Unconfirming, CancellationToken.None);
-
-            Thread.Sleep(TimeSpan.FromSeconds(2));
-
-            // Assert.
-            _ = this.callbackExecuter.Received(1).Execute(
-                Arg.Any<Guid>(),
-                Arg.Any<Uri>(),
-                Arg.Is<TransactionConfirmationCallbackResult>
-                (
-                    result => result.Status == CallbackResult.StatusError
-                )
-            );
-        }
-
-        [Fact]
-        public async void ConfirmationUpdateAsync_WithRemainingTimeout_ShouldNotExecuteTimeoutImmediately()
+        public async void RemoveWatchAsync_TimerShouldbeResume()
         {
             // Arrange.
             var builder = new WatchArgsBuilder(this.callbackRepository);
@@ -693,14 +655,51 @@ namespace Ztm.WebApi.Tests
 
             await this.handler.AddWatchesAsync(watches, CancellationToken.None);
 
-            // Act & Assert.
-            await this.handler.ConfirmationUpdateAsync(watches[0], 1, ConfirmationType.Confirmed, CancellationToken.None);
-            Thread.Sleep(TimeSpan.FromSeconds(2));
+            // Act.
+            foreach (var watchObj in watches)
+            {
+                await this.handler.RemoveWatchAsync(watchObj, WatchRemoveReason.BlockRemoved, CancellationToken.None);
+            }
 
+            Thread.Sleep(TimeSpan.FromMilliseconds(1000));
+
+            // Assert.
+            _ = this.callbackExecuter.Received(1).Execute(
+                Arg.Any<Guid>(),
+                Arg.Any<Uri>(),
+                Arg.Is<TransactionConfirmationCallbackResult>
+                (
+                    result => result.Status == CallbackResult.StatusError
+                )
+            );
+        }
+
+        [Fact]
+        public async void RemoveWatchAsync_WithRemainingTimeout_ShouldNotExecuteTimeoutImmediately()
+        {
+            // Arrange.
+            var builder = new WatchArgsBuilder(this.callbackRepository);
+
+            builder.timeout = TimeSpan.FromMilliseconds(500);
+            builder.confirmation = 10;
+            var watch = await builder.Call(this.subject.AddTransactionAsync);
+
+            var watches = new List<TransactionWatch<Guid>>()
+            {
+                new TransactionWatch<Guid>(watch.Id, uint256.Zero, builder.transaction),
+            };
+
+            await this.handler.AddWatchesAsync(watches, CancellationToken.None);
+            Thread.Sleep(TimeSpan.FromMilliseconds(1000));
+
+            // Act & Assert.
             var updated = await this.watchRepository.GetAsync(watch.Id, CancellationToken.None);
             Assert.True(updated.RemainingWaitingTime < TimeSpan.FromSeconds(1));
 
-            await this.handler.ConfirmationUpdateAsync(watches[0], 1, ConfirmationType.Unconfirming, CancellationToken.None);
+            foreach (var watchObj in watches)
+            {
+                await this.handler.RemoveWatchAsync(watchObj, WatchRemoveReason.BlockRemoved, CancellationToken.None);
+            }
 
             _ = this.callbackExecuter.Received(0);
 
