@@ -17,10 +17,8 @@ namespace Ztm.WebApi.Controllers
             int status;
             string title;
 
-            if (ex is ApiException)
+            if (ex is ApiException apiEx)
             {
-                var apiEx = (ApiException)ex;
-
                 status = apiEx.Status;
                 title = $"{apiEx.Title} : {ex.GetType().Name}";
             }
@@ -50,10 +48,8 @@ namespace Ztm.WebApi.Controllers
             int status;
             string title;
 
-            if (ex is ApiException)
+            if (ex is ApiException apiEx)
             {
-                var apiEx = (ApiException)ex;
-
                 status = apiEx.Status;
                 title = apiEx.Title;
             }
