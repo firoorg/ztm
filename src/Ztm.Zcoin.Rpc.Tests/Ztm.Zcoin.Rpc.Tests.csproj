@@ -17,6 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Ztm.Zcoin.Rpc\Ztm.Zcoin.Rpc.csproj" />
     <ProjectReference Include="..\Ztm.Zcoin.Testing\Ztm.Zcoin.Testing.csproj" />
+    <ProjectReference Include="..\Ztm.Testing\Ztm.Testing.csproj" />
   </ItemGroup>
 
 </Project>

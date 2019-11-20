@@ -117,6 +117,31 @@ namespace Ztm.Zcoin.Rpc
             return this.client.GetNewAddressAsync();
         }
 
+        public async Task<(PropertyAmount balance, PropertyAmount reserved)> GetPropertyBalanceAsync(
+            BitcoinAddress address,
+            Property property,
+            CancellationToken cancellationToken)
+        {
+            if (address == null)
+            {
+                throw new ArgumentNullException(nameof(address));
+            }
+
+            if (property == null)
+            {
+                throw new ArgumentNullException(nameof(property));
+            }
+
+            var resp = await this.client.SendCommandAsync("exodus_getbalance", address.ToString(), ToNative(property.Id));
+            var rawBalance = resp.Result.Value<string>("balance");
+            var rawReserved = resp.Result.Value<string>("reserved");
+
+            var balance = PropertyAmount.Parse(rawBalance);
+            var reserved = PropertyAmount.Parse(rawReserved);
+
+            return (balance: balance, reserved: reserved);
+        }
+
         public async Task<PropertyGrantsInfo> GetPropertyGrantsAsync(
             Property property,
             CancellationToken cancellationToken)
@@ -239,6 +264,63 @@ namespace Ztm.Zcoin.Rpc
                 commentTo,
                 subtractFeeFromAmount
             );
+        }
+
+        public async Task<Transaction> SendTokenAsync(
+            BitcoinAddress from,
+            BitcoinAddress to,
+            Property property,
+            PropertyAmount amount,
+            BitcoinAddress redeemAddress,
+            Money referenceAmount,
+            CancellationToken cancellation)
+        {
+            if (from == null)
+            {
+                throw new ArgumentNullException(nameof(from));
+            }
+
+            if (to == null)
+            {
+                throw new ArgumentNullException(nameof(to));
+            }
+
+            if (property == null)
+            {
+                throw new ArgumentNullException(nameof(property));
+            }
+
+            if (amount < PropertyAmount.One)
+            {
+                throw new ArgumentOutOfRangeException(nameof(amount), amount, "The value is less than one.");
+            }
+
+            var args = new List<object>()
+            {
+                from.ToString(),
+                to.ToString(),
+                ToNative(property.Id),
+                amount.ToString(property.Type),
+            };
+
+            if (redeemAddress != null)
+            {
+                args.Add(redeemAddress.ToString());
+
+                if (referenceAmount != null)
+                {
+                    if (referenceAmount < Money.Satoshis(1))
+                    {
+                        throw new ArgumentOutOfRangeException(nameof(referenceAmount), amount, "The value is less than zero.");
+                    }
+                    args.Add(referenceAmount.ToDecimal(MoneyUnit.BTC).ToString());
+                }
+            }
+
+            // Invoke RPC.
+            var resp = await this.client.SendCommandAsync("exodus_send", args.ToArray());
+
+            return Transaction.Parse(resp.Result.Value<string>(), this.client.Network);
         }
 
         static byte ToNative(Ecosystem ecosystem)
