@@ -170,6 +170,33 @@ namespace Ztm.WebApi.Tests
                 () => this.subject.AddHistoryAsync(Guid.NewGuid(), null, CancellationToken.None)
             );
         }
+
+        [Fact]
+        public async Task SetHistorySuccessAsync_WithExistHistory_HistoryShouldBeMarkedAsSuccess()
+        {
+            // Arrange.
+            var callback = await this.subject.AddAsync(IPAddress.Loopback, this.defaultUrl, CancellationToken.None);
+            var data = "txid:46bdfcc6c953ba3e9a12456e3bd75ff887c9ba50051b3c58113eebffa35d7df4";
+            var id = await this.subject.AddHistoryAsync(
+                callback.Id, new TestCallbackResult(CallbackResult.StatusUpdate, data), CancellationToken.None);
+
+            // Act.
+            await this.subject.SetHistorySuccessAsync(id, CancellationToken.None);
+
+            // Assert.
+            using(var db = this.dbFactory.CreateDbContext())
+            {
+                var updatedHistory = await db.WebApiCallbackHistories.FirstAsync(h => h.Id == id);
+                Assert.True(updatedHistory.Success);
+            }
+        }
+
+        [Fact]
+        public void SetHistorySuccessAsync_WithNonExistHistory_ShouldThrow()
+        {
+            _ = Assert.ThrowsAsync<KeyNotFoundException>(
+                () => this.subject.SetHistorySuccessAsync(100, CancellationToken.None));
+        }
     }
 
     sealed class TestCallbackResult : CallbackResult

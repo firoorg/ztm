@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Net;
 using System.Threading;
@@ -78,7 +79,7 @@ namespace Ztm.WebApi
             }
         }
 
-        public async Task AddHistoryAsync(Guid id, CallbackResult result, CancellationToken cancellationToken)
+        public async Task<int> AddHistoryAsync(Guid id, CallbackResult result, CancellationToken cancellationToken)
         {
             if (result == null)
             {
@@ -87,15 +88,33 @@ namespace Ztm.WebApi
 
             using (var db = this.db.CreateDbContext())
             {
-                await db.WebApiCallbackHistories.AddAsync(
+                var history = await db.WebApiCallbackHistories.AddAsync(
                     new WebApiCallbackHistory
                     {
                         CallbackId = id,
+                        Success = false,
                         Status = result.Status,
                         Data = JsonConvert.SerializeObject(result.Data),
                         InvokedTime = DateTime.UtcNow,
                     }
                 );
+                await db.SaveChangesAsync(cancellationToken);
+
+                return history.Entity.Id;
+            }
+        }
+
+        public async Task SetHistorySuccessAsync(int id, CancellationToken cancellationToken)
+        {
+            using (var db = this.db.CreateDbContext())
+            {
+                var history = await db.WebApiCallbackHistories.FirstOrDefaultAsync(h => h.Id == id);
+                if (history == null)
+                {
+                    throw new KeyNotFoundException(nameof(id));
+                }
+
+                history.Success = true;
                 await db.SaveChangesAsync(cancellationToken);
             }
         }

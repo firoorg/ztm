@@ -12,11 +12,11 @@ using Ztm.Threading;
 using Ztm.Zcoin.Synchronization;
 using Ztm.Zcoin.Watching;
 
+using ConfirmContext = Ztm.WebApi.TransactionConfirmationWatch<Ztm.WebApi.TransactionConfirmationCallbackResult>;
+using Timer = Ztm.Threading.Timer;
+
 namespace Ztm.WebApi
 {
-    using ConfirmContext = TransactionConfirmationWatch<TransactionConfirmationCallbackResult>;
-    using Timer = Ztm.Threading.Timer;
-
     public sealed class TransactionConfirmationWatcher : ITransactionConfirmationWatcher, IHostedService, IBlockListener, ITransactionConfirmationWatcherHandler<Guid>
     {
         readonly Ztm.Zcoin.Watching.TransactionConfirmationWatcher<Guid> watcher;
@@ -185,7 +185,7 @@ namespace Ztm.WebApi
                     timer.Elapsed += OnTimeout;
                     timer.Start(watch.RemainingWaitingTime < TimeSpan.Zero ? TimeSpan.Zero : watch.RemainingWaitingTime, null, watch.Id);
                 }
-                catch (Exception)
+                catch
                 {
                     timers.Remove(watch.Id);
                     throw;
@@ -218,11 +218,6 @@ namespace Ztm.WebApi
                 if (!this.timers.TryGetValue(transaction, out var timers))
                 {
                     throw new KeyNotFoundException("Transaction is not found");
-                }
-
-                if (!timers.TryGetValue(id, out var timer))
-                {
-                    throw new KeyNotFoundException("Timer is not found");
                 }
 
                 timers.Remove(id);
@@ -299,11 +294,12 @@ namespace Ztm.WebApi
 
         async Task ExecuteCallbackAsync(Callback callback, TransactionConfirmationCallbackResult payload, CancellationToken cancellationToken)
         {
-            await this.callbackRepository.AddHistoryAsync(callback.Id, payload, cancellationToken);
+            var id = await this.callbackRepository.AddHistoryAsync(callback.Id, payload, cancellationToken);
 
             try
             {
                 await this.callbackExecuter.Execute(callback.Id, callback.Url, payload);
+                await this.callbackRepository.SetHistorySuccessAsync(id, cancellationToken);
                 await this.callbackRepository.SetCompletedAsyc(callback.Id, CancellationToken.None);
             }
             catch (HttpRequestException) // lgtm[cs/empty-catch-block]
