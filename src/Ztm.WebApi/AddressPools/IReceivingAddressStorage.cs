@@ -6,7 +6,7 @@ using NBitcoin;
 
 namespace Ztm.WebApi.AddressPools
 {
-    public interface IReceivingAddressRepository
+    public interface IReceivingAddressStorage
     {
         Task<ReceivingAddress> AddAddressAsync(BitcoinAddress address, CancellationToken cancellationToken);
         Task<ReceivingAddress> GetAsync(Guid id, CancellationToken cancellationToken);

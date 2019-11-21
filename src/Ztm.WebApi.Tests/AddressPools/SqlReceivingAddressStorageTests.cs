@@ -12,19 +12,19 @@ using Ztm.Zcoin.NBitcoin;
 
 namespace Ztm.WebApi.Tests.AddressPools
 {
-    public sealed class SqlReceivingAddressRepositoryTests : IDisposable
+    public sealed class SqlReceivingAddressStorageTests : IDisposable
     {
         readonly TestMainDatabaseFactory databaseFactory;
         readonly Network network;
 
-        readonly SqlReceivingAddressRepository subject;
+        readonly SqlReceivingAddressStorage subject;
 
-        public SqlReceivingAddressRepositoryTests()
+        public SqlReceivingAddressStorageTests()
         {
             this.databaseFactory = new TestMainDatabaseFactory();
             this.network = ZcoinNetworks.Instance.Regtest;
 
-            this.subject = new SqlReceivingAddressRepository(this.databaseFactory, this.network);
+            this.subject = new SqlReceivingAddressStorage(this.databaseFactory, this.network);
         }
 
         public void Dispose()
@@ -37,12 +37,12 @@ namespace Ztm.WebApi.Tests.AddressPools
         {
             Assert.Throws<ArgumentNullException>(
                 "databaseFactory",
-                () => new SqlReceivingAddressRepository(null, this.network)
+                () => new SqlReceivingAddressStorage(null, this.network)
             );
 
             Assert.Throws<ArgumentNullException>(
                 "network",
-                () => new SqlReceivingAddressRepository(this.databaseFactory, null)
+                () => new SqlReceivingAddressStorage(this.databaseFactory, null)
             );
         }
 
@@ -132,7 +132,7 @@ namespace Ztm.WebApi.Tests.AddressPools
 
             Assert.Equal(DateTime.MinValue, reservation.ReleasedDate);
 
-            Assert.Equal(1, recv.ReceivingAddressReservations.Count);
+            Assert.Single(recv.ReceivingAddressReservations);
             Assert.Equal(reservation.Id, recv.ReceivingAddressReservations.First().Id);
         }
 
@@ -152,7 +152,7 @@ namespace Ztm.WebApi.Tests.AddressPools
             Assert.NotNull(reservation);
             Assert.Null(anotherReservation);
 
-            Assert.Equal(1, recv.ReceivingAddressReservations.Count);
+            Assert.Single(recv.ReceivingAddressReservations);
             Assert.Equal(reservation.Id, recv.ReceivingAddressReservations.First().Id);
         }
 
@@ -187,7 +187,7 @@ namespace Ztm.WebApi.Tests.AddressPools
             var unlockedRecv = await this.subject.GetAsync(address.Id, CancellationToken.None);
 
             // Assert.
-            Assert.Equal(1, unlockedRecv.ReceivingAddressReservations.Count);
+            Assert.Single(unlockedRecv.ReceivingAddressReservations);
             var updatedResevation = unlockedRecv.ReceivingAddressReservations.First();
 
             Assert.True(updatedResevation.ReservedDate < updatedResevation.ReleasedDate);

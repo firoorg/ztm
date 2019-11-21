@@ -14,12 +14,12 @@ namespace Ztm.WebApi.AddressPools
     using ReceivingAddressModel = Ztm.Data.Entity.Contexts.Main.ReceivingAddress;
     using ReceivingAddressReservationModel = Ztm.Data.Entity.Contexts.Main.ReceivingAddressReservation;
 
-    public sealed class SqlReceivingAddressRepository : IReceivingAddressRepository
+    public sealed class SqlReceivingAddressStorage : IReceivingAddressStorage
     {
         readonly IMainDatabaseFactory databaseFactory;
         readonly Network network;
 
-        public SqlReceivingAddressRepository(IMainDatabaseFactory databaseFactory, Network network)
+        public SqlReceivingAddressStorage(IMainDatabaseFactory databaseFactory, Network network)
         {
             if (databaseFactory == null)
             {
