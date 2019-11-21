@@ -30,6 +30,10 @@ namespace Ztm.Data.Entity.Contexts
 
         public DbSet<WebApiCallbackHistory> WebApiCallbackHistories { get; set; }
 
+        public DbSet<ReceivingAddress> ReceivingAddresses { get; set; }
+
+        public DbSet<ReceivingAddressReservation> ReceivingAddressReservations { get; set; }
+
         protected virtual void ConfigureBlock(EntityTypeBuilder<Block> builder)
         {
             builder.Property(e => e.Height).IsRequired().ValueGeneratedNever();
@@ -138,6 +142,30 @@ namespace Ztm.Data.Entity.Contexts
                    .OnDelete(DeleteBehavior.Cascade);
         }
 
+        protected virtual void ConfigureReceivingAddress(EntityTypeBuilder<ReceivingAddress> builder)
+        {
+            builder.Property(e => e.Id).IsRequired().ValueGeneratedOnAdd();
+            builder.Property(e => e.Address).IsRequired();
+            builder.Property(e => e.IsLocked).HasDefaultValue(false);
+
+            builder.HasKey(e => e.Id);
+            builder.HasIndex(e => e.Address).IsUnique();
+        }
+
+        protected virtual void ConfigureReceivingAddressReservation(EntityTypeBuilder<ReceivingAddressReservation> builder)
+        {
+            builder.Property(e => e.Id).IsRequired().ValueGeneratedOnAdd();
+            builder.Property(e => e.ReceivingAddressId).IsRequired();
+            builder.Property(e => e.LockedAt).IsRequired();
+
+            builder.HasKey(e => e.Id);
+            builder.HasOne(e => e.ReceivingAddress)
+                   .WithMany(e => e.ReceivingAddressReservations)
+                   .HasForeignKey(e => e.ReceivingAddressId)
+                   .HasPrincipalKey(e => e.Id)
+                   .OnDelete(DeleteBehavior.Cascade);
+        }
+
         protected sealed override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Block>(ConfigureBlock);
@@ -147,6 +175,8 @@ namespace Ztm.Data.Entity.Contexts
             modelBuilder.Entity<Transaction>(ConfigureTransaction);
             modelBuilder.Entity<WebApiCallback>(ConfigureWebApiCallback);
             modelBuilder.Entity<WebApiCallbackHistory>(ConfigureWebApiCallbackHistory);
+            modelBuilder.Entity<ReceivingAddress>(ConfigureReceivingAddress);
+            modelBuilder.Entity<ReceivingAddressReservation>(ConfigureReceivingAddressReservation);
         }
     }
 }

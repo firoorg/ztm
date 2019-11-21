@@ -23,6 +23,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Ztm.WebApi\Ztm.WebApi.csproj" />
     <ProjectReference Include="..\Ztm.Data.Entity.Testing\Ztm.Data.Entity.Testing.csproj" />
+    <ProjectReference Include="..\Ztm.Testing\Ztm.Testing.csproj" />
   </ItemGroup>
 
 </Project>
