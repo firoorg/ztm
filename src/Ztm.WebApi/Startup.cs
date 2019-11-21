@@ -54,12 +54,11 @@ namespace Ztm.WebApi
         {
             if (env.IsDevelopment())
             {
-                app.UseDeveloperExceptionPage();
+                app.UseExceptionHandler("/error-development");
             }
             else
             {
-                app.UseHsts();
-                app.UseHttpsRedirection();
+                app.UseExceptionHandler("/error");
             }
 
             app.UseMvc();
