@@ -25,6 +25,7 @@ namespace Ztm.WebApi
         readonly ICallbackRepository callbackRepository;
         readonly ITransactionConfirmationWatchRepository<TransactionConfirmationCallbackResult> watchRepository;
         readonly ICallbackExecuter callbackExecuter;
+        readonly IBlocksStorage blocks;
 
         // State recorders
         readonly ReaderWriterLockSlim timerLock;
@@ -62,6 +63,7 @@ namespace Ztm.WebApi
             this.callbackRepository = callbackRepository;
             this.watchRepository = watchRepository;
             this.callbackExecuter = callbackExecuter;
+            this.blocks = blocks;
 
             this.watcher = new Zcoin.Watching.TransactionConfirmationWatcher<ConfirmContext>
             (
@@ -124,7 +126,16 @@ namespace Ztm.WebApi
                 cancellationToken
             );
 
-            await SetupTimerAsync(watch.Id);
+            if (!await TryToRecoverOnChainTransactionAsync(watch, transaction, cancellationToken))
+            {
+                // The transaction is not on chain yet.
+                await SetupTimerAsync(watch.Id);
+            }
+            else
+            {
+                // The transaction is on chain then add null as timer.
+                SetNullTimer(transaction, watch.Id);
+            }
 
             return watch;
         }
@@ -135,7 +146,16 @@ namespace Ztm.WebApi
 
             foreach (var watch in allWatches.Where(w => !w.Completed))
             {
-                await SetupTimerAsync(watch.Id);
+                if (!await TryToRecoverOnChainTransactionAsync(watch, watch.Transaction, cancellationToken))
+                {
+                    // The transaction is not on chain yet.
+                    await SetupTimerAsync(watch.Id);
+                }
+                else
+                {
+                    // The transaction is on chain then add null as timer.
+                    SetNullTimer(watch.Transaction, watch.Id);
+                }
             }
         }
 
@@ -147,11 +167,54 @@ namespace Ztm.WebApi
             {
                 foreach (var timerSet in timers)
                 {
-                    foreach (var timer in timerSet.Value.Where(t => t.Value.Status == TimerStatus.Started))
+                    foreach (var timer in timerSet.Value.Where(t => t.Value != null && t.Value.Status == TimerStatus.Started))
                     {
                         await timer.Value.StopAsync(cancellationToken);
                     }
                 }
+            }
+            finally
+            {
+                this.timerLock.ExitWriteLock();
+            }
+        }
+
+        // Check if transaction is on chain, then adding a new watches object.
+        async Task<bool> TryToRecoverOnChainTransactionAsync(ConfirmContext context, uint256 transaction, CancellationToken cancellationToken)
+        {
+            var tx = await this.blocks.GetTransactionAsync(transaction, cancellationToken);
+            if (tx != null)
+            {
+                var (block, _) = await this.blocks.GetByTransactionAsync(tx.GetHash(), cancellationToken);
+                if (block != null)
+                {
+                    await ((ITransactionConfirmationWatcherHandler<ConfirmContext>)this)
+                        .AddWatchesAsync(
+                            new Collection<TransactionWatch<ConfirmContext>>
+                            {
+                                new TransactionWatch<ConfirmContext>(context, block.GetHash(), tx.GetHash())
+                            }.AsEnumerable(), cancellationToken);
+
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        void SetNullTimer(uint256 transaction, Guid id)
+        {
+            this.timerLock.EnterWriteLock();
+
+            try
+            {
+                if (!this.timers.TryGetValue(transaction, out var timers))
+                {
+                    timers = new Dictionary<Guid, Timer>();
+                    this.timers.Add(transaction, timers);
+                }
+
+                timers.AddOrReplace(id, null);
             }
             finally
             {
@@ -244,6 +307,7 @@ namespace Ztm.WebApi
                     {
                         var watchData = await this.watchRepository.GetAsync(id, CancellationToken.None);
                         await this.watchRepository.SetRemainingWaitingTimeAsync(id, watchData.RemainingWaitingTime - timer.ElapsedTime, CancellationToken.None);
+                        SetNullTimer(transaction, id);
 
                         return true;
                     }

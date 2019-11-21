@@ -262,7 +262,7 @@ namespace Ztm.WebApi.Tests
         }
 
         [Fact]
-        public async Task AddTransactionAsync_AndBlocksAreRemove_TimerShouldBeResume()
+        public async Task AddTransactionAsync_AndBlocksAreRemoved_TimersShouldBeResume()
         {
             // Arrange.
             await this.Initialize(CancellationToken.None);
@@ -349,7 +349,7 @@ namespace Ztm.WebApi.Tests
         }
 
         [Fact]
-        public async void AddTransactionAsync_AndFailToExecuteCallback_CompletedFlagShouldNotBeSet()
+        public async void AddTransactionAsync_AndFailToExecuteCallback_CompletedFlagAndHistorySuccessFlagShouldNotBeSet()
         {
             // Arrange.
             var builder = new WatchArgsBuilder(this.callbackRepository);
@@ -388,10 +388,16 @@ namespace Ztm.WebApi.Tests
                 Arg.Any<Guid>(),
                 Arg.Any<CancellationToken>()
             );
+
+            _ = this.callbackRepository.Received(0).SetHistorySuccessAsync
+            (
+                Arg.Any<int>(),
+                Arg.Any<CancellationToken>()
+            );
         }
 
         [Fact]
-        public async void AddTransactionAsync_AndSuccessToExecuteCallback_CompletedFlagShouldBeSet()
+        public async void AddTransactionAsync_AndSuccessToExecuteCallback_CompletedFlagAndHistorySuccessFlagShouldBeSet()
         {
             // Arrange.
             var builder = new WatchArgsBuilder(this.callbackRepository);
@@ -418,6 +424,12 @@ namespace Ztm.WebApi.Tests
                     Arg.Any<Guid>(),
                     Arg.Any<CancellationToken>()
                 );
+
+            _ = this.callbackRepository.Received(1).SetHistorySuccessAsync
+            (
+                Arg.Any<int>(),
+                Arg.Any<CancellationToken>()
+            );
         }
 
         [Fact]
@@ -446,6 +458,12 @@ namespace Ztm.WebApi.Tests
                 (
                     result => result == builder.timeoutData
                 )
+            );
+
+            _ = this.callbackRepository.Received(2).SetHistorySuccessAsync
+            (
+                Arg.Any<int>(),
+                Arg.Any<CancellationToken>()
             );
         }
 
@@ -512,8 +530,8 @@ namespace Ztm.WebApi.Tests
 
             var watches = new List<TransactionWatch<ConfirmContext>>()
             {
-                new TransactionWatch<ConfirmContext>(watch1, uint256.Zero, uint256.Zero),
-                new TransactionWatch<ConfirmContext>(watch2, uint256.Zero, uint256.Zero),
+                new TransactionWatch<ConfirmContext>(watch1, uint256.Zero, watch1.Transaction),
+                new TransactionWatch<ConfirmContext>(watch2, uint256.Zero, watch1.Transaction),
             };
 
             await this.handler.AddWatchesAsync(watches, CancellationToken.None);

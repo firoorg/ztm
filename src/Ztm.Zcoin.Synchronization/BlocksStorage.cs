@@ -126,6 +126,23 @@ namespace Ztm.Zcoin.Synchronization
             return ToDomain(data, previous);
         }
 
+        public async Task<(Block block, int height)> GetByTransactionAsync(uint256 hash, CancellationToken cancellationToken)
+        {
+            Ztm.Data.Entity.Contexts.Main.Block data, previous;
+
+            using (var db = this.db.CreateDbContext())
+            {
+                var blockTransaction = await db.BlockTransactions.FirstAsync(tx => tx.TransactionHash == hash);
+                data = blockTransaction.Block;
+
+                previous = (data.Height == 0)
+                    ? null
+                    : await db.Blocks.SingleAsync(b => b.Height == data.Height - 1, cancellationToken);
+            }
+
+            return (block: ToDomain(data, previous), height: data.Height);
+        }
+
         public async Task<Block> GetFirstAsync(CancellationToken cancellationToken)
         {
             Ztm.Data.Entity.Contexts.Main.Block data;
