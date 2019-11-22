@@ -388,34 +388,38 @@ namespace Ztm.Zcoin.Rpc
 
         class TransactionInfomation
         {
-            public uint256 TxId;
-            public Money Fee;
-            public BitcoinAddress SendingAddress;
-            public BitcoinAddress ReferenceAddress;
-            public bool IsMine;
-            public int Version;
-            public int TypeInt;
-            public string Type;
+            public uint256 TxId { get; set; }
+            public BitcoinAddress SendingAddress { get; set; }
+            public BitcoinAddress ReferenceAddress { get; set; }
+            public bool IsMine { get; set; }
+            public int Confirmations { get; set; }
+            public Money Fee { get; set; }
+            public int BlockTime { get; set; }
+            public bool Valid { get; set; }
+            public string InvalidReason { get; set; }
+
+            public int Version { get; set; }
+            public int TypeInt { get; set; }
+            public string Type { get; set; }
         }
 
-        async Task<TransactionInfomation> DecodeTransactionAsync(Transaction transaction)
+        async Task<TransactionInfomation> GetExodusTransactionAsync(Transaction transaction)
         {
-            var args = new List<object>()
-            {
-                transaction.ToHex(),
-            };
-
             // Invoke RPC.
-            var resp = await this.client.SendCommandAsync("exodus_decodetransaction", args.ToArray());
+            var resp = await this.client.SendCommandAsync("exodus_gettransaction", transaction.GetHash());
             var rawRefAddress = resp.Result.Value<string>("referenceaddress");
 
             return new TransactionInfomation{
                 TxId = uint256.Parse(resp.Result.Value<string>("txid")),
-                Fee = Money.Parse(resp.Result.Value<string>("fee")),
                 SendingAddress = BitcoinAddress.Create(resp.Result.Value<string>("sendingaddress"), this.client.Network),
                 ReferenceAddress = (rawRefAddress == null || rawRefAddress == string.Empty)
                     ? null : BitcoinAddress.Create(resp.Result.Value<string>("referenceaddress"), this.client.Network),
                 IsMine = resp.Result.Value<bool>("ismine"),
+                Confirmations = resp.Result.Value<int>("confirmations"),
+                Fee = Money.Parse(resp.Result.Value<string>("fee")),
+                BlockTime = resp.Result.Value<int>("blocktime"),
+                Valid = resp.Result.Value<bool>("valid"),
+                InvalidReason = resp.Result.Value<string>("invalidreason"),
                 Version = resp.Result.Value<int>("version"),
                 TypeInt = resp.Result.Value<int>("type_int"),
                 Type = resp.Result.Value<string>("type")
@@ -434,7 +438,7 @@ namespace Ztm.Zcoin.Rpc
 
         async Task<ExodusTransaction> TryDecodeExodusTransaction(Transaction transaction)
         {
-            var infomation = await DecodeTransactionAsync(transaction);
+            var infomation = await GetExodusTransactionAsync(transaction);
             if (infomation == null)
             {
                 return null;
