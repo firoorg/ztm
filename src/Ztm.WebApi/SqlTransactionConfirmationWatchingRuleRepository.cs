@@ -10,11 +10,11 @@ using Ztm.Data.Entity.Contexts;
 
 namespace Ztm.WebApi
 {
-    public class SqlTransactionConfirmationWatchRepository<TCallbackResult> : ITransactionConfirmationWatchRepository<TCallbackResult>
+    public class SqlTransactionConfirmationWatchingRuleRepository<TCallbackResult> : ITransactionConfirmationWatchingRuleRepository<TCallbackResult>
     {
         readonly IMainDatabaseFactory db;
 
-        public SqlTransactionConfirmationWatchRepository(IMainDatabaseFactory db)
+        public SqlTransactionConfirmationWatchingRuleRepository(IMainDatabaseFactory db)
         {
             if (db == null)
             {
@@ -24,7 +24,7 @@ namespace Ztm.WebApi
             this.db = db;
         }
 
-        public async Task<TransactionConfirmationWatch<TCallbackResult>> AddAsync(
+        public async Task<TransactionConfirmationWatchingRule<TCallbackResult>> AddAsync(
             uint256 transaction, int confirmation, TimeSpan waitingTime, TCallbackResult successData, TCallbackResult timeoutData, Callback callback, CancellationToken cancellationToken)
         {
             if (transaction == null)
@@ -49,9 +49,9 @@ namespace Ztm.WebApi
 
             using (var db = this.db.CreateDbContext())
             {
-                var watch = await db.TransactionConfirmationWatches
+                var watch = await db.TransactionConfirmationWatchingRules
                     .AddAsync(
-                    new Ztm.Data.Entity.Contexts.Main.TransactionConfirmationWatch
+                    new Ztm.Data.Entity.Contexts.Main.TransactionConfirmationWatchingRule
                     {
                         Id = Guid.NewGuid(),
                         CallbackId = callback.Id,
@@ -70,11 +70,11 @@ namespace Ztm.WebApi
             }
         }
 
-        public async Task<TransactionConfirmationWatch<TCallbackResult>> GetAsync(Guid id, CancellationToken cancellationToken)
+        public async Task<TransactionConfirmationWatchingRule<TCallbackResult>> GetAsync(Guid id, CancellationToken cancellationToken)
         {
             using (var db = this.db.CreateDbContext())
             {
-                var watch = await db.TransactionConfirmationWatches
+                var watch = await db.TransactionConfirmationWatchingRules
                     .Include(e => e.Callback)
                     .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
@@ -82,11 +82,11 @@ namespace Ztm.WebApi
             }
         }
 
-        public async Task<IEnumerable<TransactionConfirmationWatch<TCallbackResult>>> ListAsync(CancellationToken cancellationToken)
+        public async Task<IEnumerable<TransactionConfirmationWatchingRule<TCallbackResult>>> ListAsync(CancellationToken cancellationToken)
         {
             using (var db = this.db.CreateDbContext())
             {
-                var watches = await db.TransactionConfirmationWatches
+                var watches = await db.TransactionConfirmationWatchingRules
                     .Include(e => e.Callback)
                     .ToListAsync(cancellationToken);
 
@@ -94,25 +94,28 @@ namespace Ztm.WebApi
             }
         }
 
-        public async Task SetRemainingWaitingTimeAsync(Guid id, TimeSpan remainingTime, CancellationToken cancellationToken)
+        public async Task SubtractRemainingWaitingTimeAsync(Guid id, TimeSpan consumedTime, CancellationToken cancellationToken)
         {
             using (var db = this.db.CreateDbContext())
             {
-                var watch = await db.TransactionConfirmationWatches
+                var watch = await db.TransactionConfirmationWatchingRules
                     .Include(e => e.Callback)
                     .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
                 if (watch == null)
                 {
-                    throw new KeyNotFoundException("Watch id not found");
+                    throw new KeyNotFoundException("Watch id not found.");
                 }
 
-                if (remainingTime > watch.RemainingWaitingTime)
+                if (consumedTime < TimeSpan.Zero)
                 {
-                    throw new ArgumentException("Remaining time must be not less than current remaining time");
+                    throw new ArgumentException("Consumed time could not be negative.");
                 }
 
-                watch.RemainingWaitingTime = remainingTime;
+                watch.RemainingWaitingTime -= consumedTime;
+                watch.RemainingWaitingTime = watch.RemainingWaitingTime < TimeSpan.Zero
+                    ? TimeSpan.Zero
+                    : watch.RemainingWaitingTime;
 
                 await db.SaveChangesAsync(cancellationToken);
             }
@@ -122,7 +125,7 @@ namespace Ztm.WebApi
         {
             using (var db = this.db.CreateDbContext())
             {
-                var watch = await db.TransactionConfirmationWatches
+                var watch = await db.TransactionConfirmationWatchingRules
                     .Include(e => e.Callback)
                     .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
@@ -137,17 +140,33 @@ namespace Ztm.WebApi
             }
         }
 
-        static TransactionConfirmationWatch<TCallbackResult> ToDomain(
-            Ztm.Data.Entity.Contexts.Main.TransactionConfirmationWatch watch,
+        public async Task<TimeSpan> GetRemainingWaitingTimeAsync(Guid id, CancellationToken cancellationToken)
+        {
+            using (var db = this.db.CreateDbContext())
+            {
+                var watch = await db.TransactionConfirmationWatchingRules
+                    .Include(e => e.Callback)
+                    .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+
+                if (watch == null)
+                {
+                    throw new KeyNotFoundException("Watch id not found.");
+                }
+
+                return watch.RemainingWaitingTime;
+            }
+        }
+
+        static TransactionConfirmationWatchingRule<TCallbackResult> ToDomain(
+            Ztm.Data.Entity.Contexts.Main.TransactionConfirmationWatchingRule watch,
             Callback callback = null)
         {
-            return new TransactionConfirmationWatch<TCallbackResult>(
+            return new TransactionConfirmationWatchingRule<TCallbackResult>(
                 watch.Id,
                 watch.Transaction,
                 watch.Completed,
                 watch.Confirmation,
                 watch.WaitingTime,
-                watch.RemainingWaitingTime,
                 JsonConvert.DeserializeObject<TCallbackResult>(watch.SuccessData),
                 JsonConvert.DeserializeObject<TCallbackResult>(watch.TimeoutData),
                 callback != null

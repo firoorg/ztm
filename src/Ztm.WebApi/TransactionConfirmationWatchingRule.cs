@@ -3,15 +3,14 @@ using NBitcoin;
 
 namespace Ztm.WebApi
 {
-    public class TransactionConfirmationWatch<TCallbackResult>
+    public class TransactionConfirmationWatchingRule<TCallbackResult>
     {
-        public TransactionConfirmationWatch(
+        public TransactionConfirmationWatchingRule(
             Guid id,
             uint256 transaction,
             bool completed,
             int confirmation,
             TimeSpan waitingTime,
-            TimeSpan remainingWaitingTime,
             TCallbackResult success,
             TCallbackResult timeout,
             Callback callback)
@@ -21,7 +20,6 @@ namespace Ztm.WebApi
             this.Completed = completed;
             this.Confirmation = confirmation;
             this.WaitingTime = waitingTime;
-            this.RemainingWaitingTime = remainingWaitingTime;
             this.Success = success;
             this.Timeout = timeout;
             this.Callback = callback;
@@ -32,7 +30,6 @@ namespace Ztm.WebApi
         public bool Completed { get; }
         public int Confirmation { get; }
         public TimeSpan WaitingTime { get; }
-        public TimeSpan RemainingWaitingTime { get; }
         public TCallbackResult Success;
         public TCallbackResult Timeout;
         public Callback Callback { get; }

@@ -3,7 +3,7 @@ using NBitcoin;
 
 namespace Ztm.Data.Entity.Contexts.Main
 {
-    public sealed class TransactionConfirmationWatch
+    public sealed class TransactionConfirmationWatchingRule
     {
         public Guid Id { get; set; }
         public Guid CallbackId { get; set; }

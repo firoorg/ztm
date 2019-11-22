@@ -36,8 +36,8 @@ namespace Ztm.WebApi
             services.AddHttpClient<ICallbackExecuter, HttpCallbackExecuter>();
             services.AddTransient<ICallbackRepository, SqlCallbackRepository>();
             services.AddTransient<
-                ITransactionConfirmationWatchRepository<TransactionConfirmationCallbackResult>,
-                SqlTransactionConfirmationWatchRepository<TransactionConfirmationCallbackResult>>();
+                ITransactionConfirmationWatchingRuleRepository<TransactionConfirmationCallbackResult>,
+                SqlTransactionConfirmationWatchingRuleRepository<TransactionConfirmationCallbackResult>>();
             services.AddHostedService<TransactionConfirmationWatcher>();
             services.AddSingleton<IBlockListener, TransactionConfirmationWatcher>();
 
