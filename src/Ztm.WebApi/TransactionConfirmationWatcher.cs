@@ -141,7 +141,7 @@ namespace Ztm.WebApi
 
             foreach (var rule in rules.Where(w => !w.Completed))
             {
-                if (!await TryToRecoverOnChainTransactionAsync(rule, cancellationToken))
+                if (!await TryToRecoverOnChainTransactionAsync(rule, cancellationToken)) // lgtm[cs/linq/missed-where]
                 {
                     // The transaction is not on chain yet.
                     await SetupTimerAsync(rule);
@@ -455,7 +455,7 @@ namespace Ztm.WebApi
 
             foreach (var watch in watches)
             {
-                if (await StopTimer(watch.Context))
+                if (await StopTimer(watch.Context)) // lgtm[cs/linq/missed-where]
                 {
                     this.watches.AddOrReplace(watch.Context.Id, watch);
                 }
