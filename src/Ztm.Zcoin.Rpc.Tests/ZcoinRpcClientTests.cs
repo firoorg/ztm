@@ -50,6 +50,20 @@ namespace Ztm.Zcoin.Rpc.Tests
         }
 
         [Fact]
+        public void Construct_WithNullArgs_ShouldThrow()
+        {
+            Assert.Throws<ArgumentNullException>(
+                "client",
+                () => new ZcoinRpcClient(null, this.encoder)
+            );
+
+            Assert.Throws<ArgumentNullException>(
+                "encoder",
+                () => new ZcoinRpcClient(this.node.CreateRPCClient(), null)
+            );
+        }
+
+        [Fact]
         public async Task CreateManagedPropertyAsync_PassNullForOwner_ShouldThrow()
         {
             await Assert.ThrowsAsync<ArgumentNullException>(
@@ -480,11 +494,11 @@ namespace Ztm.Zcoin.Rpc.Tests
             ).Returns(exodusTx);
 
             // Act.
-            var tx = await this.subject.SendRawTransactionAsync(createTx, CancellationToken.None);
+            await this.subject.SendRawTransactionAsync(createTx, CancellationToken.None);
 
             // Assert.
             this.encoder.Received(1).Decode(Arg.Any<BitcoinAddress>(), Arg.Any<BitcoinAddress>(), Arg.Any<byte[]>());
-            Assert.Equal(exodusTx, tx.GetExodusTransaction());
+            Assert.Equal(exodusTx, createTx.GetExodusTransaction());
         }
 
         [Fact]
@@ -519,11 +533,11 @@ namespace Ztm.Zcoin.Rpc.Tests
                     "The value is unknown transaction type.");});
 
             // Act.
-            var tx = await this.subject.SendRawTransactionAsync(createTx, CancellationToken.None);
+            await this.subject.SendRawTransactionAsync(createTx, CancellationToken.None);
 
             // Assert.
             this.encoder.Received(1).Decode(Arg.Any<BitcoinAddress>(), Arg.Any<BitcoinAddress>(), Arg.Any<byte[]>());
-            Assert.Null(tx.GetExodusTransaction());
+            Assert.Null(createTx.GetExodusTransaction());
         }
 
         [Fact]
@@ -605,7 +619,9 @@ namespace Ztm.Zcoin.Rpc.Tests
 
             // Act.
             var rawTx = await this.subject.SendTokenAsync(property.Owner, destination, property.Property, new PropertyAmount(10), null, null, CancellationToken.None);
-            await this.subject.SendRawTransactionAsync(rawTx, CancellationToken.None);
+
+            var txToSend = rawTx.Clone();
+            await this.subject.SendRawTransactionAsync(txToSend, CancellationToken.None);
             this.node.Generate(1);
 
             // Assert.
@@ -614,6 +630,15 @@ namespace Ztm.Zcoin.Rpc.Tests
 
             Assert.Equal(new PropertyAmount(990), ownerBalance.balance);
             Assert.Equal(new PropertyAmount(10), destinationBalance.balance);
+
+            var decoded = rawTx.GetExodusTransaction();
+            Assert.NotNull(decoded);
+
+            var simple = (SimpleSendV0)decoded;
+            Assert.Equal(property.Owner, simple.Sender);
+            Assert.Equal(destination, simple.Receiver);
+            Assert.Equal(property.Property.Id, simple.Property);
+            Assert.Equal(new PropertyAmount(10), simple.Amount);
         }
 
         [Fact]

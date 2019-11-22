@@ -49,7 +49,7 @@ namespace Ztm.Zcoin.Rpc
 
         Task<IEnumerable<PropertyInfo>> ListPropertiesAsync(CancellationToken cancellationToken);
 
-        Task<Transaction> SendRawTransactionAsync(Transaction tx, CancellationToken cancellationToken);
+        Task<uint256> SendRawTransactionAsync(Transaction tx, CancellationToken cancellationToken);
 
         Task<uint256> SendToAddressAsync(
             BitcoinAddress address,

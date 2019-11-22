@@ -1,5 +1,6 @@
 using NBitcoin;
 using Xunit;
+using Ztm.Testing;
 using Ztm.Zcoin.NBitcoin.Exodus;
 
 namespace Ztm.Zcoin.NBitcoin.Tests
@@ -31,7 +32,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         public void SetAndGetExodusTransaction_WithValidTransaction_ShouldRetreiveSameTx()
         {
             // Arrange.
-            var address = BitcoinAddress.Create("TG3Pnw5xPZQS8JXMVa3F9WjUFfUqXKsqAz", ZcoinNetworks.Instance.Regtest);
+            var address = TestAddress.Regtest1;
             var propertyId = new PropertyId(3);
             var amount = new PropertyAmount(10);
 

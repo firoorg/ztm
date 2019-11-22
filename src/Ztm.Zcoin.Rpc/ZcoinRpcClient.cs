@@ -24,6 +24,11 @@ namespace Ztm.Zcoin.Rpc
                 throw new ArgumentNullException(nameof(client));
             }
 
+            if (encoder == null)
+            {
+                throw new ArgumentNullException(nameof(encoder));
+            }
+
             this.client = client;
             this.encoder = encoder;
         }
@@ -91,14 +96,28 @@ namespace Ztm.Zcoin.Rpc
             return Transaction.Parse(resp.Result.Value<string>(), this.client.Network);
         }
 
-        public Task<Block> GetBlockAsync(uint256 blockHash, CancellationToken cancellationToken)
+        public async Task<Block> GetBlockAsync(uint256 blockHash, CancellationToken cancellationToken)
         {
-            return this.client.GetBlockAsync(blockHash);
+            var block = await this.client.GetBlockAsync(blockHash);
+
+            foreach (var tx in block.Transactions)
+            {
+                await TryDecodeExodusTransactionAndSetAsync(tx);
+            }
+
+            return block;
         }
 
-        public Task<Block> GetBlockAsync(int height, CancellationToken cancellationToken)
+        public async Task<Block> GetBlockAsync(int height, CancellationToken cancellationToken)
         {
-            return this.client.GetBlockAsync(height);
+            var block = await this.client.GetBlockAsync(height);
+
+            foreach (var tx in block.Transactions)
+            {
+                await TryDecodeExodusTransactionAndSetAsync(tx);
+            }
+
+            return block;
         }
 
         public Task<BlockHeader> GetBlockHeaderAsync(uint256 blockHash, CancellationToken cancellationToken)
@@ -243,16 +262,17 @@ namespace Ztm.Zcoin.Rpc
             }).ToArray();
         }
 
-        public async Task<Transaction> SendRawTransactionAsync(Transaction tx, CancellationToken cancellationToken)
+        public async Task<uint256> SendRawTransactionAsync(Transaction tx, CancellationToken cancellationToken)
         {
             if (tx == null)
             {
                 throw new ArgumentNullException(nameof(tx));
             }
 
-            await this.client.SendRawTransactionAsync(tx);
+            var id = await this.client.SendRawTransactionAsync(tx);
+            await TryDecodeExodusTransactionAndSetAsync(tx);
 
-            return await ExtractExodusTransactionAync(tx);
+            return id;
         }
 
         public Task<uint256> SendToAddressAsync(
@@ -326,7 +346,13 @@ namespace Ztm.Zcoin.Rpc
             // Invoke RPC.
             var resp = await this.client.SendCommandAsync("exodus_send", args.ToArray());
 
-            return Transaction.Parse(resp.Result.Value<string>(), this.client.Network);
+            var tx = Transaction.Parse(resp.Result.Value<string>(), this.client.Network);
+
+            #pragma warning disable CS0618
+            tx.SetExodusTransaction(new SimpleSendV0(from, to, property.Id, amount)); // lgtm[cs/call-to-obsolete-method]
+            #pragma warning restore CS0618
+
+            return tx;
         }
 
         static byte ToNative(Ecosystem ecosystem)
@@ -396,36 +422,45 @@ namespace Ztm.Zcoin.Rpc
             };
         }
 
-        async Task<(string Payload, int PayloadSize)> GetPayloadAsync(Transaction transaction)
+        async Task<(string payload, int payloadSize)> GetPayloadAsync(Transaction transaction)
         {
             var resp = await this.client.SendCommandAsync("exodus_getpayload", new object[]{transaction.GetHash()});
 
             var payload = resp.Result.Value<string>("payload");
             var payloadSize = resp.Result.Value<int>("payloadsize");
 
-            return (payload, payloadSize);
+            return (payload: payload, payloadSize: payloadSize);
         }
 
-        async Task<Transaction> ExtractExodusTransactionAync(Transaction transaction)
+        async Task<ExodusTransaction> TryDecodeExodusTransaction(Transaction transaction)
         {
             var infomation = await DecodeTransactionAsync(transaction);
-            var payload = await GetPayloadAsync(transaction);
+            if (infomation == null)
+            {
+                return null;
+            }
 
-            ExodusTransaction tx;
+            var payload = await GetPayloadAsync(transaction);
 
             try
             {
-                tx = this.encoder.Decode(infomation.SendingAddress, infomation.ReferenceAddress, Encoders.Hex.DecodeData(payload.Payload));
+                return this.encoder.Decode(infomation.SendingAddress, infomation.ReferenceAddress, Encoders.Hex.DecodeData(payload.payload));
             }
             catch (TransactionFieldException)
             {
-                tx = null;
+                return null;
             }
+        }
 
-            #pragma warning disable CS0618
-            transaction.SetExodusTransaction(tx); // lgtm[cs/call-to-obsolete-method]
-            #pragma warning restore CS0618
-            return transaction;
+        async Task TryDecodeExodusTransactionAndSetAsync(Transaction transaction)
+        {
+            var exodusTransaction = await TryDecodeExodusTransaction(transaction);
+            if (exodusTransaction != null)
+            {
+                #pragma warning disable CS0618
+                transaction.SetExodusTransaction(exodusTransaction); // lgtm[cs/call-to-obsolete-method]
+                #pragma warning restore CS0618
+            }
         }
     }
 }
