@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NSubstitute;
 using Xunit;
@@ -27,6 +28,7 @@ namespace Ztm.WebApi.Tests
         readonly RuleRepository ruleRepository;
         readonly IBlocksStorage blockStorage;
         readonly ICallbackExecuter callbackExecuter;
+        readonly ILogger<TransactionConfirmationWatcher> logger;
 
         readonly Uri defaultUrl;
 
@@ -43,13 +45,15 @@ namespace Ztm.WebApi.Tests
                 .Returns(info => mockedBlocks[info.ArgAt<uint256>(0)].ToValueTuple());
 
             this.callbackExecuter = Substitute.For<ICallbackExecuter>();
+            this.logger = Substitute.For<ILogger<TransactionConfirmationWatcher>>();
 
             this.handler = this.subject = new TransactionConfirmationWatcher
             (
                 this.callbackRepository,
                 this.ruleRepository,
                 this.blockStorage,
-                this.callbackExecuter
+                this.callbackExecuter,
+                this.logger
             );
             this.blockListener = this.subject;
             this.defaultUrl = new Uri("http://zcoin.io");
@@ -80,7 +84,8 @@ namespace Ztm.WebApi.Tests
                 this.callbackRepository,
                 this.ruleRepository,
                 this.blockStorage,
-                this.callbackExecuter
+                this.callbackExecuter,
+                this.logger
             );
         }
 
@@ -90,25 +95,31 @@ namespace Ztm.WebApi.Tests
             Assert.Throws<ArgumentNullException>
             (
                 "callbackRepository",
-                () => new TransactionConfirmationWatcher(null, this.ruleRepository, this.blockStorage, this.callbackExecuter)
+                () => new TransactionConfirmationWatcher(null, this.ruleRepository, this.blockStorage, this.callbackExecuter, this.logger)
             );
 
             Assert.Throws<ArgumentNullException>
             (
                 "ruleRepository",
-                () => new TransactionConfirmationWatcher(this.callbackRepository, null, this.blockStorage, this.callbackExecuter)
+                () => new TransactionConfirmationWatcher(this.callbackRepository, null, this.blockStorage, this.callbackExecuter, this.logger)
             );
 
             Assert.Throws<ArgumentNullException>
             (
                 "blocks",
-                () => new TransactionConfirmationWatcher(this.callbackRepository, this.ruleRepository, null, this.callbackExecuter)
+                () => new TransactionConfirmationWatcher(this.callbackRepository, this.ruleRepository, null, this.callbackExecuter, this.logger)
             );
 
             Assert.Throws<ArgumentNullException>
             (
                 "callbackExecuter",
-                () => new TransactionConfirmationWatcher(this.callbackRepository, this.ruleRepository, this.blockStorage, null)
+                () => new TransactionConfirmationWatcher(this.callbackRepository, this.ruleRepository, this.blockStorage, null, this.logger)
+            );
+
+            Assert.Throws<ArgumentNullException>
+            (
+                "logger",
+                () => new TransactionConfirmationWatcher(this.callbackRepository, this.ruleRepository, this.blockStorage, this.callbackExecuter, null)
             );
         }
 
@@ -461,40 +472,6 @@ namespace Ztm.WebApi.Tests
             (
                 Arg.Any<int>(),
                 Arg.Any<CancellationToken>()
-            );
-        }
-
-        [Fact]
-        public async Task AddTransactionAsync_WithOnChainTransactionAndPushBlockPassRequiredConfirmations_ShouldCallExecute()
-        {
-            // Arrange.
-            var transaction = Transaction.Parse(TransactionData.Transaction1, ZcoinNetworks.Instance.Regtest);
-            var builder = new WatchArgsBuilder(this.callbackRepository);
-            builder.transaction = transaction.GetHash();
-
-            this.blockStorage
-                .GetTransactionAsync(transaction.GetHash(), Arg.Any<CancellationToken>())
-                .Returns(transaction);
-
-            var (block, _) = GenerateBlock();
-            this.blockStorage
-                .GetByTransactionAsync(transaction.GetHash(), Arg.Any<CancellationToken>())
-                .Returns((block, 1));
-
-            builder.timeout = TimeSpan.FromSeconds(1);
-            await builder.Call(this.subject.AddTransactionAsync);
-
-            // Act.
-            await this.blockListener.BlockAddedAsync(block, 100, CancellationToken.None);
-
-            // Assert.
-            _ = this.callbackExecuter.Received(1).Execute(
-                Arg.Any<Guid>(),
-                this.defaultUrl,
-                Arg.Is<TransactionConfirmationCallbackResult>
-                (
-                    result => result == builder.successData
-                )
             );
         }
 
@@ -872,7 +849,8 @@ namespace Ztm.WebApi.Tests
                 this.callbackRepository,
                 this.ruleRepository,
                 this.blockStorage,
-                this.callbackExecuter
+                this.callbackExecuter,
+                this.logger
             );
 
             await localWatcher.StartAsync(CancellationToken.None);
