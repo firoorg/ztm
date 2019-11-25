@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -55,13 +56,25 @@ namespace Ztm.WebApi.AddressPools
             }
         }
 
-        public Task ReleaseAsync(Guid id, CancellationToken cancellationToken)
+        public async Task ReleaseAsync(Guid id, CancellationToken cancellationToken)
         {
             this.storageLock.EnterWriteLock();
 
             try
             {
-                return this.ReleaseAsync(id, cancellationToken);
+                var r = await this.storage.GetReservationAsync(id, cancellationToken);
+                if (r == null)
+                {
+                    throw new KeyNotFoundException("The reservation is not found.");
+                }
+
+                if (r.ReleasedDate != null)
+                {
+                    throw new InvalidOperationException("The reservation is already released.");
+                }
+
+                await this.storage.SetLockedStatusAsync(r.ReceivingAddress.Id, false, cancellationToken);
+                await this.storage.SetReleasedTimeAsync(id, cancellationToken);
             }
             finally
             {
@@ -89,7 +102,10 @@ namespace Ztm.WebApi.AddressPools
 
                     if (chosen != null)
                     {
-                        return await this.storage.TryLockAsync(chosen.Id, CancellationToken.None);
+                        var reservation = await this.storage.CreateReservationAsync(chosen.Id, cancellationToken);
+                        await this.storage.SetLockedStatusAsync(chosen.Id, true, cancellationToken);
+
+                        return reservation;
                     }
                 }
             }

@@ -57,6 +57,26 @@ namespace Ztm.WebApi.AddressPools
             }
         }
 
+        public async Task<ReceivingAddressReservation> CreateReservationAsync(Guid id, CancellationToken cancellationToken)
+        {
+            using (var db = this.databaseFactory.CreateDbContext())
+            {
+                var reservation = await db.AddAsync
+                (
+                    new ReceivingAddressReservationModel{
+                        Id = Guid.NewGuid(),
+                        LockedAt = DateTime.UtcNow,
+                        ReceivingAddressId = id,
+                        ReleasedAt = null
+                    }
+                );
+
+                await db.SaveChangesAsync(cancellationToken);
+
+                return ToDomain(reservation.Entity);
+            }
+        }
+
         public async Task<ReceivingAddress> GetAsync(Guid id, CancellationToken cancellationToken)
         {
             using (var db = this.databaseFactory.CreateDbContext())
@@ -69,6 +89,18 @@ namespace Ztm.WebApi.AddressPools
             }
         }
 
+        public async Task<ReceivingAddressReservation> GetReservationAsync(Guid id, CancellationToken cancellationToken)
+        {
+            using (var db = this.databaseFactory.CreateDbContext())
+            {
+                var resv = await db.ReceivingAddressReservations
+                    .Include(e => e.ReceivingAddress)
+                    .FirstAsync(r => r.Id == id);
+
+                return ToDomain(resv);
+            }
+        }
+
         public Task<IEnumerable<ReceivingAddress>> ListReceivingAddressAsync(CancellationToken cancellationToken)
         {
             using (var db = this.databaseFactory.CreateDbContext())
@@ -77,13 +109,29 @@ namespace Ztm.WebApi.AddressPools
             }
         }
 
-        public async Task ReleaseAsync(Guid id, CancellationToken cancellationToken)
+        public async Task SetLockedStatusAsync(Guid id, bool locked, CancellationToken cancellationToken)
         {
             using (var db = this.databaseFactory.CreateDbContext())
-            using (var tx = db.Database.BeginTransaction())
+            {
+                var receivingAddress = await db.ReceivingAddresses
+                    .FirstAsync(r => r.Id == id);
+
+                if (receivingAddress == null)
+                {
+                    throw new KeyNotFoundException("The reserving address id is not found.");
+                }
+
+                receivingAddress.IsLocked = locked;
+
+                await db.SaveChangesAsync();
+            }
+        }
+
+        public async Task SetReleasedTimeAsync(Guid id, CancellationToken cancellationToken)
+        {
+            using (var db = this.databaseFactory.CreateDbContext())
             {
                 var reservation = await db.ReceivingAddressReservations
-                    .Include(r => r.ReceivingAddress)
                     .FirstAsync(r => r.Id == id);
 
                 if (reservation == null)
@@ -91,52 +139,9 @@ namespace Ztm.WebApi.AddressPools
                     throw new KeyNotFoundException("The reservation id is not found.");
                 }
 
-                if (reservation.ReleasedAt != DateTime.MinValue)
-                {
-                    throw new InvalidOperationException("The reservation is already released.");
-                }
-
                 reservation.ReleasedAt = DateTime.UtcNow;
-                reservation.ReceivingAddress.IsLocked = false;
 
                 await db.SaveChangesAsync();
-                tx.Commit();
-            }
-        }
-
-        public async Task<ReceivingAddressReservation> TryLockAsync(Guid id, CancellationToken cancellationToken)
-        {
-            using (var db = this.databaseFactory.CreateDbContext())
-            using (var tx = db.Database.BeginTransaction())
-            {
-                var recv = await db.ReceivingAddresses.FirstAsync(a => a.Id == id, cancellationToken);
-                if (recv == null)
-                {
-                    return null;
-                }
-
-                if (recv.IsLocked)
-                {
-                    return null;
-                }
-
-                recv.IsLocked = true;
-
-                var lockedAt = DateTime.UtcNow;
-                var reservation = await db.AddAsync
-                (
-                    new ReceivingAddressReservationModel{
-                        Id = Guid.NewGuid(),
-                        LockedAt = lockedAt,
-                        ReceivingAddressId = id,
-                        ReleasedAt = DateTime.MinValue
-                    }
-                );
-
-                await db.SaveChangesAsync(cancellationToken);
-                tx.Commit();
-
-                return ToDomain(reservation.Entity);
             }
         }
 

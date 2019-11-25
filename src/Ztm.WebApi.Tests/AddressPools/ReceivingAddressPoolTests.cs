@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
@@ -23,11 +22,9 @@ namespace Ztm.WebApi.Tests.AddressPools
         {
             this.generator = Substitute.For<IAddressGenerator>();
             this.storage = Substitute.ForPartsOf<TestReceivingAddressStorage>();
-            this.choser = Substitute.For<IAddressChoser>();
+            this.choser = new TestChoser();
 
             this.subject = new ReceivingAddressPool(this.generator, this.storage, this.choser);
-
-            MockChoser();
         }
 
         [Fact]
@@ -51,7 +48,7 @@ namespace Ztm.WebApi.Tests.AddressPools
         {
             // Arrange.
             var address = TestAddress.Regtest1;
-            this.generator.GenerateAsync(Arg.Any<CancellationToken>()).Returns(address);
+            this.generator.GenerateAsync(Arg.Any<CancellationToken>()).Returns(Task.FromResult(address));
 
             // Act.
             await this.subject.GenerateAddressAsync(CancellationToken.None);
@@ -77,7 +74,7 @@ namespace Ztm.WebApi.Tests.AddressPools
             // Arrange.
             var address = TestAddress.Regtest1;
             var receivingAddress = await this.storage.AddAddressAsync(address, CancellationToken.None);
-            await this.storage.TryLockAsync(receivingAddress.Id, CancellationToken.None);
+            await this.storage.SetLockedStatusAsync(receivingAddress.Id, true, CancellationToken.None);
 
             // Act.
             var reservation = await this.subject.TryLockAddressAsync(CancellationToken.None);
@@ -87,14 +84,14 @@ namespace Ztm.WebApi.Tests.AddressPools
         }
 
         [Fact]
-        public async Task TryLockAddressAsync_AndHaveAnAvailable_ShouldReturnNull()
+        public async Task TryLockAddressAsync_AndHaveAnAvailable_ShouldNotReturnNull()
         {
             // Arrange.
             var address = TestAddress.Regtest1;
-            await this.storage.AddAddressAsync(address, CancellationToken.None);
+            var recv = await this.storage.AddAddressAsync(address, CancellationToken.None);
 
             // Act.
-            var recv = await this.subject.TryLockAddressAsync(CancellationToken.None);
+            var resv = await this.subject.TryLockAddressAsync(CancellationToken.None);
 
             // Assert.
             Assert.NotNull(recv);
@@ -117,19 +114,61 @@ namespace Ztm.WebApi.Tests.AddressPools
             Assert.Null(recv);
         }
 
-        void MockChoser()
+        [Fact]
+        public async Task TryLockAddressAsync_PoolHaveAReleaed_ShouldSuccess()
         {
-            this.choser.Choose(Arg.Any<IEnumerable<ReceivingAddress>>())
-                .Returns(info => {
-                    var addresses = info.ArgAt<IEnumerable<ReceivingAddress>>(0);
+            // Arrange.
+            var address = TestAddress.Regtest1;
+            var recv = await this.storage.AddAddressAsync(address, CancellationToken.None);
+            var reservation1 = await this.subject.TryLockAddressAsync(CancellationToken.None);
 
-                    if (addresses == null || addresses.Count() == 0)
-                    {
-                        return null;
-                    }
+            await this.subject.ReleaseAsync(reservation1.Id, CancellationToken.None);
 
-                    return addresses.First();
-                });
+            // Act.
+            var reservation2 = await this.subject.TryLockAddressAsync(CancellationToken.None);
+
+            // Assert.
+            Assert.NotEqual(reservation1.Id, reservation2.Id);
+            Assert.Null(reservation2.ReleasedDate);
+        }
+
+        [Fact]
+        public async Task ReleaseAsync_UnreleasedReservation_ShouldSuccess()
+        {
+            // Arrange.
+            var address = TestAddress.Regtest1;
+            var recv = await this.storage.AddAddressAsync(address, CancellationToken.None);
+            var resv = await this.subject.TryLockAddressAsync(CancellationToken.None);
+
+            // Act.
+            await this.subject.ReleaseAsync(resv.Id, CancellationToken.None);
+
+            // Assert.
+            var updatedRecv = await this.storage.GetAsync(recv.Id, CancellationToken.None);
+            var updatedResv = await this.storage.GetReservationAsync(resv.Id, CancellationToken.None);
+
+            Assert.False(updatedRecv.IsLocked);
+            Assert.NotNull(updatedResv.ReleasedDate);
+        }
+
+        [Fact]
+        public void ReleasedAsync_WithNotExistReservation_ShouldThrow()
+        {
+            _ = Assert.ThrowsAsync<KeyNotFoundException>(
+                () => this.subject.ReleaseAsync(Guid.NewGuid(), CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task ReleasedAsync_Released_ShouldThrow()
+        {
+            var address = TestAddress.Regtest1;
+            var recv = await this.storage.AddAddressAsync(address, CancellationToken.None);
+            var resv = await this.subject.TryLockAddressAsync(CancellationToken.None);
+
+            await this.subject.ReleaseAsync(resv.Id, CancellationToken.None);
+
+            _ = Assert.ThrowsAsync<InvalidOperationException>(
+                () => this.subject.ReleaseAsync(resv.Id, CancellationToken.None));
         }
     }
 }

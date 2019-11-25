@@ -18,10 +18,22 @@ namespace Ztm.WebApi.Tests.AddressPools
 
         public virtual Task<ReceivingAddress> AddAddressAsync(BitcoinAddress address, CancellationToken cancellationToken)
         {
-            var recv = new ReceivingAddress(Guid.NewGuid(), address, false, null);
+            var recv = new ReceivingAddress(Guid.NewGuid(), address, false, new List<ReceivingAddressReservation>());
             this.receivingAddresses.Add(recv.Id, recv);
 
             return Task.FromResult(recv);
+        }
+
+        public Task<ReceivingAddressReservation> CreateReservationAsync(Guid id, CancellationToken cancellationToken)
+        {
+            var resv = new ReceivingAddressReservation(Guid.NewGuid(), null, DateTime.UtcNow, null);
+            if (this.receivingAddresses.TryGetValue(id, out var recv))
+            {
+
+                recv.ReceivingAddressReservations.Add(resv);
+            }
+
+            return Task.FromResult(resv);
         }
 
         public virtual Task<ReceivingAddress> GetAsync(Guid id, CancellationToken cancellationToken)
@@ -34,55 +46,45 @@ namespace Ztm.WebApi.Tests.AddressPools
             return Task.FromResult<ReceivingAddress>(null);
         }
 
+        public Task<ReceivingAddressReservation> GetReservationAsync(Guid id, CancellationToken cancellationToken)
+        {
+            foreach (var address in this.receivingAddresses)
+            {
+                foreach (var reservation in address.Value.ReceivingAddressReservations.Where(r => r.Id == id))
+                {
+                    return Task.FromResult(new ReceivingAddressReservation(reservation.Id, address.Value, reservation.ReservedDate, reservation.ReleasedDate));
+                }
+            }
+
+            return Task.FromResult<ReceivingAddressReservation>(null);
+        }
+
         public virtual Task<IEnumerable<ReceivingAddress>> ListReceivingAddressAsync(CancellationToken cancellationToken)
         {
             return Task.FromResult<IEnumerable<ReceivingAddress>>(this.receivingAddresses.Select(a => a.Value).ToList());
         }
 
-        public virtual Task ReleaseAsync(Guid id, CancellationToken cancellationToken)
+        public Task SetLockedStatusAsync(Guid id, bool locked, CancellationToken cancellationToken)
         {
-            if (this.receivingAddresses.TryGetValue(id, out var recv))
+            if (this.receivingAddresses.TryGetValue(id, out var v))
             {
-                var reservations = recv.ReceivingAddressReservations == null
-                    ? new List<ReceivingAddressReservation>()
-                    : recv.ReceivingAddressReservations;
-
-                var last = reservations.Last();
-                reservations[reservations.Count - 1] = new ReceivingAddressReservation(last.Id, last.ReceivingAddress, last.ReservedDate, DateTime.UtcNow);
-
-                var updated = new ReceivingAddress(recv.Id, recv.Address, false, reservations);
-
-                this.receivingAddresses.AddOrReplace(id, updated);
+                this.receivingAddresses[v.Id] = new ReceivingAddress(v.Id, v.Address, locked, v.ReceivingAddressReservations);
             }
 
             return Task.CompletedTask;
         }
 
-        public virtual Task<ReceivingAddressReservation> TryLockAsync(Guid id, CancellationToken cancellationToken)
+        public async Task SetReleasedTimeAsync(Guid id, CancellationToken cancellationToken)
         {
-            if (this.receivingAddresses.TryGetValue(id, out var recv))
+            var reservation = await GetReservationAsync(id, cancellationToken);
+            if (reservation != null)
             {
-                if (recv.IsLocked)
-                {
-                    throw new InvalidOperationException();
-                }
+                var recv = this.receivingAddresses[reservation.ReceivingAddress.Id];
+                recv.ReceivingAddressReservations.RemoveAll(r => r.Id == id);
 
-                var lockedAt = DateTime.UtcNow;
-                var reservation = new ReceivingAddressReservation(Guid.NewGuid(), recv, lockedAt, DateTime.MinValue);
-
-                var reservations = recv.ReceivingAddressReservations == null
-                    ? new List<ReceivingAddressReservation>()
-                    : recv.ReceivingAddressReservations;
-
-                reservations.Add(reservation);
-                var updated = new ReceivingAddress(recv.Id, recv.Address, true, reservations);
-
-                this.receivingAddresses.AddOrReplace(id, updated);
-
-                return Task.FromResult(reservation);
+                recv.ReceivingAddressReservations.Add(new ReceivingAddressReservation(
+                    reservation.Id, reservation.ReceivingAddress, reservation.ReservedDate, DateTime.UtcNow));
             }
-
-            return Task.FromResult<ReceivingAddressReservation>(null);
         }
     }
 }

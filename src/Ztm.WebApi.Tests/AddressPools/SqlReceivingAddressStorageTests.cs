@@ -111,109 +111,57 @@ namespace Ztm.WebApi.Tests.AddressPools
         }
 
         [Fact]
-        public async Task TryLockAsync_WithAvailableExist_ShouldSuccess()
-        {
-            // Arrange.
-            var result = await this.subject.AddAddressAsync(TestAddress.Regtest1, CancellationToken.None);
-            var startedAt = DateTime.UtcNow;
-
-            // Act.
-            var reservation = await this.subject.TryLockAsync(result.Id, CancellationToken.None);
-            var recv = await this.subject.GetAsync(result.Id, CancellationToken.None);
-
-            // Assert.
-            Assert.NotNull(reservation);
-
-            Assert.NotEqual(Guid.Empty, reservation.Id);
-            Assert.Equal(result.Id, reservation.ReceivingAddress.Id);
-
-            Assert.True(startedAt < reservation.ReservedDate);
-
-            Assert.Equal(DateTime.MinValue, reservation.ReleasedDate);
-
-            Assert.Single(recv.ReceivingAddressReservations);
-            Assert.Equal(reservation.Id, recv.ReceivingAddressReservations.First().Id);
-        }
-
-        [Fact]
-        public async Task TryLockAsync_Locked_ShouldReturnNull()
-        {
-            // Arrange.
-            var result = await this.subject.AddAddressAsync(TestAddress.Regtest1, CancellationToken.None);
-
-            // Act.
-            var reservation = await this.subject.TryLockAsync(result.Id, CancellationToken.None);
-            var anotherReservation = await this.subject.TryLockAsync(result.Id, CancellationToken.None);
-
-            var recv = await this.subject.GetAsync(result.Id, CancellationToken.None);
-
-            // Assert.
-            Assert.NotNull(reservation);
-            Assert.Null(anotherReservation);
-
-            Assert.Single(recv.ReceivingAddressReservations);
-            Assert.Equal(reservation.Id, recv.ReceivingAddressReservations.First().Id);
-        }
-
-        [Fact]
-        public async Task ReleaseAsync_WithLocked_ShouldUnlock()
+        public async Task CreateReservationAsync_WithExistAddress_ShouldSuccess()
         {
             // Arrange.
             var address = await this.subject.AddAddressAsync(TestAddress.Regtest1, CancellationToken.None);
-            var reservation = await this.subject.TryLockAsync(address.Id, CancellationToken.None);
+            var startedTime = DateTime.UtcNow;
 
             // Act.
-            await this.subject.ReleaseAsync(reservation.Id, CancellationToken.None);
-            var unlockedRecv = await this.subject.GetAsync(address.Id, CancellationToken.None);
+            var r = await this.subject.CreateReservationAsync(address.Id, CancellationToken.None);
+            var a = await this.subject.GetAsync(address.Id, CancellationToken.None);
 
             // Assert.
-            Assert.Single(unlockedRecv.ReceivingAddressReservations);
-            var updatedResevation = unlockedRecv.ReceivingAddressReservations.First();
+            Assert.NotEqual(Guid.Empty, r.Id);
+            Assert.True(startedTime < r.ReservedDate);
+            Assert.Null(r.ReleasedDate);
 
-            Assert.True(updatedResevation.ReservedDate < updatedResevation.ReleasedDate);
-            Assert.True(unlockedRecv.Available);
+            Assert.Single(a.ReceivingAddressReservations);
+            Assert.Equal(r.Id, a.ReceivingAddressReservations.First().Id);
         }
 
         [Fact]
-        public async Task ReleaseAsync_Released_ShouldThrow()
+        public async Task GetReservationAsync_WithExistsReservation_ShouldSuccess()
         {
             // Arrange.
             var address = await this.subject.AddAddressAsync(TestAddress.Regtest1, CancellationToken.None);
-            var reservation = await this.subject.TryLockAsync(address.Id, CancellationToken.None);
-            await this.subject.ReleaseAsync(reservation.Id, CancellationToken.None);
+            var startedTime = DateTime.UtcNow;
+            var r = await this.subject.CreateReservationAsync(address.Id, CancellationToken.None);
 
-            // Act & Assert.
-            _ = Assert.ThrowsAsync<InvalidOperationException>(
-                () => this.subject.ReleaseAsync(reservation.Id, CancellationToken.None)
-            );
+            // Act.
+            var retreived = await this.subject.GetReservationAsync(r.Id, CancellationToken.None);
+
+            // Assert.
+            Assert.Equal(r.Id, retreived.Id);
+            Assert.Equal(r.ReservedDate, retreived.ReservedDate);
+            Assert.Null(retreived.ReleasedDate);
         }
 
         [Fact]
-        public void ReleaseAsync_InExist_ShouldThrow()
-        {
-            _ = Assert.ThrowsAsync<KeyNotFoundException>(
-                () => this.subject.ReleaseAsync(Guid.NewGuid(), CancellationToken.None)
-            );
-        }
-
-        [Fact]
-        public async Task TryLockAsync_ReleasedAddress_ShouldSuccess()
+        public async Task SetReleasedTimeAsync_WithValidId_ShouldSuccess()
         {
             // Arrange.
             var address = await this.subject.AddAddressAsync(TestAddress.Regtest1, CancellationToken.None);
-            var reservation = await this.subject.TryLockAsync(address.Id, CancellationToken.None);
-            await this.subject.ReleaseAsync(reservation.Id, CancellationToken.None);
+            var startedTime = DateTime.UtcNow;
+            var r = await this.subject.CreateReservationAsync(address.Id, CancellationToken.None);
 
             // Act.
-            var newReservation = await this.subject.TryLockAsync(address.Id, CancellationToken.None);
-            var lockedAddress = await this.subject.GetAsync(address.Id, CancellationToken.None);
+            await this.subject.SetReleasedTimeAsync(r.Id,CancellationToken.None);
+            var updated = await this.subject.GetReservationAsync(r.Id, CancellationToken.None);
 
             // Assert.
-            Assert.NotNull(lockedAddress);
-            Assert.False(lockedAddress.Available);
-            Assert.Equal(2, lockedAddress.ReceivingAddressReservations.Count);
-
-            Assert.NotEmpty(lockedAddress.ReceivingAddressReservations.Where(r => r.ReleasedDate == DateTime.MinValue));
+            Assert.NotNull(updated.ReleasedDate);
+            Assert.True(startedTime < updated.ReleasedDate);
         }
     }
 }
