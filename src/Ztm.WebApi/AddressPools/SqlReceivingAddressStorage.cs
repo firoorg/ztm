@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -106,13 +104,8 @@ namespace Ztm.WebApi.AddressPools
             }
         }
 
-        public async Task<ReceivingAddressReservation> TryLockAsync(Guid id, TimeSpan timeout, CancellationToken cancellationToken)
+        public async Task<ReceivingAddressReservation> TryLockAsync(Guid id, CancellationToken cancellationToken)
         {
-            if (timeout < TimeSpan.Zero)
-            {
-                throw new ArgumentException(nameof(timeout), "Timeout can not less than or equal zero.");
-            }
-
             using (var db = this.databaseFactory.CreateDbContext())
             using (var tx = db.Database.BeginTransaction())
             {
@@ -134,7 +127,6 @@ namespace Ztm.WebApi.AddressPools
                 (
                     new ReceivingAddressReservationModel{
                         Id = Guid.NewGuid(),
-                        Due = lockedAt.Add(timeout),
                         LockedAt = lockedAt,
                         ReceivingAddressId = id,
                         ReleasedAt = DateTime.MinValue
@@ -173,8 +165,9 @@ namespace Ztm.WebApi.AddressPools
                     ? ToDomain(reservationModel.ReceivingAddress, false)
                     : null,
                 DateTime.SpecifyKind(reservationModel.LockedAt, DateTimeKind.Utc),
-                DateTime.SpecifyKind(reservationModel.ReleasedAt, DateTimeKind.Utc),
-                DateTime.SpecifyKind(reservationModel.Due, DateTimeKind.Utc)
+                reservationModel.ReleasedAt.HasValue
+                    ? DateTime.SpecifyKind(reservationModel.ReleasedAt.Value, DateTimeKind.Utc)
+                    : new Nullable<DateTime>()
             );
         }
     }

@@ -10,6 +10,7 @@ using Ztm.Configuration;
 using Ztm.Data.Entity.Contexts;
 using Ztm.Data.Entity.Postgres;
 using Ztm.WebApi.Binders;
+using Ztm.WebApi.AddressPools;
 using Ztm.Zcoin.NBitcoin;
 using Ztm.Zcoin.Rpc;
 using Ztm.Zcoin.Synchronization;
@@ -34,6 +35,9 @@ namespace Ztm.WebApi
         {
             // ASP.NET Services.
             services.AddMvc(ConfigureMvc).SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+
+            // Address Pools
+            UseAddressPools(services);
 
             // Fundamentals Services.
             services.AddSingleton<Network>(CreateZcoinNetwork);
@@ -88,6 +92,15 @@ namespace Ztm.WebApi
                 config.Network.Type,
                 RPCCredentialString.Parse($"{config.Rpc.UserName}:{config.Rpc.Password}")
             );
+        }
+
+        void UseAddressPools(IServiceCollection services)
+        {
+            services.AddTransient<IAddressChoser, LessUsageFirstChoser>();
+            services.AddTransient<IAddressGenerator, RpcAddressGenerator>();
+            services.AddTransient<IReceivingAddressStorage, SqlReceivingAddressStorage>();
+
+            services.AddSingleton<IReceivingAddressPool, ReceivingAddressPool>();
         }
     }
 }

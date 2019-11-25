@@ -118,7 +118,7 @@ namespace Ztm.WebApi.Tests.AddressPools
             var startedAt = DateTime.UtcNow;
 
             // Act.
-            var reservation = await this.subject.TryLockAsync(result.Id, TimeSpan.FromSeconds(1), CancellationToken.None);
+            var reservation = await this.subject.TryLockAsync(result.Id, CancellationToken.None);
             var recv = await this.subject.GetAsync(result.Id, CancellationToken.None);
 
             // Assert.
@@ -128,7 +128,6 @@ namespace Ztm.WebApi.Tests.AddressPools
             Assert.Equal(result.Id, reservation.ReceivingAddress.Id);
 
             Assert.True(startedAt < reservation.ReservedDate);
-            Assert.True(startedAt.Add(TimeSpan.FromSeconds(1)) < reservation.Due);
 
             Assert.Equal(DateTime.MinValue, reservation.ReleasedDate);
 
@@ -143,8 +142,8 @@ namespace Ztm.WebApi.Tests.AddressPools
             var result = await this.subject.AddAddressAsync(TestAddress.Regtest1, CancellationToken.None);
 
             // Act.
-            var reservation = await this.subject.TryLockAsync(result.Id, TimeSpan.FromSeconds(1), CancellationToken.None);
-            var anotherReservation = await this.subject.TryLockAsync(result.Id, TimeSpan.FromSeconds(1), CancellationToken.None);
+            var reservation = await this.subject.TryLockAsync(result.Id, CancellationToken.None);
+            var anotherReservation = await this.subject.TryLockAsync(result.Id, CancellationToken.None);
 
             var recv = await this.subject.GetAsync(result.Id, CancellationToken.None);
 
@@ -157,30 +156,11 @@ namespace Ztm.WebApi.Tests.AddressPools
         }
 
         [Fact]
-        public void TryLockAsync_InvalidTimeOut_ShouldThrow()
-        {
-            _ = Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-                "timeout",
-                () => this.subject.TryLockAsync(Guid.Empty, TimeSpan.FromTicks(0), CancellationToken.None)
-            );
-
-            _ = Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-                "timeout",
-                () => this.subject.TryLockAsync(Guid.Empty, TimeSpan.FromTicks(-1), CancellationToken.None)
-            );
-
-            _ = Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-                "timeout",
-                () => this.subject.TryLockAsync(Guid.Empty, TimeSpan.MinValue, CancellationToken.None)
-            );
-        }
-
-        [Fact]
         public async Task ReleaseAsync_WithLocked_ShouldUnlock()
         {
             // Arrange.
             var address = await this.subject.AddAddressAsync(TestAddress.Regtest1, CancellationToken.None);
-            var reservation = await this.subject.TryLockAsync(address.Id, TimeSpan.FromSeconds(1), CancellationToken.None);
+            var reservation = await this.subject.TryLockAsync(address.Id, CancellationToken.None);
 
             // Act.
             await this.subject.ReleaseAsync(reservation.Id, CancellationToken.None);
@@ -199,7 +179,7 @@ namespace Ztm.WebApi.Tests.AddressPools
         {
             // Arrange.
             var address = await this.subject.AddAddressAsync(TestAddress.Regtest1, CancellationToken.None);
-            var reservation = await this.subject.TryLockAsync(address.Id, TimeSpan.FromSeconds(1), CancellationToken.None);
+            var reservation = await this.subject.TryLockAsync(address.Id, CancellationToken.None);
             await this.subject.ReleaseAsync(reservation.Id, CancellationToken.None);
 
             // Act & Assert.
@@ -221,11 +201,11 @@ namespace Ztm.WebApi.Tests.AddressPools
         {
             // Arrange.
             var address = await this.subject.AddAddressAsync(TestAddress.Regtest1, CancellationToken.None);
-            var reservation = await this.subject.TryLockAsync(address.Id, TimeSpan.FromSeconds(1), CancellationToken.None);
+            var reservation = await this.subject.TryLockAsync(address.Id, CancellationToken.None);
             await this.subject.ReleaseAsync(reservation.Id, CancellationToken.None);
 
             // Act.
-            var newReservation = await this.subject.TryLockAsync(address.Id, TimeSpan.FromDays(1), CancellationToken.None);
+            var newReservation = await this.subject.TryLockAsync(address.Id, CancellationToken.None);
             var lockedAddress = await this.subject.GetAsync(address.Id, CancellationToken.None);
 
             // Assert.
