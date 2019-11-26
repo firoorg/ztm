@@ -15,22 +15,22 @@ namespace Ztm.Zcoin.Rpc
     public sealed class ZcoinRpcClient : IZcoinRpcClient
     {
         readonly RPCClient client;
-        readonly ITransactionEncoder encoder;
+        readonly ITransactionEncoder exodusEncoder;
 
-        public ZcoinRpcClient(RPCClient client, ITransactionEncoder encoder)
+        public ZcoinRpcClient(RPCClient client, ITransactionEncoder exodusEncoder)
         {
             if (client == null)
             {
                 throw new ArgumentNullException(nameof(client));
             }
 
-            if (encoder == null)
+            if (exodusEncoder == null)
             {
-                throw new ArgumentNullException(nameof(encoder));
+                throw new ArgumentNullException(nameof(exodusEncoder));
             }
 
             this.client = client;
-            this.encoder = encoder;
+            this.exodusEncoder = exodusEncoder;
         }
 
         public void Dispose()
@@ -164,6 +164,12 @@ namespace Ztm.Zcoin.Rpc
         public Task<BitcoinAddress> GetNewAddressAsync(CancellationToken cancellationToken)
         {
             return this.client.GetNewAddressAsync();
+        }
+
+        public async Task<byte[]> GetExodusPayloadAsync(uint256 transaction, CancellationToken cancellationToken)
+        {
+            var resp = await this.client.SendCommandAsync("exodus_getpayload", transaction);
+            return Encoders.Hex.DecodeData(resp.Result.Value<string>("payload"));
         }
 
         public async Task<(PropertyAmount balance, PropertyAmount reserved)> GetPropertyBalanceAsync(
@@ -403,16 +409,6 @@ namespace Ztm.Zcoin.Rpc
             }
         }
 
-        async Task<(string payload, int payloadSize)> GetPayloadAsync(Transaction transaction)
-        {
-            var resp = await this.client.SendCommandAsync("exodus_getpayload", new object[]{transaction.GetHash()});
-
-            var payload = resp.Result.Value<string>("payload");
-            var payloadSize = resp.Result.Value<int>("payloadsize");
-
-            return (payload: payload, payloadSize: payloadSize);
-        }
-
         async Task<ExodusTransaction> TryDecodeExodusTransaction(Transaction transaction)
         {
             var infomation = await GetExodusTransactionAsync(transaction.GetHash(), CancellationToken.None);
@@ -421,15 +417,19 @@ namespace Ztm.Zcoin.Rpc
                 return null;
             }
 
-            var payload = await GetPayloadAsync(transaction);
+            var payload = await GetExodusPayloadAsync(transaction.GetHash(), CancellationToken.None);
 
             try
             {
-                return this.encoder.Decode(infomation.SendingAddress, infomation.ReferenceAddress, Encoders.Hex.DecodeData(payload.payload));
+                return this.exodusEncoder.Decode(infomation.SendingAddress, infomation.ReferenceAddress, payload);
             }
-            catch (TransactionFieldException)
+            catch (TransactionFieldException ex)
             {
-                return null;
+                if (ex.Field == TransactionFieldException.TypeField)
+                {
+                    return null;
+                }
+                throw;
             }
         }
 

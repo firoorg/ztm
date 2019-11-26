@@ -13,9 +13,9 @@ namespace Ztm.Zcoin.Rpc
         readonly Uri serverUri;
         readonly NetworkType networkType;
         readonly RPCCredentialString credential;
-        readonly ITransactionEncoder encoder;
+        readonly ITransactionEncoder exodusEncoder;
 
-        public ZcoinRpcClientFactory(Uri server, NetworkType type, RPCCredentialString credential, ITransactionEncoder encoder)
+        public ZcoinRpcClientFactory(Uri server, NetworkType type, RPCCredentialString credential, ITransactionEncoder exodusEncoder)
         {
             if (server == null)
             {
@@ -27,15 +27,15 @@ namespace Ztm.Zcoin.Rpc
                 throw new ArgumentNullException(nameof(credential));
             }
 
-            if (encoder == null)
+            if (exodusEncoder == null)
             {
-                throw new ArgumentNullException(nameof(encoder));
+                throw new ArgumentNullException(nameof(exodusEncoder));
             }
 
             this.serverUri = server;
             this.networkType = type;
             this.credential = credential;
-            this.encoder = encoder;
+            this.exodusEncoder = exodusEncoder;
         }
 
         public async Task<IZcoinRpcClient> CreateRpcClientAsync(CancellationToken cancellationToken)
@@ -45,7 +45,7 @@ namespace Ztm.Zcoin.Rpc
 
             await client.ScanRPCCapabilitiesAsync();
 
-            return new ZcoinRpcClient(client, encoder);
+            return new ZcoinRpcClient(client, exodusEncoder);
         }
     }
 }

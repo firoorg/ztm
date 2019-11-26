@@ -47,8 +47,8 @@ namespace Ztm.WebApi
             services.AddTransient<IBlocksRetriever, BlocksRetriever>();
             services.AddSingleton<IBlocksStorage, BlocksStorage>();
 
-            // Transaction Encoder Services.
-            services.AddTransactionEncoder();
+            // NBitcoin Services.
+            services.AddNBitcoin();
 
             // Background Services.
             services.AddHostedService<BlocksSynchronizer>();
@@ -91,7 +91,7 @@ namespace Ztm.WebApi
                 config.Rpc.Address,
                 config.Network.Type,
                 RPCCredentialString.Parse($"{config.Rpc.UserName}:{config.Rpc.Password}"),
-                (ITransactionEncoder)provider.GetRequiredService(typeof(ITransactionEncoder))
+                provider.GetRequiredService<ITransactionEncoder>()
             );
         }
     }

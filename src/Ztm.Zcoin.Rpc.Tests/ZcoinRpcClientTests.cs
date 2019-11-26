@@ -3,11 +3,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
+using NBitcoin.DataEncoders;
 using NBitcoin.Tests;
 using NSubstitute;
 using Xunit;
 using Ztm.Testing;
-using Ztm.Zcoin.NBitcoin;
 using Ztm.Zcoin.NBitcoin.Exodus;
 using Ztm.Zcoin.Testing;
 
@@ -58,7 +58,7 @@ namespace Ztm.Zcoin.Rpc.Tests
             );
 
             Assert.Throws<ArgumentNullException>(
-                "encoder",
+                "exodusEncoder",
                 () => new ZcoinRpcClient(this.node.CreateRPCClient(), null)
             );
         }
@@ -654,6 +654,46 @@ namespace Ztm.Zcoin.Rpc.Tests
             Assert.Equal(0, infomation.Version);
             Assert.Equal(54, infomation.TypeInt);
             Assert.Equal("Create Property - Manual", infomation.Type);
+        }
+
+        [Fact]
+        public async Task GetExodusPayloadAsync_WithValidExistTransaction_ShouldSuccess()
+        {
+            // Arrange.
+            var owner = await this.subject.GetNewAddressAsync(CancellationToken.None);
+
+            this.node.Generate(101);
+            await this.subject.SendToAddressAsync(owner, Money.Coins(30), null, null, false, CancellationToken.None);
+            this.node.Generate(1);
+
+            var createTx = await this.subject.CreateManagedPropertyAsync(
+                owner,
+                Ecosystem.Main,
+                PropertyType.Indivisible,
+                null,
+                "Company",
+                "Private",
+                "Satang Corporation",
+                "https://satang.com",
+                "Provides cryptocurrency solutions.",
+                CancellationToken.None
+            );
+
+            await this.subject.SendRawTransactionAsync(createTx, CancellationToken.None);
+            this.node.Generate(1);
+
+            // Act.
+            var payload = await this.subject.GetExodusPayloadAsync(createTx.GetHash(), CancellationToken.None);
+
+            // Assert.
+            Assert.Equal
+            (
+                Encoders.Hex.DecodeData(
+                    "0000003601000100000000436f6d70616e79005072697661746500536174616e6720436f72706f726174696" +
+                    "f6e0068747470733a2f2f736174616e672e636f6d0050726f76696465732063727970746f63757272656e63" +
+                    "7920736f6c7574696f6e732e00"),
+                payload
+            );
         }
 
         class ManagedProperty

@@ -24,7 +24,7 @@ namespace Ztm.Zcoin.Rpc.Tests
         {
             Assert.Throws<ArgumentNullException>("server", () =>
             {
-                new ZcoinRpcClientFactory(server: null, type: NetworkType.Regtest, credential: new RPCCredentialString(), encoder: this.encoder);
+                new ZcoinRpcClientFactory(server: null, type: NetworkType.Regtest, credential: new RPCCredentialString(), exodusEncoder: this.encoder);
             });
         }
 
@@ -33,16 +33,16 @@ namespace Ztm.Zcoin.Rpc.Tests
         {
             Assert.Throws<ArgumentNullException>("credential", () =>
             {
-                new ZcoinRpcClientFactory(server: new Uri("http://127.0.0.1"), type: NetworkType.Regtest, credential: null, encoder: this.encoder);
+                new ZcoinRpcClientFactory(server: new Uri("http://127.0.0.1"), type: NetworkType.Regtest, credential: null, exodusEncoder: this.encoder);
             });
         }
 
         [Fact]
         public void Constructor_PassNullEncoder_ShouldThrow()
         {
-            Assert.Throws<ArgumentNullException>("encoder", () =>
+            Assert.Throws<ArgumentNullException>("exodusEncoder", () =>
             {
-                new ZcoinRpcClientFactory(server: new Uri("http://127.0.0.1"), type: NetworkType.Regtest, credential: new RPCCredentialString(), encoder: null);
+                new ZcoinRpcClientFactory(server: new Uri("http://127.0.0.1"), type: NetworkType.Regtest, credential: new RPCCredentialString(), exodusEncoder: null);
             });
         }
 
