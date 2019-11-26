@@ -392,9 +392,9 @@ namespace Ztm.WebApi
                 throw new ArgumentNullException(nameof(watches));
             }
 
-            foreach (var watch in watches)
+            foreach (var watch in watches) // lgtm [cs/linq/missed-where]
             {
-                if (await StopTimer(watch.Context)) // lgtm[cs/linq/missed-where]
+                if (await StopTimer(watch.Context))
                 {
                     this.watches.AddOrReplace(watch.Context.Id, watch);
                 }
