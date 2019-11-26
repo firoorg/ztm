@@ -10,6 +10,6 @@ namespace Ztm.WebApi.AddressPools
         Task<ReceivingAddressReservation> TryLockAddressAsync(
             CancellationToken cancellationToken);
 
-        Task ReleaseAsync(Guid id, CancellationToken cancellationToken);
+        Task ReleaseAddressAsync(Guid id, CancellationToken cancellationToken);
     }
 }

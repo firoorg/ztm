@@ -58,7 +58,7 @@ namespace Ztm.WebApi.Tests.AddressPools
             // Assert.
             Assert.NotEqual(Guid.Empty, result.Id);
             Assert.Equal(address, result.Address);
-            Assert.Null(result.ReceivingAddressReservations);
+            Assert.Empty(result.ReceivingAddressReservations);
         }
 
         [Fact]
@@ -125,11 +125,11 @@ namespace Ztm.WebApi.Tests.AddressPools
             Assert.NotNull(reservation);
 
             Assert.NotEqual(Guid.Empty, reservation.Id);
-            Assert.Equal(result.Id, reservation.ReceivingAddress.Id);
+            Assert.Equal(result.Id, reservation.Address.Id);
 
             Assert.True(startedAt < reservation.ReservedDate);
 
-            Assert.Equal(DateTime.MinValue, reservation.ReleasedDate);
+            Assert.Null(reservation.ReleasedDate);
 
             Assert.Single(recv.ReceivingAddressReservations);
             Assert.Equal(reservation.Id, recv.ReceivingAddressReservations.First().Id);
@@ -213,7 +213,7 @@ namespace Ztm.WebApi.Tests.AddressPools
             Assert.False(lockedAddress.Available);
             Assert.Equal(2, lockedAddress.ReceivingAddressReservations.Count);
 
-            Assert.NotEmpty(lockedAddress.ReceivingAddressReservations.Where(r => r.ReleasedDate == DateTime.MinValue));
+            Assert.NotEmpty(lockedAddress.ReceivingAddressReservations.Where(r => r.ReleasedDate == null));
         }
     }
 }

@@ -73,7 +73,7 @@ namespace Ztm.WebApi.AddressPools
         {
             using (var db = this.databaseFactory.CreateDbContext())
             {
-                return Task.FromResult<IEnumerable<ReceivingAddress>>(db.ReceivingAddresses.Select(r => ToDomain(r, true)).ToList());
+                return Task.FromResult<IEnumerable<ReceivingAddress>>(db.ReceivingAddresses.Select(r => ToDomain(r)).ToList());
             }
         }
 
@@ -91,7 +91,7 @@ namespace Ztm.WebApi.AddressPools
                     throw new KeyNotFoundException("The reservation id is not found.");
                 }
 
-                if (reservation.ReleasedAt != DateTime.MinValue)
+                if (reservation.ReleasedAt != null)
                 {
                     throw new InvalidOperationException("The reservation is already released.");
                 }
@@ -129,7 +129,7 @@ namespace Ztm.WebApi.AddressPools
                         Id = Guid.NewGuid(),
                         LockedAt = lockedAt,
                         ReceivingAddressId = id,
-                        ReleasedAt = DateTime.MinValue
+                        ReleasedAt = null
                     }
                 );
 
@@ -140,30 +140,46 @@ namespace Ztm.WebApi.AddressPools
             }
         }
 
-        ReceivingAddress ToDomain(ReceivingAddressModel receivingAddress, bool recursive = true)
+        ReceivingAddress ToDomain(ReceivingAddressModel receivingAddress)
         {
-            return new ReceivingAddress
+            var r = new ReceivingAddress
             (
                 receivingAddress.Id,
                 BitcoinAddress.Create(receivingAddress.Address, this.network),
                 receivingAddress.IsLocked,
-                recursive && receivingAddress.ReceivingAddressReservations != null
-                    ? receivingAddress.ReceivingAddressReservations.Select
-                    (
-                        r => ToDomain(r, false)
-                    ).ToList()
-                    : null
+                new List<ReceivingAddressReservation>()
             );
+
+            if (receivingAddress.ReceivingAddressReservations != null)
+            {
+                foreach (var reservation in receivingAddress.ReceivingAddressReservations)
+                {
+                    r.ReceivingAddressReservations.Add(ToDomain(reservation, r));
+                }
+            }
+
+            return r;
         }
 
-        ReceivingAddressReservation ToDomain(ReceivingAddressReservationModel reservationModel, bool recursive = true)
+        ReceivingAddressReservation ToDomain(ReceivingAddressReservationModel reservationModel)
         {
             return new ReceivingAddressReservation
             (
                 reservationModel.Id,
-                recursive && reservationModel.ReceivingAddress != null
-                    ? ToDomain(reservationModel.ReceivingAddress, false)
-                    : null,
+                ToDomain(reservationModel.ReceivingAddress),
+                DateTime.SpecifyKind(reservationModel.LockedAt, DateTimeKind.Utc),
+                reservationModel.ReleasedAt.HasValue
+                    ? DateTime.SpecifyKind(reservationModel.ReleasedAt.Value, DateTimeKind.Utc)
+                    : new Nullable<DateTime>()
+            );
+        }
+
+        ReceivingAddressReservation ToDomain(ReceivingAddressReservationModel reservationModel, ReceivingAddress address)
+        {
+            return new ReceivingAddressReservation
+            (
+                reservationModel.Id,
+                address,
                 DateTime.SpecifyKind(reservationModel.LockedAt, DateTimeKind.Utc),
                 reservationModel.ReleasedAt.HasValue
                     ? DateTime.SpecifyKind(reservationModel.ReleasedAt.Value, DateTimeKind.Utc)

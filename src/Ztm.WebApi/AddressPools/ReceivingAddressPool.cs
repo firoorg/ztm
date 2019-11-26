@@ -55,13 +55,13 @@ namespace Ztm.WebApi.AddressPools
             }
         }
 
-        public Task ReleaseAsync(Guid id, CancellationToken cancellationToken)
+        public Task ReleaseAddressAsync(Guid id, CancellationToken cancellationToken)
         {
             this.storageLock.EnterWriteLock();
 
             try
             {
-                return this.ReleaseAsync(id, cancellationToken);
+                return this.ReleaseAddressAsync(id, cancellationToken);
             }
             finally
             {

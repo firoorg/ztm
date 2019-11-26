@@ -48,7 +48,7 @@ namespace Ztm.WebApi.Tests.AddressPools
                     : recv.ReceivingAddressReservations;
 
                 var last = reservations.Last();
-                reservations[reservations.Count - 1] = new ReceivingAddressReservation(last.Id, last.ReceivingAddress, last.ReservedDate, DateTime.UtcNow);
+                reservations[reservations.Count - 1] = new ReceivingAddressReservation(last.Id, last.Address, last.ReservedDate, DateTime.UtcNow);
 
                 var updated = new ReceivingAddress(recv.Id, recv.Address, false, reservations);
 

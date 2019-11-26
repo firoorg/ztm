@@ -4,21 +4,26 @@ namespace Ztm.WebApi.AddressPools
 {
     public sealed class ReceivingAddressReservation
     {
-        public Guid Id { get; }
-        public ReceivingAddress ReceivingAddress { get; }
-        public DateTime ReservedDate { get; }
-        public DateTime? ReleasedDate { get; }
-
         public ReceivingAddressReservation(
             Guid id,
-            ReceivingAddress receivingAddress,
+            ReceivingAddress address,
             DateTime reservedDate,
             DateTime? releasedDate)
         {
+            if (address == null)
+            {
+                throw new ArgumentNullException(nameof(address));
+            }
+
             this.Id = id;
-            this.ReceivingAddress = receivingAddress;
+            this.Address = address;
             this.ReservedDate = reservedDate;
             this.ReleasedDate = releasedDate;
         }
+
+        public ReceivingAddress Address { get; }
+        public Guid Id { get; }
+        public DateTime? ReleasedDate { get; }
+        public DateTime ReservedDate { get; }
     }
 }
