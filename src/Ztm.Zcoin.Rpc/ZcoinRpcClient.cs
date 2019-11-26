@@ -135,6 +135,32 @@ namespace Ztm.Zcoin.Rpc
             return this.client.GetBlockchainInfoAsync();
         }
 
+        public async Task<ExodusTransactionInformation> GetExodusTransactionAsync(uint256 transaction, CancellationToken cancellationToken)
+        {
+            // Invoke RPC.
+            var resp = await this.client.SendCommandAsync("exodus_gettransaction", transaction);
+            var rawRefAddress = resp.Result.Value<string>("referenceaddress");
+
+            return new ExodusTransactionInformation
+            {
+                TxId = uint256.Parse(resp.Result.Value<string>("txid")),
+                SendingAddress = BitcoinAddress.Create(resp.Result.Value<string>("sendingaddress"), this.client.Network),
+                ReferenceAddress = string.IsNullOrEmpty(rawRefAddress)
+                    ? null : BitcoinAddress.Create(rawRefAddress, this.client.Network),
+                IsMine = resp.Result.Value<bool>("ismine"),
+                Confirmations = resp.Result.Value<int>("confirmations"),
+                Fee = Money.Parse(resp.Result.Value<string>("fee")),
+                Block = resp.Result.Value<int>("block"),
+                BlockHash = uint256.Parse(resp.Result.Value<string>("blockhash")),
+                BlockTime = Utils.UnixTimeToDateTime(resp.Result.Value<long>("blocktime")),
+                Valid = resp.Result.Value<bool>("valid"),
+                InvalidReason = resp.Result.Value<string>("invalidreason"),
+                Version = resp.Result.Value<int>("version"),
+                TypeInt = resp.Result.Value<int>("type_int"),
+                Type = resp.Result.Value<string>("type")
+            };
+        }
+
         public Task<BitcoinAddress> GetNewAddressAsync(CancellationToken cancellationToken)
         {
             return this.client.GetNewAddressAsync();
@@ -262,17 +288,14 @@ namespace Ztm.Zcoin.Rpc
             }).ToArray();
         }
 
-        public async Task<uint256> SendRawTransactionAsync(Transaction tx, CancellationToken cancellationToken)
+        public Task<uint256> SendRawTransactionAsync(Transaction tx, CancellationToken cancellationToken)
         {
             if (tx == null)
             {
                 throw new ArgumentNullException(nameof(tx));
             }
 
-            var id = await this.client.SendRawTransactionAsync(tx);
-            await TryDecodeExodusTransactionAndSetAsync(tx);
-
-            return id;
+            return this.client.SendRawTransactionAsync(tx);
         }
 
         public Task<uint256> SendToAddressAsync(
@@ -346,13 +369,7 @@ namespace Ztm.Zcoin.Rpc
             // Invoke RPC.
             var resp = await this.client.SendCommandAsync("exodus_send", args.ToArray());
 
-            var tx = Transaction.Parse(resp.Result.Value<string>(), this.client.Network);
-
-            #pragma warning disable CS0618
-            tx.SetExodusTransaction(new SimpleSendV0(from, to, property.Id, amount)); // lgtm[cs/call-to-obsolete-method]
-            #pragma warning restore CS0618
-
-            return tx;
+            return Transaction.Parse(resp.Result.Value<string>(), this.client.Network);
         }
 
         static byte ToNative(Ecosystem ecosystem)
@@ -386,46 +403,6 @@ namespace Ztm.Zcoin.Rpc
             }
         }
 
-        class TransactionInfomation
-        {
-            public uint256 TxId { get; set; }
-            public BitcoinAddress SendingAddress { get; set; }
-            public BitcoinAddress ReferenceAddress { get; set; }
-            public bool IsMine { get; set; }
-            public int Confirmations { get; set; }
-            public Money Fee { get; set; }
-            public int BlockTime { get; set; }
-            public bool Valid { get; set; }
-            public string InvalidReason { get; set; }
-
-            public int Version { get; set; }
-            public int TypeInt { get; set; }
-            public string Type { get; set; }
-        }
-
-        async Task<TransactionInfomation> GetExodusTransactionAsync(Transaction transaction)
-        {
-            // Invoke RPC.
-            var resp = await this.client.SendCommandAsync("exodus_gettransaction", transaction.GetHash());
-            var rawRefAddress = resp.Result.Value<string>("referenceaddress");
-
-            return new TransactionInfomation{
-                TxId = uint256.Parse(resp.Result.Value<string>("txid")),
-                SendingAddress = BitcoinAddress.Create(resp.Result.Value<string>("sendingaddress"), this.client.Network),
-                ReferenceAddress = (rawRefAddress == null || rawRefAddress == string.Empty)
-                    ? null : BitcoinAddress.Create(resp.Result.Value<string>("referenceaddress"), this.client.Network),
-                IsMine = resp.Result.Value<bool>("ismine"),
-                Confirmations = resp.Result.Value<int>("confirmations"),
-                Fee = Money.Parse(resp.Result.Value<string>("fee")),
-                BlockTime = resp.Result.Value<int>("blocktime"),
-                Valid = resp.Result.Value<bool>("valid"),
-                InvalidReason = resp.Result.Value<string>("invalidreason"),
-                Version = resp.Result.Value<int>("version"),
-                TypeInt = resp.Result.Value<int>("type_int"),
-                Type = resp.Result.Value<string>("type")
-            };
-        }
-
         async Task<(string payload, int payloadSize)> GetPayloadAsync(Transaction transaction)
         {
             var resp = await this.client.SendCommandAsync("exodus_getpayload", new object[]{transaction.GetHash()});
@@ -438,7 +415,7 @@ namespace Ztm.Zcoin.Rpc
 
         async Task<ExodusTransaction> TryDecodeExodusTransaction(Transaction transaction)
         {
-            var infomation = await GetExodusTransactionAsync(transaction);
+            var infomation = await GetExodusTransactionAsync(transaction.GetHash(), CancellationToken.None);
             if (infomation == null)
             {
                 return null;

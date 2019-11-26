@@ -232,11 +232,6 @@ namespace Ztm.Zcoin.Rpc.Tests
             Assert.Equal("https://satang.com", props.Last().Url);
             Assert.Equal("Provides cryptocurrency solutions.", props.Last().Description);
             Assert.Equal(PropertyType.Indivisible, props.Last().Type);
-
-            this.encoder.Received(1).Decode(
-                Arg.Any<BitcoinAddress>(),
-                Arg.Any<BitcoinAddress>(),
-                Arg.Any<byte[]>());
         }
 
         [Fact]
@@ -463,84 +458,6 @@ namespace Ztm.Zcoin.Rpc.Tests
         }
 
         [Fact]
-        public async Task SendRawTransactionAsync_WithValidExodusTransaction_ShouldGetExodusTransaction()
-        {
-            // Arrange.
-            var owner = await this.subject.GetNewAddressAsync(CancellationToken.None);
-
-            this.node.Generate(101);
-            await this.subject.SendToAddressAsync(owner, Money.Coins(30), null, null, false, CancellationToken.None);
-            this.node.Generate(1);
-
-            var createTx = await this.subject.CreateManagedPropertyAsync(
-                owner,
-                Ecosystem.Main,
-                PropertyType.Indivisible,
-                null,
-                "Company",
-                "Private",
-                "Satang Corporation",
-                "https://satang.com",
-                "Provides cryptocurrency solutions.",
-                CancellationToken.None
-            );
-
-            var exodusTx = new TestExodusTransaction(null, null);
-
-            this.encoder.Decode(
-                Arg.Any<BitcoinAddress>(),
-                Arg.Any<BitcoinAddress>(),
-                Arg.Any<byte[]>()
-            ).Returns(exodusTx);
-
-            // Act.
-            await this.subject.SendRawTransactionAsync(createTx, CancellationToken.None);
-
-            // Assert.
-            this.encoder.Received(1).Decode(Arg.Any<BitcoinAddress>(), Arg.Any<BitcoinAddress>(), Arg.Any<byte[]>());
-            Assert.Equal(exodusTx, createTx.GetExodusTransaction());
-        }
-
-        [Fact]
-        public async Task SendRawTransactionAsync_WithUnsupportedType_ShouldNotThrowAndSetNull()
-        {
-            // Arrange.
-            var owner = await this.subject.GetNewAddressAsync(CancellationToken.None);
-
-            this.node.Generate(101);
-            await this.subject.SendToAddressAsync(owner, Money.Coins(30), null, null, false, CancellationToken.None);
-            this.node.Generate(1);
-
-            var createTx = await this.subject.CreateManagedPropertyAsync(
-                owner,
-                Ecosystem.Main,
-                PropertyType.Indivisible,
-                null,
-                "Company",
-                "Private",
-                "Satang Corporation",
-                "https://satang.com",
-                "Provides cryptocurrency solutions.",
-                CancellationToken.None
-            );
-
-            var exodusTx = new TestExodusTransaction(null, null);
-
-            this.encoder
-                .When(e => e.Decode(Arg.Any<BitcoinAddress>(), Arg.Any<BitcoinAddress>(), Arg.Any<byte[]>()))
-                .Do(e => {throw new TransactionFieldException(
-                    TransactionFieldException.TypeField,
-                    "The value is unknown transaction type.");});
-
-            // Act.
-            await this.subject.SendRawTransactionAsync(createTx, CancellationToken.None);
-
-            // Assert.
-            this.encoder.Received(1).Decode(Arg.Any<BitcoinAddress>(), Arg.Any<BitcoinAddress>(), Arg.Any<byte[]>());
-            Assert.Null(createTx.GetExodusTransaction());
-        }
-
-        [Fact]
         public async Task SendToAddressAsync_WithNullAddress_ShouldThrow()
         {
             await Assert.ThrowsAsync<ArgumentNullException>(
@@ -630,15 +547,6 @@ namespace Ztm.Zcoin.Rpc.Tests
 
             Assert.Equal(new PropertyAmount(990), ownerBalance.balance);
             Assert.Equal(new PropertyAmount(10), destinationBalance.balance);
-
-            var decoded = rawTx.GetExodusTransaction();
-            Assert.NotNull(decoded);
-
-            var simple = (SimpleSendV0)decoded;
-            Assert.Equal(property.Owner, simple.Sender);
-            Assert.Equal(destination, simple.Receiver);
-            Assert.Equal(property.Property.Id, simple.Property);
-            Assert.Equal(new PropertyAmount(10), simple.Amount);
         }
 
         [Fact]
@@ -699,6 +607,53 @@ namespace Ztm.Zcoin.Rpc.Tests
             // Assert.
             Assert.Equal(PropertyAmount.FromDivisible(10), balance.balance);
             Assert.Equal(PropertyAmount.FromDivisible(0), balance.reserved);
+        }
+
+        [Fact]
+        public async Task GetExodusTransactionAsync_WithValidExistTransaction_ShouldSuccess()
+        {
+            // Arrange.
+            var testingAt = DateTime.UtcNow;
+            var owner = await this.subject.GetNewAddressAsync(CancellationToken.None);
+
+            this.node.Generate(101);
+            await this.subject.SendToAddressAsync(owner, Money.Coins(30), null, null, false, CancellationToken.None);
+            this.node.Generate(1);
+
+            var createTx = await this.subject.CreateManagedPropertyAsync(
+                owner,
+                Ecosystem.Main,
+                PropertyType.Indivisible,
+                null,
+                "Company",
+                "Private",
+                "Satang Corporation",
+                "https://satang.com",
+                "Provides cryptocurrency solutions.",
+                CancellationToken.None
+            );
+
+            await this.subject.SendRawTransactionAsync(createTx, CancellationToken.None);
+            var minedBlock = this.node.Generate(2).First();
+
+            // Act.
+            var infomation = await this.subject.GetExodusTransactionAsync(createTx.GetHash(), CancellationToken.None);
+
+            // Assert.
+            Assert.Equal(createTx.GetHash(), infomation.TxId);
+            Assert.Equal(owner, infomation.SendingAddress);
+            Assert.Null(infomation.ReferenceAddress);
+            Assert.True(infomation.IsMine);
+            Assert.Equal(2, infomation.Confirmations);
+            Assert.True(infomation.Fee > Money.Zero);
+            Assert.Equal(103, infomation.Block);
+            Assert.Equal(minedBlock, infomation.BlockHash);
+            Assert.True(infomation.BlockTime > testingAt);
+            Assert.True(infomation.Valid);
+            Assert.Null(infomation.InvalidReason);
+            Assert.Equal(0, infomation.Version);
+            Assert.Equal(54, infomation.TypeInt);
+            Assert.Equal("Create Property - Manual", infomation.Type);
         }
 
         class ManagedProperty
