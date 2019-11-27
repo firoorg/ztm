@@ -2,16 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Ztm.Configuration;
-using Ztm.Zcoin.NBitcoin;
+using Ztm.Hosting;
 
 namespace Ztm.Zcoin.Synchronization
 {
-    public sealed class BlocksSynchronizer : IBlocksRetrieverHandler, IHostedService
+    public sealed class BlocksSynchronizer : BackgroundService, IBlocksRetrieverHandler
     {
         readonly ILogger logger;
         readonly IBlocksRetriever retriever;
@@ -20,15 +17,16 @@ namespace Ztm.Zcoin.Synchronization
         readonly Network chainNetwork;
 
         public BlocksSynchronizer(
-            IConfiguration config,
+            IBackgroundServiceExceptionHandler exceptionHandler,
+            Network network,
             ILogger<BlocksSynchronizer> logger,
             IBlocksRetriever retriever,
             IBlocksStorage storage,
-            IEnumerable<IBlockListener> listeners)
+            IEnumerable<IBlockListener> listeners) : base(exceptionHandler)
         {
-            if (config == null)
+            if (network == null)
             {
-                throw new ArgumentNullException(nameof(config));
+                throw new ArgumentNullException(nameof(network));
             }
 
             if (logger == null)
@@ -55,17 +53,25 @@ namespace Ztm.Zcoin.Synchronization
             this.retriever = retriever;
             this.storage = storage;
             this.listeners = listeners;
-            this.chainNetwork = ZcoinNetworks.Instance.GetNetwork(config.GetZcoinSection().Network.Type);
+            this.chainNetwork = network;
         }
 
-        public Task StartAsync(CancellationToken cancellationToken)
+        protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
-            return this.retriever.StartAsync(this, cancellationToken);
-        }
+            var retrieverTask = await this.retriever.StartAsync(this, cancellationToken);
 
-        public Task StopAsync(CancellationToken cancellationToken)
-        {
-            return this.retriever.StopAsync(cancellationToken);
+            try
+            {
+                var stop = new TaskCompletionSource<bool>();
+                cancellationToken.Register(() => stop.SetResult(true));
+
+                var stopped = await Task.WhenAny(retrieverTask, stop.Task);
+                await stopped;
+            }
+            finally
+            {
+                await this.retriever.StopAsync(CancellationToken.None);
+            }
         }
 
         async Task<int> IBlocksRetrieverHandler.GetBlockHintAsync(CancellationToken cancellationToken)
