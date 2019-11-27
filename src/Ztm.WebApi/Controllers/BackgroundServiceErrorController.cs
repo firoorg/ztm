@@ -38,6 +38,7 @@ namespace Ztm.WebApi.Controllers
                 var errors = feature.Errors.Select(e => new BackgroundServiceError()
                 {
                     Service = e.Service.FullName,
+                    Error = e.Exception.Message,
                     Detail = e.Exception.StackTrace
                 }).ToList();
 

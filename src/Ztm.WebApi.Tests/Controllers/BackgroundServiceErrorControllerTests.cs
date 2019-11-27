@@ -95,12 +95,13 @@ namespace Ztm.WebApi.Tests.Controllers
         public void BackgroundServiceError_HaveErrorsAndInDevelopmentEnvironment_ShouldPopulateErrors()
         {
             // Arrange.
+            var message = "Something went wrong.";
             Exception exception;
 
             try
             {
                 // We need to do this so StackTrace will not be null.
-                throw new Exception();
+                throw new Exception(message);
             }
             catch (Exception ex)
             {
@@ -125,7 +126,9 @@ namespace Ztm.WebApi.Tests.Controllers
             response.Extensions.Should().HaveCount(1)
                                .And.ContainKey("errors")
                                .WhichValue.Should().BeAssignableTo<IEnumerable<BackgroundServiceError>>()
-                               .Which.Should().ContainSingle(e => e.Service == typeof(string).FullName && e.Detail != null);
+                               .Which.Should().ContainSingle(
+                                   e => e.Service == typeof(string).FullName && e.Error == message && e.Detail != null
+                                );
 
             result.StatusCode.Should().Be((int)HttpStatusCode.InternalServerError);
         }
