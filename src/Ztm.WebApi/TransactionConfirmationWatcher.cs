@@ -146,7 +146,7 @@ namespace Ztm.WebApi
 
             foreach (var rule in rules.Where(w => !w.Completed))
             {
-                var (block, height) = await this.blocks.GetByTransactionAsync(rule.Transaction, cancellationToken);
+                var (block, _) = await this.blocks.GetByTransactionAsync(rule.Transaction, cancellationToken);
 
                 if (block == null)
                 {
