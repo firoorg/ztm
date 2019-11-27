@@ -52,7 +52,12 @@ namespace Ztm.Hosting
 
             try
             {
-                await Task.WhenAny(this.background, Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken));
+                var completed = await Task.WhenAny(
+                    this.background,
+                    Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken)
+                );
+
+                await completed;
             }
             finally
             {
@@ -86,7 +91,11 @@ namespace Ztm.Hosting
         {
             if (background.IsFaulted)
             {
-                return this.exceptionHandler.RunAsync(GetType(), background.Exception, CancellationToken.None);
+                return this.exceptionHandler.RunAsync(
+                    GetType(),
+                    background.Exception.InnerException,
+                    CancellationToken.None
+                );
             }
             else
             {

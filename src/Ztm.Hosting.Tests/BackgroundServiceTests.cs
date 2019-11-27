@@ -247,7 +247,7 @@ namespace Ztm.Hosting.Tests
             }
         }
 
-        [Fact(Skip = "There is a bug in Task.WhenAny() that it will not throw TaskCanceledException.")]
+        [Fact]
         public async Task StopAsync_WhenCanceled_ShouldThrow()
         {
             // Arrange.
