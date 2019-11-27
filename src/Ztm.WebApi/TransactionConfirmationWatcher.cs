@@ -146,7 +146,16 @@ namespace Ztm.WebApi
 
             foreach (var rule in rules.Where(w => !w.Completed))
             {
-                await SetupTimerAsync(rule);
+                var (block, height) = await this.blocks.GetByTransactionAsync(rule.Transaction, cancellationToken);
+
+                if (block == null)
+                {
+                    await SetupTimerAsync(rule);
+                }
+                else
+                {
+                    this.watches.AddOrReplace(rule.Id, new TransactionWatch<Rule>(rule, block.GetHash(), rule.Transaction));
+                }
             }
         }
 
