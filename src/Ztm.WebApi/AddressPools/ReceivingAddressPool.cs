@@ -11,8 +11,6 @@ namespace Ztm.WebApi.AddressPools
         readonly IReceivingAddressStorage storage;
         readonly IAddressChoser choser;
 
-        readonly ReaderWriterLockSlim storageLock;
-
         public ReceivingAddressPool(
             IAddressGenerator generator,
             IReceivingAddressStorage storage,
@@ -36,69 +34,31 @@ namespace Ztm.WebApi.AddressPools
             this.generator = generator;
             this.storage = storage;
             this.choser = choser;
-
-            this.storageLock = new ReaderWriterLockSlim();
         }
 
         public async Task GenerateAddressAsync(CancellationToken cancellationToken)
         {
-            storageLock.EnterWriteLock();
-
-            try
-            {
                 var address = await this.generator.GenerateAsync(cancellationToken);
-                await this.storage.AddAddressAsync(address, cancellationToken);
-            }
-            finally
-            {
-                storageLock.ExitWriteLock();
-            }
+                await this.storage.AddAddressAsync(address, CancellationToken.None);
         }
 
         public Task ReleaseAddressAsync(Guid id, CancellationToken cancellationToken)
         {
-            this.storageLock.EnterWriteLock();
-
-            try
-            {
-                return this.ReleaseAddressAsync(id, cancellationToken);
-            }
-            finally
-            {
-                this.storageLock.ExitWriteLock();
-            }
+            return this.ReleaseAddressAsync(id, cancellationToken);
         }
 
         public async Task<ReceivingAddressReservation> TryLockAddressAsync(CancellationToken cancellationToken)
         {
-            this.storageLock.EnterWriteLock();
+            var addresses = await this.storage.ListReceivingAddressAsync(cancellationToken);
+            var availables = addresses.Where(a => a.Available);
 
-            try
+            if (availables.Count() <= 0)
             {
-                var addresses = await this.storage.ListReceivingAddressAsync(cancellationToken);
-                if (addresses != null)
-                {
-                    var availables = addresses.Where(a => a.Available);
-
-                    if (availables.Count() <= 0)
-                    {
-                        return null;
-                    }
-
-                    var chosen = this.choser.Choose(availables);
-
-                    if (chosen != null)
-                    {
-                        return await this.storage.TryLockAsync(chosen.Id, CancellationToken.None);
-                    }
-                }
-            }
-            finally
-            {
-                this.storageLock.ExitWriteLock();
+                return null;
             }
 
-            return null;
+            var chosen = this.choser.Choose(availables);
+            return await this.storage.TryLockAsync(chosen.Id, CancellationToken.None);
         }
     }
 }
