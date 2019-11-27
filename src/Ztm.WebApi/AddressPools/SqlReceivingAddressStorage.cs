@@ -69,11 +69,23 @@ namespace Ztm.WebApi.AddressPools
             }
         }
 
-        public Task<IEnumerable<ReceivingAddress>> ListReceivingAddressAsync(CancellationToken cancellationToken)
+        public Task<IEnumerable<ReceivingAddress>> ListReceivingAddressAsync(AddressFilter filter, CancellationToken cancellationToken)
         {
             using (var db = this.databaseFactory.CreateDbContext())
             {
-                return Task.FromResult<IEnumerable<ReceivingAddress>>(db.ReceivingAddresses.Select(r => ToDomain(r)).ToList());
+                IQueryable<ReceivingAddressModel> query = db.ReceivingAddresses.Include(a => a.ReceivingAddressReservations);
+
+                if (filter.HasFlag(AddressFilter.Available))
+                {
+                    query = query.Where(a => !a.IsLocked);
+                }
+
+                if (filter.HasFlag(AddressFilter.NeverUsed))
+                {
+                    query = query.Where(a => !a.ReceivingAddressReservations.Any());
+                }
+
+                return Task.FromResult<IEnumerable<ReceivingAddress>>(query.Select(r => ToDomain(r)).ToList());
             }
         }
 
@@ -154,7 +166,7 @@ namespace Ztm.WebApi.AddressPools
             {
                 foreach (var reservation in receivingAddress.ReceivingAddressReservations)
                 {
-                    r.ReceivingAddressReservations.Add(ToDomain(reservation, r));
+                    r.Reservations.Add(ToDomain(reservation, r));
                 }
             }
 

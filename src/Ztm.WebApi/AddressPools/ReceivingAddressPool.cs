@@ -49,16 +49,15 @@ namespace Ztm.WebApi.AddressPools
 
         public async Task<ReceivingAddressReservation> TryLockAddressAsync(CancellationToken cancellationToken)
         {
-            var addresses = await this.storage.ListReceivingAddressAsync(cancellationToken);
-            var availables = addresses.Where(a => a.Available);
+            var addresses = await this.storage.ListReceivingAddressAsync(AddressFilter.Available, cancellationToken);
 
-            if (availables.Count() <= 0)
+            if (addresses.Any())
             {
-                return null;
+                var chosen = this.choser.Choose(addresses);
+                return await this.storage.TryLockAsync(chosen.Id, CancellationToken.None);
             }
 
-            var chosen = this.choser.Choose(availables);
-            return await this.storage.TryLockAsync(chosen.Id, CancellationToken.None);
+            return null;
         }
     }
 }

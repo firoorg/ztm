@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,7 +19,7 @@ namespace Ztm.WebApi.Tests.AddressPools
 
         public virtual Task<ReceivingAddress> AddAddressAsync(BitcoinAddress address, CancellationToken cancellationToken)
         {
-            var recv = new ReceivingAddress(Guid.NewGuid(), address, false, null);
+            var recv = new ReceivingAddress(Guid.NewGuid(), address, false, new Collection<ReceivingAddressReservation>());
             this.receivingAddresses.Add(recv.Id, recv);
 
             return Task.FromResult(recv);
@@ -34,21 +35,34 @@ namespace Ztm.WebApi.Tests.AddressPools
             return Task.FromResult<ReceivingAddress>(null);
         }
 
-        public virtual Task<IEnumerable<ReceivingAddress>> ListReceivingAddressAsync(CancellationToken cancellationToken)
+        public virtual Task<IEnumerable<ReceivingAddress>> ListReceivingAddressAsync(AddressFilter filter, CancellationToken cancellationToken)
         {
-            return Task.FromResult<IEnumerable<ReceivingAddress>>(this.receivingAddresses.Select(a => a.Value).ToList());
+            var addresses = this.receivingAddresses.AsEnumerable();
+
+            if (filter.HasFlag(AddressFilter.Available))
+            {
+                addresses = addresses.Where(e => !e.Value.IsLocked);
+            }
+
+            if (filter.HasFlag(AddressFilter.NeverUsed))
+            {
+                addresses = addresses.Where(e => e.Value.Reservations.Count == 0);
+            }
+
+            return Task.FromResult<IEnumerable<ReceivingAddress>>(addresses.Select(a => a.Value).ToList());
         }
 
         public virtual Task ReleaseAsync(Guid id, CancellationToken cancellationToken)
         {
             if (this.receivingAddresses.TryGetValue(id, out var recv))
             {
-                var reservations = recv.ReceivingAddressReservations == null
+                var reservations = recv.Reservations == null
                     ? new List<ReceivingAddressReservation>()
-                    : recv.ReceivingAddressReservations;
+                    : recv.Reservations;
 
                 var last = reservations.Last();
-                reservations[reservations.Count - 1] = new ReceivingAddressReservation(last.Id, last.Address, last.ReservedDate, DateTime.UtcNow);
+                reservations.Remove(last);
+                reservations.Add(new ReceivingAddressReservation(last.Id, last.Address, last.ReservedDate, DateTime.UtcNow));
 
                 var updated = new ReceivingAddress(recv.Id, recv.Address, false, reservations);
 
@@ -70,9 +84,9 @@ namespace Ztm.WebApi.Tests.AddressPools
                 var lockedAt = DateTime.UtcNow;
                 var reservation = new ReceivingAddressReservation(Guid.NewGuid(), recv, lockedAt, DateTime.MinValue);
 
-                var reservations = recv.ReceivingAddressReservations == null
+                var reservations = recv.Reservations == null
                     ? new List<ReceivingAddressReservation>()
-                    : recv.ReceivingAddressReservations;
+                    : recv.Reservations;
 
                 reservations.Add(reservation);
                 var updated = new ReceivingAddress(recv.Id, recv.Address, true, reservations);

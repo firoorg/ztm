@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using Xunit;
 using Ztm.Testing;
@@ -16,16 +17,31 @@ namespace Ztm.WebApi.Tests.AddressPools
             this.subject = new LessUsageFirstChoser();
         }
 
+        [Fact]
+        public void Choose_WithNullAddresses_ShouldThrow()
+        {
+            Assert.Throws<ArgumentNullException>(
+                "addresses",
+                () => this.subject.Choose(null));
+        }
+
+        [Fact]
+        public void Choose_WithEmptyAddresses_ShouldThrow()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(
+                "addresses",
+                () => this.subject.Choose(new Collection<ReceivingAddress>()));
+        }
+
         [Theory]
         [InlineData(0, 0, 0, 1, 1)]
         [InlineData(1, 2, 2, 1, 1)]
         [InlineData(999, 999, 1000, 999, 1000)]
-        [InlineData(0, -1, -1, 1, 1)]
-        [InlineData(0, 0, -1, -1)]
         public void Choose_FromList(int expected, params int[] vs)
         {
             // Arrange.
             var availables = new List<ReceivingAddress>();
+            var emptyReservations = new Collection<ReceivingAddressReservation>();
 
             foreach (var v in vs)
             {
@@ -34,31 +50,30 @@ namespace Ztm.WebApi.Tests.AddressPools
                     Guid.NewGuid(),
                     TestAddress.Regtest1,
                     false,
-                    null
+                    emptyReservations
                 );
 
-                var reservations = v < 0 ? null : new List<ReceivingAddressReservation>();
-                if (reservations != null)
+                var reservations = new List<ReceivingAddressReservation>();
+
+                foreach (var _ in Enumerable.Range(0, v))
                 {
-                    foreach (var _ in Enumerable.Range(0, v))
-                    {
-                        reservations.Add(
-                            new ReceivingAddressReservation
-                            (
-                                Guid.NewGuid(),
-                                r,
-                                DateTime.UtcNow,
-                                null
-                            ));
-                    }
+                    reservations.Add(
+                        new ReceivingAddressReservation
+                        (
+                            Guid.NewGuid(),
+                            r,
+                            DateTime.UtcNow,
+                            null
+                        ));
                 }
 
                 availables.Add(
+
                     new ReceivingAddress
                     (
                         r.Id,
                         r.Address,
-                        r.Available,
+                        r.IsLocked,
                         reservations
                     ));
             }
@@ -67,9 +82,7 @@ namespace Ztm.WebApi.Tests.AddressPools
             var chosen = this.subject.Choose(availables);
 
             // Assert.
-            var usage = chosen.ReceivingAddressReservations == null
-                ? 0
-                : chosen.ReceivingAddressReservations.Count;
+            var usage = chosen.Reservations.Count;
 
             Assert.Equal(expected, usage);
         }

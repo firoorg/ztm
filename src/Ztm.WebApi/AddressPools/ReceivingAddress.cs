@@ -6,26 +6,23 @@ namespace Ztm.WebApi.AddressPools
 {
     public sealed class ReceivingAddress
     {
-        public Guid Id { get; }
-        public BitcoinAddress Address { get; }
-        public bool IsLocked { get; }
-        public List<ReceivingAddressReservation> ReceivingAddressReservations { get; }
-
-        public ReceivingAddress(Guid id, BitcoinAddress address, bool isLocked, List<ReceivingAddressReservation> receivingAddressReservations)
+        public ReceivingAddress(Guid id, BitcoinAddress address, bool isLocked, ICollection<ReceivingAddressReservation> reservations)
         {
+            if (reservations == null)
+            {
+                throw new ArgumentNullException(nameof(reservations));
+            }
+
             this.Id = id;
             this.Address = address;
             this.IsLocked = isLocked;
-            this.ReceivingAddressReservations = receivingAddressReservations;
+            this.Reservations = reservations;
         }
 
-        public bool Available
-        {
-            get
-            {
-                return !IsLocked;
-            }
-        }
+        public BitcoinAddress Address { get; }
+        public Guid Id { get; }
+        public bool IsLocked { get; }
+        public ICollection<ReceivingAddressReservation> Reservations { get; }
 
         public override bool Equals(object obj)
         {

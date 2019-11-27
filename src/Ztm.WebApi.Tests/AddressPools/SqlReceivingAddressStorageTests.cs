@@ -58,7 +58,7 @@ namespace Ztm.WebApi.Tests.AddressPools
             // Assert.
             Assert.NotEqual(Guid.Empty, result.Id);
             Assert.Equal(address, result.Address);
-            Assert.Empty(result.ReceivingAddressReservations);
+            Assert.Empty(result.Reservations);
         }
 
         [Fact]
@@ -87,7 +87,7 @@ namespace Ztm.WebApi.Tests.AddressPools
         public async Task ListReceivingAddressAsync_WithEmptyRecerivingAddress_ShouldGetEmpty()
         {
             // Act.
-            var result = await this.subject.ListReceivingAddressAsync(CancellationToken.None);
+            var result = await this.subject.ListReceivingAddressAsync(AddressFilter.NoFilter, CancellationToken.None);
 
             // Assert.
             Assert.Empty(result);
@@ -104,10 +104,52 @@ namespace Ztm.WebApi.Tests.AddressPools
             };
 
             // Act.
-            var result = await this.subject.ListReceivingAddressAsync(CancellationToken.None);
+            var result = await this.subject.ListReceivingAddressAsync(AddressFilter.NoFilter, CancellationToken.None);
 
             // Assert.
-            Assert.Equal(receivingAddresses, result.ToList());
+            Assert.Contains(receivingAddresses.First(), result);
+            Assert.Contains(receivingAddresses.Last(), result);
+        }
+
+        [Fact]
+        public async Task ListReceivingAddressAsync_WithAvailableFlag_ShouldAllAvailableAddresses()
+        {
+            // Arrange.
+            var receivingAddresses = new List<ReceivingAddress>
+            {
+                await this.subject.AddAddressAsync(TestAddress.Regtest1, CancellationToken.None),
+                await this.subject.AddAddressAsync(TestAddress.Regtest2, CancellationToken.None)
+            };
+            await this.subject.TryLockAsync(receivingAddresses.First().Id, CancellationToken.None);
+
+            // Act.
+            var result = await this.subject.ListReceivingAddressAsync(AddressFilter.Available, CancellationToken.None);
+
+            // Assert.
+            Assert.Single(result);
+            Assert.Equal(receivingAddresses.Last().Id, result.First().Id);
+        }
+
+        [Fact]
+        public async Task ListReceivingAddressAsync_WithNeverUsedFlag_ShouldAllFreshAddresses()
+        {
+            // Arrange.
+            var receivingAddresses = new List<ReceivingAddress>
+            {
+                await this.subject.AddAddressAsync(TestAddress.Regtest1, CancellationToken.None),
+                await this.subject.AddAddressAsync(TestAddress.Regtest2, CancellationToken.None)
+            };
+            var r = await this.subject.TryLockAsync(receivingAddresses.First().Id, CancellationToken.None);
+            await this.subject.ReleaseAsync(r.Id, CancellationToken.None);
+
+            // Act.
+            var availables = await this.subject.ListReceivingAddressAsync(AddressFilter.Available, CancellationToken.None);
+            var neverUsed = await this.subject.ListReceivingAddressAsync(AddressFilter.NeverUsed, CancellationToken.None);
+
+            // Assert.
+            Assert.Equal(2, availables.Count());
+            Assert.Single(neverUsed);
+            Assert.Equal(receivingAddresses.Last().Id, neverUsed.First().Id);
         }
 
         [Fact]
@@ -131,8 +173,8 @@ namespace Ztm.WebApi.Tests.AddressPools
 
             Assert.Null(reservation.ReleasedDate);
 
-            Assert.Single(recv.ReceivingAddressReservations);
-            Assert.Equal(reservation.Id, recv.ReceivingAddressReservations.First().Id);
+            Assert.Single(recv.Reservations);
+            Assert.Equal(reservation.Id, recv.Reservations.First().Id);
         }
 
         [Fact]
@@ -151,8 +193,8 @@ namespace Ztm.WebApi.Tests.AddressPools
             Assert.NotNull(reservation);
             Assert.Null(anotherReservation);
 
-            Assert.Single(recv.ReceivingAddressReservations);
-            Assert.Equal(reservation.Id, recv.ReceivingAddressReservations.First().Id);
+            Assert.Single(recv.Reservations);
+            Assert.Equal(reservation.Id, recv.Reservations.First().Id);
         }
 
         [Fact]
@@ -167,11 +209,11 @@ namespace Ztm.WebApi.Tests.AddressPools
             var unlockedRecv = await this.subject.GetAsync(address.Id, CancellationToken.None);
 
             // Assert.
-            Assert.Single(unlockedRecv.ReceivingAddressReservations);
-            var updatedResevation = unlockedRecv.ReceivingAddressReservations.First();
+            Assert.Single(unlockedRecv.Reservations);
+            var updatedResevation = unlockedRecv.Reservations.First();
 
             Assert.True(updatedResevation.ReservedDate < updatedResevation.ReleasedDate);
-            Assert.True(unlockedRecv.Available);
+            Assert.False(unlockedRecv.IsLocked);
         }
 
         [Fact]
@@ -210,10 +252,10 @@ namespace Ztm.WebApi.Tests.AddressPools
 
             // Assert.
             Assert.NotNull(lockedAddress);
-            Assert.False(lockedAddress.Available);
-            Assert.Equal(2, lockedAddress.ReceivingAddressReservations.Count);
+            Assert.True(lockedAddress.IsLocked);
+            Assert.Equal(2, lockedAddress.Reservations.Count);
 
-            Assert.NotEmpty(lockedAddress.ReceivingAddressReservations.Where(r => r.ReleasedDate == null));
+            Assert.NotEmpty(lockedAddress.Reservations.Where(r => r.ReleasedDate == null));
         }
     }
 }
