@@ -54,7 +54,7 @@ namespace Ztm.WebApi.AddressPools
             if (addresses.Any())
             {
                 var chosen = this.choser.Choose(addresses);
-                return await this.storage.TryLockAsync(chosen.Id, CancellationToken.None);
+                return await this.storage.TryLockAsync(chosen.Id, cancellationToken);
             }
 
             return null;

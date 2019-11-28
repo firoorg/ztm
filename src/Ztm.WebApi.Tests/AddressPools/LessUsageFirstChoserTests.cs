@@ -28,7 +28,7 @@ namespace Ztm.WebApi.Tests.AddressPools
         [Fact]
         public void Choose_WithEmptyAddresses_ShouldThrow()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(
+            Assert.Throws<ArgumentException>(
                 "addresses",
                 () => this.subject.Choose(new Collection<ReceivingAddress>()));
         }

@@ -15,14 +15,14 @@ namespace Ztm.WebApi.AddressPools
 
             if (!addresses.Any())
             {
-                throw new ArgumentOutOfRangeException(nameof(addresses), "Addresses could not be empty.");
+                throw new ArgumentException("Addresses could not be empty.", nameof(addresses));
             }
 
             return addresses.Aggregate
             (
                 (previous, next) => next.Reservations.Count < previous.Reservations.Count
-                ? next
-                : previous
+                    ? next
+                    : previous
             );
         }
     }
