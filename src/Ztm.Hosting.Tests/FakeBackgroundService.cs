@@ -1,7 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using NSubstitute;
+using Moq;
 
 namespace Ztm.Hosting.Tests
 {
@@ -9,24 +9,23 @@ namespace Ztm.Hosting.Tests
     {
         public FakeBackgroundService(IBackgroundServiceExceptionHandler exceptionHandler) : base(exceptionHandler)
         {
-            StubbedDispose = Substitute.For<Action<bool>>();
-            StubbedExecuteAsync = Substitute.For<Func<CancellationToken, Task>>();
-            StubbedExecuteAsync(Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+            StubbedDispose = new Mock<Action<bool>>();
+            StubbedExecuteAsync = new Mock<Func<CancellationToken, Task>>();
         }
 
-        public Action<bool> StubbedDispose { get; }
+        public Mock<Action<bool>> StubbedDispose { get; }
 
-        public Func<CancellationToken, Task> StubbedExecuteAsync { get; }
+        public Mock<Func<CancellationToken, Task>> StubbedExecuteAsync { get; }
 
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
-            StubbedDispose(disposing);
+            StubbedDispose.Object(disposing);
         }
 
         protected override Task ExecuteAsync(CancellationToken cancellationToken)
         {
-            return StubbedExecuteAsync(cancellationToken);
+            return StubbedExecuteAsync.Object(cancellationToken);
         }
     }
 }

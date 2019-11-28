@@ -4,20 +4,20 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Internal;
-using NSubstitute;
+using Moq;
 using Xunit;
 
 namespace Ztm.Hosting.Tests
 {
     public sealed class BackgroundServiceErrorLoggerTests
     {
-        readonly ILogger<BackgroundServiceErrorLogger> logger;
+        readonly Mock<ILogger<BackgroundServiceErrorLogger>> logger;
         readonly BackgroundServiceErrorLogger subject;
 
         public BackgroundServiceErrorLoggerTests()
         {
-            this.logger = Substitute.For<ILogger<BackgroundServiceErrorLogger>>();
-            this.subject = new BackgroundServiceErrorLogger(this.logger);
+            this.logger = new Mock<ILogger<BackgroundServiceErrorLogger>>();
+            this.subject = new BackgroundServiceErrorLogger(this.logger.Object);
         }
 
         [Fact]
@@ -51,12 +51,15 @@ namespace Ztm.Hosting.Tests
 
             await this.subject.RunAsync(typeof(FakeBackgroundService), ex, CancellationToken.None);
 
-            this.logger.Received(1).Log(
-                LogLevel.Critical,
-                0,
-                Arg.Is<FormattedLogValues>(v => v != null),
-                ex,
-                Arg.Is<Func<FormattedLogValues, Exception, string>>(v => v != null)
+            this.logger.Verify(
+                l => l.Log(
+                    LogLevel.Critical,
+                    0,
+                    It.IsNotNull<FormattedLogValues>(),
+                    ex,
+                    It.IsNotNull<Func<object, Exception, string>>()
+                ),
+                Times.Once()
             );
         }
     }

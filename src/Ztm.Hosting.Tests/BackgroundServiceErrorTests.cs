@@ -1,4 +1,5 @@
 using System;
+using FluentAssertions;
 using Xunit;
 
 namespace Ztm.Hosting.Tests
@@ -31,8 +32,8 @@ namespace Ztm.Hosting.Tests
         [Fact]
         public void Constructor_WithValidParameters_ShouldSuccess()
         {
-            Assert.Same(this.exception, this.subject.Exception);
-            Assert.Same(this.service, this.subject.Service);
+            this.subject.Exception.Should().BeSameAs(this.exception);
+            this.subject.Service.Should().BeSameAs(this.service);
         }
     }
 }
