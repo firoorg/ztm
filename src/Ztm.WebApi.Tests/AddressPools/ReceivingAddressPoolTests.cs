@@ -117,6 +117,20 @@ namespace Ztm.WebApi.Tests.AddressPools
             Assert.Null(recv);
         }
 
+        [Fact]
+        public async Task ReleaseAddressAsync_ReleaseFunctionInStorageShouldBeCalled()
+        {
+            // Arrange.
+            var id = Guid.NewGuid();
+            this.storage.ReleaseAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+
+            // Act.
+            await this.subject.ReleaseAddressAsync(id, CancellationToken.None);
+
+            // Assert.
+            _ = this.storage.Received(1).ReleaseAsync(Arg.Is<Guid>(id), Arg.Any<CancellationToken>());
+        }
+
         void MockChoser()
         {
             this.choser.Choose(Arg.Any<IEnumerable<ReceivingAddress>>())
