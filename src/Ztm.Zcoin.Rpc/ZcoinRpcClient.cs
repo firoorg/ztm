@@ -439,7 +439,7 @@ namespace Ztm.Zcoin.Rpc
             if (exodusTransaction != null)
             {
                 #pragma warning disable CS0618
-                transaction.SetExodusTransaction(exodusTransaction); // lgtm[cs/call-to-obsolete-method]
+                transaction.SetExodusTransaction(exodusTransaction); // lgtm [cs/call-to-obsolete-method]
                 #pragma warning restore CS0618
             }
         }
