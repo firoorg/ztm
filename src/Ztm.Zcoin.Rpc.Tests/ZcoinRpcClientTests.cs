@@ -610,6 +610,14 @@ namespace Ztm.Zcoin.Rpc.Tests
         }
 
         [Fact]
+        public void GetExodusTransactionAsync_WithNullTransaction_ShouldThrow()
+        {
+            _ = Assert.ThrowsAsync<ArgumentNullException>(
+                "transaction",
+                () => this.subject.GetExodusTransactionAsync(null, CancellationToken.None));
+        }
+
+        [Fact]
         public async Task GetExodusTransactionAsync_WithValidExistTransaction_ShouldSuccess()
         {
             // Arrange.
@@ -654,6 +662,14 @@ namespace Ztm.Zcoin.Rpc.Tests
             Assert.Equal(0, infomation.Version);
             Assert.Equal(54, infomation.TypeInt);
             Assert.Equal("Create Property - Manual", infomation.Type);
+        }
+
+        [Fact]
+        public void GetExodusPayloadAsync_WithNullTransaction_ShouldThrow()
+        {
+            _ = Assert.ThrowsAsync<ArgumentNullException>(
+                "transaction",
+                () => this.subject.GetExodusPayloadAsync(null, CancellationToken.None));
         }
 
         [Fact]

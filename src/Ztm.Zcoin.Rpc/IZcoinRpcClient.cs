@@ -32,11 +32,11 @@ namespace Ztm.Zcoin.Rpc
 
         Task<BlockchainInfo> GetBlockchainInfoAsync(CancellationToken cancellationToken);
 
+        Task<byte[]> GetExodusPayloadAsync(uint256 transaction, CancellationToken cancellationToken);
+
         Task<ExodusTransactionInformation> GetExodusTransactionAsync(uint256 transaction, CancellationToken cancellationToken);
 
         Task<BitcoinAddress> GetNewAddressAsync(CancellationToken cancellationToken);
-
-        Task<byte[]> GetExodusPayloadAsync(uint256 transaction, CancellationToken cancellationToken);
 
         Task<(PropertyAmount balance, PropertyAmount reserved)> GetPropertyBalanceAsync(
             BitcoinAddress address, Property property, CancellationToken cancellationToken);
