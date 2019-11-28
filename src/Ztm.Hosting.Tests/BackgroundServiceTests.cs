@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NSubstitute;
 using Xunit;
+using Ztm.Testing;
 
 namespace Ztm.Hosting.Tests
 {
@@ -66,14 +67,14 @@ namespace Ztm.Hosting.Tests
         [Fact]
         public async Task StartAsync_NotStarted_ShouldStart()
         {
-            using (var cancellationSource = new CancellationTokenSource())
+            await AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
             {
                 // Act.
-                await this.subject.StartAsync(cancellationSource.Token);
+                await this.subject.StartAsync(cancellationToken);
 
                 // Assert.
                 _ = this.subject.StubbedExecuteAsync.Received(1)(
-                    Arg.Is<CancellationToken>(t => t != cancellationSource.Token)
+                    Arg.Is<CancellationToken>(t => t != cancellationToken)
                 );
 
                 _ = this.exceptionHandler.Received(0).RunAsync(
@@ -81,42 +82,43 @@ namespace Ztm.Hosting.Tests
                     Arg.Any<Exception>(),
                     Arg.Any<CancellationToken>()
                 );
-            }
+            });
         }
 
         [Fact]
         public async Task StartAsync_AlreadyStarted_ShouldThrow()
         {
-            using (var cancellationSource = new CancellationTokenSource())
+            await AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
             {
                 // Act.
-                await this.subject.StartAsync(cancellationSource.Token);
+                await this.subject.StartAsync(cancellationToken);
 
                 // Assert.
                 _ = this.subject.StubbedExecuteAsync.Received(1)(
-                    Arg.Is<CancellationToken>(t => t != cancellationSource.Token)
+                    Arg.Is<CancellationToken>(t => t != cancellationToken)
                 );
 
                 await Assert.ThrowsAsync<InvalidOperationException>(
                     () => this.subject.StartAsync(CancellationToken.None)
                 );
-            }
+            });
         }
 
         [Fact]
         public async Task StartAsync_WhenBackgroundTaskThrow_ShouldInvokeExceptionHandler()
         {
-            // Arrange.
-            this.subject.StubbedExecuteAsync(Arg.Any<CancellationToken>()).Returns(Task.FromException(new Exception()));
-
-            using (var cancellationSource = new CancellationTokenSource())
+            await AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
             {
+                // Arrange.
+                this.subject.StubbedExecuteAsync(Arg.Any<CancellationToken>())
+                            .Returns(Task.FromException(new Exception()));
+
                 // Act.
-                await this.subject.StartAsync(cancellationSource.Token);
+                await this.subject.StartAsync(cancellationToken);
 
                 // Assert.
                 _ = this.subject.StubbedExecuteAsync.Received(1)(
-                    Arg.Is<CancellationToken>(t => t != cancellationSource.Token)
+                    Arg.Is<CancellationToken>(t => t != cancellationToken)
                 );
 
                 _ = this.exceptionHandler.Received(1).RunAsync(
@@ -124,38 +126,7 @@ namespace Ztm.Hosting.Tests
                     Arg.Is<Exception>(ex => ex != null),
                     Arg.Any<CancellationToken>()
                 );
-            }
-        }
-
-        [Fact]
-        public async Task StartAsync_WhenExecuteAsyncThrow_ShouldThrow()
-        {
-            // Arrange.
-            var ex = new Exception();
-
-            this.subject.StubbedExecuteAsync.When(f => f(Arg.Any<CancellationToken>())).Do(call =>
-            {
-                throw ex;
             });
-
-            using (var cancellationSource = new CancellationTokenSource())
-            {
-                // Act.
-                var res = await Assert.ThrowsAsync<Exception>(() => this.subject.StartAsync(cancellationSource.Token));
-
-                // Assert.
-                _ = this.subject.StubbedExecuteAsync.Received(1)(
-                    Arg.Is<CancellationToken>(t => t != cancellationSource.Token)
-                );
-
-                _ = this.exceptionHandler.Received(0).RunAsync(
-                    Arg.Any<Type>(),
-                    Arg.Any<Exception>(),
-                    Arg.Any<CancellationToken>()
-                );
-
-                Assert.Same(ex, res);
-            }
         }
 
         [Fact]
@@ -167,17 +138,17 @@ namespace Ztm.Hosting.Tests
         [Fact]
         public async Task StopAsync_BackgroundTaskSucceeded_ShouldSuccess()
         {
-            // Arrange.
-            using (var cancellationSource = new CancellationTokenSource())
+            await AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
             {
-                await this.subject.StartAsync(cancellationSource.Token);
+                // Arrange.
+                await this.subject.StartAsync(cancellationToken);
 
                 // Act.
                 await this.subject.StopAsync(CancellationToken.None);
 
                 // Assert.
                 _ = this.subject.StubbedExecuteAsync.Received(1)(
-                    Arg.Is<CancellationToken>(t => t != cancellationSource.Token)
+                    Arg.Is<CancellationToken>(t => t != cancellationToken)
                 );
 
                 _ = this.exceptionHandler.Received(0).RunAsync(
@@ -185,25 +156,26 @@ namespace Ztm.Hosting.Tests
                     Arg.Any<Exception>(),
                     Arg.Any<CancellationToken>()
                 );
-            }
+            });
         }
 
         [Fact]
         public async Task StopAsync_BackgroundTaskThrowException_ShouldSuccess()
         {
-            // Arrange.
-            this.subject.StubbedExecuteAsync(Arg.Any<CancellationToken>()).Returns(Task.FromException(new Exception()));
-
-            using (var cancellationSource = new CancellationTokenSource())
+            await AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
             {
-                await this.subject.StartAsync(cancellationSource.Token);
+                // Arrange.
+                this.subject.StubbedExecuteAsync(Arg.Any<CancellationToken>())
+                            .Returns(Task.FromException(new Exception()));
+
+                await this.subject.StartAsync(cancellationToken);
 
                 // Act.
                 await this.subject.StopAsync(CancellationToken.None);
 
                 // Assert.
                 _ = this.subject.StubbedExecuteAsync.Received(1)(
-                    Arg.Is<CancellationToken>(t => t != cancellationSource.Token)
+                    Arg.Is<CancellationToken>(t => t != cancellationToken)
                 );
 
                 _ = this.exceptionHandler.Received(1).RunAsync(
@@ -211,32 +183,30 @@ namespace Ztm.Hosting.Tests
                     Arg.Is<Exception>(ex => ex != null),
                     Arg.Any<CancellationToken>()
                 );
-            }
+            });
         }
 
         [Fact]
         public async Task StopAsync_BackgroundTaskCanceled_ShouldSuccess()
         {
-            // Arrange.
-            this.subject.StubbedExecuteAsync(Arg.Any<CancellationToken>()).Returns(async call =>
+            await AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
             {
-                var cancellationToken = call.ArgAt<CancellationToken>(0);
+                // Arrange.
+                this.subject.StubbedExecuteAsync(Arg.Any<CancellationToken>()).Returns(async call =>
+                {
+                    var token = call.ArgAt<CancellationToken>(0);
+                    await Task.Delay(Timeout.InfiniteTimeSpan, token);
+                    token.ThrowIfCancellationRequested();
+                });
 
-                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
-
-                cancellationToken.ThrowIfCancellationRequested();
-            });
-
-            using (var cancellationSource = new CancellationTokenSource())
-            {
-                await this.subject.StartAsync(cancellationSource.Token);
+                await this.subject.StartAsync(cancellationToken);
 
                 // Act.
                 await this.subject.StopAsync(CancellationToken.None);
 
                 // Assert.
                 _ = this.subject.StubbedExecuteAsync.Received(1)(
-                    Arg.Is<CancellationToken>(t => t != cancellationSource.Token)
+                    Arg.Is<CancellationToken>(t => t != cancellationToken)
                 );
 
                 _ = this.exceptionHandler.Received(0).RunAsync(
@@ -244,26 +214,26 @@ namespace Ztm.Hosting.Tests
                     Arg.Any<Exception>(),
                     Arg.Any<CancellationToken>()
                 );
-            }
+            });
         }
 
         [Fact]
         public async Task StopAsync_WhenCanceled_ShouldThrow()
         {
-            // Arrange.
-            this.subject.StubbedExecuteAsync(Arg.Any<CancellationToken>()).Returns(async call =>
+            await AsynchronousTesting.WithCancellationTokenAsync(async (cancellationToken, cancel) =>
             {
-                await Task.Delay(Timeout.InfiniteTimeSpan);
-            });
+                // Arrange.
+                this.subject.StubbedExecuteAsync(Arg.Any<CancellationToken>()).Returns(async call =>
+                {
+                    await Task.Delay(Timeout.InfiniteTimeSpan);
+                });
 
-            using (var cancellationSource = new CancellationTokenSource())
-            {
                 await this.subject.StartAsync(CancellationToken.None);
 
                 // Act.
-                var stop = this.subject.StopAsync(cancellationSource.Token);
+                var stop = this.subject.StopAsync(cancellationToken);
 
-                cancellationSource.Cancel();
+                cancel();
 
                 // Assert.
                 await Assert.ThrowsAnyAsync<OperationCanceledException>(() => stop);
@@ -277,7 +247,7 @@ namespace Ztm.Hosting.Tests
                     Arg.Any<Exception>(),
                     Arg.Any<CancellationToken>()
                 );
-            }
+            }, cancellationSource => cancellationSource.Cancel());
         }
     }
 }

@@ -36,7 +36,7 @@ namespace Ztm.Hosting
                 throw new InvalidOperationException("The service is already started.");
             }
 
-            this.background = ExecuteAsync(this.cancellation.Token).ContinueWith(FinalizeBackgroundAsync);
+            this.background = RunBackgroundTaskAsync(this.cancellation.Token);
 
             return Task.CompletedTask;
         }
@@ -52,12 +52,18 @@ namespace Ztm.Hosting
 
             try
             {
+                // This method must ignore any errors that was raised from background task due to it is already handled
+                // by exception handler. But we still need to throw OperationCanceledException if cancellationToken is
+                // triggered.
                 var completed = await Task.WhenAny(
                     this.background,
                     Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken)
                 );
 
-                await completed;
+                if (!ReferenceEquals(completed, this.background))
+                {
+                    await completed;
+                }
             }
             finally
             {
@@ -87,19 +93,17 @@ namespace Ztm.Hosting
 
         protected abstract Task ExecuteAsync(CancellationToken cancellationToken);
 
-        Task FinalizeBackgroundAsync(Task background)
+        async Task RunBackgroundTaskAsync(CancellationToken cancellationToken)
         {
-            if (background.IsFaulted)
+            await Task.Yield(); // We don't want the code after this to run synchronously.
+
+            try
             {
-                return this.exceptionHandler.RunAsync(
-                    GetType(),
-                    background.Exception.InnerException,
-                    CancellationToken.None
-                );
+                await ExecuteAsync(cancellationToken);
             }
-            else
+            catch (Exception ex) when (!(ex is OperationCanceledException))
             {
-                return Task.CompletedTask;
+                await this.exceptionHandler.RunAsync(GetType(), ex, CancellationToken.None);
             }
         }
     }

@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Ztm.Hosting\Ztm.Hosting.csproj" />
+    <ProjectReference Include="..\Ztm.Testing\Ztm.Testing.csproj" />
   </ItemGroup>
 
 </Project>
