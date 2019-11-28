@@ -4,5 +4,6 @@ path_classifiers:
 queries:
   - include: "*"
   - exclude: cs/class-name-matches-base-class
+  - exclude: cs/linq/missed-where
   - exclude: cs/misleading-indentation
   - exclude: cs/useless-gethashcode-call

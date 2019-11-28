@@ -401,7 +401,7 @@ namespace Ztm.WebApi
                 throw new ArgumentNullException(nameof(watches));
             }
 
-            foreach (var watch in watches) // lgtm [cs/linq/missed-where]
+            foreach (var watch in watches)
             {
                 if (await StopTimer(watch.Context))
                 {
