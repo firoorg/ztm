@@ -49,7 +49,7 @@ namespace Ztm.Zcoin.Rpc.Tests
         [Fact]
         public async Task CreateRpcClientAsync_WithCorrectParameters_ShouldSuccess()
         {
-            using (var nodeBuilder = NodeBuilderFactory.CreateNodeBuilder(GetType().Name))
+            using (var nodeBuilder = NodeBuilderFactory.CreateNodeBuilder(GetType().FullName))
             {
                 var node = nodeBuilder.CreateNode(true);
                 var cred = RPCCredentialString.Parse(node.GetRPCAuth());

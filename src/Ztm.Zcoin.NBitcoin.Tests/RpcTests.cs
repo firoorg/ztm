@@ -16,7 +16,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests
 
         public RpcTests()
         {
-            this.builder = NodeBuilderFactory.CreateNodeBuilder(GetType().Name);
+            this.builder = NodeBuilderFactory.CreateNodeBuilder(GetType().FullName);
             this.node = this.builder.CreateNode(true);
             this.rpc = node.CreateRPCClient();
         }
