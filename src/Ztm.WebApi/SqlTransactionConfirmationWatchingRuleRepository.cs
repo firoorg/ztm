@@ -157,7 +157,7 @@ namespace Ztm.WebApi
             }
         }
 
-        static TransactionConfirmationWatchingRule<TCallbackResult> ToDomain(
+        public static TransactionConfirmationWatchingRule<TCallbackResult> ToDomain(
             Ztm.Data.Entity.Contexts.Main.TransactionConfirmationWatchingRule watch,
             Callback callback = null)
         {
@@ -171,7 +171,7 @@ namespace Ztm.WebApi
                 JsonConvert.DeserializeObject<TCallbackResult>(watch.TimeoutData),
                 callback != null
                     ? callback
-                    : watch.Callback == null ? null : SqlCallbackRepository.ToDomain(watch.Callback)
+                    : (watch.Callback == null ? null : SqlCallbackRepository.ToDomain(watch.Callback))
             );
         }
     }

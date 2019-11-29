@@ -32,6 +32,8 @@ namespace Ztm.Data.Entity.Contexts
 
         public DbSet<TransactionConfirmationWatchingRule> TransactionConfirmationWatchingRules { get; set; }
 
+        public DbSet<TransactionConfirmationWatch> TransactionConfirmationWatches { get; set; }
+
         protected virtual void ConfigureBlock(EntityTypeBuilder<Block> builder)
         {
             builder.Property(e => e.Height).IsRequired().ValueGeneratedNever();
@@ -162,6 +164,25 @@ namespace Ztm.Data.Entity.Contexts
                    .OnDelete(DeleteBehavior.Cascade);
         }
 
+        protected virtual void ConfirgureTransactionConfirmationWatch(
+            EntityTypeBuilder<TransactionConfirmationWatch> builder)
+        {
+            builder.Property(e => e.Id).IsRequired().ValueGeneratedNever();
+            builder.Property(e => e.RuleId).IsRequired();
+            builder.Property(e => e.StartBlock).IsRequired();
+            builder.Property(e => e.StartTime).IsRequired();
+            builder.Property(e => e.Transaction).IsRequired();
+            builder.Property(e => e.Status).IsRequired();
+
+            builder.HasKey(e => e.Id);
+            builder.HasIndex(e => e.RuleId);
+            builder.HasOne(e => e.Rule)
+                   .WithMany(e => e.Watches)
+                   .HasForeignKey(e => e.RuleId)
+                   .HasPrincipalKey(e => e.Id)
+                   .OnDelete(DeleteBehavior.Cascade);
+        }
+
         protected sealed override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Block>(ConfigureBlock);
@@ -172,6 +193,7 @@ namespace Ztm.Data.Entity.Contexts
             modelBuilder.Entity<WebApiCallback>(ConfigureWebApiCallback);
             modelBuilder.Entity<WebApiCallbackHistory>(ConfigureWebApiCallbackHistory);
             modelBuilder.Entity<TransactionConfirmationWatchingRule>(ConfigureTransactionConfirmationWatchingRule);
+            modelBuilder.Entity<TransactionConfirmationWatch>(ConfirgureTransactionConfirmationWatch);
         }
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.ObjectModel;
 using NBitcoin;
 
 namespace Ztm.Data.Entity.Contexts.Main
@@ -16,5 +17,6 @@ namespace Ztm.Data.Entity.Contexts.Main
         public string TimeoutData { get; set; }
 
         public WebApiCallback Callback { get; set; }
+        public Collection<TransactionConfirmationWatch> Watches { get; set; }
     }
 }

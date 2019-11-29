@@ -27,6 +27,7 @@ namespace Ztm.WebApi.Tests
         readonly ICallbackRepository callbackRepository;
         readonly RuleRepository ruleRepository;
         readonly IBlocksStorage blockStorage;
+        readonly ITransactionConfirmationWatchRepository watchRepository;
         readonly ICallbackExecuter callbackExecuter;
         readonly ILogger<TransactionConfirmationWatcher> logger;
 
@@ -46,6 +47,7 @@ namespace Ztm.WebApi.Tests
 
             this.callbackExecuter = Substitute.For<ICallbackExecuter>();
             this.logger = Substitute.For<ILogger<TransactionConfirmationWatcher>>();
+            this.watchRepository = Substitute.ForPartsOf<TestTransactionConfirmationWatchRepository>();
 
             this.handler = this.subject = new TransactionConfirmationWatcher
             (
@@ -53,6 +55,7 @@ namespace Ztm.WebApi.Tests
                 this.ruleRepository,
                 this.blockStorage,
                 this.callbackExecuter,
+                this.watchRepository,
                 this.logger
             );
             this.blockListener = this.subject;
@@ -85,6 +88,7 @@ namespace Ztm.WebApi.Tests
                 this.ruleRepository,
                 this.blockStorage,
                 this.callbackExecuter,
+                this.watchRepository,
                 this.logger
             );
         }
@@ -95,31 +99,37 @@ namespace Ztm.WebApi.Tests
             Assert.Throws<ArgumentNullException>
             (
                 "callbackRepository",
-                () => new TransactionConfirmationWatcher(null, this.ruleRepository, this.blockStorage, this.callbackExecuter, this.logger)
+                () => new TransactionConfirmationWatcher(null, this.ruleRepository, this.blockStorage, this.callbackExecuter, this.watchRepository, this.logger)
             );
 
             Assert.Throws<ArgumentNullException>
             (
                 "ruleRepository",
-                () => new TransactionConfirmationWatcher(this.callbackRepository, null, this.blockStorage, this.callbackExecuter, this.logger)
+                () => new TransactionConfirmationWatcher(this.callbackRepository, null, this.blockStorage, this.callbackExecuter, this.watchRepository, this.logger)
             );
 
             Assert.Throws<ArgumentNullException>
             (
                 "blocks",
-                () => new TransactionConfirmationWatcher(this.callbackRepository, this.ruleRepository, null, this.callbackExecuter, this.logger)
+                () => new TransactionConfirmationWatcher(this.callbackRepository, this.ruleRepository, null, this.callbackExecuter, this.watchRepository, this.logger)
             );
 
             Assert.Throws<ArgumentNullException>
             (
                 "callbackExecuter",
-                () => new TransactionConfirmationWatcher(this.callbackRepository, this.ruleRepository, this.blockStorage, null, this.logger)
+                () => new TransactionConfirmationWatcher(this.callbackRepository, this.ruleRepository, this.blockStorage, null, this.watchRepository, this.logger)
+            );
+
+            Assert.Throws<ArgumentNullException>
+            (
+                "watchRepository",
+                () => new TransactionConfirmationWatcher(this.callbackRepository, this.ruleRepository, this.blockStorage, this.callbackExecuter, null, this.logger)
             );
 
             Assert.Throws<ArgumentNullException>
             (
                 "logger",
-                () => new TransactionConfirmationWatcher(this.callbackRepository, this.ruleRepository, this.blockStorage, this.callbackExecuter, null)
+                () => new TransactionConfirmationWatcher(this.callbackRepository, this.ruleRepository, this.blockStorage, this.callbackExecuter, this.watchRepository, null)
             );
         }
 
@@ -707,24 +717,19 @@ namespace Ztm.WebApi.Tests
         {
             // Arrange.
             var builder = new WatchArgsBuilder(this.callbackRepository);
-
             builder.timeout = TimeSpan.FromMilliseconds(500);
             builder.confirmation = 10;
-            var watch = await builder.Call(this.subject.AddTransactionAsync);
 
-            var watches = new List<TransactionWatch<Rule>>()
-            {
-                new TransactionWatch<Rule>(watch, uint256.Zero, builder.transaction),
-            };
+            var rule = await builder.Call(this.subject.AddTransactionAsync);
+
+            var watches = new List<TransactionWatch<Rule>>();
+            var watch = new TransactionWatch<Rule>(rule, uint256.Zero, builder.transaction);
+            watches.Add(watch);
 
             await this.handler.AddWatchesAsync(watches, CancellationToken.None);
 
             // Act.
-            foreach (var watchObj in watches)
-            {
-                await this.handler.RemoveWatchAsync(watchObj, WatchRemoveReason.BlockRemoved, CancellationToken.None);
-            }
-
+            await this.handler.RemoveWatchAsync(watch, WatchRemoveReason.BlockRemoved, CancellationToken.None);
             Thread.Sleep(TimeSpan.FromMilliseconds(1000));
 
             // Assert.
@@ -850,6 +855,7 @@ namespace Ztm.WebApi.Tests
                 this.ruleRepository,
                 this.blockStorage,
                 this.callbackExecuter,
+                this.watchRepository,
                 this.logger
             );
 
