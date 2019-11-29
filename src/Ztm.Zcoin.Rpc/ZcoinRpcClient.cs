@@ -426,7 +426,7 @@ namespace Ztm.Zcoin.Rpc
             {
                 infomation = await GetExodusTransactionAsync(transaction.GetHash(), CancellationToken.None);
             }
-            catch (Exception) // lgtm[cs/catch-of-all-exceptions]
+            catch (Exception) // lgtm [cs/catch-of-all-exceptions]
             {
                 return null;
             }
