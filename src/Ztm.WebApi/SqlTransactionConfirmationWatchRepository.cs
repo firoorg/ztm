@@ -86,8 +86,6 @@ namespace Ztm.WebApi
 
         TransactionWatch<Rule> ToDomain(TransactionConfirmationWatch watch)
         {
-            var rule = watch.Rule;
-
             return new TransactionWatch<Rule>
             (
                 watch.Rule == null ? null : SqlTransactionConfirmationWatchingRuleRepository<TransactionConfirmationCallbackResult>.ToDomain(watch.Rule),
