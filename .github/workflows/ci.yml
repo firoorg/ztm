@@ -1,20 +1,16 @@
 name: Continuous Integration
 on: [push, pull_request]
-env:
-  DOTNET_VERSION: '2.2.108'
 jobs:
   build:
     name: Build
     runs-on: windows-latest
-    env:
-      PUBLISH_PATH: ${{ format('{0}\build', env.GITHUB_WORKSPACE) }}
     steps:
     - name: Checkout
       uses: actions/checkout@v1
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
+        dotnet-version: '2.2.108'
     - name: Build
       run: dotnet build src\Ztm.sln
     - name: Unit Test
@@ -34,19 +30,19 @@ jobs:
       env:
         ZTM_MAIN_DATABASE: Host=127.0.0.1;Database=postgres;Username=postgres
       run: |
-        dotnet publish -o $PUBLISH_PATH\ztm -r linux-musl-x64 -c Release src\Ztm.WebApi
-        dotnet ef migrations script -o $PUBLISH_PATH\ztm\Ztm.Data.Entity.Postgres.sql -i -p src\Ztm.Data.Entity.Postgres
-        dotnet publish -o $PUBLISH_PATH\e2e src\Ztm.EndToEndTests
+        dotnet publish -o $GITHUB_WORKSPACE\build\ztm -r linux-musl-x64 -c Release src\Ztm.WebApi
+        dotnet ef migrations script -o $GITHUB_WORKSPACE\build\ztm\Ztm.Data.Entity.Postgres.sql -i -p src\Ztm.Data.Entity.Postgres
+        dotnet publish -o $GITHUB_WORKSPACE\build\e2e src\Ztm.EndToEndTests
     - name: Archive Release Artifact
       uses: actions/upload-artifact@v1
       with:
         name: release
-        path: ${{ format('{0}\ztm', env.PUBLISH_PATH) }}
+        path: build\ztm
     - name: Archive E2E Tests Artifact
       uses: actions/upload-artifact@v1
       with:
         name: e2e
-        path: ${{ format('{0}\e2e', env.PUBLISH_PATH) }}
+        path: build\e2e
   e2e:
     name: E2E Test
     needs: build
@@ -60,7 +56,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
+        dotnet-version: '2.2.108'
     - name: Get Release Artifact
       uses: actions/download-artifact@v1
       with:
