@@ -165,9 +165,13 @@ namespace Ztm.WebApi
             {
                 foreach (var timerSet in timers)
                 {
-                    foreach (var timer in timerSet.Value.Where(t => t.Value != null && t.Value.Status == TimerStatus.Started))
+                    foreach (var timer in timerSet.Value)
                     {
                         await timer.Value.StopAsync(cancellationToken);
+                        if (timer.Value.ElapsedCount == 0)
+                        {
+                            await this.ruleRepository.SubtractRemainingWaitingTimeAsync(timer.Key, timer.Value.ElapsedTime, CancellationToken.None);
+                        }
                     }
                 }
             }
@@ -289,7 +293,7 @@ namespace Ztm.WebApi
             var rule = await this.ruleRepository.GetAsync(watch.Context.Id, cancellationToken);
 
             await this.ruleRepository.CompleteAsync(watch.Context.Id, cancellationToken);
-            await ExecuteCallbackAsync(rule.Callback, rule.Success, cancellationToken);
+            await ExecuteCallbackAsync(rule.Callback, rule.Success, CancellationToken.None);
         }
 
         async Task ExecuteCallbackAsync(Callback callback, TransactionConfirmationCallbackResult payload, CancellationToken cancellationToken)
@@ -306,7 +310,7 @@ namespace Ztm.WebApi
                 return;
             }
 
-            await this.callbackRepository.SetHistorySuccessAsync(id, cancellationToken);
+            await this.callbackRepository.SetHistorySuccessAsync(id, CancellationToken.None);
             await this.callbackRepository.SetCompletedAsyc(callback.Id, CancellationToken.None);
         }
 
