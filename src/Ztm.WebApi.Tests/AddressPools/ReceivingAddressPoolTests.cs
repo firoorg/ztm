@@ -58,7 +58,7 @@ namespace Ztm.WebApi.Tests.AddressPools
 
             // Assert.
             _ = this.generator.Received(1).GenerateAsync(Arg.Any<CancellationToken>());
-            _ = this.storage.Received(1).AddAddressAsync(Arg.Is<BitcoinAddress>(address), Arg.Any<CancellationToken>());
+            _ = this.storage.Received(1).AddAsync(Arg.Is<BitcoinAddress>(address), Arg.Any<CancellationToken>());
         }
 
         [Fact]
@@ -76,7 +76,7 @@ namespace Ztm.WebApi.Tests.AddressPools
         {
             // Arrange.
             var address = TestAddress.Regtest1;
-            var receivingAddress = await this.storage.AddAddressAsync(address, CancellationToken.None);
+            var receivingAddress = await this.storage.AddAsync(address, CancellationToken.None);
             await this.storage.TryLockAsync(receivingAddress.Id, CancellationToken.None);
 
             // Act.
@@ -91,7 +91,7 @@ namespace Ztm.WebApi.Tests.AddressPools
         {
             // Arrange.
             var address = TestAddress.Regtest1;
-            await this.storage.AddAddressAsync(address, CancellationToken.None);
+            await this.storage.AddAsync(address, CancellationToken.None);
 
             // Act.
             var recv = await this.subject.TryLockAddressAsync(CancellationToken.None);
@@ -104,8 +104,8 @@ namespace Ztm.WebApi.Tests.AddressPools
         public async Task TryLockAddressAsync_AndConsumedAllAvailable_ShouldReturnNullWhenTryToLockNext()
         {
             // Arrange.
-            await this.storage.AddAddressAsync(TestAddress.Regtest1, CancellationToken.None);
-            await this.storage.AddAddressAsync(TestAddress.Regtest2, CancellationToken.None);
+            await this.storage.AddAsync(TestAddress.Regtest1, CancellationToken.None);
+            await this.storage.AddAsync(TestAddress.Regtest2, CancellationToken.None);
 
             // Act.
             await this.subject.TryLockAddressAsync(CancellationToken.None);

@@ -39,7 +39,7 @@ namespace Ztm.WebApi.AddressPools
         public async Task GenerateAddressAsync(CancellationToken cancellationToken)
         {
             var address = await this.generator.GenerateAsync(cancellationToken);
-            await this.storage.AddAddressAsync(address, CancellationToken.None);
+            await this.storage.AddAsync(address, CancellationToken.None);
         }
 
         public Task ReleaseAddressAsync(Guid id, CancellationToken cancellationToken)

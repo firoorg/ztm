@@ -17,7 +17,7 @@ namespace Ztm.WebApi.Tests.AddressPools
             this.receivingAddresses = new Dictionary<Guid, ReceivingAddress>();
         }
 
-        public virtual Task<ReceivingAddress> AddAddressAsync(BitcoinAddress address, CancellationToken cancellationToken)
+        public virtual Task<ReceivingAddress> AddAsync(BitcoinAddress address, CancellationToken cancellationToken)
         {
             var recv = new ReceivingAddress(Guid.NewGuid(), address, false, new Collection<ReceivingAddressReservation>());
             this.receivingAddresses.Add(recv.Id, recv);

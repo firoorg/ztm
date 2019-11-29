@@ -1,23 +1,23 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using NBitcoin;
 using Ztm.Data.Entity.Contexts;
+using ReceivingAddressModel = Ztm.Data.Entity.Contexts.Main.ReceivingAddress;
+using ReceivingAddressReservationModel = Ztm.Data.Entity.Contexts.Main.ReceivingAddressReservation;
 
 namespace Ztm.WebApi.AddressPools
 {
-    using ReceivingAddressModel = Ztm.Data.Entity.Contexts.Main.ReceivingAddress;
-    using ReceivingAddressReservationModel = Ztm.Data.Entity.Contexts.Main.ReceivingAddressReservation;
-
-    public sealed class SqlReceivingAddressStorage : IReceivingAddressStorage
+    public sealed class EntityReceivingAddressStorage : IReceivingAddressStorage
     {
         readonly IMainDatabaseFactory databaseFactory;
         readonly Network network;
 
-        public SqlReceivingAddressStorage(IMainDatabaseFactory databaseFactory, Network network)
+        public EntityReceivingAddressStorage(IMainDatabaseFactory databaseFactory, Network network)
         {
             if (databaseFactory == null)
             {
@@ -33,7 +33,7 @@ namespace Ztm.WebApi.AddressPools
             this.network = network;
         }
 
-        public async Task<ReceivingAddress> AddAddressAsync(BitcoinAddress address, CancellationToken cancellationToken)
+        public async Task<ReceivingAddress> AddAsync(BitcoinAddress address, CancellationToken cancellationToken)
         {
             if (address == null)
             {
@@ -42,7 +42,7 @@ namespace Ztm.WebApi.AddressPools
 
             using (var db = this.databaseFactory.CreateDbContext())
             {
-                var recAddress = await db.AddAsync<ReceivingAddressModel>(
+                var recAddress = await db.ReceivingAddresses.AddAsync(
                     new ReceivingAddressModel
                     {
                         Address = address.ToString(),
@@ -53,6 +53,7 @@ namespace Ztm.WebApi.AddressPools
 
                 await db.SaveChangesAsync(cancellationToken);
 
+                recAddress.Entity.Reservations = new List<ReceivingAddressReservationModel>();
                 return ToDomain(recAddress.Entity);
             }
         }
@@ -62,18 +63,18 @@ namespace Ztm.WebApi.AddressPools
             using (var db = this.databaseFactory.CreateDbContext())
             {
                 var recv = await db.ReceivingAddresses
-                    .Include(e => e.ReceivingAddressReservations)
-                    .FirstAsync(r => r.Id == id);
+                    .Include(e => e.Reservations)
+                    .SingleAsync(r => r.Id == id);
 
                 return ToDomain(recv);
             }
         }
 
-        public Task<IEnumerable<ReceivingAddress>> ListReceivingAddressAsync(AddressFilter filter, CancellationToken cancellationToken)
+        public async Task<IEnumerable<ReceivingAddress>> ListReceivingAddressAsync(AddressFilter filter, CancellationToken cancellationToken)
         {
             using (var db = this.databaseFactory.CreateDbContext())
             {
-                IQueryable<ReceivingAddressModel> query = db.ReceivingAddresses.Include(a => a.ReceivingAddressReservations);
+                IQueryable<ReceivingAddressModel> query = db.ReceivingAddresses.Include(a => a.Reservations);
 
                 if (filter.HasFlag(AddressFilter.Available))
                 {
@@ -82,21 +83,21 @@ namespace Ztm.WebApi.AddressPools
 
                 if (filter.HasFlag(AddressFilter.NeverUsed))
                 {
-                    query = query.Where(a => !a.ReceivingAddressReservations.Any());
+                    query = query.Where(a => !a.Reservations.Any());
                 }
 
-                return Task.FromResult<IEnumerable<ReceivingAddress>>(query.Select(r => ToDomain(r)).ToList());
+                return await query.Select(r => ToDomain(r)).ToListAsync();
             }
         }
 
         public async Task ReleaseAsync(Guid id, CancellationToken cancellationToken)
         {
             using (var db = this.databaseFactory.CreateDbContext())
-            using (var tx = db.Database.BeginTransaction())
+            using (var tx = db.Database.BeginTransaction(IsolationLevel.RepeatableRead))
             {
                 var reservation = await db.ReceivingAddressReservations
-                    .Include(r => r.ReceivingAddress)
-                    .FirstAsync(r => r.Id == id);
+                    .Include(r => r.Address)
+                    .SingleAsync(r => r.Id == id);
 
                 if (reservation == null)
                 {
@@ -109,9 +110,9 @@ namespace Ztm.WebApi.AddressPools
                 }
 
                 reservation.ReleasedAt = DateTime.UtcNow;
-                reservation.ReceivingAddress.IsLocked = false;
+                reservation.Address.IsLocked = false;
 
-                await db.SaveChangesAsync();
+                await db.SaveChangesAsync(cancellationToken);
                 tx.Commit();
             }
         }
@@ -119,12 +120,12 @@ namespace Ztm.WebApi.AddressPools
         public async Task<ReceivingAddressReservation> TryLockAsync(Guid id, CancellationToken cancellationToken)
         {
             using (var db = this.databaseFactory.CreateDbContext())
-            using (var tx = db.Database.BeginTransaction())
+            using (var tx = db.Database.BeginTransaction(IsolationLevel.RepeatableRead))
             {
-                var recv = await db.ReceivingAddresses.FirstAsync(a => a.Id == id, cancellationToken);
+                var recv = await db.ReceivingAddresses.SingleAsync(a => a.Id == id, cancellationToken);
                 if (recv == null)
                 {
-                    return null;
+                    throw new ArgumentNullException("Receiving address id is not found.");
                 }
 
                 if (recv.IsLocked)
@@ -134,13 +135,13 @@ namespace Ztm.WebApi.AddressPools
 
                 recv.IsLocked = true;
 
-                var lockedAt = DateTime.UtcNow;
-                var reservation = await db.AddAsync
+                var reservation = await db.ReceivingAddressReservations.AddAsync
                 (
-                    new ReceivingAddressReservationModel{
+                    new ReceivingAddressReservationModel
+                    {
                         Id = Guid.NewGuid(),
-                        LockedAt = lockedAt,
-                        ReceivingAddressId = id,
+                        LockedAt = DateTime.UtcNow,
+                        AddressId = id,
                         ReleasedAt = null
                     }
                 );
@@ -152,19 +153,19 @@ namespace Ztm.WebApi.AddressPools
             }
         }
 
-        ReceivingAddress ToDomain(ReceivingAddressModel receivingAddress)
+        ReceivingAddress ToDomain(ReceivingAddressModel entity)
         {
             var r = new ReceivingAddress
             (
-                receivingAddress.Id,
-                BitcoinAddress.Create(receivingAddress.Address, this.network),
-                receivingAddress.IsLocked,
+                entity.Id,
+                BitcoinAddress.Create(entity.Address, this.network),
+                entity.IsLocked,
                 new List<ReceivingAddressReservation>()
             );
 
-            if (receivingAddress.ReceivingAddressReservations != null)
+            if (entity.Reservations.Any())
             {
-                foreach (var reservation in receivingAddress.ReceivingAddressReservations)
+                foreach (var reservation in entity.Reservations)
                 {
                     r.Reservations.Add(ToDomain(reservation, r));
                 }
@@ -173,28 +174,15 @@ namespace Ztm.WebApi.AddressPools
             return r;
         }
 
-        ReceivingAddressReservation ToDomain(ReceivingAddressReservationModel reservationModel)
+        ReceivingAddressReservation ToDomain(ReceivingAddressReservationModel entity, ReceivingAddress address = null)
         {
             return new ReceivingAddressReservation
             (
-                reservationModel.Id,
-                ToDomain(reservationModel.ReceivingAddress),
-                DateTime.SpecifyKind(reservationModel.LockedAt, DateTimeKind.Utc),
-                reservationModel.ReleasedAt.HasValue
-                    ? DateTime.SpecifyKind(reservationModel.ReleasedAt.Value, DateTimeKind.Utc)
-                    : new Nullable<DateTime>()
-            );
-        }
-
-        ReceivingAddressReservation ToDomain(ReceivingAddressReservationModel reservationModel, ReceivingAddress address)
-        {
-            return new ReceivingAddressReservation
-            (
-                reservationModel.Id,
-                address,
-                DateTime.SpecifyKind(reservationModel.LockedAt, DateTimeKind.Utc),
-                reservationModel.ReleasedAt.HasValue
-                    ? DateTime.SpecifyKind(reservationModel.ReleasedAt.Value, DateTimeKind.Utc)
+                entity.Id,
+                address != null ? address : ToDomain(entity.Address),
+                DateTime.SpecifyKind(entity.LockedAt, DateTimeKind.Utc),
+                entity.ReleasedAt.HasValue
+                    ? DateTime.SpecifyKind(entity.ReleasedAt.Value, DateTimeKind.Utc)
                     : new Nullable<DateTime>()
             );
         }

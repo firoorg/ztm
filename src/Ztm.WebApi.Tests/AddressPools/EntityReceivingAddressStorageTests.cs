@@ -12,19 +12,19 @@ using Ztm.Zcoin.NBitcoin;
 
 namespace Ztm.WebApi.Tests.AddressPools
 {
-    public sealed class SqlReceivingAddressStorageTests : IDisposable
+    public sealed class EntityReceivingAddressStorageTests : IDisposable
     {
         readonly TestMainDatabaseFactory databaseFactory;
         readonly Network network;
 
-        readonly SqlReceivingAddressStorage subject;
+        readonly EntityReceivingAddressStorage subject;
 
-        public SqlReceivingAddressStorageTests()
+        public EntityReceivingAddressStorageTests()
         {
             this.databaseFactory = new TestMainDatabaseFactory();
             this.network = ZcoinNetworks.Instance.Regtest;
 
-            this.subject = new SqlReceivingAddressStorage(this.databaseFactory, this.network);
+            this.subject = new EntityReceivingAddressStorage(this.databaseFactory, this.network);
         }
 
         public void Dispose()
@@ -37,12 +37,12 @@ namespace Ztm.WebApi.Tests.AddressPools
         {
             Assert.Throws<ArgumentNullException>(
                 "databaseFactory",
-                () => new SqlReceivingAddressStorage(null, this.network)
+                () => new EntityReceivingAddressStorage(null, this.network)
             );
 
             Assert.Throws<ArgumentNullException>(
                 "network",
-                () => new SqlReceivingAddressStorage(this.databaseFactory, null)
+                () => new EntityReceivingAddressStorage(this.databaseFactory, null)
             );
         }
 
@@ -53,7 +53,7 @@ namespace Ztm.WebApi.Tests.AddressPools
             var address = TestAddress.Regtest1;
 
             // Act.
-            var result = await this.subject.AddAddressAsync(TestAddress.Regtest1, CancellationToken.None);
+            var result = await this.subject.AddAsync(TestAddress.Regtest1, CancellationToken.None);
 
             // Assert.
             Assert.NotEqual(Guid.Empty, result.Id);
@@ -66,7 +66,7 @@ namespace Ztm.WebApi.Tests.AddressPools
         {
             _ = Assert.ThrowsAsync<ArgumentNullException>(
                 "address",
-                () => this.subject.AddAddressAsync(null, CancellationToken.None)
+                () => this.subject.AddAsync(null, CancellationToken.None)
             );
         }
 
@@ -74,7 +74,7 @@ namespace Ztm.WebApi.Tests.AddressPools
         public async Task GetAsync_ExistReceivingAddress_ShouldSuccess()
         {
             // Arrange.
-            var recv = await this.subject.AddAddressAsync(TestAddress.Regtest1, CancellationToken.None);
+            var recv = await this.subject.AddAsync(TestAddress.Regtest1, CancellationToken.None);
 
             // Act.
             var received = await this.subject.GetAsync(recv.Id, CancellationToken.None);
@@ -87,7 +87,7 @@ namespace Ztm.WebApi.Tests.AddressPools
         public async Task ListReceivingAddressAsync_WithEmptyRecerivingAddress_ShouldGetEmpty()
         {
             // Act.
-            var result = await this.subject.ListReceivingAddressAsync(AddressFilter.NoFilter, CancellationToken.None);
+            var result = await this.subject.ListReceivingAddressAsync(AddressFilter.None, CancellationToken.None);
 
             // Assert.
             Assert.Empty(result);
@@ -99,12 +99,12 @@ namespace Ztm.WebApi.Tests.AddressPools
             // Arrange.
             var receivingAddresses = new List<ReceivingAddress>
             {
-                await this.subject.AddAddressAsync(TestAddress.Regtest1, CancellationToken.None),
-                await this.subject.AddAddressAsync(TestAddress.Regtest2, CancellationToken.None)
+                await this.subject.AddAsync(TestAddress.Regtest1, CancellationToken.None),
+                await this.subject.AddAsync(TestAddress.Regtest2, CancellationToken.None)
             };
 
             // Act.
-            var result = await this.subject.ListReceivingAddressAsync(AddressFilter.NoFilter, CancellationToken.None);
+            var result = await this.subject.ListReceivingAddressAsync(AddressFilter.None, CancellationToken.None);
 
             // Assert.
             Assert.Contains(receivingAddresses.First(), result);
@@ -117,8 +117,8 @@ namespace Ztm.WebApi.Tests.AddressPools
             // Arrange.
             var receivingAddresses = new List<ReceivingAddress>
             {
-                await this.subject.AddAddressAsync(TestAddress.Regtest1, CancellationToken.None),
-                await this.subject.AddAddressAsync(TestAddress.Regtest2, CancellationToken.None)
+                await this.subject.AddAsync(TestAddress.Regtest1, CancellationToken.None),
+                await this.subject.AddAsync(TestAddress.Regtest2, CancellationToken.None)
             };
             await this.subject.TryLockAsync(receivingAddresses.First().Id, CancellationToken.None);
 
@@ -136,8 +136,8 @@ namespace Ztm.WebApi.Tests.AddressPools
             // Arrange.
             var receivingAddresses = new List<ReceivingAddress>
             {
-                await this.subject.AddAddressAsync(TestAddress.Regtest1, CancellationToken.None),
-                await this.subject.AddAddressAsync(TestAddress.Regtest2, CancellationToken.None)
+                await this.subject.AddAsync(TestAddress.Regtest1, CancellationToken.None),
+                await this.subject.AddAsync(TestAddress.Regtest2, CancellationToken.None)
             };
             var r = await this.subject.TryLockAsync(receivingAddresses.First().Id, CancellationToken.None);
             await this.subject.ReleaseAsync(r.Id, CancellationToken.None);
@@ -156,7 +156,7 @@ namespace Ztm.WebApi.Tests.AddressPools
         public async Task TryLockAsync_WithAvailableExist_ShouldSuccess()
         {
             // Arrange.
-            var result = await this.subject.AddAddressAsync(TestAddress.Regtest1, CancellationToken.None);
+            var result = await this.subject.AddAsync(TestAddress.Regtest1, CancellationToken.None);
             var startedAt = DateTime.UtcNow;
 
             // Act.
@@ -181,7 +181,7 @@ namespace Ztm.WebApi.Tests.AddressPools
         public async Task TryLockAsync_Locked_ShouldReturnNull()
         {
             // Arrange.
-            var result = await this.subject.AddAddressAsync(TestAddress.Regtest1, CancellationToken.None);
+            var result = await this.subject.AddAsync(TestAddress.Regtest1, CancellationToken.None);
 
             // Act.
             var reservation = await this.subject.TryLockAsync(result.Id, CancellationToken.None);
@@ -201,7 +201,7 @@ namespace Ztm.WebApi.Tests.AddressPools
         public async Task ReleaseAsync_WithLocked_ShouldUnlock()
         {
             // Arrange.
-            var address = await this.subject.AddAddressAsync(TestAddress.Regtest1, CancellationToken.None);
+            var address = await this.subject.AddAsync(TestAddress.Regtest1, CancellationToken.None);
             var reservation = await this.subject.TryLockAsync(address.Id, CancellationToken.None);
 
             // Act.
@@ -220,7 +220,7 @@ namespace Ztm.WebApi.Tests.AddressPools
         public async Task ReleaseAsync_Released_ShouldThrow()
         {
             // Arrange.
-            var address = await this.subject.AddAddressAsync(TestAddress.Regtest1, CancellationToken.None);
+            var address = await this.subject.AddAsync(TestAddress.Regtest1, CancellationToken.None);
             var reservation = await this.subject.TryLockAsync(address.Id, CancellationToken.None);
             await this.subject.ReleaseAsync(reservation.Id, CancellationToken.None);
 
@@ -242,7 +242,7 @@ namespace Ztm.WebApi.Tests.AddressPools
         public async Task TryLockAsync_ReleasedAddress_ShouldSuccess()
         {
             // Arrange.
-            var address = await this.subject.AddAddressAsync(TestAddress.Regtest1, CancellationToken.None);
+            var address = await this.subject.AddAsync(TestAddress.Regtest1, CancellationToken.None);
             var reservation = await this.subject.TryLockAsync(address.Id, CancellationToken.None);
             await this.subject.ReleaseAsync(reservation.Id, CancellationToken.None);
 

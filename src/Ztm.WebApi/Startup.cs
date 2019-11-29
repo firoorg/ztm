@@ -98,7 +98,7 @@ namespace Ztm.WebApi
         {
             services.AddTransient<IAddressChoser, LessUsageFirstChoser>();
             services.AddTransient<IAddressGenerator, RpcAddressGenerator>();
-            services.AddTransient<IReceivingAddressStorage, SqlReceivingAddressStorage>();
+            services.AddTransient<IReceivingAddressStorage, EntityReceivingAddressStorage>();
 
             services.AddSingleton<IReceivingAddressPool, ReceivingAddressPool>();
         }

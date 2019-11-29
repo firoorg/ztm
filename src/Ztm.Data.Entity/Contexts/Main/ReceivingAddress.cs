@@ -9,6 +9,6 @@ namespace Ztm.Data.Entity.Contexts.Main
         public string Address { get; set; }
         public bool IsLocked { get; set; }
 
-        public List<ReceivingAddressReservation> ReceivingAddressReservations { get; set; }
+        public List<ReceivingAddressReservation> Reservations { get; set; }
     }
 }

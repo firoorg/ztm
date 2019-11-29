@@ -5,8 +5,8 @@ namespace Ztm.WebApi.AddressPools
     [Flags]
     public enum AddressFilter
     {
-        NoFilter = 0,
-        NeverUsed = 1,
-        Available = 2,
+        None = 0x00,
+        NeverUsed = 0x01,
+        Available = 0x02,
     }
 }
