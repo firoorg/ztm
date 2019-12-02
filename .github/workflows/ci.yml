@@ -12,27 +12,29 @@ jobs:
       with:
         dotnet-version: '2.2.108'
     - name: Build
+      shell: cmd
       run: dotnet build src\Ztm.sln
     - name: Unit Test
-      shell: python
       run: |
-        import os
-        import os.path
-        import re
-        import subprocess
+        Get-ChildItem -Path src -Filter *.Tests -Directory | ForEach-Object {
+            $path = $_.FullName
 
-        for file in os.listdir('src'):
-          if re.match(r'^.+\.Tests$', file) is None:
-            continue
-          subprocess.run(['dotnet', 'test', os.path.join('src', file)], check=True)
-          print() # add a blank line between each project
+            $runner = Start-Process -FilePath dotnet -ArgumentList test, $path -PassThru -Wait
+
+            if ($runner.ExitCode -ne 0) {
+                exit $runner.ExitCode
+            }
+
+            Write-Host
+        }
     - name: Publish
       env:
         ZTM_MAIN_DATABASE: Host=127.0.0.1;Database=postgres;Username=postgres
+      shell: cmd
       run: |
-        dotnet publish -o $GITHUB_WORKSPACE\build\ztm -r linux-musl-x64 -c Release src\Ztm.WebApi
-        dotnet ef migrations script -o $GITHUB_WORKSPACE\build\ztm\Ztm.Data.Entity.Postgres.sql -i -p src\Ztm.Data.Entity.Postgres
-        dotnet publish -o $GITHUB_WORKSPACE\build\e2e src\Ztm.EndToEndTests
+        dotnet publish /o "%GITHUB_WORKSPACE%\build\ztm" /r linux-musl-x64 /c Release src\Ztm.WebApi
+        dotnet ef migrations script /o "%GITHUB_WORKSPACE%\build\ztm\Ztm.Data.Entity.Postgres.sql" /i /p src\Ztm.Data.Entity.Postgres
+        dotnet publish /o "%GITHUB_WORKSPACE%\build\e2e" src\Ztm.EndToEndTests
     - name: Archive Release Artifact
       uses: actions/upload-artifact@v1
       with:
@@ -70,8 +72,6 @@ jobs:
     - name: Fixing File Permissions
       run: chmod +x release/Ztm.WebApi
     - name: Prepare Required Services
-      # right now Actions does not support additional arguments for services and we don't want to
-      # bring docker-compose.yml here from the previous job so we need to spawn by ourself
       run: |
         docker network create $DOCKER_NETWORK
         docker run --rm -d --name $DOCKER_DB_MAIN --network $DOCKER_NETWORK postgres:10
