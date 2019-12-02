@@ -17,7 +17,7 @@ using Timer = Ztm.Threading.Timer;
 
 namespace Ztm.WebApi
 {
-    public sealed class TransactionConfirmationWatcher : ITransactionConfirmationWatcher, IHostedService, IBlockListener, ITransactionConfirmationWatcherHandler<Rule>
+    public sealed class TransactionConfirmationWatcher : ITransactionConfirmationWatcher, IHostedService, IBlockListener, ITransactionConfirmationWatcherHandler<Rule>, IDisposable
     {
         readonly Ztm.Zcoin.Watching.TransactionConfirmationWatcher<Rule> watcher;
 
@@ -26,7 +26,6 @@ namespace Ztm.WebApi
         readonly ITransactionConfirmationWatchingRuleRepository<TransactionConfirmationCallbackResult> ruleRepository;
         readonly ITransactionConfirmationWatchRepository watchRepository;
         readonly ICallbackExecuter callbackExecuter;
-        readonly IBlocksStorage blocks;
         readonly ILogger<TransactionConfirmationWatcher> logger;
 
         // State recorders
@@ -77,7 +76,6 @@ namespace Ztm.WebApi
             this.ruleRepository = ruleRepository;
             this.watchRepository = watchRepository;
             this.callbackExecuter = callbackExecuter;
-            this.blocks = blocks;
             this.logger = logger;
 
             this.watcher = new Zcoin.Watching.TransactionConfirmationWatcher<Rule>
@@ -86,8 +84,13 @@ namespace Ztm.WebApi
                 blocks
             );
 
-            this.timerLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
             this.timers = new Dictionary<uint256, Dictionary<Guid, Timer>>();
+            this.timerLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
+        }
+
+        public void Dispose()
+        {
+            this.timerLock.Dispose();
         }
 
         public async Task<Rule> AddTransactionAsync(
@@ -106,7 +109,7 @@ namespace Ztm.WebApi
 
             if (confirmation < 1)
             {
-                throw new ArgumentOutOfRangeException(nameof(confirmation) ,"Confirmation is less than zero.");
+                throw new ArgumentOutOfRangeException(nameof(confirmation), "Confirmation is less than zero.");
             }
 
             if (!Timer.IsValidDuration(unconfirmedWaitingTime))
@@ -151,7 +154,8 @@ namespace Ztm.WebApi
 
             var pendingWatches = await this.watchRepository.ListAsync(TransactionConfirmationWatchingWatchStatus.Pending, cancellationToken);
 
-            foreach (var rule in rules.Where(r => !r.Completed && !pendingWatches.Any(w => w.Context.Id == r.Id)))
+            foreach (var rule in rules.Where(r => r.Status == TransactionConfirmationWatchingRuleStatus.Pending
+                && !pendingWatches.Any(w => w.Context.Id == r.Id)))
             {
                 await SetupTimerAsync(rule);
             }
@@ -223,16 +227,15 @@ namespace Ztm.WebApi
             {
                 this.timerLock.EnterWriteLock();
 
+                var rule = (Rule)e.Context;
                 try
                 {
-                    var rule = (Rule)e.Context;
-
-                    await this.ruleRepository.CompleteAsync(rule.Id, CancellationToken.None);
-                    await ExecuteCallbackAsync(rule.Callback, rule.Timeout, cancellationToken);
-                    RemoveTimer(rule);
+                    await this.ruleRepository.UpdateStatusAsync(rule.Id, TransactionConfirmationWatchingRuleStatus.Timeout, CancellationToken.None);
+                    await ExecuteCallbackAsync(rule.Callback, rule.Timeout, CancellationToken.None);
                 }
                 finally
                 {
+                    RemoveTimer(rule);
                     this.timerLock.ExitWriteLock();
                 }
             });
@@ -292,7 +295,7 @@ namespace Ztm.WebApi
         {
             var rule = await this.ruleRepository.GetAsync(watch.Context.Id, cancellationToken);
 
-            await this.ruleRepository.CompleteAsync(watch.Context.Id, cancellationToken);
+            await this.ruleRepository.UpdateStatusAsync(watch.Context.Id, TransactionConfirmationWatchingRuleStatus.Success, cancellationToken);
             await ExecuteCallbackAsync(rule.Callback, rule.Success, CancellationToken.None);
         }
 

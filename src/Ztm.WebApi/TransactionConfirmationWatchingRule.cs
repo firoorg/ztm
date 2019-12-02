@@ -8,7 +8,7 @@ namespace Ztm.WebApi
         public TransactionConfirmationWatchingRule(
             Guid id,
             uint256 transaction,
-            bool completed,
+            TransactionConfirmationWatchingRuleStatus status,
             int confirmation,
             TimeSpan waitingTime,
             TCallbackResult success,
@@ -17,7 +17,7 @@ namespace Ztm.WebApi
         {
             this.Id = id;
             this.Transaction = transaction;
-            this.Completed = completed;
+            this.Status = status;
             this.Confirmation = confirmation;
             this.WaitingTime = waitingTime;
             this.Success = success;
@@ -27,7 +27,7 @@ namespace Ztm.WebApi
 
         public Guid Id { get; }
         public uint256 Transaction { get; }
-        public bool Completed { get; }
+        public TransactionConfirmationWatchingRuleStatus Status { get; }
         public int Confirmation { get; }
         public TimeSpan WaitingTime { get; }
         public TCallbackResult Success { get; }

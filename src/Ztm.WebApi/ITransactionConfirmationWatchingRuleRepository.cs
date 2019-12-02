@@ -24,6 +24,6 @@ namespace Ztm.WebApi
         Task<IEnumerable<TransactionConfirmationWatchingRule<TCallbackResult>>> ListAsync(CancellationToken cancellationToken);
         Task SubtractRemainingWaitingTimeAsync(Guid id, TimeSpan remainingTime, CancellationToken cancellationToken);
         Task<TimeSpan> GetRemainingWaitingTimeAsync(Guid id, CancellationToken cancellationToken);
-        Task CompleteAsync(Guid id, CancellationToken cancellationToken);
+        Task UpdateStatusAsync(Guid id, TransactionConfirmationWatchingRuleStatus status, CancellationToken cancellationToken);
     }
 }

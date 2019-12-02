@@ -56,7 +56,7 @@ namespace Ztm.WebApi
                         Id = Guid.NewGuid(),
                         CallbackId = callback.Id,
                         Transaction = transaction,
-                        Completed = false,
+                        Status = (int)TransactionConfirmationWatchingRuleStatus.Pending,
                         Confirmation = confirmation,
                         WaitingTime = waitingTime,
                         RemainingWaitingTime = waitingTime,
@@ -121,7 +121,7 @@ namespace Ztm.WebApi
             }
         }
 
-        public async Task CompleteAsync(Guid id, CancellationToken cancellationToken)
+        public async Task UpdateStatusAsync(Guid id, TransactionConfirmationWatchingRuleStatus status, CancellationToken cancellationToken)
         {
             using (var db = this.db.CreateDbContext())
             {
@@ -134,7 +134,7 @@ namespace Ztm.WebApi
                     throw new KeyNotFoundException("Watch id not found");
                 }
 
-                watch.Completed = true;
+                watch.Status = (int)status;
 
                 await db.SaveChangesAsync(cancellationToken);
             }
@@ -164,7 +164,7 @@ namespace Ztm.WebApi
             return new TransactionConfirmationWatchingRule<TCallbackResult>(
                 watch.Id,
                 watch.Transaction,
-                watch.Completed,
+                (TransactionConfirmationWatchingRuleStatus)watch.Status,
                 watch.Confirmation,
                 watch.WaitingTime,
                 JsonConvert.DeserializeObject<TCallbackResult>(watch.SuccessData),

@@ -391,7 +391,7 @@ namespace Ztm.WebApi.Tests
             Thread.Sleep(TimeSpan.FromMilliseconds(1000));
 
             // Assert.
-            _ = this.ruleRepository.Received(1).CompleteAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+            _ = this.ruleRepository.Received(1).UpdateStatusAsync(Arg.Any<Guid>(), Arg.Any<TransactionConfirmationWatchingRuleStatus>(), Arg.Any<CancellationToken>());
 
             _ = this.callbackExecuter.Received(1)
                 .Execute
@@ -426,7 +426,7 @@ namespace Ztm.WebApi.Tests
             Thread.Sleep(TimeSpan.FromMilliseconds(1000));
 
             // Assert.
-            _ = this.ruleRepository.Received(1).CompleteAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+            _ = this.ruleRepository.Received(1).UpdateStatusAsync(Arg.Any<Guid>(), Arg.Any<TransactionConfirmationWatchingRuleStatus>(), Arg.Any<CancellationToken>());
 
             _ = this.callbackExecuter.Received(1)
                 .Execute
@@ -843,7 +843,7 @@ namespace Ztm.WebApi.Tests
                 builder.transaction, builder.confirmation, builder.timeout, builder.successData, builder.timeoutData, completedCallback, CancellationToken.None
             );
 
-            await this.ruleRepository.CompleteAsync(watch.Id, CancellationToken.None);
+            await this.ruleRepository.UpdateStatusAsync(watch.Id, TransactionConfirmationWatchingRuleStatus.Success, CancellationToken.None);
 
             // Act.
             ITransactionConfirmationWatcherHandler<Rule> localHandler;
@@ -906,8 +906,9 @@ namespace Ztm.WebApi.Tests
             this.ruleRepository
                 .When
                 (
-                    w => w.CompleteAsync(
+                    w => w.UpdateStatusAsync(
                         Arg.Any<Guid>(),
+                        Arg.Any<TransactionConfirmationWatchingRuleStatus>(),
                         Arg.Any<CancellationToken>()
                     )
                 )
@@ -916,11 +917,12 @@ namespace Ztm.WebApi.Tests
                     w =>
                     {
                         var id = w.ArgAt<Guid>(0);
+                        var status = w.ArgAt<TransactionConfirmationWatchingRuleStatus>(1);
 
                         var old = mockedWatchs[id];
 
                         mockedWatchs[id] = new TransactionConfirmationWatchingRule<TransactionConfirmationCallbackResult>(
-                            old.Id, old.Transaction, true, old.Confirmation, old.WaitingTime,
+                            old.Id, old.Transaction, status, old.Confirmation, old.WaitingTime,
                             old.Success, old.Timeout, old.Callback);
                     }
                 );
@@ -944,7 +946,7 @@ namespace Ztm.WebApi.Tests
                         (
                             Guid.NewGuid(),
                             info.ArgAt<uint256>(0),
-                            false,
+                            TransactionConfirmationWatchingRuleStatus.Pending,
                             info.ArgAt<int>(1),
                             info.ArgAt<TimeSpan>(2),
                             info.ArgAt<TransactionConfirmationCallbackResult>(3),
