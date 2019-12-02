@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Ztm.Hosting
 {
-    public sealed class BackgroundServiceErrorLogger : IBackgroundServiceExceptionHandler
+    public sealed class BackgroundServiceErrorLogger : BackgroundServiceExceptionHandler
     {
         readonly ILogger logger;
 
@@ -19,18 +19,8 @@ namespace Ztm.Hosting
             this.logger = logger;
         }
 
-        public Task RunAsync(Type service, Exception exception, CancellationToken cancellationToken)
+        protected override Task RunAsync(Type service, Exception exception, CancellationToken cancellationToken)
         {
-            if (service == null)
-            {
-                throw new ArgumentNullException(nameof(service));
-            }
-
-            if (exception == null)
-            {
-                throw new ArgumentNullException(nameof(exception));
-            }
-
             this.logger.LogCritical(exception, "Fatal error occurred in {Service}.", service);
 
             return Task.CompletedTask;

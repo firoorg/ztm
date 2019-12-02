@@ -18,27 +18,11 @@ namespace Ztm.Hosting.Tests
         }
 
         [Fact]
-        public void RunAsync_WithNullService_ShouldThrow()
-        {
-            this.subject.Invoking(s => s.RunAsync(null, new Exception(), CancellationToken.None))
-                        .Should().ThrowExactly<ArgumentNullException>()
-                        .And.ParamName.Should().Be("service");
-        }
-
-        [Fact]
-        public void RunAsync_WithNullException_ShouldThrow()
-        {
-            this.subject.Invoking(s => s.RunAsync(typeof(FakeBackgroundService), null, CancellationToken.None))
-                        .Should().ThrowExactly<ArgumentNullException>()
-                        .And.ParamName.Should().Be("exception");
-        }
-
-        [Fact]
         public async Task RunAsync_WithValidArguments_ShouldSuccess()
         {
             var ex = new Exception();
 
-            await this.subject.RunAsync(typeof(FakeBackgroundService), ex, CancellationToken.None);
+            await RunAsync(typeof(FakeBackgroundService), ex, CancellationToken.None);
 
             this.subject.Should().ContainSingle(e => e.Service == typeof(FakeBackgroundService) && e.Exception == ex);
         }
@@ -59,7 +43,7 @@ namespace Ztm.Hosting.Tests
             {
                 var error = new BackgroundServiceError(typeof(FakeBackgroundService), new Exception());
 
-                await this.subject.RunAsync(typeof(FakeBackgroundService), new Exception(), CancellationToken.None);
+                await RunAsync(typeof(FakeBackgroundService), new Exception(), CancellationToken.None);
                 generated.Add(error);
             }
 
@@ -74,6 +58,11 @@ namespace Ztm.Hosting.Tests
 
             // Assert.
             collected.Should().BeEquivalentTo(generated);
+        }
+
+        Task RunAsync(Type service, Exception exception, CancellationToken cancellationToken)
+        {
+            return ((IBackgroundServiceExceptionHandler)this.subject).RunAsync(service, exception, cancellationToken);
         }
     }
 }

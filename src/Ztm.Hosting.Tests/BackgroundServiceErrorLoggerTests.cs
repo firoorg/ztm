@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Internal;
 using Moq;
@@ -27,29 +26,14 @@ namespace Ztm.Hosting.Tests
         }
 
         [Fact]
-        public void RunAsync_WithNullService_ShouldThrow()
-        {
-            var ex = new Exception();
-
-            this.subject.Invoking(s => s.RunAsync(null, ex, CancellationToken.None))
-                        .Should().ThrowExactly<ArgumentNullException>()
-                        .And.ParamName.Should().Be("service");
-        }
-
-        [Fact]
-        public void RunAsync_WithNullException_ShouldThrow()
-        {
-            this.subject.Invoking(s => s.RunAsync(typeof(FakeBackgroundService), null, CancellationToken.None))
-                        .Should().ThrowExactly<ArgumentNullException>()
-                        .And.ParamName.Should().Be("exception");
-        }
-
-        [Fact]
         public async Task RunAsync_WithValidArguments_ShouldInvokeLogger()
         {
             var ex = new Exception();
 
-            await this.subject.RunAsync(typeof(FakeBackgroundService), ex, CancellationToken.None);
+            await ((IBackgroundServiceExceptionHandler)this.subject).RunAsync(
+                typeof(FakeBackgroundService),
+                ex,
+            CancellationToken.None);
 
             this.logger.Verify(
                 l => l.Log(

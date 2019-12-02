@@ -39,24 +39,6 @@ namespace Ztm.Hosting.AspNetCore.Tests
         }
 
         [Fact]
-        public void RunAsync_WithNullService_ShouldThrow()
-        {
-            var ex = new Exception();
-
-            this.subject.Invoking(s => s.RunAsync(null, ex, CancellationToken.None))
-                        .Should().ThrowExactly<ArgumentNullException>()
-                        .And.ParamName.Should().Be("service");
-        }
-
-        [Fact]
-        public void RunAsync_WithNullException_ShouldThrow()
-        {
-            this.subject.Invoking(s => s.RunAsync(typeof(string), null, CancellationToken.None))
-                        .Should().ThrowExactly<ArgumentNullException>()
-                        .And.ParamName.Should().Be("exception");
-        }
-
-        [Fact]
         public async Task RunAsync_WithValidArguments_ShouldInvokeLoggerAndCollector()
         {
             // Arrange.
@@ -66,7 +48,7 @@ namespace Ztm.Hosting.AspNetCore.Tests
             using (var cancellationToken = new CancellationTokenSource())
             {
                 // Act.
-                await this.subject.RunAsync(service, ex, cancellationToken.Token);
+                await ((IBackgroundServiceExceptionHandler)this.subject).RunAsync(service, ex, cancellationToken.Token);
 
                 // Assert.
                 this.logger.Verify(
