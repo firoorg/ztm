@@ -30,8 +30,8 @@ namespace Ztm.WebApi
         public bool Completed { get; }
         public int Confirmation { get; }
         public TimeSpan WaitingTime { get; }
-        public TCallbackResult Success;
-        public TCallbackResult Timeout;
+        public TCallbackResult Success { get; }
+        public TCallbackResult Timeout { get; }
         public Callback Callback { get; }
     }
 }

@@ -379,7 +379,7 @@ namespace Ztm.WebApi
                 break;
 
             default:
-                throw new NotSupportedException($"{nameof(ConfirmationType)} is not supported");
+                throw new NotSupportedException($"{nameof(ConfirmationType)} is not supported.");
             }
 
             return false;
@@ -408,11 +408,14 @@ namespace Ztm.WebApi
 
         async Task IWatcherHandler<TransactionWatch<Rule>, Rule>.RemoveWatchAsync(TransactionWatch<Rule> watch, WatchRemoveReason reason, CancellationToken cancellationToken)
         {
-            await this.watchRepository.UpdateStatusAsync(watch.Id, TransactionConfirmationWatchingWatchStatus.Rejected, cancellationToken);
-
             if (reason == WatchRemoveReason.BlockRemoved)
             {
+                await this.watchRepository.UpdateStatusAsync(watch.Id, TransactionConfirmationWatchingWatchStatus.Rejected, cancellationToken);
                 await SetupTimerAsync(watch.Context);
+            }
+            else
+            {
+                await this.watchRepository.UpdateStatusAsync(watch.Id, TransactionConfirmationWatchingWatchStatus.Success, cancellationToken);
             }
         }
     }
