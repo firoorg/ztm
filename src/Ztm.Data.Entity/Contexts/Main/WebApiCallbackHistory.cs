@@ -6,7 +6,6 @@ namespace Ztm.Data.Entity.Contexts.Main
     {
         public int Id { get; set; }
         public Guid CallbackId { get; set; }
-        public bool Success { get; set; }
         public string Status { get; set; }
         public DateTime InvokedTime { get; set; }
 

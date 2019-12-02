@@ -129,7 +129,6 @@ namespace Ztm.Data.Entity.Contexts
         {
             builder.Property(e => e.Id).IsRequired().ValueGeneratedOnAdd();
             builder.Property(e => e.CallbackId).IsRequired();
-            builder.Property(e => e.Success).IsRequired();
             builder.Property(e => e.Status).IsRequired();
             builder.Property(e => e.InvokedTime).IsRequired();
             builder.Property(e => e.Data).IsRequired();

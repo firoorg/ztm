@@ -406,12 +406,6 @@ namespace Ztm.WebApi.Tests
                 Arg.Any<Guid>(),
                 Arg.Any<CancellationToken>()
             );
-
-            _ = this.callbackRepository.Received(0).SetHistorySuccessAsync
-            (
-                Arg.Any<int>(),
-                Arg.Any<CancellationToken>()
-            );
         }
 
         [Fact]
@@ -442,12 +436,6 @@ namespace Ztm.WebApi.Tests
                     Arg.Any<Guid>(),
                     Arg.Any<CancellationToken>()
                 );
-
-            _ = this.callbackRepository.Received(1).SetHistorySuccessAsync
-            (
-                Arg.Any<int>(),
-                Arg.Any<CancellationToken>()
-            );
         }
 
         [Fact]
@@ -476,12 +464,6 @@ namespace Ztm.WebApi.Tests
                 (
                     result => result == builder.timeoutData
                 )
-            );
-
-            _ = this.callbackRepository.Received(2).SetHistorySuccessAsync
-            (
-                Arg.Any<int>(),
-                Arg.Any<CancellationToken>()
             );
         }
 

@@ -92,7 +92,6 @@ namespace Ztm.WebApi
                     new WebApiCallbackHistory
                     {
                         CallbackId = id,
-                        Success = false,
                         Status = result.Status,
                         Data = JsonConvert.SerializeObject(result.Data),
                         InvokedTime = DateTime.UtcNow,
@@ -101,21 +100,6 @@ namespace Ztm.WebApi
                 await db.SaveChangesAsync(cancellationToken);
 
                 return history.Entity.Id;
-            }
-        }
-
-        public async Task SetHistorySuccessAsync(int id, CancellationToken cancellationToken)
-        {
-            using (var db = this.db.CreateDbContext())
-            {
-                var history = await db.WebApiCallbackHistories.FirstOrDefaultAsync(h => h.Id == id);
-                if (history == null)
-                {
-                    throw new KeyNotFoundException(nameof(id));
-                }
-
-                history.Success = true;
-                await db.SaveChangesAsync(cancellationToken);
             }
         }
 

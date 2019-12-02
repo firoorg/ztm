@@ -11,6 +11,5 @@ namespace Ztm.WebApi
         Task SetCompletedAsyc(Guid id, CancellationToken cancellationToken);
         Task<Callback> GetAsync(Guid id, CancellationToken cancellationToken);
         Task<int> AddHistoryAsync(Guid id, CallbackResult result, CancellationToken cancellationToken);
-        Task SetHistorySuccessAsync(int id, CancellationToken cancellationToken);
     }
 }

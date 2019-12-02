@@ -233,6 +233,10 @@ namespace Ztm.WebApi
                     await this.ruleRepository.UpdateStatusAsync(rule.Id, TransactionConfirmationWatchingRuleStatus.Timeout, CancellationToken.None);
                     await ExecuteCallbackAsync(rule.Callback, rule.Timeout, CancellationToken.None);
                 }
+                catch (Exception ex)
+                {
+                    this.logger.LogError("Timeout update is fail.", ex);
+                }
                 finally
                 {
                     RemoveTimer(rule);
@@ -313,7 +317,6 @@ namespace Ztm.WebApi
                 return;
             }
 
-            await this.callbackRepository.SetHistorySuccessAsync(id, CancellationToken.None);
             await this.callbackRepository.SetCompletedAsyc(callback.Id, CancellationToken.None);
         }
 
