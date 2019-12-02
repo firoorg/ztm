@@ -87,7 +87,7 @@ namespace Ztm.WebApi.Tests.AddressPools
         public async Task ListReceivingAddressAsync_WithEmptyRecerivingAddress_ShouldGetEmpty()
         {
             // Act.
-            var result = await this.subject.ListReceivingAddressAsync(AddressFilter.None, CancellationToken.None);
+            var result = await this.subject.ListAsync(AddressFilter.None, CancellationToken.None);
 
             // Assert.
             Assert.Empty(result);
@@ -104,7 +104,7 @@ namespace Ztm.WebApi.Tests.AddressPools
             };
 
             // Act.
-            var result = await this.subject.ListReceivingAddressAsync(AddressFilter.None, CancellationToken.None);
+            var result = await this.subject.ListAsync(AddressFilter.None, CancellationToken.None);
 
             // Assert.
             Assert.Contains(receivingAddresses.First(), result);
@@ -123,7 +123,7 @@ namespace Ztm.WebApi.Tests.AddressPools
             await this.subject.TryLockAsync(receivingAddresses.First().Id, CancellationToken.None);
 
             // Act.
-            var result = await this.subject.ListReceivingAddressAsync(AddressFilter.Available, CancellationToken.None);
+            var result = await this.subject.ListAsync(AddressFilter.Available, CancellationToken.None);
 
             // Assert.
             Assert.Single(result);
@@ -143,8 +143,8 @@ namespace Ztm.WebApi.Tests.AddressPools
             await this.subject.ReleaseAsync(r.Id, CancellationToken.None);
 
             // Act.
-            var availables = await this.subject.ListReceivingAddressAsync(AddressFilter.Available, CancellationToken.None);
-            var neverUsed = await this.subject.ListReceivingAddressAsync(AddressFilter.NeverUsed, CancellationToken.None);
+            var availables = await this.subject.ListAsync(AddressFilter.Available, CancellationToken.None);
+            var neverUsed = await this.subject.ListAsync(AddressFilter.NeverUsed, CancellationToken.None);
 
             // Assert.
             Assert.Equal(2, availables.Count());

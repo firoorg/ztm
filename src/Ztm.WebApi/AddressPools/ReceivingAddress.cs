@@ -8,6 +8,11 @@ namespace Ztm.WebApi.AddressPools
     {
         public ReceivingAddress(Guid id, BitcoinAddress address, bool isLocked, ICollection<ReceivingAddressReservation> reservations)
         {
+            if (address == null)
+            {
+                throw new ArgumentNullException(nameof(address));
+            }
+
             if (reservations == null)
             {
                 throw new ArgumentNullException(nameof(reservations));

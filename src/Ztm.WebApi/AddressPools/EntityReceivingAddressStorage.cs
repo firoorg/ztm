@@ -53,7 +53,6 @@ namespace Ztm.WebApi.AddressPools
 
                 await db.SaveChangesAsync(cancellationToken);
 
-                recAddress.Entity.Reservations = new List<ReceivingAddressReservationModel>();
                 return ToDomain(recAddress.Entity);
             }
         }
@@ -64,13 +63,13 @@ namespace Ztm.WebApi.AddressPools
             {
                 var recv = await db.ReceivingAddresses
                     .Include(e => e.Reservations)
-                    .SingleAsync(r => r.Id == id);
+                    .SingleOrDefaultAsync(r => r.Id == id);
 
-                return ToDomain(recv);
+                return recv == null ? null : ToDomain(recv);
             }
         }
 
-        public async Task<IEnumerable<ReceivingAddress>> ListReceivingAddressAsync(AddressFilter filter, CancellationToken cancellationToken)
+        public async Task<IEnumerable<ReceivingAddress>> ListAsync(AddressFilter filter, CancellationToken cancellationToken)
         {
             using (var db = this.databaseFactory.CreateDbContext())
             {
@@ -99,11 +98,6 @@ namespace Ztm.WebApi.AddressPools
                     .Include(r => r.Address)
                     .SingleAsync(r => r.Id == id);
 
-                if (reservation == null)
-                {
-                    throw new KeyNotFoundException("The reservation id is not found.");
-                }
-
                 if (reservation.ReleasedAt != null)
                 {
                     throw new InvalidOperationException("The reservation is already released.");
@@ -122,11 +116,9 @@ namespace Ztm.WebApi.AddressPools
             using (var db = this.databaseFactory.CreateDbContext())
             using (var tx = db.Database.BeginTransaction(IsolationLevel.RepeatableRead))
             {
-                var recv = await db.ReceivingAddresses.SingleAsync(a => a.Id == id, cancellationToken);
-                if (recv == null)
-                {
-                    throw new ArgumentNullException("Receiving address id is not found.");
-                }
+                var recv = await db
+                    .ReceivingAddresses
+                    .SingleAsync(a => a.Id == id, cancellationToken);
 
                 if (recv.IsLocked)
                 {
@@ -163,12 +155,9 @@ namespace Ztm.WebApi.AddressPools
                 new List<ReceivingAddressReservation>()
             );
 
-            if (entity.Reservations.Any())
+            foreach (var reservation in entity.Reservations)
             {
-                foreach (var reservation in entity.Reservations)
-                {
-                    r.Reservations.Add(ToDomain(reservation, r));
-                }
+                r.Reservations.Add(ToDomain(reservation, r));
             }
 
             return r;

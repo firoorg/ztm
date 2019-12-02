@@ -49,7 +49,7 @@ namespace Ztm.WebApi.AddressPools
 
         public async Task<ReceivingAddressReservation> TryLockAddressAsync(CancellationToken cancellationToken)
         {
-            var addresses = await this.storage.ListReceivingAddressAsync(AddressFilter.Available, cancellationToken);
+            var addresses = await this.storage.ListAsync(AddressFilter.Available, cancellationToken);
 
             if (addresses.Any())
             {

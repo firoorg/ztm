@@ -35,7 +35,7 @@ namespace Ztm.WebApi.Tests.AddressPools
             return Task.FromResult<ReceivingAddress>(null);
         }
 
-        public virtual Task<IEnumerable<ReceivingAddress>> ListReceivingAddressAsync(AddressFilter filter, CancellationToken cancellationToken)
+        public virtual Task<IEnumerable<ReceivingAddress>> ListAsync(AddressFilter filter, CancellationToken cancellationToken)
         {
             var addresses = this.receivingAddresses.AsEnumerable();
 

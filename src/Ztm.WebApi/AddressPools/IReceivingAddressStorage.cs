@@ -10,7 +10,7 @@ namespace Ztm.WebApi.AddressPools
     {
         Task<ReceivingAddress> AddAsync(BitcoinAddress address, CancellationToken cancellationToken);
         Task<ReceivingAddress> GetAsync(Guid id, CancellationToken cancellationToken);
-        Task<IEnumerable<ReceivingAddress>> ListReceivingAddressAsync(
+        Task<IEnumerable<ReceivingAddress>> ListAsync(
             AddressFilter filter,
             CancellationToken cancellationToken);
         Task<ReceivingAddressReservation> TryLockAsync(Guid id, CancellationToken cancellationToken);
