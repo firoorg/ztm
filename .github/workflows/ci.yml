@@ -16,17 +16,18 @@ jobs:
       with:
         path: dependencies
         key: nuget-packages
+    - name: Restore NuGet Packages
+      shell: cmd
+      run: dotnet.exe restore --packages dependencies src\Ztm.sln
     - name: Build
       shell: cmd
-      run: |
-        dotnet.exe restore --packages dependencies src\Ztm.sln
-        dotnet.exe build src\Ztm.sln
+      run: dotnet.exe build --no-restore src\Ztm.sln
     - name: Unit Test
       run: |
         Get-ChildItem -Path src -Filter *.Tests -Directory | ForEach-Object {
             $path = $_.FullName
 
-            $runner = Start-Process -FilePath dotnet.exe -ArgumentList test, $path -PassThru -Wait
+            $runner = Start-Process -FilePath dotnet.exe -ArgumentList test, --no-build, -v=normal, $path -NoNewWindow -PassThru -Wait
 
             if ($runner.ExitCode -ne 0) {
                 exit $runner.ExitCode
