@@ -28,11 +28,9 @@ namespace Ztm.WebApi
         readonly ICallbackExecuter callbackExecuter;
         readonly ILogger<TransactionConfirmationWatcher> logger;
 
-        // State recorders
-        readonly ReaderWriterLockSlim timerLock;
-
-        // Dictionary from transaction to Dictionary from watch id to timer and confirmations.
+        // Dictionary from transaction to Dictionary from watch id to timer.
         readonly Dictionary<uint256, Dictionary<Guid, Timer>> timers;
+        readonly ReaderWriterLockSlim timerLock;
 
         public TransactionConfirmationWatcher(
             ICallbackRepository callbackRepository,
@@ -165,15 +163,12 @@ namespace Ztm.WebApi
 
             try
             {
-                foreach (var timerSet in this.timers)
+                foreach (var timer in this.timers.SelectMany(ts => ts.Value))
                 {
-                    foreach (var timer in timerSet.Value)
+                    await timer.Value.StopAsync(cancellationToken);
+                    if (timer.Value.ElapsedCount == 0)
                     {
-                        await timer.Value.StopAsync(cancellationToken);
-                        if (timer.Value.ElapsedCount == 0)
-                        {
-                            await this.ruleRepository.SubtractRemainingWaitingTimeAsync(timer.Key, timer.Value.ElapsedTime, CancellationToken.None);
-                        }
+                        await this.ruleRepository.SubtractRemainingWaitingTimeAsync(timer.Key, timer.Value.ElapsedTime, CancellationToken.None);
                     }
                 }
             }
@@ -230,10 +225,6 @@ namespace Ztm.WebApi
                 {
                     await this.ruleRepository.UpdateStatusAsync(rule.Id, TransactionConfirmationWatchingRuleStatus.Timeout, CancellationToken.None);
                     await ExecuteCallbackAsync(rule.Callback, rule.Timeout, CancellationToken.None);
-                }
-                catch (Exception ex)
-                {
-                    this.logger.LogError("Timeout update is fail.", ex);
                 }
                 finally
                 {
@@ -401,7 +392,7 @@ namespace Ztm.WebApi
                 await this.watchRepository.UpdateStatusAsync(watch.Id, TransactionConfirmationWatchingWatchStatus.Rejected, cancellationToken);
                 await SetupTimerAsync(watch.Context);
             }
-            else
+            else if (reason.HasFlag(WatchRemoveReason.Completed))
             {
                 await this.watchRepository.UpdateStatusAsync(watch.Id, TransactionConfirmationWatchingWatchStatus.Success, cancellationToken);
             }
