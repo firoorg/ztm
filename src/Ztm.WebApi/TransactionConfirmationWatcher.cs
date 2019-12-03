@@ -152,10 +152,8 @@ namespace Ztm.WebApi
         {
             var rules = await this.ruleRepository.ListAsync(cancellationToken);
 
-            var pendingWatches = await this.watchRepository.ListAsync(TransactionConfirmationWatchingWatchStatus.Pending, cancellationToken);
-
-            foreach (var rule in rules.Where(r => r.Status == TransactionConfirmationWatchingRuleStatus.Pending
-                && !pendingWatches.Any(w => w.Context.Id == r.Id)))
+            foreach (var rule in rules
+                .Where(r => r.Status == TransactionConfirmationWatchingRuleStatus.Pending && r.CurrentWatchId == null))
             {
                 await SetupTimerAsync(rule);
             }
@@ -167,7 +165,7 @@ namespace Ztm.WebApi
 
             try
             {
-                foreach (var timerSet in timers)
+                foreach (var timerSet in this.timers)
                 {
                     foreach (var timer in timerSet.Value)
                     {
@@ -253,7 +251,7 @@ namespace Ztm.WebApi
             {
                 if (!this.timers.TryGetValue(rule.Transaction, out var timers))
                 {
-                    throw new KeyNotFoundException("Transaction is not found");
+                    throw new KeyNotFoundException("Transaction is not found.");
                 }
 
                 timers.Remove(rule.Id);
@@ -297,10 +295,8 @@ namespace Ztm.WebApi
 
         async Task ConfirmAsync(TransactionWatch<Rule> watch, CancellationToken cancellationToken)
         {
-            var rule = await this.ruleRepository.GetAsync(watch.Context.Id, cancellationToken);
-
             await this.ruleRepository.UpdateStatusAsync(watch.Context.Id, TransactionConfirmationWatchingRuleStatus.Success, cancellationToken);
-            await ExecuteCallbackAsync(rule.Callback, rule.Success, CancellationToken.None);
+            await ExecuteCallbackAsync(watch.Context.Callback, watch.Context.Success, CancellationToken.None);
         }
 
         async Task ExecuteCallbackAsync(Callback callback, TransactionConfirmationCallbackResult payload, CancellationToken cancellationToken)
@@ -311,9 +307,9 @@ namespace Ztm.WebApi
             {
                 await this.callbackExecuter.Execute(callback.Id, callback.Url, payload);
             }
-            catch (HttpRequestException ex) // lgtm[cs/empty-catch-block]
+            catch (Exception ex)
             {
-                this.logger.LogError($"Fail to execute callback, {ex}");
+                this.logger.LogError($"Callback execution is fail.", ex);
                 return;
             }
 
@@ -361,31 +357,17 @@ namespace Ztm.WebApi
         {
             switch (type)
             {
-            case ConfirmationType.Unconfirming:
-                if (confirmation == 1)
-                {
-                    return false;
-                }
-                break;
-
-            case ConfirmationType.Confirmed:
-                if (confirmation == 1)
-                {
-                    return false;
-                }
-
-                var requiredConfirmations = watch.Context.Confirmation;
-
-                if (confirmation >= requiredConfirmations)
-                {
-                    await ConfirmAsync(watch, cancellationToken);
-                    return true;
-                }
-
-                break;
-
-            default:
-                throw new NotSupportedException($"{nameof(ConfirmationType)} is not supported.");
+                case ConfirmationType.Confirmed:
+                    if (confirmation >= watch.Context.Confirmation)
+                    {
+                        await ConfirmAsync(watch, cancellationToken);
+                        return true;
+                    }
+                    break;
+                case ConfirmationType.Unconfirming:
+                    break;
+                default:
+                    throw new NotSupportedException($"{type} is not supported.");
             }
 
             return false;
@@ -414,7 +396,7 @@ namespace Ztm.WebApi
 
         async Task IWatcherHandler<TransactionWatch<Rule>, Rule>.RemoveWatchAsync(TransactionWatch<Rule> watch, WatchRemoveReason reason, CancellationToken cancellationToken)
         {
-            if (reason == WatchRemoveReason.BlockRemoved)
+            if (reason.HasFlag(WatchRemoveReason.BlockRemoved))
             {
                 await this.watchRepository.UpdateStatusAsync(watch.Id, TransactionConfirmationWatchingWatchStatus.Rejected, cancellationToken);
                 await SetupTimerAsync(watch.Context);
