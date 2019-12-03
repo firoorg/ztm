@@ -11,32 +11,47 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '2.2.108'
+    - name: Cache NuGet Packages
+      uses: actions/cache@v1
+      with:
+        path: dependencies
+        key: nuget-packages
     - name: Build
       shell: cmd
-      run: dotnet build src\Ztm.sln
+      run: |
+        dotnet.exe restore --packages dependencies src\Ztm.sln
+        dotnet.exe build src\Ztm.sln
     - name: Unit Test
       run: |
         Get-ChildItem -Path src -Filter *.Tests -Directory | ForEach-Object {
-            Write-Host $_.FullName
+            $path = $_.FullName
+
+            $runner = Start-Process -FilePath dotnet.exe -ArgumentList test, $path -PassThru -Wait
+
+            if ($runner.ExitCode -ne 0) {
+                exit $runner.ExitCode
+            }
+
+            Write-Host
         }
     - name: Publish
       env:
         ZTM_MAIN_DATABASE: Host=127.0.0.1;Database=postgres;Username=postgres
       shell: cmd
       run: |
-        dotnet publish /o "%GITHUB_WORKSPACE%\build\ztm" /r linux-musl-x64 /c Release src\Ztm.WebApi
-        dotnet ef migrations script /o "%GITHUB_WORKSPACE%\build\ztm\Ztm.Data.Entity.Postgres.sql" /i /p src\Ztm.Data.Entity.Postgres
-        dotnet publish /o "%GITHUB_WORKSPACE%\build\e2e" src\Ztm.EndToEndTests
+        dotnet.exe publish -o "%GITHUB_WORKSPACE%\release" -r linux-musl-x64 -c Release src\Ztm.WebApi
+        dotnet.exe ef migrations script -o "%GITHUB_WORKSPACE%\release\Ztm.Data.Entity.Postgres.sql" -i -p src\Ztm.Data.Entity.Postgres
+        dotnet.exe publish -o "%GITHUB_WORKSPACE%\e2e-runner" src\Ztm.EndToEndTests
     - name: Archive Release Artifact
       uses: actions/upload-artifact@v1
       with:
         name: release
-        path: build\ztm
-    - name: Archive E2E Tests Artifact
+        path: release
+    - name: Archive E2E Runner Artifact
       uses: actions/upload-artifact@v1
       with:
-        name: e2e
-        path: build\e2e
+        name: e2e-runner
+        path: e2e-runner
   e2e:
     name: E2E Test
     needs: build
@@ -56,11 +71,11 @@ jobs:
       with:
         name: release
         path: release
-    - name: Get E2E Tests Artifact
+    - name: Get E2E Runner Artifact
       uses: actions/download-artifact@v1
       with:
-        name: e2e
-        path: e2e
+        name: e2e-runner
+        path: e2e-runner
     - name: Fixing File Permissions
       run: chmod +x release/Ztm.WebApi
     - name: Prepare Required Services
@@ -74,7 +89,7 @@ jobs:
         import json
         import os
 
-        with open('appsettings.json') as f:
+        with open('release/appsettings.json') as f:
           conf = json.load(f)
 
         conf['Logging']['LogLevel']['Default'] = 'Information'
@@ -83,7 +98,7 @@ jobs:
         conf['Zcoin']['Rpc']['Address'] = 'http://{0}:28888'.format(os.environ['DOCKER_ZCOIND'])
         conf['Zcoin']['ZeroMq']['Address'] = 'tcp://{0}:28332'.format(os.environ['DOCKER_ZCOIND'])
 
-        with open('appsettings.json', 'w') as f:
+        with open('release/appsettings.json', 'w') as f:
           json.dump(conf, f, indent=2)
     - name: Start ZTM
       run: docker run --rm -d --name $DOCKER_ZTM --network $DOCKER_NETWORK --user=1000:1000 -v ./release:/opt/ztm:ro -w /opt/ztm -p 5000:5000 mcr.microsoft.com/dotnet/core/runtime-deps:2.2-alpine /opt/ztm/Ztm.WebApi --urls=http://*:5000
@@ -91,4 +106,4 @@ jobs:
       env:
         ZTM_HOST: localhost
         ZTM_PORT: 5000
-      run: dotnet vstest e2e/Ztm.EndToEndTests.dll
+      run: dotnet vstest e2e-runner/Ztm.EndToEndTests.dll
