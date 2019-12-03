@@ -62,7 +62,7 @@ namespace Ztm.Zcoin.Synchronization
             this.disposed = true;
         }
 
-        public Task StartAsync(IBlocksRetrieverHandler handler, CancellationToken cancellationToken)
+        public Task<Task> StartAsync(IBlocksRetrieverHandler handler, CancellationToken cancellationToken)
         {
             if (handler == null)
             {
@@ -122,10 +122,10 @@ namespace Ztm.Zcoin.Synchronization
                 throw;
             }
 
-            return Task.CompletedTask;
+            return Task.FromResult(this.retrieveBlocksTask);
         }
 
-        public async Task<Exception> StopAsync(CancellationToken cancellationToken)
+        public async Task StopAsync(CancellationToken cancellationToken)
         {
             ThrowIfAlreadyDisposed();
             ThrowIfNotRunning();
@@ -134,20 +134,8 @@ namespace Ztm.Zcoin.Synchronization
             this.retrieveBlocksCancelSource.Cancel();
 
             // Wait until background tasks is completed.
-            Exception error = null;
-
-            try
-            {
-                await this.retrieveBlocksTask;
-            }
-            catch (OperationCanceledException)
-            {
-                // Ignore.
-            }
-            catch (Exception ex) // lgtm[cs/catch-of-all-exceptions]
-            {
-                error = ex;
-            }
+            // We need to use Task.WhenAny() so it will not throw if there is exception in retrieveBlocksTask.
+            await Task.WhenAny(this.retrieveBlocksTask);
 
             Debug.Assert(this.newBlockNotification == null);
 
@@ -165,8 +153,6 @@ namespace Ztm.Zcoin.Synchronization
             this.subscriber = null;
             this.poller.Dispose();
             this.poller = null;
-
-            return error;
         }
 
         async Task RetrieveBlocks(IBlocksRetrieverHandler handler)

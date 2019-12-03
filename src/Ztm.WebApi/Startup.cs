@@ -9,6 +9,7 @@ using NBitcoin.RPC;
 using Ztm.Configuration;
 using Ztm.Data.Entity.Contexts;
 using Ztm.Data.Entity.Postgres;
+using Ztm.Hosting.AspNetCore;
 using Ztm.WebApi.Binders;
 using Ztm.Zcoin.NBitcoin;
 using Ztm.Zcoin.Rpc;
@@ -36,6 +37,7 @@ namespace Ztm.WebApi
             services.AddMvc(ConfigureMvc).SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 
             // Fundamentals Services.
+            services.AddBackgroundServiceExceptionHandler();
             services.AddSingleton<Network>(CreateZcoinNetwork);
 
             // Database Services.
@@ -61,6 +63,7 @@ namespace Ztm.WebApi
                 app.UseExceptionHandler("/error");
             }
 
+            app.UseBackgroundServiceExceptionHandler("/background-service-error");
             app.UseMvc();
         }
 
