@@ -292,13 +292,13 @@ namespace Ztm.WebApi
 
         async Task ExecuteCallbackAsync(Callback callback, TransactionConfirmationCallbackResult payload, CancellationToken cancellationToken)
         {
-            var id = await this.callbackRepository.AddHistoryAsync(callback.Id, payload, cancellationToken);
+            await this.callbackRepository.AddHistoryAsync(callback.Id, payload, cancellationToken);
 
             try
             {
                 await this.callbackExecuter.Execute(callback.Id, callback.Url, payload);
             }
-            catch (Exception ex)
+            catch (Exception ex) // lgtm [cs/catch-of-all-exceptions]
             {
                 this.logger.LogError($"Callback execution is fail.", ex);
                 return;
@@ -376,7 +376,7 @@ namespace Ztm.WebApi
                 throw new ArgumentNullException(nameof(watches));
             }
 
-            foreach (var watch in watches)
+            foreach (var watch in watches) // lgtm [cs/linq/missed-where]
             {
                 if (await StopTimer(watch.Context))
                 {
