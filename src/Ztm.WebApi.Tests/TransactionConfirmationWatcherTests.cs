@@ -905,7 +905,7 @@ namespace Ztm.WebApi.Tests
 
                         mockedWatchs[id] = new TransactionConfirmationWatchingRule<TransactionConfirmationCallbackResult>(
                             old.Id, old.Transaction, status, old.Confirmation, old.WaitingTime,
-                            old.Success, old.Timeout, old.Callback);
+                            old.Success, old.Timeout, old.Callback, old.CurrentWatchId);
                     }
                 );
 
@@ -933,7 +933,8 @@ namespace Ztm.WebApi.Tests
                             info.ArgAt<TimeSpan>(2),
                             info.ArgAt<TransactionConfirmationCallbackResult>(3),
                             info.ArgAt<TransactionConfirmationCallbackResult>(4),
-                            info.ArgAt<Callback>(5)
+                            info.ArgAt<Callback>(5),
+                            null
                         );
 
                         mockedWatchs[watch.Id] = watch;

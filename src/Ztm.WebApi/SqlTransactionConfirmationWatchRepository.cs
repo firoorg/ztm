@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -38,18 +39,31 @@ namespace Ztm.WebApi
             }
 
             using (var db = this.db.CreateDbContext())
+            using (var tx = await db.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken))
             {
-                await db.AddAsync(new TransactionConfirmationWatch
+                await db.TransactionConfirmationWatches.AddAsync(
+                    new TransactionConfirmationWatch
+                    {
+                        Id = watch.Id,
+                        RuleId = watch.Context.Id,
+                        StartBlock = watch.StartBlock,
+                        StartTime = watch.StartTime,
+                        Transaction = watch.TransactionId,
+                        Status = (int)TransactionConfirmationWatchingWatchStatus.Pending,
+                    }
+                );
+
+                var rule = await db.TransactionConfirmationWatchingRules
+                    .FirstAsync(r => r.Id == watch.Context.Id);
+                if (rule.CurrentWatchId != null)
                 {
-                    Id = watch.Id,
-                    RuleId = watch.Context.Id,
-                    StartBlock = watch.StartBlock,
-                    StartTime = watch.StartTime,
-                    Transaction = watch.TransactionId,
-                    Status = (int)TransactionConfirmationWatchingWatchStatus.Pending,
-                });
+                    throw new InvalidOperationException("The rule is watched.");
+                }
+
+                rule.CurrentWatchId = watch.Id;
 
                 await db.SaveChangesAsync(cancellationToken);
+                tx.Commit();
             }
         }
 
@@ -60,7 +74,6 @@ namespace Ztm.WebApi
                 return Task.FromResult<IEnumerable<TransactionWatch<Rule>>>
                 (
                     db.TransactionConfirmationWatches
-                        .Include(w => w.Rule)
                         .Where(w => (int)status == w.Status)
                         .Select(w => ToDomain(w))
                         .ToList()
@@ -71,6 +84,7 @@ namespace Ztm.WebApi
         public async Task UpdateStatusAsync(Guid id, TransactionConfirmationWatchingWatchStatus status, CancellationToken cancellationToken)
         {
             using (var db = this.db.CreateDbContext())
+            using (var tx = await db.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken))
             {
                 var watch = await db.TransactionConfirmationWatches.Where(w => w.Id == id).FirstOrDefaultAsync(cancellationToken);
                 if (watch == null)
@@ -78,9 +92,29 @@ namespace Ztm.WebApi
                     throw new KeyNotFoundException("Watch id is not found.");
                 }
 
+                if (watch.Status != (int)TransactionConfirmationWatchingWatchStatus.Pending)
+                {
+                    throw new InvalidOperationException("The watch is not be able to update.");
+                }
+
+                switch (status)
+                {
+                    case TransactionConfirmationWatchingWatchStatus.Error:
+                    case TransactionConfirmationWatchingWatchStatus.Rejected:
+                    case TransactionConfirmationWatchingWatchStatus.Success:
+                        break;
+                    default:
+                        throw new InvalidOperationException("New status is not allowed to set.");
+
+                }
+
                 watch.Status = (int)status;
 
+                var rule = await db.TransactionConfirmationWatchingRules.FirstAsync(r => r.Id == watch.RuleId);
+                rule.CurrentWatchId = null;
+
                 await db.SaveChangesAsync(cancellationToken);
+                tx.Commit();
             }
         }
 

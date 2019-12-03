@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using NBitcoin;
 using Newtonsoft.Json;
 using Ztm.Data.Entity.Contexts;
+using TransactionConfirmationWatchingRuleModel = Ztm.Data.Entity.Contexts.Main.TransactionConfirmationWatchingRule;
 
 namespace Ztm.WebApi
 {
@@ -51,7 +52,7 @@ namespace Ztm.WebApi
             {
                 var watch = await db.TransactionConfirmationWatchingRules
                     .AddAsync(
-                    new Ztm.Data.Entity.Contexts.Main.TransactionConfirmationWatchingRule
+                    new TransactionConfirmationWatchingRuleModel
                     {
                         Id = Guid.NewGuid(),
                         CallbackId = callback.Id,
@@ -62,6 +63,7 @@ namespace Ztm.WebApi
                         RemainingWaitingTime = waitingTime,
                         SuccessData = JsonConvert.SerializeObject(successData),
                         TimeoutData = JsonConvert.SerializeObject(timeoutData),
+                        CurrentWatchId = null,
                     }, cancellationToken);
 
                 await db.SaveChangesAsync(cancellationToken);
@@ -76,6 +78,7 @@ namespace Ztm.WebApi
             {
                 var watch = await db.TransactionConfirmationWatchingRules
                     .Include(e => e.Callback)
+                    .Include(e => e.CurrentWatch)
                     .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
                 return watch == null ? null : ToDomain(watch);
@@ -88,6 +91,7 @@ namespace Ztm.WebApi
             {
                 var watches = await db.TransactionConfirmationWatchingRules
                     .Include(e => e.Callback)
+                    .Include(e => e.CurrentWatch)
                     .ToListAsync(cancellationToken);
 
                 return watches.Select(e => ToDomain(e));
@@ -171,7 +175,8 @@ namespace Ztm.WebApi
                 JsonConvert.DeserializeObject<TCallbackResult>(watch.TimeoutData),
                 callback != null
                     ? callback
-                    : (watch.Callback == null ? null : SqlCallbackRepository.ToDomain(watch.Callback))
+                    : (watch.Callback == null ? null : SqlCallbackRepository.ToDomain(watch.Callback)),
+                watch.CurrentWatchId
             );
         }
     }

@@ -67,6 +67,9 @@ namespace Ztm.WebApi.Tests
 
             // Act.
             await this.subject.AddAsync(watch, CancellationToken.None);
+
+            var updatedRule = await this.ruleRepository.GetAsync(rule.Id, CancellationToken.None);
+            Assert.Equal(watch.Id, updatedRule.CurrentWatchId);
         }
 
         [Fact]
@@ -147,6 +150,38 @@ namespace Ztm.WebApi.Tests
 
             var updated = watches.First();
             Assert.Equal(watch.Id, updated.Id);
+
+            var updatedRule = await this.ruleRepository.GetAsync(rule.Id, CancellationToken.None);
+            Assert.Null(updatedRule.CurrentWatchId);
+        }
+
+        [Fact]
+        public async Task UpdateStatusAsync_WithInvalidStatus_ShouldThrow()
+        {
+            // Arrange.
+            var rule = await GenerateRuleAsync();
+            var watch = new TransactionWatch<Rule>(rule, uint256.One, uint256.One);
+
+            await this.subject.AddAsync(watch, CancellationToken.None);
+
+            // Act & Assert.
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => this.subject.UpdateStatusAsync(watch.Id, TransactionConfirmationWatchingWatchStatus.Pending, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task UpdateStatusAsync_FinalWatchObject_ShouldThrow()
+        {
+            // Arrange.
+            var rule = await GenerateRuleAsync();
+            var watch = new TransactionWatch<Rule>(rule, uint256.One, uint256.One);
+
+            await this.subject.AddAsync(watch, CancellationToken.None);
+            await this.subject.UpdateStatusAsync(watch.Id, TransactionConfirmationWatchingWatchStatus.Rejected, CancellationToken.None);
+
+            // Act & Assert.
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => this.subject.UpdateStatusAsync(watch.Id, TransactionConfirmationWatchingWatchStatus.Success, CancellationToken.None));
         }
 
         async Task<Rule> GenerateRuleAsync()

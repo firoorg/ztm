@@ -161,6 +161,12 @@ namespace Ztm.Data.Entity.Contexts
                    .HasForeignKey(e => e.CallbackId)
                    .HasPrincipalKey(e => e.Id)
                    .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(e => e.CurrentWatch)
+                   .WithMany()
+                   .HasForeignKey(e => e.CurrentWatchId)
+                   .HasPrincipalKey(e => e.Id)
+                   .OnDelete(DeleteBehavior.SetNull);
         }
 
         protected virtual void ConfirgureTransactionConfirmationWatch(

@@ -1,5 +1,6 @@
 using System;
 using NBitcoin;
+using Ztm.Zcoin.Watching;
 
 namespace Ztm.WebApi
 {
@@ -13,7 +14,8 @@ namespace Ztm.WebApi
             TimeSpan waitingTime,
             TCallbackResult success,
             TCallbackResult timeout,
-            Callback callback)
+            Callback callback,
+            Guid? currentWatchId)
         {
             this.Id = id;
             this.Transaction = transaction;
@@ -23,6 +25,7 @@ namespace Ztm.WebApi
             this.Success = success;
             this.Timeout = timeout;
             this.Callback = callback;
+            this.CurrentWatchId = currentWatchId;
         }
 
         public Guid Id { get; }
@@ -33,5 +36,6 @@ namespace Ztm.WebApi
         public TCallbackResult Success { get; }
         public TCallbackResult Timeout { get; }
         public Callback Callback { get; }
+        public Guid? CurrentWatchId { get; }
     }
 }

@@ -15,8 +15,10 @@ namespace Ztm.Data.Entity.Contexts.Main
         public TimeSpan RemainingWaitingTime { get; set; }
         public string SuccessData { get; set; }
         public string TimeoutData { get; set; }
+        public Guid? CurrentWatchId { get; set; }
 
         public WebApiCallback Callback { get; set; }
+        public TransactionConfirmationWatch CurrentWatch { get; set; }
         public Collection<TransactionConfirmationWatch> Watches { get; set; }
     }
 }
