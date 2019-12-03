@@ -13,185 +13,164 @@ namespace Ztm.Zcoin.NBitcoin.Tests
             this.subject = new PropertyAmountConverter();
         }
 
-        [Fact]
-        public void CanConvertFrom_WithStringType_ShouldReturnTrue()
+        [Theory]
+        [InlineData(typeof(string))]
+        [InlineData(typeof(int))]
+        [InlineData(typeof(long))]
+        [InlineData(typeof(decimal))]
+        public void CanConvertFrom_WithSupportType_ShouldReturnTrue(Type type)
         {
-            Assert.True(this.subject.CanConvertFrom(typeof(string)));
-        }
-
-        [Fact]
-        public void CanConvertFrom_WithIntType_ShouldReturnTrue()
-        {
-            Assert.True(this.subject.CanConvertFrom(typeof(int)));
-        }
-
-        [Fact]
-        public void CanConvertFrom_WithLongType_ShouldReturnTrue()
-        {
-            Assert.True(this.subject.CanConvertFrom(typeof(long)));
-        }
-
-        [Fact]
-        public void CanConvertFrom_WithFloatType_ShouldReturnTrue()
-        {
-            Assert.True(this.subject.CanConvertFrom(typeof(float)));
-        }
-
-        [Fact]
-        public void CanConvertFrom_WithDoubleType_ShouldReturnTrue()
-        {
-            Assert.True(this.subject.CanConvertFrom(typeof(double)));
-        }
-
-        [Fact]
-        public void CanConvertFrom_WithDecimalType_ShouldReturnTrue()
-        {
-            Assert.True(this.subject.CanConvertFrom(typeof(decimal)));
-        }
-
-        [Fact]
-        public void CanConvertTo_WithStringType_ShouldReturnTrue()
-        {
-            Assert.True(this.subject.CanConvertTo(typeof(string)));
+            Assert.True(this.subject.CanConvertFrom(type));
         }
 
         [Theory]
-        [InlineData("0.00000001", PropertyType.Divisible)]
-        [InlineData("10000.10000000", PropertyType.Divisible)]
-        [InlineData("9999.99999999", PropertyType.Divisible)]
-        [InlineData("5000", PropertyType.Indivisible)]
-        public void ConvertFrom_WithValidString_ShouldSuccess(string value, PropertyType type)
+        [InlineData(typeof(float))]
+        [InlineData(typeof(double))]
+        public void CanConvertFrom_WithUnsupportType_ShouldReturnFalse(Type type)
         {
-            var amount = (PropertyAmount)this.subject.ConvertFromString(value);
+            Assert.False(this.subject.CanConvertFrom(type));
+        }
 
-            Assert.True(amount.IsValid);
-            Assert.Equal(type, amount.Type);
-            Assert.Equal(value, amount.ToString());
+        [Theory]
+        [InlineData(typeof(long))]
+        [InlineData(typeof(decimal))]
+        public void CanConvertTo_WithSupportType_ShouldReturnTrue(Type type)
+        {
+            Assert.True(this.subject.CanConvertTo(type));
+        }
+
+        [Theory]
+        [InlineData(typeof(string))]
+        [InlineData(typeof(int))]
+        [InlineData(typeof(float))]
+        [InlineData(typeof(double))]
+        public void CanConvertTo_WithUnsupportType_ShouldReturnFalse(Type type)
+        {
+            Assert.False(this.subject.CanConvertTo(type));
+        }
+
+        [Theory]
+        [InlineData("-92233720368.54775808", -9223372036854775808L)]
+        [InlineData("-0.00000001", -1L)]
+        [InlineData("0.00000001", 1L)]
+        [InlineData("0.1", 10000000L)]
+        [InlineData("0.0", 0L)]
+        [InlineData("1.0", 100000000L)]
+        [InlineData("1.9", 190000000L)]
+        [InlineData("92233720368.54775807", 9223372036854775807L)]
+        [InlineData("-9223372036854775808", -9223372036854775808L)]
+        [InlineData("-1", -1L)]
+        [InlineData("0", 0L)]
+        [InlineData("9223372036854775807", 9223372036854775807L)]
+        public void ConvertFrom_WithValidString_ShouldSuccess(string s, long expect)
+        {
+            var amount = (PropertyAmount)this.subject.ConvertFromString(s);
+
+            Assert.Equal(expect, amount.Indivisible);
         }
 
         [Theory]
         [InlineData("")]
-        [InlineData("-0.00000001")]
+        [InlineData("a.0")]
+        [InlineData("1a.1")]
+        [InlineData("1.a")]
+        [InlineData("1.1a")]
         [InlineData("0.000000001")]
-        [InlineData("0.000000011")]
+        [InlineData("-92233720368.54775809")]
         [InlineData("92233720368.54775808")]
-        [InlineData("-1")]
+        [InlineData("aa")]
+        [InlineData("1a")]
+        [InlineData("-9223372036854775809")]
         [InlineData("9223372036854775808")]
-        public void ConvertFrom_WithInvalidString_ShouldThrow(string value)
+        public void ConvertFrom_WithInvalidString_ShouldThrow(string s)
         {
-            Assert.Throws<NotSupportedException>(() => this.subject.ConvertFromString(value));
+            Assert.Throws<NotSupportedException>(() => this.subject.ConvertFromString(s));
         }
 
         [Theory]
-        [InlineData("0.00000000")]
-        [InlineData("0")]
-        public void ConvertFrom_WithStringZero_ShouldReturnInvalidAmount(string value)
-        {
-            var amount = (PropertyAmount)this.subject.ConvertFromString(value);
-
-            Assert.False(amount.IsValid);
-        }
-
-        [Theory]
-        [InlineData(1)]
-        [InlineData(1L)]
-        [InlineData(int.MaxValue)]
-        [InlineData(long.MaxValue)]
-        public void ConvertFrom_WithValidInteger_ShouldSuccess(object value)
-        {
-            var amount = (PropertyAmount)this.subject.ConvertFrom(value);
-            var expected = PropertyAmount.Indivisible(value is int ? (int)value : (long)value);
-
-            Assert.True(amount.IsValid);
-            Assert.Equal(PropertyType.Indivisible, amount.Type);
-            Assert.Equal(expected.ToString(), amount.ToString());
-        }
-
-        [Theory]
-        [InlineData(-1)]
-        [InlineData(-1L)]
+        [InlineData(int.MinValue)]
+        [InlineData(long.MinValue)]
         [InlineData(0)]
         [InlineData(0L)]
-        public void ConvertFrom_WithInvalidInteger_ShouldThrow(object value)
-        {
-            Assert.Throws<NotSupportedException>(() => this.subject.ConvertFrom(value));
-        }
-
-        [Theory]
-        [InlineData(0.00000001f)]
-        [InlineData(0.00000001d)]
-        [InlineData(10000.99999999f)]
-        [InlineData(10000.99999999d)]
-        public void ConvertFrom_WithValidFloatingPoint_ShouldSuccess(object value)
+        [InlineData(int.MaxValue)]
+        [InlineData(long.MaxValue)]
+        public void ConvertFrom_WithInteger_ShouldSuccess(object value)
         {
             var amount = (PropertyAmount)this.subject.ConvertFrom(value);
-            var expected = PropertyAmount.Divisible(value is float ? (decimal)(float)value : (decimal)(double)value);
 
-            Assert.True(amount.IsValid);
-            Assert.Equal(PropertyType.Divisible, amount.Type);
-            Assert.Equal(expected.ToString(), amount.ToString());
+            Assert.Equal(Convert.ToInt64(value), amount.Indivisible);
         }
 
         [Theory]
-        [InlineData(-0.1f)]
-        [InlineData(-0.1d)]
-        [InlineData(0f)]
-        [InlineData(0d)]
-        [InlineData(0.000000001f)]
-        [InlineData(0.000000001d)]
-        [InlineData(92233720368.54775808d)]
-        public void ConvertFrom_WithInvalidFloatingPoint_ShouldThrow(object value)
+        [InlineData("-92233720368.54775808")]
+        [InlineData("0.00000001")]
+        [InlineData("0")]
+        [InlineData("92233720368.54775807")]
+        public void ConvertFrom_WithValidDecimal_ShouldSuccess(string s)
         {
+            var value = decimal.Parse(s);
+            var amount = (PropertyAmount)this.subject.ConvertFrom(value);
+
+            Assert.Equal(value, amount.Divisible);
+        }
+
+        [Theory]
+        [InlineData("0.000000009")]
+        [InlineData("-92233720368.54775809")]
+        [InlineData("92233720368.54775808")]
+        public void ConvertFrom_WithInvalidDecimal_ShouldThrow(string s)
+        {
+            var value = decimal.Parse(s);
+
             Assert.Throws<NotSupportedException>(() => this.subject.ConvertFrom(value));
         }
 
         [Theory]
-        [InlineData("0.00000001")]
-        [InlineData("92233720368.54775807")]
-        public void ConvertFrom_WithValidDecimal_ShouldSuccess(string value)
+        [InlineData(0f)]
+        [InlineData(0d)]
+        public void ConvertFrom_WithUnsupportedType_ShouldThrow(object value)
         {
-            var amount = (PropertyAmount)this.subject.ConvertFrom(decimal.Parse(value));
+            Assert.Throws<NotSupportedException>(() => this.subject.ConvertFrom(value));
+        }
 
-            Assert.True(amount.IsValid);
-            Assert.Equal(PropertyType.Divisible, amount.Type);
-            Assert.Equal(value, amount.ToString());
+        [Fact]
+        public void ConvertTo_WithNullDestinationType_ShouldThrow()
+        {
+            var amount = new PropertyAmount(1);
+
+            Assert.Throws<ArgumentNullException>(
+                "destinationType",
+                () => this.subject.ConvertTo(null, null, amount, null)
+            );
+        }
+
+        [Fact]
+        public void ConvertTo_WithTargetIsLong_ShouldSuccess()
+        {
+            var amount = new PropertyAmount(1);
+            var converted = this.subject.ConvertTo(amount, typeof(long));
+
+            Assert.Equal(amount.Indivisible, converted);
+        }
+
+        [Fact]
+        public void ConvertTo_WithTargetIsDecimal_ShouldSuccess()
+        {
+            var amount = new PropertyAmount(1);
+            var converted = this.subject.ConvertTo(amount, typeof(decimal));
+
+            Assert.Equal(amount.Divisible, converted);
         }
 
         [Theory]
-        [InlineData("-0.1")]
-        [InlineData("0")]
-        [InlineData("0.000000001")]
-        [InlineData("92233720368.54775808")]
-        public void ConvertFrom_WithInvalidDecimal_ShouldThrow(string value)
+        [InlineData(typeof(string))]
+        [InlineData(typeof(float))]
+        [InlineData(typeof(double))]
+        public void ConvertTo_WithUnsuppportedType_ShouldThrow(Type type)
         {
-            Assert.Throws<NotSupportedException>(() => this.subject.ConvertFrom(decimal.Parse(value)));
-        }
+            var amount = new PropertyAmount(1);
 
-        [Fact]
-        public void ConvertTo_WithDefaultInstance_ShouldThrow()
-        {
-            Assert.Throws<NotSupportedException>(() => this.subject.ConvertToString(default(PropertyAmount)));
-        }
-
-        [Fact]
-        public void ConvertTo_WithValidValueAndTargetIsString_ShouldSuccess()
-        {
-            var converted = this.subject.ConvertToString(PropertyAmount.Divisible(1));
-
-            Assert.Equal("1.00000000", converted);
-        }
-
-        [Fact]
-        public void GetStandardValues_WithDefault_ShouldReturnValidValues()
-        {
-            Assert.True(this.subject.GetStandardValuesSupported());
-
-            var values = this.subject.GetStandardValues();
-
-            foreach (PropertyAmount amount in values)
-            {
-                Assert.True(amount.IsValid);
-            }
+            Assert.Throws<NotSupportedException>(() => this.subject.ConvertTo(amount, type));
         }
     }
 }

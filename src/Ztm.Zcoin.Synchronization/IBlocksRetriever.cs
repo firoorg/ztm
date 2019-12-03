@@ -8,8 +8,8 @@ namespace Ztm.Zcoin.Synchronization
     {
         bool IsRunning { get; }
 
-        Task StartAsync(IBlocksRetrieverHandler handler, CancellationToken cancellationToken);
+        Task<Task> StartAsync(IBlocksRetrieverHandler handler, CancellationToken cancellationToken);
 
-        Task<Exception> StopAsync(CancellationToken cancellationToken);
+        Task StopAsync(CancellationToken cancellationToken);
     }
 }

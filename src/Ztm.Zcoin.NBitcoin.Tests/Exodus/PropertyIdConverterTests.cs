@@ -31,35 +31,39 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
         }
 
         [Theory]
-        [InlineData("1", "1")]
-        [InlineData("4294967295", "4294967295")]
-        [InlineData(1, "1")]
-        [InlineData(2147483647, "2147483647")]
-        [InlineData(1L, "1")]
-        [InlineData(4294967295L, "4294967295")]
-        public void ConvertFrom_WithValidValue_ShouldSuccess(object value, string expected)
+        [InlineData("1", 1L)]
+        [InlineData("4294967295", 4294967295L)]
+        [InlineData(1L, 1L)]
+        [InlineData((long)uint.MaxValue, (long)uint.MaxValue)]
+        public void ConvertFrom_WithValidInput_ShouldSuccess(object input, long expect)
         {
-            var id = (PropertyId)this.subject.ConvertFrom(value);
+            var output = (PropertyId)this.subject.ConvertFrom(input);
 
-            Assert.True(id.IsValid);
-            Assert.Equal(expected, id.ToString());
+            Assert.Equal(expect, output.Value);
         }
 
         [Theory]
+        [InlineData("a")]
+        [InlineData("1.0")]
         [InlineData("-9223372036854775809")]
-        [InlineData("-9223372036854775808")]
+        [InlineData("9223372036854775808")]
+        [InlineData("-1")]
         [InlineData("0")]
         [InlineData("4294967296")]
-        [InlineData("9223372036854775807")]
-        [InlineData("9223372036854775808")]
-        [InlineData(-2147483648)]
+        [InlineData(-1)]
         [InlineData(0)]
-        [InlineData(-9223372036854775808L)]
-        [InlineData(-2147483648L)]
+        [InlineData(-1L)]
         [InlineData(0L)]
-        [InlineData(4294967296L)]
-        [InlineData(9223372036854775807)]
-        public void ConvertFrom_WithInvalidValue_ShouldThrow(object value)
+        [InlineData((long)uint.MaxValue + 1)]
+        public void ConvertFrom_WithInvalidInput_ShouldThrow(object value)
+        {
+            Assert.Throws<NotSupportedException>(() => this.subject.ConvertFrom(value));
+        }
+
+        [Theory]
+        [InlineData(1F)]
+        [InlineData(1D)]
+        public void ConvertFrom_WithUnsupportType_ShouldThrow(object value)
         {
             Assert.Throws<NotSupportedException>(() => this.subject.ConvertFrom(value));
         }
@@ -67,16 +71,9 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
         [Fact]
         public void ConvertTo_WithNullDestinationType_ShouldThrow()
         {
-            Assert.Throws<ArgumentNullException>(
-                "destinationType",
-                () => this.subject.ConvertTo(null, null, new PropertyId(1), null)
-            );
-        }
+            var id = new PropertyId(1);
 
-        [Fact]
-        public void ConvertTo_WithInvalidValue_ShouldThrow()
-        {
-            Assert.Throws<NotSupportedException>(() => this.subject.ConvertTo(default(PropertyId), typeof(string)));
+            Assert.Throws<ArgumentNullException>("destinationType", () => this.subject.ConvertTo(null, null, id, null));
         }
 
         [Theory]
@@ -87,6 +84,17 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
             var converted = this.subject.ConvertTo(new PropertyId(id), type);
 
             Assert.Equal(expected, converted);
+        }
+
+        [Theory]
+        [InlineData(typeof(int))]
+        [InlineData(typeof(float))]
+        [InlineData(typeof(double))]
+        public void ConvertTo_WithUnsupportType_ShouldThrow(Type type)
+        {
+            var id = new PropertyId(1);
+
+            Assert.Throws<NotSupportedException>(() => this.subject.ConvertTo(id, type));
         }
     }
 }

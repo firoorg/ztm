@@ -31,15 +31,6 @@ Change directory to `src/Ztm.Data.Entity.Postgres` then run:
 ZTM_MAIN_DATABASE="Host=127.0.0.1;Database=postgres;Username=postgres" dotnet ef database update
 ```
 
-### Start Zcoin Daemon
-
-Grab latest stable Zcoin binary from [here](https://github.com/zcoinofficial/zcoin/releases), extract or install it,
-then start Zcoin daemon:
-
-```sh
-./zcoind -testnet -printtoconsole -rpcuser=zcoin -rpcpassword=zcoin -zmqpubhashblock=tcp://127.0.0.1:28332
-```
-
 ### Start Web API
 
 ```sh

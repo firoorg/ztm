@@ -52,7 +52,7 @@ namespace Ztm.Configuration.Tests
             Assert.Equal(new Uri("http://127.0.0.1:8888"), parsed.Rpc.Address);
             Assert.Equal("root", parsed.Rpc.UserName);
             Assert.Equal("abc", parsed.Rpc.Password);
-            Assert.Equal(1, parsed.Property.Id);
+            Assert.Equal(new PropertyId(1), parsed.Property.Id);
             Assert.Equal(PropertyType.Divisible, parsed.Property.Type);
             Assert.Equal(NetworkType.Mainnet, parsed.Property.Issuer.Type);
             Assert.Equal(BitcoinAddress.Create("a8ULhhDgfdSiXJhSZVdhb8EuDc6R3ogsaM", ZcoinNetworks.Instance.Mainnet), parsed.Property.Issuer.Address);

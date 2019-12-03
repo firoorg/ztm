@@ -32,7 +32,7 @@ namespace Ztm.Zcoin.Rpc
             BitcoinAddress owner,
             Ecosystem ecosystem,
             PropertyType type,
-            PropertyId? currentId,
+            Property current,
             string category,
             string subcategory,
             string name,
@@ -43,11 +43,6 @@ namespace Ztm.Zcoin.Rpc
             if (owner == null)
             {
                 throw new ArgumentNullException(nameof(owner));
-            }
-
-            if (currentId.HasValue && !currentId.Value.IsValid)
-            {
-                throw new ArgumentException("The value is not a valid property identifier.", nameof(currentId));
             }
 
             if (category == null)
@@ -81,7 +76,7 @@ namespace Ztm.Zcoin.Rpc
                 owner.ToString(),
                 ToNative(ecosystem),
                 ToNative(type),
-                currentId.HasValue ? ToNative(currentId.Value) : 0U,
+                current != null ? ToNative(current.Id) : 0U,
                 category,
                 subcategory,
                 name,
@@ -122,23 +117,49 @@ namespace Ztm.Zcoin.Rpc
             return this.client.GetNewAddressAsync();
         }
 
-        public async Task<PropertyGrantsInfo> GetPropertyGrantsAsync(PropertyId id, CancellationToken cancellationToken)
+        public async Task<(PropertyAmount balance, PropertyAmount reserved)> GetPropertyBalanceAsync(
+            BitcoinAddress address,
+            Property property,
+            CancellationToken cancellationToken)
         {
-            if (!id.IsValid)
+            if (address == null)
             {
-                throw new ArgumentException("The value is not a valid property identifier.", nameof(id));
+                throw new ArgumentNullException(nameof(address));
             }
 
-            var resp = await this.client.SendCommandAsync("exodus_getgrants", ToNative(id));
-            var totalTokens = PropertyAmount.Parse(resp.Result.Value<string>("totaltokens"));
+            if (property == null)
+            {
+                throw new ArgumentNullException(nameof(property));
+            }
+
+            var resp = await this.client.SendCommandAsync("exodus_getbalance", address.ToString(), ToNative(property.Id));
+            var rawBalance = resp.Result.Value<string>("balance");
+            var rawReserved = resp.Result.Value<string>("reserved");
+
+            var balance = PropertyAmount.Parse(rawBalance);
+            var reserved = PropertyAmount.Parse(rawReserved);
+
+            return (balance: balance, reserved: reserved);
+        }
+
+        public async Task<PropertyGrantsInfo> GetPropertyGrantsAsync(
+            Property property,
+            CancellationToken cancellationToken)
+        {
+            if (property == null)
+            {
+                throw new ArgumentNullException(nameof(property));
+            }
+
+            var resp = await this.client.SendCommandAsync("exodus_getgrants", ToNative(property.Id));
 
             return new PropertyGrantsInfo()
             {
-                Id = resp.Result.Value<long>("propertyid"),
+                Id = new PropertyId(resp.Result.Value<long>("propertyid")),
                 Name = resp.Result.Value<string>("name"),
                 Issuer = BitcoinAddress.Create(resp.Result.Value<string>("issuer"), this.client.Network),
                 CreationTransaction = uint256.Parse(resp.Result.Value<string>("creationtxid")),
-                TotalTokens = totalTokens.IsValid ? (PropertyAmount?)totalTokens : null,
+                TotalTokens = PropertyAmount.Parse(resp.Result.Value<string>("totaltokens")),
                 Histories = ((JArray)resp.Result["issuances"]).Select(i =>
                 {
                     var grant = i.Value<string>("grant");
@@ -155,16 +176,16 @@ namespace Ztm.Zcoin.Rpc
         }
 
         public async Task<Transaction> GrantPropertyAsync(
-            PropertyId id,
+            Property property,
             BitcoinAddress from,
             BitcoinAddress to,
             PropertyAmount amount,
             string note,
             CancellationToken cancellationToken)
         {
-            if (!id.IsValid)
+            if (property == null)
             {
-                throw new ArgumentException("The value is not a valid property identifier.", nameof(id));
+                throw new ArgumentNullException(nameof(property));
             }
 
             if (from == null)
@@ -177,17 +198,18 @@ namespace Ztm.Zcoin.Rpc
                 throw new ArgumentNullException(nameof(to));
             }
 
-            if (!amount.IsValid)
+            if (amount < PropertyAmount.One)
             {
-                throw new ArgumentException("The value is not a valid property amount.", nameof(amount));
+                throw new ArgumentOutOfRangeException(nameof(amount), amount, "The value is less than one.");
             }
 
+            // Setup arguments.
             var args = new List<object>()
             {
                 from.ToString(),
                 to.ToString(),
-                ToNative(id),
-                amount.ToString()
+                ToNative(property.Id),
+                amount.ToString(property.Type)
             };
 
             if (note != null)
@@ -195,6 +217,7 @@ namespace Ztm.Zcoin.Rpc
                 args.Add(note);
             }
 
+            // Invoke RPC.
             var resp = await this.client.SendCommandAsync("exodus_sendgrant", args.ToArray());
 
             return Transaction.Parse(resp.Result.Value<string>(), this.client.Network);
@@ -206,7 +229,7 @@ namespace Ztm.Zcoin.Rpc
 
             return ((JArray)resp.Result).Select(i => new PropertyInfo()
             {
-                Id = i.Value<long>("propertyid"),
+                Id = new PropertyId(i.Value<long>("propertyid")),
                 Name = i.Value<string>("name"),
                 Category = i.Value<string>("category"),
                 Subcategory = i.Value<string>("subcategory"),
@@ -243,6 +266,63 @@ namespace Ztm.Zcoin.Rpc
             );
         }
 
+        public async Task<Transaction> SendTokenAsync(
+            BitcoinAddress from,
+            BitcoinAddress to,
+            Property property,
+            PropertyAmount amount,
+            BitcoinAddress redeemAddress,
+            Money referenceAmount,
+            CancellationToken cancellation)
+        {
+            if (from == null)
+            {
+                throw new ArgumentNullException(nameof(from));
+            }
+
+            if (to == null)
+            {
+                throw new ArgumentNullException(nameof(to));
+            }
+
+            if (property == null)
+            {
+                throw new ArgumentNullException(nameof(property));
+            }
+
+            if (amount < PropertyAmount.One)
+            {
+                throw new ArgumentOutOfRangeException(nameof(amount), amount, "The value is less than one.");
+            }
+
+            var args = new List<object>()
+            {
+                from.ToString(),
+                to.ToString(),
+                ToNative(property.Id),
+                amount.ToString(property.Type),
+            };
+
+            if (redeemAddress != null)
+            {
+                args.Add(redeemAddress.ToString());
+
+                if (referenceAmount != null)
+                {
+                    if (referenceAmount < Money.Satoshis(1))
+                    {
+                        throw new ArgumentOutOfRangeException(nameof(referenceAmount), amount, "The value is less than zero.");
+                    }
+                    args.Add(referenceAmount.ToDecimal(MoneyUnit.BTC).ToString());
+                }
+            }
+
+            // Invoke RPC.
+            var resp = await this.client.SendCommandAsync("exodus_send", args.ToArray());
+
+            return Transaction.Parse(resp.Result.Value<string>(), this.client.Network);
+        }
+
         static byte ToNative(Ecosystem ecosystem)
         {
             switch (ecosystem)
@@ -258,7 +338,7 @@ namespace Ztm.Zcoin.Rpc
 
         static uint ToNative(PropertyId id)
         {
-            return (uint)id.Value;
+            return Convert.ToUInt32(id.Value); // Don't use cast due to it will not check overflow.
         }
 
         static ushort ToNative(PropertyType type)

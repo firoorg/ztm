@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using NBitcoin;
 using NBitcoin.Tests;
 using Xunit;
+using Ztm.Testing;
 using Ztm.Zcoin.NBitcoin.Exodus;
 using Ztm.Zcoin.Testing;
 
@@ -53,28 +54,6 @@ namespace Ztm.Zcoin.Rpc.Tests
                     Ecosystem.Main,
                     PropertyType.Divisible,
                     null,
-                    "Company",
-                    "Private",
-                    "Satang Corporation",
-                    "https://satang.com",
-                    "Provides cryptocurrency solutions.",
-                    CancellationToken.None
-                )
-            );
-        }
-
-        [Fact]
-        public async Task CreateManagedPropertyAsync_PassInvalidTokenId_ShouldThrow()
-        {
-            var owner = await this.subject.GetNewAddressAsync(CancellationToken.None);
-
-            await Assert.ThrowsAsync<ArgumentException>(
-                "currentId",
-                () => this.subject.CreateManagedPropertyAsync(
-                    owner,
-                    Ecosystem.Main,
-                    PropertyType.Divisible,
-                    default(PropertyId),
                     "Company",
                     "Private",
                     "Satang Corporation",
@@ -245,11 +224,11 @@ namespace Ztm.Zcoin.Rpc.Tests
         }
 
         [Fact]
-        public async Task GetPropertyGrantsAsync_WithInvalidId_ShouldThrow()
+        public async Task GetPropertyGrantsAsync_WithNullProperty_ShouldThrow()
         {
-            await Assert.ThrowsAsync<ArgumentException>(
-                "id",
-                () => this.subject.GetPropertyGrantsAsync(default(PropertyId), CancellationToken.None)
+            await Assert.ThrowsAsync<ArgumentNullException>(
+                "property",
+                () => this.subject.GetPropertyGrantsAsync(null, CancellationToken.None)
             );
         }
 
@@ -281,30 +260,33 @@ namespace Ztm.Zcoin.Rpc.Tests
             this.node.Generate(1);
 
             // Act.
-            var info = await this.subject.GetPropertyGrantsAsync(3, CancellationToken.None);
+            var info = await this.subject.GetPropertyGrantsAsync(
+                new Property(new PropertyId(3), PropertyType.Indivisible),
+                CancellationToken.None
+            );
 
             // Assert.
             Assert.Equal(3, info.Id.Value);
             Assert.Equal("Satang Corporation", info.Name);
             Assert.Equal(owner, info.Issuer);
             Assert.Equal(tx.GetHash(), info.CreationTransaction);
-            Assert.Null(info.TotalTokens);
+            Assert.Equal(PropertyAmount.Zero, info.TotalTokens);
             Assert.Empty(info.Histories);
         }
 
         [Fact]
-        public async Task GrantPropertyAsync_WithInvalidId_ShouldThrow()
+        public async Task GrantPropertyAsync_WithNullProperty_ShouldThrow()
         {
             var owner = await this.subject.GetNewAddressAsync(CancellationToken.None);
             var to = BitcoinAddress.Create("TG3Pnw5xPZQS8JXMVa3F9WjUFfUqXKsqAz", this.node.Network);
 
-            await Assert.ThrowsAsync<ArgumentException>(
-                "id",
+            await Assert.ThrowsAsync<ArgumentNullException>(
+                "property",
                 () => this.subject.GrantPropertyAsync(
-                    default(PropertyId),
+                    null,
                     owner,
                     to,
-                    PropertyAmount.Indivisible(100),
+                    new PropertyAmount(100),
                     null,
                     CancellationToken.None
                 )
@@ -319,10 +301,10 @@ namespace Ztm.Zcoin.Rpc.Tests
             await Assert.ThrowsAsync<ArgumentNullException>(
                 "from",
                 () => this.subject.GrantPropertyAsync(
-                    3,
+                    new Property(new PropertyId(3), PropertyType.Indivisible),
                     null,
                     to,
-                    PropertyAmount.Indivisible(100),
+                    new PropertyAmount(100),
                     null,
                     CancellationToken.None
                 )
@@ -337,10 +319,10 @@ namespace Ztm.Zcoin.Rpc.Tests
             await Assert.ThrowsAsync<ArgumentNullException>(
                 "to",
                 () => this.subject.GrantPropertyAsync(
-                    3,
+                    new Property(new PropertyId(3), PropertyType.Indivisible),
                     owner,
                     null,
-                    PropertyAmount.Indivisible(100),
+                    new PropertyAmount(100),
                     null,
                     CancellationToken.None
                 )
@@ -353,13 +335,13 @@ namespace Ztm.Zcoin.Rpc.Tests
             var owner = await this.subject.GetNewAddressAsync(CancellationToken.None);
             var to = BitcoinAddress.Create("TG3Pnw5xPZQS8JXMVa3F9WjUFfUqXKsqAz", this.node.Network);
 
-            await Assert.ThrowsAsync<ArgumentException>(
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
                 "amount",
                 () => this.subject.GrantPropertyAsync(
-                    3,
+                    new Property(new PropertyId(3), PropertyType.Indivisible),
                     owner,
                     to,
-                    default(PropertyAmount),
+                    PropertyAmount.Zero,
                     null,
                     CancellationToken.None
                 )
@@ -393,12 +375,14 @@ namespace Ztm.Zcoin.Rpc.Tests
 
             this.node.Generate(1);
 
+            var property = new Property(new PropertyId(3), PropertyType.Indivisible);
+
             // Act.
             var grantTx = await this.subject.GrantPropertyAsync(
-                3,
+                property,
                 owner,
                 owner,
-                PropertyAmount.Indivisible(1000),
+                new PropertyAmount(1000),
                 null,
                 CancellationToken.None);
 
@@ -407,18 +391,18 @@ namespace Ztm.Zcoin.Rpc.Tests
             this.node.Generate(1);
 
             // Assert.
-            var info = await this.subject.GetPropertyGrantsAsync(3, CancellationToken.None);
+            var info = await this.subject.GetPropertyGrantsAsync(property, CancellationToken.None);
 
             Assert.Equal(3, info.Id.Value);
             Assert.Equal("Satang Corporation", info.Name);
             Assert.Equal(owner, info.Issuer);
             Assert.Equal(createTx.GetHash(), info.CreationTransaction);
-            Assert.Equal("1000", info.TotalTokens.Value.ToString());
+            Assert.Equal("1000", info.TotalTokens.ToString(property.Type));
             Assert.Single(info.Histories);
 
             Assert.Equal(PropertyGrantType.Grant, info.Histories.First().Type);
             Assert.Equal(grantTx.GetHash(), info.Histories.First().Transaction);
-            Assert.Equal("1000", info.Histories.First().Amount.ToString());
+            Assert.Equal("1000", info.Histories.First().Amount.ToString(property.Type));
         }
 
         [Fact]
@@ -472,6 +456,241 @@ namespace Ztm.Zcoin.Rpc.Tests
                 "amount",
                 () => this.subject.SendToAddressAsync(to, null, null, null, false, CancellationToken.None)
             );
+        }
+
+        [Fact]
+        public async Task SendTokenAsync_WithNullAsRequiredArgs_ShouldThrow()
+        {
+            var from = TestAddress.Regtest1;
+            var to = TestAddress.Regtest2;
+            var property = new Property(new PropertyId(3), PropertyType.Indivisible);
+            var amount = new PropertyAmount(100);
+            var redeemAddress = TestAddress.Regtest2;
+
+            await Assert.ThrowsAsync<ArgumentNullException>(
+                "from",
+                () => this.subject.SendTokenAsync(null, to, property, amount, null, null, CancellationToken.None)
+            );
+
+            await Assert.ThrowsAsync<ArgumentNullException>(
+                "to",
+                () => this.subject.SendTokenAsync(from, null, property, amount, null, null, CancellationToken.None)
+            );
+
+            await Assert.ThrowsAsync<ArgumentNullException>(
+                "property",
+                () => this.subject.SendTokenAsync(from, to, null, amount, null, null, CancellationToken.None)
+            );
+        }
+
+        [Fact]
+        public async Task SendTokenAsync_WithInvalidArgs_ShouldThrow()
+        {
+            var from = TestAddress.Regtest1;
+            var to = TestAddress.Regtest2;
+            var property = new Property(new PropertyId(3), PropertyType.Indivisible);
+            var amount = new PropertyAmount(100);
+            var redeemAddress = TestAddress.Regtest2;
+
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
+                "amount",
+                () => this.subject.SendTokenAsync(from, to, property, PropertyAmount.Zero, null, null, CancellationToken.None)
+            );
+
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
+                "referenceAmount",
+                () => this.subject.SendTokenAsync(from, to, property, amount, redeemAddress, Money.Zero, CancellationToken.None)
+            );
+
+        }
+
+        [Fact]
+        public async Task SendAsync_WithValidPropertyAndArgs_ShouldSuccess()
+        {
+            // Arrange.
+            var issuer = new PropertyIssuer(this.node, this.subject);
+            this.node.Generate(101);
+            var property = await issuer.IssueManagedAsync();
+            await property.GrantAsync(new PropertyAmount(1000));
+
+            var destination = await this.subject.GetNewAddressAsync(CancellationToken.None);
+
+            // Act.
+            var rawTx = await this.subject.SendTokenAsync(property.Owner, destination, property.Property, new PropertyAmount(10), null, null, CancellationToken.None);
+            await this.subject.SendRawTransactionAsync(rawTx, CancellationToken.None);
+            this.node.Generate(1);
+
+            // Assert.
+            var ownerBalance = await this.subject.GetPropertyBalanceAsync(property.Owner, property.Property, CancellationToken.None);
+            var destinationBalance = await this.subject.GetPropertyBalanceAsync(destination, property.Property, CancellationToken.None);
+
+            Assert.Equal(new PropertyAmount(990), ownerBalance.balance);
+            Assert.Equal(new PropertyAmount(10), destinationBalance.balance);
+        }
+
+        [Fact]
+        public async Task GetPropertyBalanceAsync_WithNullArgs_ShouldThrow()
+        {
+            // Arrange.
+            var issuer = new PropertyIssuer(this.node, this.subject);
+            this.node.Generate(101);
+            var managedProperty = await issuer.IssueManagedAsync();
+
+            // Assert.
+            await Assert.ThrowsAsync<ArgumentNullException>(
+                "address",
+                () => this.subject.GetPropertyBalanceAsync(null, managedProperty.Property, CancellationToken.None)
+            );
+
+            await Assert.ThrowsAsync<ArgumentNullException>(
+                "property",
+                () => this.subject.GetPropertyBalanceAsync(issuer.Owner, null, CancellationToken.None)
+            );
+        }
+
+        [Fact]
+        public async Task GetPropertyBalanceAsync_WithIndivisibleToken_ShouldSuccess()
+        {
+            // Arrange.
+            var issuer = new PropertyIssuer(this.node, this.subject);
+            issuer.PropertyType = PropertyType.Indivisible;
+            this.node.Generate(101);
+            var property = await issuer.IssueManagedAsync();
+
+            await property.GrantAsync(new PropertyAmount(1000));
+
+            // Act.
+            var balance = await this.subject.GetPropertyBalanceAsync(
+                property.Owner, property.Property, CancellationToken.None);
+
+            // Assert.
+            Assert.Equal(new PropertyAmount(1000), balance.balance);
+            Assert.Equal(new PropertyAmount(0), balance.reserved);
+        }
+
+        [Fact]
+        public async Task GetPropertyBalanceAsync_WithDivisibleToken_ShouldSuccess()
+        {
+            // Arrange.
+            var issuer = new PropertyIssuer(this.node, this.subject);
+            issuer.PropertyType = PropertyType.Divisible;
+            this.node.Generate(101);
+            var property = await issuer.IssueManagedAsync();
+
+            await property.GrantAsync(PropertyAmount.FromDivisible(10));
+
+            // Act.
+            var balance = await this.subject.GetPropertyBalanceAsync(
+                property.Owner, property.Property, CancellationToken.None);
+
+            // Assert.
+            Assert.Equal(PropertyAmount.FromDivisible(10), balance.balance);
+            Assert.Equal(PropertyAmount.FromDivisible(0), balance.reserved);
+        }
+
+        class ManagedProperty
+        {
+            readonly CoreNode node;
+            readonly ZcoinRpcClient client;
+
+            public ManagedProperty(CoreNode node, ZcoinRpcClient client)
+            {
+                this.node = node;
+                this.client = client;
+            }
+
+            public async Task GrantAsync(PropertyAmount amount)
+            {
+                var grantTx = await this.client.GrantPropertyAsync(
+                    this.Property,
+                    this.Owner,
+                    this.Owner,
+                    amount,
+                    null,
+                    CancellationToken.None);
+
+                await this.client.SendRawTransactionAsync(grantTx, CancellationToken.None);
+
+                this.node.Generate(1);
+            }
+
+            public BitcoinAddress Owner { get; set; }
+            public Property Property { get; set; }
+        }
+
+        class PropertyIssuer
+        {
+            readonly CoreNode node;
+            readonly ZcoinRpcClient client;
+
+            public PropertyIssuer(CoreNode node, ZcoinRpcClient client)
+            {
+                this.node = node;
+                this.client = client;
+
+                this.Owner = null;
+                this.Ecosystem = Ecosystem.Main;
+                this.PropertyType = PropertyType.Indivisible;
+                this.CurrentProperty = null;
+                this.Category = "Company";
+                this.SubCategory = "Private";
+                this.Name = "Satang Corporation";
+                this.Url = "https://satang.com";
+                this.Description = "Provides cryptocurrency solutions.";
+            }
+
+            public BitcoinAddress Owner { get; set; }
+            public Ecosystem Ecosystem { get; set; }
+            public PropertyType PropertyType { get; set; }
+            public Property CurrentProperty { get; set; }
+            public string Category { get; set; }
+            public string SubCategory { get; set; }
+            public string Name { get; set; }
+            public string Url { get; set; }
+            public string Description { get; set; }
+
+            public async Task<ManagedProperty> IssueManagedAsync()
+            {
+                if (this.Owner == null)
+                {
+                    this.Owner = await this.client.GetNewAddressAsync(CancellationToken.None);
+
+                    await this.client.SendToAddressAsync(
+                        this.Owner,
+                        Money.Coins(30),
+                        null,
+                        null,
+                        false,
+                        CancellationToken.None);
+
+                    this.node.Generate(1);
+                }
+
+                var rawTransaction = await client.CreateManagedPropertyAsync(
+                    this.Owner,
+                    this.Ecosystem,
+                    this.PropertyType,
+                    this.CurrentProperty,
+                    this.Category,
+                    this.SubCategory,
+                    this.Name,
+                    this.Url,
+                    this.Description,
+                    CancellationToken.None
+                );
+
+                await this.client.SendRawTransactionAsync(rawTransaction, CancellationToken.None);
+
+                this.node.Generate(1);
+
+                var lastId = (await this.client.ListPropertiesAsync(CancellationToken.None)).Max(e => e.Id.Value);
+
+                return new ManagedProperty(this.node, this.client)
+                {
+                    Owner = this.Owner,
+                    Property = new Property(new PropertyId(lastId), this.PropertyType)
+                };
+            }
         }
     }
 }

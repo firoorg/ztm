@@ -14,7 +14,7 @@ namespace Ztm.Zcoin.Rpc
             BitcoinAddress owner,
             Ecosystem ecosystem,
             PropertyType type,
-            PropertyId? currentId,
+            Property current,
             string category,
             string subcategory,
             string name,
@@ -34,10 +34,13 @@ namespace Ztm.Zcoin.Rpc
 
         Task<BitcoinAddress> GetNewAddressAsync(CancellationToken cancellationToken);
 
-        Task<PropertyGrantsInfo> GetPropertyGrantsAsync(PropertyId id, CancellationToken cancellationToken);
+        Task<(PropertyAmount balance, PropertyAmount reserved)> GetPropertyBalanceAsync(
+            BitcoinAddress address, Property property, CancellationToken cancellationToken);
+
+        Task<PropertyGrantsInfo> GetPropertyGrantsAsync(Property property, CancellationToken cancellationToken);
 
         Task<Transaction> GrantPropertyAsync(
-            PropertyId id,
+            Property property,
             BitcoinAddress from,
             BitcoinAddress to,
             PropertyAmount amount,
@@ -54,6 +57,15 @@ namespace Ztm.Zcoin.Rpc
             string comment,
             string commentTo,
             bool subtractFeeFromAmount,
+            CancellationToken cancellationToken);
+
+        Task<Transaction> SendTokenAsync(
+            BitcoinAddress from,
+            BitcoinAddress to,
+            Property property,
+            PropertyAmount amount,
+            BitcoinAddress redeemAddress,
+            Money referenceAmount,
             CancellationToken cancellationToken);
     }
 }
