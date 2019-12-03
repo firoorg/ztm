@@ -7,12 +7,12 @@
     <ProjectReference Include="..\Ztm.Data.Entity\Ztm.Data.Entity.csproj" />
     <ProjectReference Include="..\Ztm.ObjectModel\Ztm.ObjectModel.csproj" />
     <ProjectReference Include="..\Ztm.Threading\Ztm.Threading.csproj" />
+    <ProjectReference Include="..\Ztm.Hosting\Ztm.Hosting.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.2.4" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="2.2.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.2.0" />
     <PackageReference Include="NBitcoin" Version="4.2.16" />
     <PackageReference Include="NetMQ" Version="4.0.0.1" />
