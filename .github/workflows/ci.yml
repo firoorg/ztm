@@ -17,15 +17,7 @@ jobs:
     - name: Unit Test
       run: |
         Get-ChildItem -Path src -Filter *.Tests -Directory | ForEach-Object {
-            $path = $_.FullName
-
-            $runner = Start-Process -FilePath dotnet -ArgumentList test, $path -PassThru -Wait
-
-            if ($runner.ExitCode -ne 0) {
-                exit $runner.ExitCode
-            }
-
-            Write-Host
+            Write-Host $_.FullName
         }
     - name: Publish
       env:
