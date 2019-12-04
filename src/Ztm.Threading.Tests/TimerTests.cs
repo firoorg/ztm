@@ -131,12 +131,12 @@ namespace Ztm.Threading.Tests
             this.subject.Elapsed += handler;
             this.subject.Start(TimeSpan.Zero, TimeSpan.Zero, context);
 
-            await Task.Delay(500);
+            await Task.Delay(1000);
 
             // Act.
             await this.subject.StopAsync(CancellationToken.None);
 
-            await Task.Delay(1000); // Required to test if we handled internal timer queue correctly.
+            await Task.Delay(500); // Required to test if we handled internal timer queue correctly.
 
             // Assert.
             Assert.Equal(TimerStatus.Stopped, this.subject.Status);
