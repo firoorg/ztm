@@ -7,14 +7,12 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v1
-    - name: Setup .NET Core 3.1
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: '3.1.100'
     - name: Setup .NET Core 2.2
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '2.2.207'
+    - shell: cmd
+      run: echo "${{ env }}"
     - name: Install EF CLI
       shell: cmd
       run: dotnet.exe tool install --global dotnet-ef --version 3.0.0
@@ -119,3 +117,7 @@ jobs:
         ZTM_HOST: localhost
         ZTM_PORT: 5000
       run: dotnet vstest e2e-runner/Ztm.EndToEndTests.dll
+    - name: Stop Containers
+      run: docker stop $DOCKER_ZTM $DOCKER_ZCOIND $DOCKER_DB_MAIN
+    - name: Remove Docker Network
+      run: docker network rm $DOCKER_NETWORK
