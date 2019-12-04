@@ -4,10 +4,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using NBitcoin.RPC;
 using NBitcoin.Tests;
 using NSubstitute;
 using Xunit;
 using Ztm.Testing;
+using Ztm.Zcoin.NBitcoin;
 using Ztm.Zcoin.NBitcoin.Exodus;
 using Ztm.Zcoin.Testing;
 
@@ -710,6 +712,92 @@ namespace Ztm.Zcoin.Rpc.Tests
                     "7920736f6c7574696f6e732e00"),
                 payload
             );
+        }
+
+        [Fact]
+        public async Task GetBlockAsync_WhichContiainExodusTransaction_ShouldSuccess()
+        {
+            // Arrange.
+            var issuer = new PropertyIssuer(this.node, this.subject);
+            this.node.Generate(101);
+
+            var property = await issuer.IssueManagedAsync();
+            await property.GrantAsync(new PropertyAmount(1000));
+
+            var destination = await this.subject.GetNewAddressAsync(CancellationToken.None);
+            var rawTx = await this.subject.SendTokenAsync(property.Owner, destination, property.Property, new PropertyAmount(10), null, null, CancellationToken.None);
+
+            await this.subject.SendRawTransactionAsync(rawTx, CancellationToken.None);
+            var id = this.node.Generate(1).First();
+
+            var exodusTransaction = new TestExodusTransaction(TestAddress.Regtest1, TestAddress.Regtest2);
+            this.encoder.Decode(Arg.Any<BitcoinAddress>(), Arg.Any<BitcoinAddress>(), Arg.Any<byte[]>())
+                .Returns(exodusTransaction);
+
+            // Act.
+            var block = await this.subject.GetBlockAsync(id, CancellationToken.None);
+
+            // Assert.
+            Assert.Equal(2, block.Transactions.Count);
+            Assert.Null(block.Transactions.First().GetExodusTransaction());
+            Assert.Equal(exodusTransaction, block.Transactions.Last().GetExodusTransaction());
+        }
+
+        [Fact]
+        public async Task GetExodusTransactionAsync_NonExodus_ShouldThrow()
+        {
+            var id = this.node.Generate(1).First();
+            var block = await this.subject.GetBlockAsync(id, CancellationToken.None);
+
+            await Assert.ThrowsAsync<RPCException>(
+                () => this.subject.GetExodusTransactionAsync(block.Transactions.First().GetHash(), CancellationToken.None)
+            );
+        }
+
+        [Fact]
+        public async Task GetExodusTransactionAsync_InExistTx_ShouldThrow()
+        {
+            await Assert.ThrowsAsync<RPCException>(
+                () => this.subject.GetExodusTransactionAsync(uint256.One, CancellationToken.None)
+            );
+        }
+
+        [Fact]
+        public async Task GetExodusTransactionAsync_ExodusTransaction_ShouldSuccess()
+        {
+            // Arrange.
+            var issuer = new PropertyIssuer(this.node, this.subject);
+            this.node.Generate(101);
+
+            var property = await issuer.IssueManagedAsync();
+            await property.GrantAsync(new PropertyAmount(1000));
+
+            var destination = await this.subject.GetNewAddressAsync(CancellationToken.None);
+            var tx = await this.subject.SendTokenAsync(property.Owner, destination, property.Property, new PropertyAmount(10), null, null, CancellationToken.None);
+
+            await this.subject.SendRawTransactionAsync(tx, CancellationToken.None);
+            var id = this.node.Generate(1).First();
+
+            var block = await this.subject.GetBlockAsync(id, CancellationToken.None);
+
+            // Act.
+            var info = await this.subject.GetExodusTransactionAsync(tx.GetHash(), CancellationToken.None);
+
+            // Assert.
+            Assert.Equal(tx.GetHash(), info.TxId);
+            Assert.Equal(property.Owner, info.SendingAddress);
+            Assert.Equal(destination, info.ReferenceAddress);
+            Assert.True(info.IsMine);
+            Assert.Equal(1, info.Confirmations);
+            Assert.True(info.Fee > Money.Zero);
+            Assert.Equal(105, info.Block);
+            Assert.Equal(id, info.BlockHash);
+            Assert.Equal(block.Header.BlockTime, info.BlockTime);
+            Assert.True(info.Valid);
+            Assert.Null(info.InvalidReason);
+            Assert.Equal(0, info.Version);
+            Assert.Equal(0, info.TypeInt);
+            Assert.Equal("Simple Send", info.Type);
         }
 
         class ManagedProperty

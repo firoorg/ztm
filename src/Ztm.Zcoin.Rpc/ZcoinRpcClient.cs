@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -426,11 +427,10 @@ namespace Ztm.Zcoin.Rpc
             {
                 infomation = await GetExodusTransactionAsync(transaction.GetHash(), CancellationToken.None);
             }
-            catch (RPCException)
+            catch (RPCException ex) when (ex.Message == "Not a Exodus Protocol transaction")
             {
                 return null;
             }
-
 
             var payload = await GetExodusPayloadAsync(transaction.GetHash(), CancellationToken.None);
 
