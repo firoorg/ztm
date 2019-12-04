@@ -13,7 +13,7 @@ jobs:
         dotnet-version: '2.2.108'
     - name: Install EF CLI
       shell: cmd
-      run: dotnet.exe tool install --global dotnet-ef --version 2.2.6
+      run: dotnet.exe tool install --global dotnet-ef
     - name: Cache NuGet Packages
       uses: actions/cache@v1
       with:
@@ -38,14 +38,17 @@ jobs:
 
             Write-Host
         }
-    - name: Publish
+    - name: Create Release
+      shell: cmd
+      run: dotnet.exe publish -o "%GITHUB_WORKSPACE%\release" -r linux-musl-x64 -c Release src\Ztm.WebApi
+    - name: Create Migration Scripts for Main Database
+      shell: cmd
       env:
         ZTM_MAIN_DATABASE: Host=127.0.0.1;Database=postgres;Username=postgres
+      run: dotnet.exe ef migrations script -o "%GITHUB_WORKSPACE%\release\Ztm.Data.Entity.Postgres.sql" -i -p src\Ztm.Data.Entity.Postgres
+    - name: Create Release for E2E Runner
       shell: cmd
-      run: |
-        dotnet.exe publish -o "%GITHUB_WORKSPACE%\release" -r linux-musl-x64 -c Release src\Ztm.WebApi
-        dotnet.exe ef migrations script -o "%GITHUB_WORKSPACE%\release\Ztm.Data.Entity.Postgres.sql" -i -p src\Ztm.Data.Entity.Postgres
-        dotnet.exe publish -o "%GITHUB_WORKSPACE%\e2e-runner" --no-build src\Ztm.EndToEndTests
+      run: dotnet.exe publish -o "%GITHUB_WORKSPACE%\e2e-runner" --no-build src\Ztm.EndToEndTests
     - name: Archive Release Artifact
       uses: actions/upload-artifact@v1
       with:
@@ -80,7 +83,7 @@ jobs:
       with:
         name: e2e-runner
         path: e2e-runner
-    - name: Fixing File Permissions
+    - name: Fix File Permissions
       run: chmod +x release/Ztm.WebApi
     - name: Create Docker Network
       run: docker network create $DOCKER_NETWORK
