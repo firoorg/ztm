@@ -92,7 +92,7 @@ namespace Ztm.WebApi.Tests.AddressPools
         {
             // Arrange.
             var address = TestAddress.Regtest1;
-            await this.storage.AddAsync(address, CancellationToken.None);
+            var r = await this.storage.AddAsync(address, CancellationToken.None);
             var cancellationToken = new CancellationToken(true);
 
             // Act.
@@ -102,7 +102,7 @@ namespace Ztm.WebApi.Tests.AddressPools
             Assert.NotNull(recv);
             _ = this.storage.Received(1).ListAsync(Arg.Any<AddressFilter>(), Arg.Is<CancellationToken>(c => c == cancellationToken));
             _ = this.choser.Received(1).Choose(Arg.Is<IEnumerable<ReceivingAddress>>(rs => rs.Any()));
-            _ = this.storage.Received(1).TryLockAsync(Arg.Any<Guid>(), Arg.Is<CancellationToken>(c => c == cancellationToken));
+            _ = this.storage.Received(1).TryLockAsync(Arg.Is<Guid>(id => id == r.Id), Arg.Is<CancellationToken>(c => c == cancellationToken));
         }
 
         [Fact]

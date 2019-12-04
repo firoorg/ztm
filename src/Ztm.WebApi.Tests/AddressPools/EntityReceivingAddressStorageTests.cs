@@ -112,7 +112,7 @@ namespace Ztm.WebApi.Tests.AddressPools
         }
 
         [Fact]
-        public async Task ListAsync_WithEmptyRecerivingAddress_ShouldGetEmpty_WithEmptyRecerivingAddress_ShouldGetEmpty()
+        public async Task ListAsync_WithEmptyRecerivingAddress_ShouldReturnEmpty()
         {
             // Act.
             var result = await this.subject.ListAsync(AddressFilter.None, CancellationToken.None);
