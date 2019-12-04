@@ -106,23 +106,6 @@ namespace Ztm.WebApi.Tests.AddressPools
         }
 
         [Fact]
-        public async Task TryLockAddressAsync_AndConsumedAllAvailable_ShouldReturnNullWhenTryToLockNext()
-        {
-            // Arrange.
-            await this.storage.AddAsync(TestAddress.Regtest1, CancellationToken.None);
-            await this.storage.AddAsync(TestAddress.Regtest2, CancellationToken.None);
-
-            // Act.
-            await this.subject.TryLockAddressAsync(CancellationToken.None);
-            await this.subject.TryLockAddressAsync(CancellationToken.None);
-
-            var recv = await this.subject.TryLockAddressAsync(CancellationToken.None);
-
-            // Assert.
-            Assert.Null(recv);
-        }
-
-        [Fact]
         public async Task ReleaseAddressAsync_ReleaseFunctionInStorageShouldBeCalled()
         {
             // Arrange.

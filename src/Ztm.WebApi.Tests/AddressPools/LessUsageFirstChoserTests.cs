@@ -34,14 +34,15 @@ namespace Ztm.WebApi.Tests.AddressPools
         }
 
         [Theory]
-        [InlineData(0, 0, 0, 1, 1)]
-        [InlineData(1, 2, 2, 1, 1)]
-        [InlineData(999, 999, 1000, 999, 1000)]
-        public void Choose_WithNonEmptyList_ShouldReturnLessUsageAddress(int expected, params int[] usages)
+        [InlineData(0, 0, 1, 1)]
+        [InlineData(2, 2, 1, 1)]
+        [InlineData(999, 1000, 999, 1000)]
+        public void Choose_WithNonEmptyList_ShouldReturnLessUsageAddress(params int[] usages)
         {
             // Arrange.
             var availables = new List<ReceivingAddress>();
             var emptyReservations = new Collection<ReceivingAddressReservation>();
+            var expected = usages.Min();
 
             foreach (var u in usages)
             {
@@ -54,7 +55,7 @@ namespace Ztm.WebApi.Tests.AddressPools
                         new Collection<ReceivingAddressReservation>()
                     ));
 
-                foreach (var _ in Enumerable.Range(0, u))
+                for (int i = 0; i < u; i++)
                 {
                     var a = availables.Last();
                     a.Reservations.Add(new ReceivingAddressReservation(Guid.NewGuid(), a, DateTime.UtcNow, null));

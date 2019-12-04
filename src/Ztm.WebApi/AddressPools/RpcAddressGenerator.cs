@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
@@ -11,6 +12,11 @@ namespace Ztm.WebApi.AddressPools
 
         public RpcAddressGenerator(IZcoinRpcClient client)
         {
+            if (client == null)
+            {
+                throw new ArgumentNullException(nameof(client));
+            }
+
             this.client = client;
         }
 
