@@ -16,14 +16,14 @@ namespace Ztm.Threading
         int oneShotState; // 0 = not one shot, 1 = not fired, 2 = stopping by outside, 3 = stopping by inside
         ShutdownGuard stopGuard;
         System.Threading.Timer timer;
-        int elapsed;
+        volatile int elapsed;
 
         public Timer()
         {
             this.stopwatch = new Stopwatch();
         }
 
-        public int ElapsedCount => Volatile.Read(ref this.elapsed);
+        public int ElapsedCount => this.elapsed;
 
         public TimeSpan ElapsedTime => this.stopwatch.Elapsed;
 
