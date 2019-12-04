@@ -26,13 +26,17 @@ namespace Ztm.Zcoin.Testing
             }
         };
 
+        /// <summary>
+        /// Create a new instance of <see cref="NodeBuilder"/> for the specified test suite.
+        /// </summary>
+        /// <remarks>
+        /// This method is not thread-safe.
+        /// </remarks>
         public static NodeBuilder CreateNodeBuilder(Type suite)
         {
-            lock (DownloadData)
+            if (suite == null)
             {
-                // EnsureDownloaded() will triggered by NodeBuilder.Create() but it not thread-safe for the first call.
-                // So we need to make the first call to be the thread safe.
-                NodeBuilder.EnsureDownloaded(DownloadData);
+                throw new ArgumentNullException(nameof(suite));
             }
 
             return NodeBuilder.Create(DownloadData, ZcoinNetworks.Instance.Regtest, suite.FullName);
