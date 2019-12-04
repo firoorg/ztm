@@ -41,7 +41,14 @@ namespace Ztm.WebApi.AddressPools
             }
 
             using (var db = this.databaseFactory.CreateDbContext())
+            using (var tx = await db.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead))
             {
+                var exist = await db.ReceivingAddresses.FirstOrDefaultAsync(a => a.Address == address.ToString());
+                if (exist != null)
+                {
+                    throw new ArgumentException("Address is existed.", nameof(address));
+                }
+
                 var recAddress = await db.ReceivingAddresses.AddAsync(
                     new ReceivingAddressModel
                     {
@@ -52,6 +59,7 @@ namespace Ztm.WebApi.AddressPools
                 );
 
                 await db.SaveChangesAsync(cancellationToken);
+                tx.Commit();
 
                 return ToDomain(recAddress.Entity);
             }
@@ -65,7 +73,12 @@ namespace Ztm.WebApi.AddressPools
                     .Include(e => e.Reservations)
                     .SingleOrDefaultAsync(r => r.Id == id);
 
-                return recv == null ? null : ToDomain(recv);
+                if (recv == null)
+                {
+                    throw new KeyNotFoundException("ReceivingAddress id is not found.");
+                }
+
+                return ToDomain(recv);
             }
         }
 

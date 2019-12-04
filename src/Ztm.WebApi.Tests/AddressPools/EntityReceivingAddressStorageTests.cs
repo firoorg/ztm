@@ -79,6 +79,26 @@ namespace Ztm.WebApi.Tests.AddressPools
         }
 
         [Fact]
+        public async Task AddAsync_SameAddressTwice_ShouldThrow()
+        {
+            // Arrange.
+            var address = TestAddress.Regtest1;
+            await this.subject.AddAsync(TestAddress.Regtest1, CancellationToken.None);
+
+            // Act.
+            await Assert.ThrowsAsync<ArgumentException>(
+                "address",
+                () => this.subject.AddAsync(TestAddress.Regtest1, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task GetTask_NonExist_ShouldThrow()
+        {
+            await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => this.subject.GetAsync(Guid.NewGuid(), CancellationToken.None));
+        }
+
+        [Fact]
         public async Task GetAsync_ExistReceivingAddress_ShouldSuccess()
         {
             // Arrange.
