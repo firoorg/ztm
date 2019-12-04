@@ -949,8 +949,8 @@ namespace Ztm.WebApi.Tests
                     .Returns(info => mockedWatchs[info.ArgAt<Guid>(0)]);
 
                 this.ruleRepository
-                    .ListAsync(Arg.Any<CancellationToken>())
-                    .Returns(info => mockedWatchs.Select(w => w.Value));
+                    .ListActiveAsync(Arg.Any<CancellationToken>())
+                    .Returns(info => mockedWatchs.Where(w => w.Value.Status == TransactionConfirmationWatchingRuleStatus.Pending).Select(w => w.Value));
 
                 this.ruleRepository
                     .When(w => w.SubtractRemainingWaitingTimeAsync(Arg.Any<Guid>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>()))

@@ -85,13 +85,14 @@ namespace Ztm.WebApi
             }
         }
 
-        public async Task<IEnumerable<TransactionConfirmationWatchingRule<TCallbackResult>>> ListAsync(CancellationToken cancellationToken)
+        public async Task<IEnumerable<TransactionConfirmationWatchingRule<TCallbackResult>>> ListActiveAsync(CancellationToken cancellationToken)
         {
             using (var db = this.db.CreateDbContext())
             {
                 var watches = await db.TransactionConfirmationWatchingRules
                     .Include(e => e.Callback)
                     .Include(e => e.CurrentWatch)
+                    .Where(e => e.Status == (int)TransactionConfirmationWatchingWatchStatus.Pending)
                     .ToListAsync(cancellationToken);
 
                 return watches.Select(e => ToDomain(e));

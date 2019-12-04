@@ -127,7 +127,7 @@ namespace Ztm.WebApi.Tests
         }
 
         [Fact]
-        public async Task ListAsync_WithNonEmptyList_ShouldSuccess()
+        public async Task ListActiveAsync_WithNonEmptyList_ShouldSuccess()
         {
             // Arrange.
             await this.CreateDefaultCallback();
@@ -148,7 +148,7 @@ namespace Ztm.WebApi.Tests
                 .ToList();
 
             // Act.
-            var retrieved = (await this.subject.ListAsync(CancellationToken.None)).ToList();
+            var retrieved = (await this.subject.ListActiveAsync(CancellationToken.None)).ToList();
 
             // Assert.
             Assert.Equal(2, retrieved.Count());
@@ -165,9 +165,32 @@ namespace Ztm.WebApi.Tests
         }
 
         [Fact]
-        public async Task ListAsync_WithEmptyList_ShouldReturnEmptyIEnumerable()
+        public async Task ListActiveAsync_WithEmptyList_ShouldReturnEmptyIEnumerable()
         {
-            Assert.Empty(await this.subject.ListAsync(CancellationToken.None));
+            Assert.Empty(await this.subject.ListActiveAsync(CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task ListActiveAsync_NonPendingRule_ShouldBeFilterOut()
+        {
+            // Arrange.
+            await this.CreateDefaultCallback();
+
+            var transaction = uint256.Parse("008b3395991c7893bb8a82d8389a48ded863af914d9cc31711554bc97e4723c0");
+            var successResult = new TestCallbackResult(CallbackResult.StatusSuccess, "success");
+            var timeoutResult = new TestCallbackResult(CallbackResult.StatusError, "timeout");
+
+            var watches = new List<TransactionConfirmationWatchingRule<TestCallbackResult>>();
+            watches.Add(await this.subject.AddAsync(transaction, 10, TimeSpan.FromMinutes(5),
+                successResult, timeoutResult, this.defaultCallback, CancellationToken.None));
+
+            await this.subject.UpdateStatusAsync(watches.Last().Id, TransactionConfirmationWatchingRuleStatus.Success, CancellationToken.None);
+
+            // Act.
+            var retrieved = (await this.subject.ListActiveAsync(CancellationToken.None)).ToList();
+
+            // Assert.
+            Assert.Empty(retrieved);
         }
 
         [Fact]

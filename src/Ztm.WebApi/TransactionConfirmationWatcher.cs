@@ -86,11 +86,6 @@ namespace Ztm.WebApi
             this.timerLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
         }
 
-        public void Dispose()
-        {
-            this.timerLock.Dispose();
-        }
-
         public async Task<Rule> AddTransactionAsync(
             uint256 transaction,
             int confirmation,
@@ -146,12 +141,16 @@ namespace Ztm.WebApi
             return rule;
         }
 
+        public void Dispose()
+        {
+            this.timerLock.Dispose();
+        }
+
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            var rules = await this.ruleRepository.ListAsync(cancellationToken);
+            var rules = await this.ruleRepository.ListActiveAsync(cancellationToken);
 
-            foreach (var rule in rules
-                .Where(r => r.Status == TransactionConfirmationWatchingRuleStatus.Pending && r.CurrentWatchId == null))
+            foreach (var rule in rules.Where(r => r.CurrentWatchId == null))
             {
                 await SetupTimerAsync(rule);
             }
@@ -226,6 +225,10 @@ namespace Ztm.WebApi
                     await this.ruleRepository.UpdateStatusAsync(rule.Id, TransactionConfirmationWatchingRuleStatus.Timeout, CancellationToken.None);
                     await ExecuteCallbackAsync(rule.Callback, rule.Timeout, CancellationToken.None);
                 }
+                catch (Exception ex) // lgtm [cs/catch-of-all-exceptions]
+                {
+                    this.logger.LogError("Timeout execution is fail.", ex);
+                }
                 finally
                 {
                     RemoveTimer(rule);
@@ -269,8 +272,8 @@ namespace Ztm.WebApi
                     await timer.StopAsync(CancellationToken.None);
                     if (timer.ElapsedCount == 0)
                     {
-                        await this.ruleRepository.SubtractRemainingWaitingTimeAsync(rule.Id, timer.ElapsedTime, CancellationToken.None);
                         RemoveTimer(rule);
+                        await this.ruleRepository.SubtractRemainingWaitingTimeAsync(rule.Id, timer.ElapsedTime, CancellationToken.None);
 
                         return true;
                     }
@@ -387,14 +390,14 @@ namespace Ztm.WebApi
 
         async Task IWatcherHandler<TransactionWatch<Rule>, Rule>.RemoveWatchAsync(TransactionWatch<Rule> watch, WatchRemoveReason reason, CancellationToken cancellationToken)
         {
-            if (reason.HasFlag(WatchRemoveReason.BlockRemoved))
+            if (reason.HasFlag(WatchRemoveReason.Completed))
+            {
+                await this.watchRepository.UpdateStatusAsync(watch.Id, TransactionConfirmationWatchingWatchStatus.Success, cancellationToken);
+            }
+            else if (reason.HasFlag(WatchRemoveReason.BlockRemoved))
             {
                 await this.watchRepository.UpdateStatusAsync(watch.Id, TransactionConfirmationWatchingWatchStatus.Rejected, cancellationToken);
                 await SetupTimerAsync(watch.Context);
-            }
-            else if (reason.HasFlag(WatchRemoveReason.Completed))
-            {
-                await this.watchRepository.UpdateStatusAsync(watch.Id, TransactionConfirmationWatchingWatchStatus.Success, cancellationToken);
             }
         }
     }
