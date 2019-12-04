@@ -11,6 +11,9 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '2.2.108'
+    - name: Install EF CLI
+      shell: cmd
+      run: dotnet.exe tool install --global dotnet-ef
     - name: Cache NuGet Packages
       uses: actions/cache@v1
       with:
@@ -42,7 +45,7 @@ jobs:
       run: |
         dotnet.exe publish -o "%GITHUB_WORKSPACE%\release" -r linux-musl-x64 -c Release src\Ztm.WebApi
         dotnet.exe ef migrations script -o "%GITHUB_WORKSPACE%\release\Ztm.Data.Entity.Postgres.sql" -i -p src\Ztm.Data.Entity.Postgres
-        dotnet.exe publish -o "%GITHUB_WORKSPACE%\e2e-runner" src\Ztm.EndToEndTests
+        dotnet.exe publish -o "%GITHUB_WORKSPACE%\e2e-runner" --no-build src\Ztm.EndToEndTests
     - name: Archive Release Artifact
       uses: actions/upload-artifact@v1
       with:
@@ -79,11 +82,12 @@ jobs:
         path: e2e-runner
     - name: Fixing File Permissions
       run: chmod +x release/Ztm.WebApi
-    - name: Prepare Required Services
-      run: |
-        docker network create $DOCKER_NETWORK
-        docker run --rm -d --name $DOCKER_DB_MAIN --network $DOCKER_NETWORK postgres:10
-        docker run --rm -d --name $DOCKER_ZCOIND --network $DOCKER_NETWORK zcoinofficial/zcoind:latest -regtest -exodus -dandelion=0 -rpcuser=zcoin -rpcpassword=zcoin -rpcallowip=0.0.0.0/0 -zmqpubhashblock=tcp://0.0.0.0:28332
+    - name: Create Docker Network
+      run: docker network create $DOCKER_NETWORK
+    - name: Start PostgreSQL
+      run: docker run --rm -d --name $DOCKER_DB_MAIN --network $DOCKER_NETWORK postgres:10
+    - name: Start Zcoin Daemon
+      run: docker run --rm -d --name $DOCKER_ZCOIND --network $DOCKER_NETWORK zcoinofficial/zcoind:latest -regtest -exodus -dandelion=0 -rpcuser=zcoin -rpcpassword=zcoin -rpcallowip=0.0.0.0/0 -zmqpubhashblock=tcp://0.0.0.0:28332
     - name: Configure ZTM
       shell: python
       run: |
@@ -102,7 +106,7 @@ jobs:
         with open('release/appsettings.json', 'w') as f:
           json.dump(conf, f, indent=2)
     - name: Start ZTM
-      run: docker run --rm -d --name $DOCKER_ZTM --network $DOCKER_NETWORK --user=1000:1000 -v ./release:/opt/ztm:ro -w /opt/ztm -p 5000:5000 mcr.microsoft.com/dotnet/core/runtime-deps:2.2-alpine /opt/ztm/Ztm.WebApi --urls=http://*:5000
+      run: docker run --rm -d --name $DOCKER_ZTM --network $DOCKER_NETWORK --user=1000:1000 -v $GITHUB_WORKSPACE/release:/opt/ztm:ro -w /opt/ztm -p 5000:5000 mcr.microsoft.com/dotnet/core/runtime-deps:2.2-alpine /opt/ztm/Ztm.WebApi --urls=http://*:5000
     - name: Run E2E Tests
       env:
         ZTM_HOST: localhost
