@@ -1,4 +1,4 @@
-using System.Runtime.CompilerServices;
+using System;
 using NBitcoin.Tests;
 using Ztm.Zcoin.NBitcoin;
 
@@ -26,9 +26,16 @@ namespace Ztm.Zcoin.Testing
             }
         };
 
-        public static NodeBuilder CreateNodeBuilder([CallerMemberName] string directoryName = null)
+        public static NodeBuilder CreateNodeBuilder(Type suite)
         {
-            var builder = NodeBuilder.Create(DownloadData, ZcoinNetworks.Instance.Regtest, directoryName);
+            lock (DownloadData)
+            {
+                // EnsureDownloaded() will triggered by NodeBuilder.Create() but it not thread-safe for the first call.
+                // So we need to make the first call to be the thread safe.
+                NodeBuilder.EnsureDownloaded(DownloadData);
+            }
+
+            var builder = NodeBuilder.Create(DownloadData, ZcoinNetworks.Instance.Regtest, suite.FullName);
 
             try
             {
@@ -41,13 +48,6 @@ namespace Ztm.Zcoin.Testing
             }
 
             return builder;
-        }
-
-        static NodeBuilderFactory()
-        {
-            // EnsureDownloaded() will triggered by NodeBuilder.Create() but it not thread-safe for the first call.
-            // So we need to invoke the first call here.
-            NodeBuilder.EnsureDownloaded(DownloadData);
         }
     }
 }
