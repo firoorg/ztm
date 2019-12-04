@@ -23,7 +23,7 @@ namespace Ztm.Threading
             this.stopwatch = new Stopwatch();
         }
 
-        public int ElapsedCount => this.elapsed;
+        public int ElapsedCount => Volatile.Read(ref this.elapsed);
 
         public TimeSpan ElapsedTime => this.stopwatch.Elapsed;
 
