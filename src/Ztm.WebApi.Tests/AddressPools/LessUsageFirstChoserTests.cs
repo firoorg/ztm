@@ -37,45 +37,28 @@ namespace Ztm.WebApi.Tests.AddressPools
         [InlineData(0, 0, 0, 1, 1)]
         [InlineData(1, 2, 2, 1, 1)]
         [InlineData(999, 999, 1000, 999, 1000)]
-        public void Choose_FromList(int expected, params int[] vs)
+        public void Choose_WithNonEmptyList_ShouldReturnLessUsageAddress(int expected, params int[] usages)
         {
             // Arrange.
             var availables = new List<ReceivingAddress>();
             var emptyReservations = new Collection<ReceivingAddressReservation>();
 
-            foreach (var v in vs)
+            foreach (var u in usages)
             {
-                var r = new ReceivingAddress
-                (
-                    Guid.NewGuid(),
-                    TestAddress.Regtest1,
-                    false,
-                    emptyReservations
-                );
-
-                var reservations = new List<ReceivingAddressReservation>();
-
-                foreach (var _ in Enumerable.Range(0, v))
-                {
-                    reservations.Add(
-                        new ReceivingAddressReservation
-                        (
-                            Guid.NewGuid(),
-                            r,
-                            DateTime.UtcNow,
-                            null
-                        ));
-                }
-
                 availables.Add(
-
                     new ReceivingAddress
                     (
-                        r.Id,
-                        r.Address,
-                        r.IsLocked,
-                        reservations
+                        Guid.NewGuid(),
+                        TestAddress.Regtest1,
+                        false,
+                        new Collection<ReceivingAddressReservation>()
                     ));
+
+                foreach (var _ in Enumerable.Range(0, u))
+                {
+                    var a = availables.Last();
+                    a.Reservations.Add(new ReceivingAddressReservation(Guid.NewGuid(), a, DateTime.UtcNow, null));
+                }
             }
 
             // Act.

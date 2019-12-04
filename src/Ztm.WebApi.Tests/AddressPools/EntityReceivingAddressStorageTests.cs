@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using NBitcoin;
 using Xunit;
 using Ztm.Data.Entity.Testing;
@@ -47,7 +48,7 @@ namespace Ztm.WebApi.Tests.AddressPools
         }
 
         [Fact]
-        public async Task AddAddressAsync_WithValidArgs_ShouldSuccess()
+        public async Task AddAsync_WithValidArgs_ShouldSuccess()
         {
             // Arrange.
             var address = TestAddress.Regtest1;
@@ -59,12 +60,19 @@ namespace Ztm.WebApi.Tests.AddressPools
             Assert.NotEqual(Guid.Empty, result.Id);
             Assert.Equal(address, result.Address);
             Assert.Empty(result.Reservations);
+
+            using (var db = this.databaseFactory.CreateDbContext())
+            {
+                var receivingAddress = await db.ReceivingAddresses.FirstOrDefaultAsync(a => a.Id == result.Id);
+                Assert.NotNull(receivingAddress);
+                Assert.Equal(result.Id, receivingAddress.Id);
+            }
         }
 
         [Fact]
-        public void AddAddressAsync_WithNullAddress_ShouldThrow()
+        public async Task AddAsync_WithNullAddress_ShouldThrow()
         {
-            _ = Assert.ThrowsAsync<ArgumentNullException>(
+            await Assert.ThrowsAsync<ArgumentNullException>(
                 "address",
                 () => this.subject.AddAsync(null, CancellationToken.None)
             );
@@ -84,7 +92,7 @@ namespace Ztm.WebApi.Tests.AddressPools
         }
 
         [Fact]
-        public async Task ListReceivingAddressAsync_WithEmptyRecerivingAddress_ShouldGetEmpty()
+        public async Task ListAsync_WithEmptyRecerivingAddress_ShouldGetEmpty_WithEmptyRecerivingAddress_ShouldGetEmpty()
         {
             // Act.
             var result = await this.subject.ListAsync(AddressFilter.None, CancellationToken.None);
@@ -94,7 +102,7 @@ namespace Ztm.WebApi.Tests.AddressPools
         }
 
         [Fact]
-        public async Task ListReceivingAddressAsync_WithNonEmptyRecerivingAddress_ShouldGetRecAddresses()
+        public async Task ListAsync_WithNonEmptyRecerivingAddress_ShouldGetRecAddresses()
         {
             // Arrange.
             var receivingAddresses = new List<ReceivingAddress>
@@ -107,12 +115,11 @@ namespace Ztm.WebApi.Tests.AddressPools
             var result = await this.subject.ListAsync(AddressFilter.None, CancellationToken.None);
 
             // Assert.
-            Assert.Contains(receivingAddresses.First(), result);
-            Assert.Contains(receivingAddresses.Last(), result);
+            Assert.Subset(result.ToHashSet(), receivingAddresses.ToHashSet());
         }
 
         [Fact]
-        public async Task ListReceivingAddressAsync_WithAvailableFlag_ShouldAllAvailableAddresses()
+        public async Task ListAsync_WithAvailableFlag_ShouldAllAvailableAddresses()
         {
             // Arrange.
             var receivingAddresses = new List<ReceivingAddress>
@@ -131,7 +138,7 @@ namespace Ztm.WebApi.Tests.AddressPools
         }
 
         [Fact]
-        public async Task ListReceivingAddressAsync_WithNeverUsedFlag_ShouldAllFreshAddresses()
+        public async Task ListAsync_WithNeverUsedFlag_ShouldAllFreshAddresses()
         {
             // Arrange.
             var receivingAddresses = new List<ReceivingAddress>
@@ -225,17 +232,24 @@ namespace Ztm.WebApi.Tests.AddressPools
             await this.subject.ReleaseAsync(reservation.Id, CancellationToken.None);
 
             // Act & Assert.
-            _ = Assert.ThrowsAsync<InvalidOperationException>(
+            await Assert.ThrowsAsync<InvalidOperationException>(
                 () => this.subject.ReleaseAsync(reservation.Id, CancellationToken.None)
             );
         }
 
         [Fact]
-        public void ReleaseAsync_InExist_ShouldThrow()
+        public async Task ReleaseAsync_InExist_ShouldThrow()
         {
-            _ = Assert.ThrowsAsync<KeyNotFoundException>(
+            await Assert.ThrowsAsync<KeyNotFoundException>(
                 () => this.subject.ReleaseAsync(Guid.NewGuid(), CancellationToken.None)
             );
+        }
+
+        [Fact]
+        public async Task TryLockAsync_NonExistAddres_ShouldThrow()
+        {
+            await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => this.subject.TryLockAsync(Guid.NewGuid(), CancellationToken.None));
         }
 
         [Fact]

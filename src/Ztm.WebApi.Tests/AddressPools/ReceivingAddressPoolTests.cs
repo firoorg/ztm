@@ -22,7 +22,7 @@ namespace Ztm.WebApi.Tests.AddressPools
         public ReceivingAddressPoolTests()
         {
             this.generator = Substitute.For<IAddressGenerator>();
-            this.storage = Substitute.ForPartsOf<TestReceivingAddressStorage>();
+            this.storage = Substitute.ForPartsOf<FakeReceivingAddressStorage>();
             this.choser = Substitute.For<IAddressChoser>();
 
             this.subject = new ReceivingAddressPool(this.generator, this.storage, this.choser);
@@ -52,13 +52,14 @@ namespace Ztm.WebApi.Tests.AddressPools
             // Arrange.
             var address = TestAddress.Regtest1;
             this.generator.GenerateAsync(Arg.Any<CancellationToken>()).Returns(address);
+            var cancellationToken = new CancellationToken(true);
 
             // Act.
-            await this.subject.GenerateAddressAsync(CancellationToken.None);
+            await this.subject.GenerateAddressAsync(cancellationToken);
 
             // Assert.
-            _ = this.generator.Received(1).GenerateAsync(Arg.Any<CancellationToken>());
-            _ = this.storage.Received(1).AddAsync(Arg.Is<BitcoinAddress>(address), Arg.Any<CancellationToken>());
+            _ = this.generator.Received(1).GenerateAsync(Arg.Is<CancellationToken>(c => c == cancellationToken));
+            _ = this.storage.Received(1).AddAsync(Arg.Is<BitcoinAddress>(address), Arg.Is<CancellationToken>(c => c == CancellationToken.None));
         }
 
         [Fact]
@@ -87,17 +88,21 @@ namespace Ztm.WebApi.Tests.AddressPools
         }
 
         [Fact]
-        public async Task TryLockAddressAsync_AndHaveAnAvailable_ShouldReturnNull()
+        public async Task TryLockAddressAsync_AndHaveAnAvailable_ShouldSuccess()
         {
             // Arrange.
             var address = TestAddress.Regtest1;
             await this.storage.AddAsync(address, CancellationToken.None);
+            var cancellationToken = new CancellationToken(true);
 
             // Act.
-            var recv = await this.subject.TryLockAddressAsync(CancellationToken.None);
+            var recv = await this.subject.TryLockAddressAsync(cancellationToken);
 
             // Assert.
             Assert.NotNull(recv);
+            _ = this.storage.Received(1).ListAsync(Arg.Any<AddressFilter>(), Arg.Is<CancellationToken>(c => c == cancellationToken));
+            _ = this.choser.Received(1).Choose(Arg.Is<IEnumerable<ReceivingAddress>>(rs => rs.Any()));
+            _ = this.storage.Received(1).TryLockAsync(Arg.Any<Guid>(), Arg.Is<CancellationToken>(c => c == cancellationToken));
         }
 
         [Fact]
@@ -123,12 +128,13 @@ namespace Ztm.WebApi.Tests.AddressPools
             // Arrange.
             var id = Guid.NewGuid();
             this.storage.ReleaseAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+            var cancellationToken = new CancellationToken(true);
 
             // Act.
-            await this.subject.ReleaseAddressAsync(id, CancellationToken.None);
+            await this.subject.ReleaseAddressAsync(id, cancellationToken);
 
             // Assert.
-            _ = this.storage.Received(1).ReleaseAsync(Arg.Is<Guid>(id), Arg.Any<CancellationToken>());
+            _ = this.storage.Received(1).ReleaseAsync(Arg.Is<Guid>(id), Arg.Is<CancellationToken>(c => c == cancellationToken));
         }
 
         void MockChoser()

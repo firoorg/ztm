@@ -9,10 +9,11 @@ using Ztm.WebApi.AddressPools;
 
 namespace Ztm.WebApi.Tests.AddressPools
 {
-    public class TestReceivingAddressStorage : IReceivingAddressStorage
+    public class FakeReceivingAddressStorage : IReceivingAddressStorage
     {
         readonly Dictionary<Guid, ReceivingAddress> receivingAddresses;
-        public TestReceivingAddressStorage()
+
+        public FakeReceivingAddressStorage()
         {
             this.receivingAddresses = new Dictionary<Guid, ReceivingAddress>();
         }
@@ -56,9 +57,7 @@ namespace Ztm.WebApi.Tests.AddressPools
         {
             if (this.receivingAddresses.TryGetValue(id, out var recv))
             {
-                var reservations = recv.Reservations == null
-                    ? new List<ReceivingAddressReservation>()
-                    : recv.Reservations;
+                var reservations = recv.Reservations;
 
                 var last = reservations.Last();
                 reservations.Remove(last);
@@ -66,7 +65,8 @@ namespace Ztm.WebApi.Tests.AddressPools
 
                 var updated = new ReceivingAddress(recv.Id, recv.Address, false, reservations);
 
-                this.receivingAddresses.AddOrReplace(id, updated);
+                this.receivingAddresses.Remove(id);
+                this.receivingAddresses.Add(id, updated);
             }
 
             return Task.CompletedTask;
@@ -83,15 +83,13 @@ namespace Ztm.WebApi.Tests.AddressPools
 
                 var lockedAt = DateTime.UtcNow;
                 var reservation = new ReceivingAddressReservation(Guid.NewGuid(), recv, lockedAt, DateTime.MinValue);
-
-                var reservations = recv.Reservations == null
-                    ? new List<ReceivingAddressReservation>()
-                    : recv.Reservations;
+                var reservations = recv.Reservations;
 
                 reservations.Add(reservation);
                 var updated = new ReceivingAddress(recv.Id, recv.Address, true, reservations);
 
-                this.receivingAddresses.AddOrReplace(id, updated);
+                this.receivingAddresses.Remove(id);
+                this.receivingAddresses.Add(id, updated);
 
                 return Task.FromResult(reservation);
             }

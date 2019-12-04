@@ -96,7 +96,12 @@ namespace Ztm.WebApi.AddressPools
             {
                 var reservation = await db.ReceivingAddressReservations
                     .Include(r => r.Address)
-                    .SingleAsync(r => r.Id == id);
+                    .SingleOrDefaultAsync(r => r.Id == id);
+
+                if (reservation == null)
+                {
+                    throw new KeyNotFoundException("Reservation id is not found.");
+                }
 
                 if (reservation.ReleasedAt != null)
                 {
@@ -118,7 +123,12 @@ namespace Ztm.WebApi.AddressPools
             {
                 var recv = await db
                     .ReceivingAddresses
-                    .SingleAsync(a => a.Id == id, cancellationToken);
+                    .SingleOrDefaultAsync(a => a.Id == id, cancellationToken);
+
+                if (recv == null)
+                {
+                    throw new KeyNotFoundException("Address id is not found.");
+                }
 
                 if (recv.IsLocked)
                 {
