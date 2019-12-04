@@ -24,7 +24,7 @@ namespace Ztm.Zcoin.Rpc.Tests
 
         public ZcoinRpcClientTests()
         {
-            this.nodes = NodeBuilderFactory.CreateNodeBuilder(GetType().FullName);
+            this.nodes = NodeBuilderFactory.CreateNodeBuilder(GetType());
 
             try
             {
