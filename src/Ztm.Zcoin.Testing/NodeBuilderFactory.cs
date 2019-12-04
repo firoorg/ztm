@@ -35,19 +35,7 @@ namespace Ztm.Zcoin.Testing
                 NodeBuilder.EnsureDownloaded(DownloadData);
             }
 
-            var builder = NodeBuilder.Create(DownloadData, ZcoinNetworks.Instance.Regtest, suite.FullName);
-
-            try
-            {
-                builder.ConfigParameters.Add("printtoconsole", "0");
-            }
-            catch
-            {
-                builder.Dispose();
-                throw;
-            }
-
-            return builder;
+            return NodeBuilder.Create(DownloadData, ZcoinNetworks.Instance.Regtest, suite.FullName);
         }
     }
 }

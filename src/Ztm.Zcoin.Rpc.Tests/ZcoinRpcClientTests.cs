@@ -32,8 +32,7 @@ namespace Ztm.Zcoin.Rpc.Tests
                 this.nodes.ConfigParameters.Add("dandelion", "0");
                 this.nodes.ConfigParameters.Add("exodus", "1");
 
-                this.node = this.nodes.CreateNode();
-                this.nodes.StartAll();
+                this.node = this.nodes.CreateNode(true);
 
                 this.transactionEncoder = Substitute.For<ITransactionEncoder>();
 
