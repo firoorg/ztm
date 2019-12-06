@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using NBitcoin.RPC;
+using Newtonsoft.Json.Serialization;
 using Ztm.Configuration;
 using Ztm.Data.Entity.Contexts;
 using Ztm.Data.Entity.Postgres;
@@ -34,7 +35,15 @@ namespace Ztm.WebApi
         public void ConfigureServices(IServiceCollection services)
         {
             // ASP.NET Services.
-            services.AddMvc(ConfigureMvc).SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+            services.AddMvc(ConfigureMvc)
+                    .SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
+                    .AddJsonOptions(o =>
+                    {
+                        o.SerializerSettings.ContractResolver = new DefaultContractResolver()
+                        {
+                            NamingStrategy = new SnakeCaseNamingStrategy()
+                        };
+                    });
 
             // Fundamentals Services.
             services.AddBackgroundServiceExceptionHandler();
