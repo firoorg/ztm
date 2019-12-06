@@ -12,11 +12,11 @@ namespace Ztm.Zcoin.Rpc.Tests
 {
     public class ZcoinRpcClientFactoryTests
     {
-        readonly ITransactionEncoder encoder;
+        readonly ITransactionEncoder transactionEncoder;
 
         public ZcoinRpcClientFactoryTests()
         {
-            this.encoder = Substitute.For<ITransactionEncoder>();
+            this.transactionEncoder = Substitute.For<ITransactionEncoder>();
         }
 
         [Fact]
@@ -24,7 +24,7 @@ namespace Ztm.Zcoin.Rpc.Tests
         {
             Assert.Throws<ArgumentNullException>("server", () =>
             {
-                new ZcoinRpcClientFactory(server: null, type: NetworkType.Regtest, credential: new RPCCredentialString(), exodusEncoder: this.encoder);
+                new ZcoinRpcClientFactory(server: null, type: NetworkType.Regtest, credential: new RPCCredentialString(), exodusEncoder: this.transactionEncoder);
             });
         }
 
@@ -33,7 +33,7 @@ namespace Ztm.Zcoin.Rpc.Tests
         {
             Assert.Throws<ArgumentNullException>("credential", () =>
             {
-                new ZcoinRpcClientFactory(server: new Uri("http://127.0.0.1"), type: NetworkType.Regtest, credential: null, exodusEncoder: this.encoder);
+                new ZcoinRpcClientFactory(server: new Uri("http://127.0.0.1"), type: NetworkType.Regtest, credential: null, exodusEncoder: this.transactionEncoder);
             });
         }
 
@@ -53,7 +53,7 @@ namespace Ztm.Zcoin.Rpc.Tests
             {
                 var node = nodeBuilder.CreateNode(true);
                 var cred = RPCCredentialString.Parse(node.GetRPCAuth());
-                var factory = new ZcoinRpcClientFactory(node.RPCUri, node.Network.NetworkType, cred, this.encoder);
+                var factory = new ZcoinRpcClientFactory(node.RPCUri, node.Network.NetworkType, cred, this.transactionEncoder);
 
                 node.Generate(3);
 
