@@ -3,7 +3,7 @@ using Ztm.Zcoin.NBitcoin.Exodus;
 
 namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
 {
-    sealed class TestExodusTransaction : ExodusTransaction
+    public sealed class TestExodusTransaction : ExodusTransaction
     {
         public TestExodusTransaction(BitcoinAddress sender, BitcoinAddress receiver) : base(sender, receiver)
         {

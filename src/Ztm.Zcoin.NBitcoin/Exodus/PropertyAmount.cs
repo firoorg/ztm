@@ -132,5 +132,10 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
         {
             return first.value >= second.value;
         }
+
+        public static PropertyAmount Negate(PropertyAmount amount)
+        {
+            return new PropertyAmount(-amount.Indivisible);
+        }
     }
 }
