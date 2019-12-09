@@ -40,5 +40,15 @@ namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionInterpreter
                 && this.Amount.Equals(other.Amount)
                 && this.Property.Equals(other.Property);
         }
+
+        public override bool Equals(object other)
+        {
+            if (other == null || other.GetType() != this.GetType())
+            {
+                return false;
+            }
+
+            return this.Equals((BalanceChange)other);
+        }
     }
 }
