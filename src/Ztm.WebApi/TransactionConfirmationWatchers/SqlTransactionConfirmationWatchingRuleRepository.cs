@@ -8,8 +8,9 @@ using NBitcoin;
 using Newtonsoft.Json;
 using Ztm.Data.Entity.Contexts;
 using TransactionConfirmationWatchingRuleModel = Ztm.Data.Entity.Contexts.Main.TransactionConfirmationWatchingRule;
+using Ztm.WebApi.Callbacks;
 
-namespace Ztm.WebApi
+namespace Ztm.WebApi.TransactionConfirmationWatchers
 {
     public class SqlTransactionConfirmationWatchingRuleRepository<TCallbackResult> : ITransactionConfirmationWatchingRuleRepository<TCallbackResult>
     {

@@ -8,9 +8,9 @@ using Microsoft.EntityFrameworkCore;
 using Ztm.Data.Entity.Contexts;
 using Ztm.Data.Entity.Contexts.Main;
 using Ztm.Zcoin.Watching;
-using Rule = Ztm.WebApi.TransactionConfirmationWatchingRule<Ztm.WebApi.TransactionConfirmationCallbackResult>;
+using Rule = Ztm.WebApi.TransactionConfirmationWatchers.TransactionConfirmationWatchingRule<Ztm.WebApi.TransactionConfirmationWatchers.TransactionConfirmationCallbackResult>;
 
-namespace Ztm.WebApi
+namespace Ztm.WebApi.TransactionConfirmationWatchers
 {
     public sealed class SqlTransactionConfirmationWatchRepository : ITransactionConfirmationWatchRepository
     {

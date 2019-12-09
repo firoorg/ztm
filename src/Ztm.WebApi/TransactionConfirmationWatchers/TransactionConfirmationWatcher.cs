@@ -9,13 +9,14 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Ztm.Threading;
+using Ztm.WebApi.Callbacks;
 using Ztm.Zcoin.Synchronization;
 using Ztm.Zcoin.Watching;
 
-using Rule = Ztm.WebApi.TransactionConfirmationWatchingRule<Ztm.WebApi.TransactionConfirmationCallbackResult>;
+using Rule = Ztm.WebApi.TransactionConfirmationWatchers.TransactionConfirmationWatchingRule<Ztm.WebApi.TransactionConfirmationWatchers.TransactionConfirmationCallbackResult>;
 using Timer = Ztm.Threading.Timer;
 
-namespace Ztm.WebApi
+namespace Ztm.WebApi.TransactionConfirmationWatchers
 {
     public sealed class TransactionConfirmationWatcher : ITransactionConfirmationWatcher, IHostedService, IBlockListener, ITransactionConfirmationWatcherHandler<Rule>, IDisposable
     {

@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 using Ztm.Data.Entity.Contexts;
 using Ztm.Data.Entity.Contexts.Main;
 
-namespace Ztm.WebApi
+namespace Ztm.WebApi.Callbacks
 {
     public class SqlCallbackRepository : ICallbackRepository
     {

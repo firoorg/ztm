@@ -7,10 +7,12 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Xunit;
 using Ztm.Data.Entity.Testing;
+using Ztm.WebApi.Callbacks;
+using Ztm.WebApi.TransactionConfirmationWatchers;
 using Ztm.Zcoin.Watching;
-using Rule = Ztm.WebApi.TransactionConfirmationWatchingRule<Ztm.WebApi.TransactionConfirmationCallbackResult>;
+using Rule = Ztm.WebApi.TransactionConfirmationWatchers.TransactionConfirmationWatchingRule<Ztm.WebApi.TransactionConfirmationWatchers.TransactionConfirmationCallbackResult>;
 
-namespace Ztm.WebApi.Tests
+namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
 {
     public sealed class SqlTransactionConfirmationWatchRepositoryTests : IDisposable
     {

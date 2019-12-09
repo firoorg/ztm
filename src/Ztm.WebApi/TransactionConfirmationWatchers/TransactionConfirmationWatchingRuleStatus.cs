@@ -1,4 +1,4 @@
-namespace Ztm.WebApi
+namespace Ztm.WebApi.TransactionConfirmationWatchers
 {
     public enum TransactionConfirmationWatchingRuleStatus
     {

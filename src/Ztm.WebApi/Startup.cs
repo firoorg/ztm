@@ -12,6 +12,8 @@ using Ztm.Data.Entity.Contexts;
 using Ztm.Data.Entity.Postgres;
 using Ztm.Hosting.AspNetCore;
 using Ztm.WebApi.Binders;
+using Ztm.WebApi.Callbacks;
+using Ztm.WebApi.TransactionConfirmationWatchers;
 using Ztm.Zcoin.NBitcoin;
 using Ztm.Zcoin.NBitcoin.Exodus;
 using Ztm.Zcoin.Rpc;

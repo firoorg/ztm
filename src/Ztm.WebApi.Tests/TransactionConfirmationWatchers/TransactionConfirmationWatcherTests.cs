@@ -9,14 +9,17 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NSubstitute;
 using Xunit;
+using Ztm.WebApi.Callbacks;
+using Ztm.WebApi.TransactionConfirmationWatchers;
 using Ztm.Zcoin.NBitcoin;
 using Ztm.Zcoin.Synchronization;
 using Ztm.Zcoin.Watching;
 
-using Rule = Ztm.WebApi.TransactionConfirmationWatchingRule<Ztm.WebApi.TransactionConfirmationCallbackResult>;
-using RuleRepository = Ztm.WebApi.ITransactionConfirmationWatchingRuleRepository<Ztm.WebApi.TransactionConfirmationCallbackResult>;
+using Rule = Ztm.WebApi.TransactionConfirmationWatchers.TransactionConfirmationWatchingRule<Ztm.WebApi.TransactionConfirmationWatchers.TransactionConfirmationCallbackResult>;
+using RuleRepository = Ztm.WebApi.TransactionConfirmationWatchers.ITransactionConfirmationWatchingRuleRepository<Ztm.WebApi.TransactionConfirmationWatchers.TransactionConfirmationCallbackResult>;
+using Callback = Ztm.WebApi.Callbacks.Callback;
 
-namespace Ztm.WebApi.Tests
+namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
 {
     public sealed class TransactionConfirmationWatcherTests : IDisposable
     {

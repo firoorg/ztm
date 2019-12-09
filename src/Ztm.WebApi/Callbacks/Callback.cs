@@ -1,7 +1,7 @@
 using System;
 using System.Net;
 
-namespace Ztm.WebApi
+namespace Ztm.WebApi.Callbacks
 {
     public class Callback : IComparable<Callback>
     {

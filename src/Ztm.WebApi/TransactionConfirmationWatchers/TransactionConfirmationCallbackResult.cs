@@ -1,6 +1,7 @@
 using System;
+using Ztm.WebApi.Callbacks;
 
-namespace Ztm.WebApi
+namespace Ztm.WebApi.TransactionConfirmationWatchers
 {
     public sealed class TransactionConfirmationCallbackResult : CallbackResult
     {

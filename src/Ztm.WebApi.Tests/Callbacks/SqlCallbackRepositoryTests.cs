@@ -8,8 +8,9 @@ using Newtonsoft.Json;
 using Xunit;
 using Ztm.Data.Entity.Contexts.Main;
 using Ztm.Data.Entity.Testing;
+using Ztm.WebApi.Callbacks;
 
-namespace Ztm.WebApi.Tests
+namespace Ztm.WebApi.Tests.Callbacks
 {
     public class SqlCallbackRepositoryTests : IDisposable
     {

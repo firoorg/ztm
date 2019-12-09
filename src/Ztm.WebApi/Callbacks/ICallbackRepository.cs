@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Net;
 
-namespace Ztm.WebApi
+namespace Ztm.WebApi.Callbacks
 {
     public interface ICallbackRepository
     {

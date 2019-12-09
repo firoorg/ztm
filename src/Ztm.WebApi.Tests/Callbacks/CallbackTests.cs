@@ -1,8 +1,9 @@
 using System;
 using System.Net;
 using Xunit;
+using Ztm.WebApi.Callbacks;
 
-namespace Ztm.WebApi.Tests
+namespace Ztm.WebApi.Tests.Callbacks
 {
     public class CallbackTests
     {

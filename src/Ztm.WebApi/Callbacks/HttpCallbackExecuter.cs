@@ -2,11 +2,10 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
-namespace Ztm.WebApi
+namespace Ztm.WebApi.Callbacks
 {
     public class HttpCallbackExecuter : ICallbackExecuter
     {

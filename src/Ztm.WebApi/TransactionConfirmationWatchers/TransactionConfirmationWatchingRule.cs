@@ -1,8 +1,8 @@
 using System;
 using NBitcoin;
-using Ztm.Zcoin.Watching;
+using Ztm.WebApi.Callbacks;
 
-namespace Ztm.WebApi
+namespace Ztm.WebApi.TransactionConfirmationWatchers
 {
     public class TransactionConfirmationWatchingRule<TCallbackResult>
     {
