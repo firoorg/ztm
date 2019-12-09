@@ -3,9 +3,13 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
+using NBitcoin.DataEncoders;
+using NBitcoin.RPC;
 using NBitcoin.Tests;
+using NSubstitute;
 using Xunit;
 using Ztm.Testing;
+using Ztm.Zcoin.NBitcoin;
 using Ztm.Zcoin.NBitcoin.Exodus;
 using Ztm.Zcoin.Testing;
 
@@ -13,6 +17,7 @@ namespace Ztm.Zcoin.Rpc.Tests
 {
     public sealed class ZcoinRpcClientTests : IDisposable
     {
+        readonly ITransactionEncoder transactionEncoder;
         readonly NodeBuilder nodes;
         readonly CoreNode node;
         readonly ZcoinRpcClient subject;
@@ -30,7 +35,9 @@ namespace Ztm.Zcoin.Rpc.Tests
                 this.node = this.nodes.CreateNode();
                 this.nodes.StartAll();
 
-                this.subject = new ZcoinRpcClient(this.node.CreateRPCClient());
+                this.transactionEncoder = Substitute.For<ITransactionEncoder>();
+
+                this.subject = new ZcoinRpcClient(this.node.CreateRPCClient(), this.transactionEncoder);
             }
             catch
             {
@@ -42,6 +49,20 @@ namespace Ztm.Zcoin.Rpc.Tests
         public void Dispose()
         {
             this.nodes.Dispose();
+        }
+
+        [Fact]
+        public void Construct_WithNullArgs_ShouldThrow()
+        {
+            Assert.Throws<ArgumentNullException>(
+                "client",
+                () => new ZcoinRpcClient(null, this.transactionEncoder)
+            );
+
+            Assert.Throws<ArgumentNullException>(
+                "exodusEncoder",
+                () => new ZcoinRpcClient(this.node.CreateRPCClient(), null)
+            );
         }
 
         [Fact]
@@ -517,6 +538,7 @@ namespace Ztm.Zcoin.Rpc.Tests
 
             // Act.
             var rawTx = await this.subject.SendTokenAsync(property.Owner, destination, property.Property, new PropertyAmount(10), null, null, CancellationToken.None);
+
             await this.subject.SendRawTransactionAsync(rawTx, CancellationToken.None);
             this.node.Generate(1);
 
@@ -586,6 +608,197 @@ namespace Ztm.Zcoin.Rpc.Tests
             // Assert.
             Assert.Equal(PropertyAmount.FromDivisible(10), balance.balance);
             Assert.Equal(PropertyAmount.FromDivisible(0), balance.reserved);
+        }
+
+        [Fact]
+        public async Task GetExodusTransactionAsync_WithNullTransaction_ShouldThrow()
+        {
+            await Assert.ThrowsAsync<ArgumentNullException>(
+                "transaction",
+                () => this.subject.GetExodusTransactionAsync(null, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task GetExodusTransactionAsync_WithValidTransaction_ShouldSuccess()
+        {
+            // Arrange.
+            var testingAt = DateTime.UtcNow;
+            var owner = await this.subject.GetNewAddressAsync(CancellationToken.None);
+
+            this.node.Generate(101);
+            await this.subject.SendToAddressAsync(owner, Money.Coins(30), null, null, false, CancellationToken.None);
+            this.node.Generate(1);
+
+            var createTx = await this.subject.CreateManagedPropertyAsync(
+                owner,
+                Ecosystem.Main,
+                PropertyType.Indivisible,
+                null,
+                "Company",
+                "Private",
+                "Satang Corporation",
+                "https://satang.com",
+                "Provides cryptocurrency solutions.",
+                CancellationToken.None
+            );
+
+            await this.subject.SendRawTransactionAsync(createTx, CancellationToken.None);
+            var minedBlock = this.node.Generate(2).First();
+
+            // Act.
+            var infomation = await this.subject.GetExodusTransactionAsync(createTx.GetHash(), CancellationToken.None);
+
+            // Assert.
+            Assert.Equal(createTx.GetHash(), infomation.TxId);
+            Assert.Equal(owner, infomation.SendingAddress);
+            Assert.Null(infomation.ReferenceAddress);
+            Assert.True(infomation.IsMine);
+            Assert.Equal(2, infomation.Confirmations);
+            Assert.True(infomation.Fee > Money.Zero);
+            Assert.Equal(103, infomation.Block);
+            Assert.Equal(minedBlock, infomation.BlockHash);
+            Assert.True(infomation.BlockTime > testingAt);
+            Assert.True(infomation.Valid);
+            Assert.Null(infomation.InvalidReason);
+            Assert.Equal(0, infomation.Version);
+            Assert.Equal(54, infomation.TypeInt);
+            Assert.Equal("Create Property - Manual", infomation.Type);
+        }
+
+        [Fact]
+        public async Task GetExodusPayloadAsync_WithNullTransaction_ShouldThrow()
+        {
+            await Assert.ThrowsAsync<ArgumentNullException>(
+                "transaction",
+                () => this.subject.GetExodusPayloadAsync(null, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task GetExodusPayloadAsync_WithNonExodusTransaction_ShouldThrow()
+        {
+            var id = this.node.Generate(1).First();
+            var block = await this.subject.GetBlockAsync(id, CancellationToken.None);
+
+            await Assert.ThrowsAsync<RPCException>(
+                () => this.subject.GetExodusPayloadAsync(block.Transactions.First().GetHash(), CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task GetExodusPayloadAsync_WithValidTransaction_ShouldSuccess()
+        {
+            // Arrange.
+            var owner = await this.subject.GetNewAddressAsync(CancellationToken.None);
+
+            this.node.Generate(101);
+            await this.subject.SendToAddressAsync(owner, Money.Coins(30), null, null, false, CancellationToken.None);
+            this.node.Generate(1);
+
+            var createTx = await this.subject.CreateManagedPropertyAsync(
+                owner,
+                Ecosystem.Main,
+                PropertyType.Indivisible,
+                null,
+                "Company",
+                "Private",
+                "Satang Corporation",
+                "https://satang.com",
+                "Provides cryptocurrency solutions.",
+                CancellationToken.None
+            );
+
+            await this.subject.SendRawTransactionAsync(createTx, CancellationToken.None);
+            this.node.Generate(1);
+
+            // Act.
+            var payload = await this.subject.GetExodusPayloadAsync(createTx.GetHash(), CancellationToken.None);
+
+            // Assert.
+            Assert.Equal
+            (
+                Encoders.Hex.DecodeData(
+                    "0000003601000100000000436f6d70616e79005072697661746500536174616e6720436f72706f726174696" +
+                    "f6e0068747470733a2f2f736174616e672e636f6d0050726f76696465732063727970746f63757272656e63" +
+                    "7920736f6c7574696f6e732e00"),
+                payload
+            );
+        }
+
+        [Fact]
+        public async Task GetBlockAsync_WhichContiainsExodusTransaction_ShouldSuccess()
+        {
+            // Arrange.
+            var issuer = new PropertyIssuer(this.node, this.subject);
+            this.node.Generate(101);
+
+            var property = await issuer.IssueManagedAsync();
+            await property.GrantAsync(new PropertyAmount(1000));
+
+            var destination = await this.subject.GetNewAddressAsync(CancellationToken.None);
+            var rawTx = await this.subject.SendTokenAsync(property.Owner, destination, property.Property, new PropertyAmount(10), null, null, CancellationToken.None);
+
+            await this.subject.SendRawTransactionAsync(rawTx, CancellationToken.None);
+            var id = this.node.Generate(1).First();
+
+            var exodusTransaction = new TestExodusTransaction(TestAddress.Regtest1, TestAddress.Regtest2);
+            this.transactionEncoder.Decode(Arg.Is<BitcoinAddress>(a => a == property.Owner), Arg.Is<BitcoinAddress>(a => a == destination), Arg.Any<byte[]>())
+                .Returns(exodusTransaction);
+
+            // Act.
+            var block = await this.subject.GetBlockAsync(id, CancellationToken.None);
+
+            // Assert.
+            Assert.Equal(2, block.Transactions.Count);
+            Assert.Null(block.Transactions.First().GetExodusTransaction());
+            Assert.Equal(exodusTransaction, block.Transactions.Last().GetExodusTransaction());
+        }
+
+
+        [Fact]
+        public async Task GetBlockAsync_ByHeight_WhichContiainsExodusTransaction_ShouldSuccess()
+        {
+            // Arrange.
+            var issuer = new PropertyIssuer(this.node, this.subject);
+            this.node.Generate(101);
+
+            var property = await issuer.IssueManagedAsync();
+            await property.GrantAsync(new PropertyAmount(1000));
+
+            var destination = await this.subject.GetNewAddressAsync(CancellationToken.None);
+            var rawTx = await this.subject.SendTokenAsync(property.Owner, destination, property.Property, new PropertyAmount(10), null, null, CancellationToken.None);
+
+            await this.subject.SendRawTransactionAsync(rawTx, CancellationToken.None);
+            this.node.Generate(1);
+
+            var exodusTransaction = new TestExodusTransaction(TestAddress.Regtest1, TestAddress.Regtest2);
+            this.transactionEncoder.Decode(Arg.Is<BitcoinAddress>(a => a == property.Owner), Arg.Is<BitcoinAddress>(a => a == destination), Arg.Any<byte[]>())
+                .Returns(exodusTransaction);
+
+            // Act.
+            var block = await this.subject.GetBlockAsync(105, CancellationToken.None);
+
+            // Assert.
+            Assert.Equal(2, block.Transactions.Count);
+            Assert.Null(block.Transactions.First().GetExodusTransaction());
+            Assert.Equal(exodusTransaction, block.Transactions.Last().GetExodusTransaction());
+        }
+
+        [Fact]
+        public async Task GetExodusTransactionAsync_NonExodus_ShouldThrow()
+        {
+            var id = this.node.Generate(1).First();
+            var block = await this.subject.GetBlockAsync(id, CancellationToken.None);
+
+            await Assert.ThrowsAsync<RPCException>(
+                () => this.subject.GetExodusTransactionAsync(block.Transactions.First().GetHash(), CancellationToken.None)
+            );
+        }
+
+        [Fact]
+        public async Task GetExodusTransactionAsync_NonExistTx_ShouldThrow()
+        {
+            await Assert.ThrowsAsync<RPCException>(
+                () => this.subject.GetExodusTransactionAsync(uint256.One, CancellationToken.None)
+            );
         }
 
         class ManagedProperty
@@ -691,6 +904,26 @@ namespace Ztm.Zcoin.Rpc.Tests
                     Property = new Property(new PropertyId(lastId), this.PropertyType)
                 };
             }
+        }
+
+        sealed class TestExodusTransaction : ExodusTransaction
+        {
+            public TestExodusTransaction(BitcoinAddress sender, BitcoinAddress receiver) : base(sender, receiver)
+            {
+                Id = 1;
+                Version = 1;
+            }
+
+            public TestExodusTransaction(BitcoinAddress sender, BitcoinAddress receiver, int id, int version)
+                : base(sender, receiver)
+            {
+                Id = id;
+                Version = version;
+            }
+
+            public override int Id { get; }
+
+            public override int Version { get; }
         }
     }
 }

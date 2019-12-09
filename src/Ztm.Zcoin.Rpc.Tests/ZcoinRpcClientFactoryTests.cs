@@ -3,19 +3,28 @@ using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using NBitcoin.RPC;
+using NSubstitute;
 using Xunit;
+using Ztm.Zcoin.NBitcoin.Exodus;
 using Ztm.Zcoin.Testing;
 
 namespace Ztm.Zcoin.Rpc.Tests
 {
     public class ZcoinRpcClientFactoryTests
     {
+        readonly ITransactionEncoder transactionEncoder;
+
+        public ZcoinRpcClientFactoryTests()
+        {
+            this.transactionEncoder = Substitute.For<ITransactionEncoder>();
+        }
+
         [Fact]
         public void Constructor_PassNullForServer_ShouldThrow()
         {
             Assert.Throws<ArgumentNullException>("server", () =>
             {
-                new ZcoinRpcClientFactory(server: null, type: NetworkType.Regtest, credential: new RPCCredentialString());
+                new ZcoinRpcClientFactory(server: null, type: NetworkType.Regtest, credential: new RPCCredentialString(), exodusEncoder: this.transactionEncoder);
             });
         }
 
@@ -24,7 +33,16 @@ namespace Ztm.Zcoin.Rpc.Tests
         {
             Assert.Throws<ArgumentNullException>("credential", () =>
             {
-                new ZcoinRpcClientFactory(server: new Uri("http://127.0.0.1"), type: NetworkType.Regtest, credential: null);
+                new ZcoinRpcClientFactory(server: new Uri("http://127.0.0.1"), type: NetworkType.Regtest, credential: null, exodusEncoder: this.transactionEncoder);
+            });
+        }
+
+        [Fact]
+        public void Constructor_PassNullEncoder_ShouldThrow()
+        {
+            Assert.Throws<ArgumentNullException>("exodusEncoder", () =>
+            {
+                new ZcoinRpcClientFactory(server: new Uri("http://127.0.0.1"), type: NetworkType.Regtest, credential: new RPCCredentialString(), exodusEncoder: null);
             });
         }
 
@@ -35,7 +53,7 @@ namespace Ztm.Zcoin.Rpc.Tests
             {
                 var node = nodeBuilder.CreateNode(true);
                 var cred = RPCCredentialString.Parse(node.GetRPCAuth());
-                var factory = new ZcoinRpcClientFactory(node.RPCUri, node.Network.NetworkType, cred);
+                var factory = new ZcoinRpcClientFactory(node.RPCUri, node.Network.NetworkType, cred, this.transactionEncoder);
 
                 node.Generate(3);
 
