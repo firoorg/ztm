@@ -4,12 +4,12 @@ using Ztm.WebApi.Callbacks;
 
 namespace Ztm.WebApi.TransactionConfirmationWatchers
 {
-    public class TransactionConfirmationWatchingRule<TCallbackResult>
+    public class Rule<TCallbackResult>
     {
-        public TransactionConfirmationWatchingRule(
+        public Rule(
             Guid id,
             uint256 transaction,
-            TransactionConfirmationWatchingRuleStatus status,
+            RuleStatus status,
             int confirmation,
             TimeSpan waitingTime,
             TCallbackResult success,
@@ -30,7 +30,7 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
 
         public Guid Id { get; }
         public uint256 Transaction { get; }
-        public TransactionConfirmationWatchingRuleStatus Status { get; }
+        public RuleStatus Status { get; }
         public int Confirmation { get; }
         public TimeSpan WaitingTime { get; }
         public TCallbackResult Success { get; }

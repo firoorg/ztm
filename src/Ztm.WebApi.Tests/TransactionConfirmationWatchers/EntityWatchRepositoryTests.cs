@@ -10,23 +10,23 @@ using Ztm.Data.Entity.Testing;
 using Ztm.WebApi.Callbacks;
 using Ztm.WebApi.TransactionConfirmationWatchers;
 using Ztm.Zcoin.Watching;
-using Rule = Ztm.WebApi.TransactionConfirmationWatchers.TransactionConfirmationWatchingRule<Ztm.WebApi.TransactionConfirmationWatchers.TransactionConfirmationCallbackResult>;
+using Rule = Ztm.WebApi.TransactionConfirmationWatchers.Rule<Ztm.WebApi.TransactionConfirmationWatchers.CallbackResult>;
 
 namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
 {
-    public sealed class SqlTransactionConfirmationWatchRepositoryTests : IDisposable
+    public sealed class EntityWatchRepositoryTests : IDisposable
     {
         readonly TestMainDatabaseFactory databaseFactory;
-        readonly SqlCallbackRepository callbackRepository;
-        readonly SqlTransactionConfirmationWatchingRuleRepository<TransactionConfirmationCallbackResult> ruleRepository;
-        readonly SqlTransactionConfirmationWatchRepository subject;
+        readonly EntityCallbackRepository callbackRepository;
+        readonly EntityRuleRepository<WebApi.TransactionConfirmationWatchers.CallbackResult> ruleRepository;
+        readonly EntityWatchRepository subject;
 
-        public SqlTransactionConfirmationWatchRepositoryTests()
+        public EntityWatchRepositoryTests()
         {
             this.databaseFactory = new TestMainDatabaseFactory();
-            this.callbackRepository = new SqlCallbackRepository(this.databaseFactory);
-            this.ruleRepository = new SqlTransactionConfirmationWatchingRuleRepository<TransactionConfirmationCallbackResult>(this.databaseFactory);
-            this.subject = new SqlTransactionConfirmationWatchRepository(this.databaseFactory);
+            this.callbackRepository = new EntityCallbackRepository(this.databaseFactory);
+            this.ruleRepository = new EntityRuleRepository<WebApi.TransactionConfirmationWatchers.CallbackResult>(this.databaseFactory);
+            this.subject = new EntityWatchRepository(this.databaseFactory);
         }
 
         public void Dispose()
@@ -39,7 +39,7 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
         {
             Assert.Throws<ArgumentNullException>(
                 "db",
-                () => new SqlTransactionConfirmationWatchRepository(null));
+                () => new EntityWatchRepository(null));
         }
 
         [Fact]
@@ -78,7 +78,7 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
         public async Task ListAsync_EmptyWatch_ShouldReturnEmpty()
         {
             var watches = await this.subject.ListAsync(
-                TransactionConfirmationWatchingWatchStatus.Error,
+                WatchStatus.Error,
                 CancellationToken.None
             );
 
@@ -95,7 +95,7 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             await this.subject.AddAsync(watch, CancellationToken.None);
 
             // Act.
-            var watches = await this.subject.ListAsync(TransactionConfirmationWatchingWatchStatus.Pending, CancellationToken.None);
+            var watches = await this.subject.ListAsync(WatchStatus.Pending, CancellationToken.None);
 
             // Assert.
             Assert.Single(watches);
@@ -113,11 +113,11 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             var watch2 = new TransactionWatch<Rule>(rule2, uint256.One, uint256.One);
             await this.subject.AddAsync(watch2, CancellationToken.None);
 
-            await this.subject.UpdateStatusAsync(watch2.Id, TransactionConfirmationWatchingWatchStatus.Rejected, CancellationToken.None);
+            await this.subject.UpdateStatusAsync(watch2.Id, WatchStatus.Rejected, CancellationToken.None);
 
             // Act.
-            var rejectedWatches = await this.subject.ListAsync(TransactionConfirmationWatchingWatchStatus.Rejected, CancellationToken.None);
-            var pendingWatches = await this.subject.ListAsync(TransactionConfirmationWatchingWatchStatus.Pending, CancellationToken.None);
+            var rejectedWatches = await this.subject.ListAsync(WatchStatus.Rejected, CancellationToken.None);
+            var pendingWatches = await this.subject.ListAsync(WatchStatus.Pending, CancellationToken.None);
 
             // Assert.
             Assert.Single(rejectedWatches);
@@ -131,7 +131,7 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
         public async Task UpdateStatusAsync_WithNonExistId_ShouldThrow()
         {
             await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => this.subject.UpdateStatusAsync(Guid.NewGuid(), TransactionConfirmationWatchingWatchStatus.Error, CancellationToken.None));
+                () => this.subject.UpdateStatusAsync(Guid.NewGuid(), WatchStatus.Error, CancellationToken.None));
         }
 
         [Fact]
@@ -144,10 +144,10 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             await this.subject.AddAsync(watch, CancellationToken.None);
 
             // Act.
-            await this.subject.UpdateStatusAsync(watch.Id, TransactionConfirmationWatchingWatchStatus.Rejected, CancellationToken.None);
+            await this.subject.UpdateStatusAsync(watch.Id, WatchStatus.Rejected, CancellationToken.None);
 
             // Assert.
-            var watches = await this.subject.ListAsync(TransactionConfirmationWatchingWatchStatus.Rejected, CancellationToken.None);
+            var watches = await this.subject.ListAsync(WatchStatus.Rejected, CancellationToken.None);
             Assert.Single(watches);
 
             var updated = watches.First();
@@ -168,7 +168,7 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
 
             // Act & Assert.
             await Assert.ThrowsAsync<InvalidOperationException>(
-                () => this.subject.UpdateStatusAsync(watch.Id, TransactionConfirmationWatchingWatchStatus.Pending, CancellationToken.None));
+                () => this.subject.UpdateStatusAsync(watch.Id, WatchStatus.Pending, CancellationToken.None));
         }
 
         [Fact]
@@ -179,18 +179,18 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             var watch = new TransactionWatch<Rule>(rule, uint256.One, uint256.One);
 
             await this.subject.AddAsync(watch, CancellationToken.None);
-            await this.subject.UpdateStatusAsync(watch.Id, TransactionConfirmationWatchingWatchStatus.Rejected, CancellationToken.None);
+            await this.subject.UpdateStatusAsync(watch.Id, WatchStatus.Rejected, CancellationToken.None);
 
             // Act & Assert.
             await Assert.ThrowsAsync<InvalidOperationException>(
-                () => this.subject.UpdateStatusAsync(watch.Id, TransactionConfirmationWatchingWatchStatus.Success, CancellationToken.None));
+                () => this.subject.UpdateStatusAsync(watch.Id, WatchStatus.Success, CancellationToken.None));
         }
 
         async Task<Rule> GenerateRuleAsync()
         {
             var url = new Uri("https://zcoin.io");
-            var success = new TransactionConfirmationCallbackResult("success", "");
-            var fail = new TransactionConfirmationCallbackResult("fail", "");
+            var success = new WebApi.TransactionConfirmationWatchers.CallbackResult("success", "");
+            var fail = new WebApi.TransactionConfirmationWatchers.CallbackResult("fail", "");
             var callback = await this.callbackRepository.AddAsync(IPAddress.Loopback, url, CancellationToken.None);
             return await this.ruleRepository.AddAsync(uint256.One, 10, TimeSpan.FromHours(1), success, fail, callback, CancellationToken.None);
         }

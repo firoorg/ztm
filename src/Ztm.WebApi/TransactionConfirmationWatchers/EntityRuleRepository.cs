@@ -12,11 +12,11 @@ using Ztm.WebApi.Callbacks;
 
 namespace Ztm.WebApi.TransactionConfirmationWatchers
 {
-    public class SqlTransactionConfirmationWatchingRuleRepository<TCallbackResult> : ITransactionConfirmationWatchingRuleRepository<TCallbackResult>
+    public class EntityRuleRepository<TCallbackResult> : IRuleRepository<TCallbackResult>
     {
         readonly IMainDatabaseFactory db;
 
-        public SqlTransactionConfirmationWatchingRuleRepository(IMainDatabaseFactory db)
+        public EntityRuleRepository(IMainDatabaseFactory db)
         {
             if (db == null)
             {
@@ -26,7 +26,7 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
             this.db = db;
         }
 
-        public async Task<TransactionConfirmationWatchingRule<TCallbackResult>> AddAsync(
+        public async Task<Rule<TCallbackResult>> AddAsync(
             uint256 transaction, int confirmation, TimeSpan waitingTime, TCallbackResult successData, TCallbackResult timeoutData, Callback callback, CancellationToken cancellationToken)
         {
             if (transaction == null)
@@ -58,7 +58,7 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
                         Id = Guid.NewGuid(),
                         CallbackId = callback.Id,
                         Transaction = transaction,
-                        Status = (int)TransactionConfirmationWatchingRuleStatus.Pending,
+                        Status = (int)RuleStatus.Pending,
                         Confirmation = confirmation,
                         WaitingTime = waitingTime,
                         RemainingWaitingTime = waitingTime,
@@ -73,7 +73,7 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
             }
         }
 
-        public async Task<TransactionConfirmationWatchingRule<TCallbackResult>> GetAsync(Guid id, CancellationToken cancellationToken)
+        public async Task<Rule<TCallbackResult>> GetAsync(Guid id, CancellationToken cancellationToken)
         {
             using (var db = this.db.CreateDbContext())
             {
@@ -86,14 +86,14 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
             }
         }
 
-        public async Task<IEnumerable<TransactionConfirmationWatchingRule<TCallbackResult>>> ListActiveAsync(CancellationToken cancellationToken)
+        public async Task<IEnumerable<Rule<TCallbackResult>>> ListActiveAsync(CancellationToken cancellationToken)
         {
             using (var db = this.db.CreateDbContext())
             {
                 var watches = await db.TransactionConfirmationWatchingRules
                     .Include(e => e.Callback)
                     .Include(e => e.CurrentWatch)
-                    .Where(e => e.Status == (int)TransactionConfirmationWatchingWatchStatus.Pending)
+                    .Where(e => e.Status == (int)WatchStatus.Pending)
                     .ToListAsync(cancellationToken);
 
                 return watches.Select(e => ToDomain(e));
@@ -127,7 +127,7 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
             }
         }
 
-        public async Task UpdateStatusAsync(Guid id, TransactionConfirmationWatchingRuleStatus status, CancellationToken cancellationToken)
+        public async Task UpdateStatusAsync(Guid id, RuleStatus status, CancellationToken cancellationToken)
         {
             using (var db = this.db.CreateDbContext())
             {
@@ -163,21 +163,21 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
             }
         }
 
-        public static TransactionConfirmationWatchingRule<TCallbackResult> ToDomain(
+        public static Rule<TCallbackResult> ToDomain(
             Ztm.Data.Entity.Contexts.Main.TransactionConfirmationWatchingRule watch,
             Callback callback = null)
         {
-            return new TransactionConfirmationWatchingRule<TCallbackResult>(
+            return new Rule<TCallbackResult>(
                 watch.Id,
                 watch.Transaction,
-                (TransactionConfirmationWatchingRuleStatus)watch.Status,
+                (RuleStatus)watch.Status,
                 watch.Confirmation,
                 watch.WaitingTime,
                 JsonConvert.DeserializeObject<TCallbackResult>(watch.SuccessData),
                 JsonConvert.DeserializeObject<TCallbackResult>(watch.TimeoutData),
                 callback != null
                     ? callback
-                    : (watch.Callback == null ? null : SqlCallbackRepository.ToDomain(watch.Callback)),
+                    : (watch.Callback == null ? null : EntityCallbackRepository.ToDomain(watch.Callback)),
                 watch.CurrentWatchId
             );
         }

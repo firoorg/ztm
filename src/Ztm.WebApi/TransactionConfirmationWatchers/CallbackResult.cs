@@ -1,11 +1,10 @@
 using System;
-using Ztm.WebApi.Callbacks;
 
 namespace Ztm.WebApi.TransactionConfirmationWatchers
 {
-    public sealed class TransactionConfirmationCallbackResult : CallbackResult
+    public sealed class CallbackResult : Ztm.WebApi.Callbacks.CallbackResult
     {
-        public TransactionConfirmationCallbackResult(string status, string data)
+        public CallbackResult(string status, string data)
         {
             this.Status = status;
             this.Data = data;
@@ -21,7 +20,7 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
                 return false;
             }
 
-            var other = (TransactionConfirmationCallbackResult)obj;
+            var other = (CallbackResult)obj;
             return this.Status == other.Status && this.Data.Equals(other.Data);
         }
 

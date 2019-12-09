@@ -5,15 +5,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using Ztm.WebApi.TransactionConfirmationWatchers;
 using Ztm.Zcoin.Watching;
-using Rule = Ztm.WebApi.TransactionConfirmationWatchers.TransactionConfirmationWatchingRule<Ztm.WebApi.TransactionConfirmationWatchers.TransactionConfirmationCallbackResult>;
+using Rule = Ztm.WebApi.TransactionConfirmationWatchers.Rule<Ztm.WebApi.TransactionConfirmationWatchers.CallbackResult>;
 
 namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
 {
-    public class TestTransactionConfirmationWatchRepository : ITransactionConfirmationWatchRepository
+    public class FakeWatchRepository : IWatchRepository
     {
         readonly Dictionary<Guid, TransactionWatchWithStatus> watches;
 
-        public TestTransactionConfirmationWatchRepository()
+        public FakeWatchRepository()
         {
             this.watches = new Dictionary<Guid, TransactionWatchWithStatus>();
         }
@@ -23,18 +23,18 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             this.watches.Add(watch.Id, new TransactionWatchWithStatus
             {
                 watch = watch,
-                status = TransactionConfirmationWatchingWatchStatus.Pending
+                status = WatchStatus.Pending
             });
 
             return Task.FromResult(watch);
         }
 
-        public virtual Task<IEnumerable<TransactionWatch<Rule>>> ListAsync(TransactionConfirmationWatchingWatchStatus status, CancellationToken cancellationToken)
+        public virtual Task<IEnumerable<TransactionWatch<Rule>>> ListAsync(WatchStatus status, CancellationToken cancellationToken)
         {
             return Task.FromResult(this.watches.Where(w => status.HasFlag(w.Value.status)).Select(w => w.Value.watch));
         }
 
-        public virtual Task UpdateStatusAsync(Guid id, TransactionConfirmationWatchingWatchStatus status, CancellationToken cancellationToken)
+        public virtual Task UpdateStatusAsync(Guid id, WatchStatus status, CancellationToken cancellationToken)
         {
             if (this.watches.TryGetValue(id, out var watchWithStatus))
             {
@@ -48,7 +48,7 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
         class TransactionWatchWithStatus
         {
             public TransactionWatch<Rule> watch { get; set; }
-            public TransactionConfirmationWatchingWatchStatus status { get; set; }
+            public WatchStatus status { get; set; }
         }
     }
 }

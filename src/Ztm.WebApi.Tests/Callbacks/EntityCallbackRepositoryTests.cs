@@ -12,19 +12,19 @@ using Ztm.WebApi.Callbacks;
 
 namespace Ztm.WebApi.Tests.Callbacks
 {
-    public class SqlCallbackRepositoryTests : IDisposable
+    public class EntityCallbackRepositoryTests : IDisposable
     {
-        readonly SqlCallbackRepository subject;
+        readonly EntityCallbackRepository subject;
         readonly TestMainDatabaseFactory dbFactory;
 
         readonly Uri defaultUrl;
 
-        public SqlCallbackRepositoryTests()
+        public EntityCallbackRepositoryTests()
         {
             this.defaultUrl = new Uri("http://zcoin.io");
 
             this.dbFactory = new TestMainDatabaseFactory();
-            this.subject = new SqlCallbackRepository(dbFactory);
+            this.subject = new EntityCallbackRepository(dbFactory);
         }
 
         public void Dispose()
@@ -37,7 +37,7 @@ namespace Ztm.WebApi.Tests.Callbacks
         {
             Assert.Throws<ArgumentNullException>(
                 "db",
-                () => new SqlCallbackRepository(null)
+                () => new EntityCallbackRepository(null)
             );
         }
 

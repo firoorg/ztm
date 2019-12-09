@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using Ztm.WebApi.Callbacks;
-using Rule = Ztm.WebApi.TransactionConfirmationWatchers.TransactionConfirmationWatchingRule<Ztm.WebApi.TransactionConfirmationWatchers.TransactionConfirmationCallbackResult>;
+using Rule = Ztm.WebApi.TransactionConfirmationWatchers.Rule<Ztm.WebApi.TransactionConfirmationWatchers.CallbackResult>;
 
 namespace Ztm.WebApi.TransactionConfirmationWatchers
 {
@@ -14,8 +14,8 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
             int confirmation,
             TimeSpan unconfirmedWaitingTime,
             Callback callback,
-            TransactionConfirmationCallbackResult successData,
-            TransactionConfirmationCallbackResult timeoutData,
+            CallbackResult successData,
+            CallbackResult timeoutData,
             CancellationToken cancellationToken);
     }
 }

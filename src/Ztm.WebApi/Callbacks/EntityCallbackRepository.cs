@@ -11,11 +11,11 @@ using Ztm.Data.Entity.Contexts.Main;
 
 namespace Ztm.WebApi.Callbacks
 {
-    public class SqlCallbackRepository : ICallbackRepository
+    public class EntityCallbackRepository : ICallbackRepository
     {
         readonly IMainDatabaseFactory db;
 
-        public SqlCallbackRepository(IMainDatabaseFactory db)
+        public EntityCallbackRepository(IMainDatabaseFactory db)
         {
             if (db == null)
             {

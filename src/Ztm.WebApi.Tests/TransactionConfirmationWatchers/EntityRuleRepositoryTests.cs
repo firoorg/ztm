@@ -9,22 +9,23 @@ using Xunit;
 using Ztm.Data.Entity.Testing;
 using Ztm.WebApi.Callbacks;
 using Ztm.WebApi.TransactionConfirmationWatchers;
+using CallbackResult = Ztm.WebApi.TransactionConfirmationWatchers.CallbackResult;
 
 namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
 {
-    public class SqlTransactionConfirmationWatchingRuleRepositoryTests : IDisposable
+    public class EntityRuleRepositoryTests : IDisposable
     {
-        readonly SqlTransactionConfirmationWatchingRuleRepository<TestCallbackResult> subject;
-        readonly SqlCallbackRepository callbackRepository;
+        readonly EntityRuleRepository<TestCallbackResult> subject;
+        readonly EntityCallbackRepository callbackRepository;
         readonly TestMainDatabaseFactory dbFactory;
 
         private Callback defaultCallback;
 
-        public SqlTransactionConfirmationWatchingRuleRepositoryTests()
+        public EntityRuleRepositoryTests()
         {
             this.dbFactory = new TestMainDatabaseFactory();
-            this.subject = new SqlTransactionConfirmationWatchingRuleRepository<TestCallbackResult>(dbFactory);
-            this.callbackRepository = new SqlCallbackRepository(dbFactory);
+            this.subject = new EntityRuleRepository<TestCallbackResult>(dbFactory);
+            this.callbackRepository = new EntityCallbackRepository(dbFactory);
         }
 
         public void Dispose()
@@ -37,7 +38,7 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
         {
             Assert.Throws<ArgumentNullException>(
                 "db",
-                () => new SqlTransactionConfirmationWatchingRuleRepository<TestCallbackResult>(null)
+                () => new EntityRuleRepository<TestCallbackResult>(null)
             );
         }
 
@@ -138,7 +139,7 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             var successResult = new TestCallbackResult(CallbackResult.StatusSuccess, "success");
             var timeoutResult = new TestCallbackResult(CallbackResult.StatusError, "timeout");
 
-            var watches = new List<TransactionConfirmationWatchingRule<TestCallbackResult>>();
+            var watches = new List<Rule<TestCallbackResult>>();
             watches.Add(await this.subject.AddAsync(transaction, 10, TimeSpan.FromMinutes(5),
                 successResult, timeoutResult, this.defaultCallback, CancellationToken.None));
 
@@ -182,11 +183,11 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             var successResult = new TestCallbackResult(CallbackResult.StatusSuccess, "success");
             var timeoutResult = new TestCallbackResult(CallbackResult.StatusError, "timeout");
 
-            var watches = new List<TransactionConfirmationWatchingRule<TestCallbackResult>>();
+            var watches = new List<Rule<TestCallbackResult>>();
             watches.Add(await this.subject.AddAsync(transaction, 10, TimeSpan.FromMinutes(5),
                 successResult, timeoutResult, this.defaultCallback, CancellationToken.None));
 
-            await this.subject.UpdateStatusAsync(watches.Last().Id, TransactionConfirmationWatchingRuleStatus.Success, CancellationToken.None);
+            await this.subject.UpdateStatusAsync(watches.Last().Id, RuleStatus.Success, CancellationToken.None);
 
             // Act.
             var retrieved = (await this.subject.ListActiveAsync(CancellationToken.None)).ToList();
@@ -256,7 +257,7 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             );
         }
 
-        sealed class TestCallbackResult : CallbackResult
+        sealed class TestCallbackResult : Ztm.WebApi.Callbacks.CallbackResult
         {
             public TestCallbackResult(string status, object data)
             {

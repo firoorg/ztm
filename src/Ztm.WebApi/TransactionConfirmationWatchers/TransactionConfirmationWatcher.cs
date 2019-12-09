@@ -13,7 +13,7 @@ using Ztm.WebApi.Callbacks;
 using Ztm.Zcoin.Synchronization;
 using Ztm.Zcoin.Watching;
 
-using Rule = Ztm.WebApi.TransactionConfirmationWatchers.TransactionConfirmationWatchingRule<Ztm.WebApi.TransactionConfirmationWatchers.TransactionConfirmationCallbackResult>;
+using Rule = Ztm.WebApi.TransactionConfirmationWatchers.Rule<Ztm.WebApi.TransactionConfirmationWatchers.CallbackResult>;
 using Timer = Ztm.Threading.Timer;
 
 namespace Ztm.WebApi.TransactionConfirmationWatchers
@@ -24,8 +24,8 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
 
         // Providers
         readonly ICallbackRepository callbackRepository;
-        readonly ITransactionConfirmationWatchingRuleRepository<TransactionConfirmationCallbackResult> ruleRepository;
-        readonly ITransactionConfirmationWatchRepository watchRepository;
+        readonly IRuleRepository<CallbackResult> ruleRepository;
+        readonly IWatchRepository watchRepository;
         readonly ICallbackExecuter callbackExecuter;
         readonly ILogger<TransactionConfirmationWatcher> logger;
 
@@ -35,10 +35,10 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
 
         public TransactionConfirmationWatcher(
             ICallbackRepository callbackRepository,
-            ITransactionConfirmationWatchingRuleRepository<TransactionConfirmationCallbackResult> ruleRepository,
+            IRuleRepository<CallbackResult> ruleRepository,
             IBlocksStorage blocks,
             ICallbackExecuter callbackExecuter,
-            ITransactionConfirmationWatchRepository watchRepository,
+            IWatchRepository watchRepository,
             ILogger<TransactionConfirmationWatcher> logger)
         {
             if (callbackRepository == null)
@@ -92,8 +92,8 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
             int confirmation,
             TimeSpan unconfirmedWaitingTime,
             Callback callback,
-            TransactionConfirmationCallbackResult successData,
-            TransactionConfirmationCallbackResult timeoutData,
+            CallbackResult successData,
+            CallbackResult timeoutData,
             CancellationToken cancellationToken)
         {
             if (transaction == null)
@@ -223,7 +223,7 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
                 var rule = (Rule)e.Context;
                 try
                 {
-                    await this.ruleRepository.UpdateStatusAsync(rule.Id, TransactionConfirmationWatchingRuleStatus.Timeout, CancellationToken.None);
+                    await this.ruleRepository.UpdateStatusAsync(rule.Id, RuleStatus.Timeout, CancellationToken.None);
                     await ExecuteCallbackAsync(rule.Callback, rule.Timeout, CancellationToken.None);
                 }
                 catch (Exception ex) // lgtm [cs/catch-of-all-exceptions]
@@ -290,11 +290,11 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
 
         async Task ConfirmAsync(TransactionWatch<Rule> watch, CancellationToken cancellationToken)
         {
-            await this.ruleRepository.UpdateStatusAsync(watch.Context.Id, TransactionConfirmationWatchingRuleStatus.Success, cancellationToken);
+            await this.ruleRepository.UpdateStatusAsync(watch.Context.Id, RuleStatus.Success, cancellationToken);
             await ExecuteCallbackAsync(watch.Context.Callback, watch.Context.Success, CancellationToken.None);
         }
 
-        async Task ExecuteCallbackAsync(Callback callback, TransactionConfirmationCallbackResult payload, CancellationToken cancellationToken)
+        async Task ExecuteCallbackAsync(Callback callback, CallbackResult payload, CancellationToken cancellationToken)
         {
             await this.callbackRepository.AddHistoryAsync(callback.Id, payload, cancellationToken);
 
@@ -370,7 +370,7 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
 
         Task<IEnumerable<TransactionWatch<Rule>>> IConfirmationWatcherHandler<TransactionWatch<Rule>, Rule>.GetCurrentWatchesAsync(CancellationToken cancellationToken)
         {
-            return this.watchRepository.ListAsync(TransactionConfirmationWatchingWatchStatus.Pending, cancellationToken);
+            return this.watchRepository.ListAsync(WatchStatus.Pending, cancellationToken);
         }
 
         async Task IWatcherHandler<TransactionWatch<Rule>, Rule>.AddWatchesAsync(IEnumerable<TransactionWatch<Rule>> watches, CancellationToken cancellationToken)
@@ -393,11 +393,11 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
         {
             if (reason.HasFlag(WatchRemoveReason.Completed))
             {
-                await this.watchRepository.UpdateStatusAsync(watch.Id, TransactionConfirmationWatchingWatchStatus.Success, cancellationToken);
+                await this.watchRepository.UpdateStatusAsync(watch.Id, WatchStatus.Success, cancellationToken);
             }
             else if (reason.HasFlag(WatchRemoveReason.BlockRemoved))
             {
-                await this.watchRepository.UpdateStatusAsync(watch.Id, TransactionConfirmationWatchingWatchStatus.Rejected, cancellationToken);
+                await this.watchRepository.UpdateStatusAsync(watch.Id, WatchStatus.Rejected, cancellationToken);
                 await SetupTimerAsync(watch.Context);
             }
         }

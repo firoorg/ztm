@@ -7,9 +7,9 @@ using Ztm.WebApi.Callbacks;
 
 namespace Ztm.WebApi.TransactionConfirmationWatchers
 {
-    public interface ITransactionConfirmationWatchingRuleRepository<TCallbackResult>
+    public interface IRuleRepository<TCallbackResult>
     {
-        Task<TransactionConfirmationWatchingRule<TCallbackResult>> AddAsync
+        Task<Rule<TCallbackResult>> AddAsync
         (
             uint256 transaction,
             int confirmation,
@@ -20,10 +20,10 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
             CancellationToken cancellationToken
         );
 
-        Task<TransactionConfirmationWatchingRule<TCallbackResult>> GetAsync(Guid id, CancellationToken cancellationToken);
-        Task<IEnumerable<TransactionConfirmationWatchingRule<TCallbackResult>>> ListActiveAsync(CancellationToken cancellationToken);
+        Task<Rule<TCallbackResult>> GetAsync(Guid id, CancellationToken cancellationToken);
+        Task<IEnumerable<Rule<TCallbackResult>>> ListActiveAsync(CancellationToken cancellationToken);
         Task SubtractRemainingWaitingTimeAsync(Guid id, TimeSpan remainingTime, CancellationToken cancellationToken);
         Task<TimeSpan> GetRemainingWaitingTimeAsync(Guid id, CancellationToken cancellationToken);
-        Task UpdateStatusAsync(Guid id, TransactionConfirmationWatchingRuleStatus status, CancellationToken cancellationToken);
+        Task UpdateStatusAsync(Guid id, RuleStatus status, CancellationToken cancellationToken);
     }
 }

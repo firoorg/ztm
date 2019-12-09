@@ -1,9 +1,10 @@
 namespace Ztm.WebApi.TransactionConfirmationWatchers
 {
-    public enum TransactionConfirmationWatchingRuleStatus
+    public enum WatchStatus
     {
         Pending = 0,
         Success = 1,
-        Timeout = 2
+        Rejected = 2,
+        Error = 3
     }
 }

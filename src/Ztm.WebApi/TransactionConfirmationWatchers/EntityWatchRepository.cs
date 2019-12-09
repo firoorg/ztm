@@ -8,15 +8,15 @@ using Microsoft.EntityFrameworkCore;
 using Ztm.Data.Entity.Contexts;
 using Ztm.Data.Entity.Contexts.Main;
 using Ztm.Zcoin.Watching;
-using Rule = Ztm.WebApi.TransactionConfirmationWatchers.TransactionConfirmationWatchingRule<Ztm.WebApi.TransactionConfirmationWatchers.TransactionConfirmationCallbackResult>;
+using Rule = Ztm.WebApi.TransactionConfirmationWatchers.Rule<Ztm.WebApi.TransactionConfirmationWatchers.CallbackResult>;
 
 namespace Ztm.WebApi.TransactionConfirmationWatchers
 {
-    public sealed class SqlTransactionConfirmationWatchRepository : ITransactionConfirmationWatchRepository
+    public sealed class EntityWatchRepository : IWatchRepository
     {
         readonly IMainDatabaseFactory db;
 
-        public SqlTransactionConfirmationWatchRepository(IMainDatabaseFactory db)
+        public EntityWatchRepository(IMainDatabaseFactory db)
         {
             if (db == null)
             {
@@ -49,7 +49,7 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
                         StartBlock = watch.StartBlock,
                         StartTime = watch.StartTime,
                         Transaction = watch.TransactionId,
-                        Status = (int)TransactionConfirmationWatchingWatchStatus.Pending,
+                        Status = (int)WatchStatus.Pending,
                     }
                 );
 
@@ -67,7 +67,7 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
             }
         }
 
-        public Task<IEnumerable<TransactionWatch<Rule>>> ListAsync(TransactionConfirmationWatchingWatchStatus status, CancellationToken cancellationToken)
+        public Task<IEnumerable<TransactionWatch<Rule>>> ListAsync(WatchStatus status, CancellationToken cancellationToken)
         {
             using (var db = this.db.CreateDbContext())
             {
@@ -81,7 +81,7 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
             }
         }
 
-        public async Task UpdateStatusAsync(Guid id, TransactionConfirmationWatchingWatchStatus status, CancellationToken cancellationToken)
+        public async Task UpdateStatusAsync(Guid id, WatchStatus status, CancellationToken cancellationToken)
         {
             using (var db = this.db.CreateDbContext())
             using (var tx = await db.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken))
@@ -92,16 +92,16 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
                     throw new KeyNotFoundException("Watch id is not found.");
                 }
 
-                if (watch.Status != (int)TransactionConfirmationWatchingWatchStatus.Pending)
+                if (watch.Status != (int)WatchStatus.Pending)
                 {
                     throw new InvalidOperationException("The watch is not be able to update.");
                 }
 
                 switch (status)
                 {
-                    case TransactionConfirmationWatchingWatchStatus.Error:
-                    case TransactionConfirmationWatchingWatchStatus.Rejected:
-                    case TransactionConfirmationWatchingWatchStatus.Success:
+                    case WatchStatus.Error:
+                    case WatchStatus.Rejected:
+                    case WatchStatus.Success:
                         break;
                     default:
                         throw new InvalidOperationException("New status is not allowed to set.");
@@ -122,7 +122,7 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
         {
             return new TransactionWatch<Rule>
             (
-                watch.Rule == null ? null : SqlTransactionConfirmationWatchingRuleRepository<TransactionConfirmationCallbackResult>.ToDomain(watch.Rule),
+                watch.Rule == null ? null : EntityRuleRepository<CallbackResult>.ToDomain(watch.Rule),
                 watch.StartBlock,
                 watch.Transaction,
                 watch.StartTime,
