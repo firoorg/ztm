@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using NBitcoin;
+using Ztm.Zcoin.NBitcoin.Exodus;
 
 namespace Ztm.Zcoin.NBitcoin
 {
@@ -20,11 +21,18 @@ namespace Ztm.Zcoin.NBitcoin
         }
         #pragma warning restore CS0618
 
-        public bool IsZerocoinSpend
+        public ExodusTransaction ExodusTransaction { get; set; }
+
+        public override bool IsCoinBase
         {
             get
             {
-                return Inputs.All(txIn => txIn.IsZerocoinSpend());
+                if (IsZerocoinSpend || IsSigmaSpend || IsZerocoinRemint)
+                {
+                    return false;
+                }
+
+                return base.IsCoinBase;
             }
         }
 
@@ -44,16 +52,11 @@ namespace Ztm.Zcoin.NBitcoin
             }
         }
 
-        public override bool IsCoinBase
+        public bool IsZerocoinSpend
         {
             get
             {
-                if (IsZerocoinSpend || IsSigmaSpend || IsZerocoinRemint)
-                {
-                    return false;
-                }
-
-                return base.IsCoinBase;
+                return Inputs.All(txIn => txIn.IsZerocoinSpend());
             }
         }
 
