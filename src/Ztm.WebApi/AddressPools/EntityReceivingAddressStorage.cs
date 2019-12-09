@@ -46,7 +46,7 @@ namespace Ztm.WebApi.AddressPools
                 var exist = await db.ReceivingAddresses.FirstOrDefaultAsync(a => a.Address == address.ToString());
                 if (exist != null)
                 {
-                    throw new ArgumentException("Address is existed.", nameof(address));
+                    throw new ArgumentException("The address is duplicated.", nameof(address));
                 }
 
                 var recAddress = await db.ReceivingAddresses.AddAsync(
@@ -75,7 +75,7 @@ namespace Ztm.WebApi.AddressPools
 
                 if (recv == null)
                 {
-                    throw new KeyNotFoundException("ReceivingAddress id is not found.");
+                    throw new KeyNotFoundException("The address id is not found.");
                 }
 
                 return ToDomain(recv);

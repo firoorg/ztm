@@ -11,7 +11,6 @@ namespace Ztm.WebApi.Tests.AddressPools
     public sealed class RpcAddressGeneratorTests
     {
         readonly IZcoinRpcClient client;
-
         readonly RpcAddressGenerator subject;
 
         public RpcAddressGeneratorTests()
@@ -21,7 +20,7 @@ namespace Ztm.WebApi.Tests.AddressPools
         }
 
         [Fact]
-        public void Construct_WithNullArgs_ShouldThrow()
+        public void Construct_WithNull_ShouldThrow()
         {
             Assert.Throws<ArgumentNullException>(
                 "client",
