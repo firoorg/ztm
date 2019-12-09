@@ -50,5 +50,16 @@ namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionInterpreter
 
             return this.Equals((BalanceChange)other);
         }
+
+        public override int GetHashCode()
+        {
+            int h = 0;
+
+            h ^= this.Address.GetHashCode();
+            h ^= this.Amount.GetHashCode();
+            h ^= this.Property.GetHashCode();
+
+            return h;
+        }
     }
 }
