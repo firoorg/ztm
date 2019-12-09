@@ -59,14 +59,14 @@ namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionInterpreter
         }
 
         [Fact]
-        public void Interpret_WithUnSupportExodusTransactionType_ShouldThrow()
+        public void Interpret_WithUnsupportedExodusTransactionType_ShouldThrow()
         {
             var tx =  Transaction.Parse(
                 ZcoinTransactionData.ZerocoinRemint, ZcoinNetworks.Instance.Regtest);
-            var exodus = new FakeUnsupportedExodusTransaction(TestAddress.Regtest1, TestAddress.Regtest2);
+            var unsupported = new FakeUnsupportedExodusTransaction(TestAddress.Regtest1, TestAddress.Regtest2);
 
             #pragma warning disable CS0618
-            tx.SetExodusTransaction(exodus);
+            tx.SetExodusTransaction(unsupported);
             #pragma warning restore CS0618
 
             Assert.Throws<TransactionFieldException>(

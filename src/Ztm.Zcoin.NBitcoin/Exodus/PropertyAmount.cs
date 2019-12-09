@@ -135,6 +135,11 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
 
         public static PropertyAmount Negate(PropertyAmount amount)
         {
+            if (amount.value == long.MinValue)
+            {
+                throw new OverflowException("The negated value is overflow.");
+            }
+
             return new PropertyAmount(-amount.Indivisible);
         }
     }
