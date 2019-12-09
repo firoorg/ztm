@@ -5,7 +5,7 @@ namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionInterpreter
 {
     public interface IExodusInterpreter
     {
-        bool CanInterpret(Type type);
+        Type SupportType { get; }
         IEnumerable<BalanceChange> Interpret(ExodusTransaction transaction);
     }
 }

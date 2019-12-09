@@ -7,7 +7,7 @@ namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionInterpreter
 {
     public class Interpreter : IInterpreter
     {
-        readonly IEnumerable<IExodusInterpreter> transactionInterpreter;
+        readonly IDictionary<Type, IExodusInterpreter> transactionInterpreter;
 
         public Interpreter(IEnumerable<IExodusInterpreter> transactionInterpreters)
         {
@@ -16,7 +16,7 @@ namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionInterpreter
                 throw new ArgumentNullException(nameof(transactionInterpreters));
             }
 
-            this.transactionInterpreter = transactionInterpreters;
+            this.transactionInterpreter = transactionInterpreters.ToDictionary(i => i.SupportType);
         }
 
         public IEnumerable<BalanceChange> Interpret(Transaction transaction)
@@ -32,9 +32,7 @@ namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionInterpreter
                 throw new ArgumentException("The transaction does not contain exodus data.", nameof(transaction));
             }
 
-            var interpreter = this.transactionInterpreter.FirstOrDefault(i => i.CanInterpret(ex.GetType()));
-
-            if (interpreter == null)
+            if (!this.transactionInterpreter.TryGetValue(ex.GetType(), out var interpreter))
             {
                 throw new TransactionFieldException(
                     TransactionFieldException.TypeField, "The value is unknown transaction type.");

@@ -18,6 +18,8 @@ namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionInterpreter
         public InterpreterTests()
         {
             this.defaultInterpreter = Substitute.For<IExodusInterpreter>();
+            this.defaultInterpreter.SupportType.Returns(typeof(FakeExodusTransaction));
+
             this.transactionInterpreters = new Collection<IExodusInterpreter>
             {
                 this.defaultInterpreter,
@@ -61,7 +63,7 @@ namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionInterpreter
         {
             var tx =  Transaction.Parse(
                 ZcoinTransactionData.ZerocoinRemint, ZcoinNetworks.Instance.Regtest);
-            var exodus = new TestExodusTransaction(TestAddress.Regtest1, TestAddress.Regtest2);
+            var exodus = new FakeUnsupportedExodusTransaction(TestAddress.Regtest1, TestAddress.Regtest2);
 
             #pragma warning disable CS0618
             tx.SetExodusTransaction(exodus);
@@ -78,7 +80,7 @@ namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionInterpreter
             // Arrange.
             var tx =  Transaction.Parse(
                 ZcoinTransactionData.ZerocoinRemint, ZcoinNetworks.Instance.Regtest);
-            var exodus = new TestExodusTransaction(TestAddress.Regtest1, TestAddress.Regtest2);
+            var exodus = new FakeExodusTransaction(TestAddress.Regtest1, TestAddress.Regtest2);
 
             #pragma warning disable CS0618
             tx.SetExodusTransaction(exodus);
@@ -93,16 +95,25 @@ namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionInterpreter
                 new BalanceChange(address, amount, property)
             };
 
-            this.defaultInterpreter.CanInterpret(Arg.Is<Type>(t => exodus.GetType() == t)).Returns(true);
             this.defaultInterpreter.Interpret(Arg.Is<ExodusTransaction>(t => exodus == t)).Returns(changes);
 
             // Act.
             var retrievedChanges = this.subject.Interpret(tx);
 
             // Assert.
-            this.defaultInterpreter.Received(1).CanInterpret(Arg.Is<Type>(t => exodus.GetType() == t));
             this.defaultInterpreter.Received(1).Interpret(Arg.Is<ExodusTransaction>(t => exodus == t));
             Assert.Equal(changes, retrievedChanges);
         }
+    }
+
+    class FakeUnsupportedExodusTransaction : ExodusTransaction
+    {
+        public FakeUnsupportedExodusTransaction(BitcoinAddress sender, BitcoinAddress receiver) : base(sender, receiver)
+        {
+        }
+
+        public override int Id => throw new NotImplementedException();
+
+        public override int Version => throw new NotImplementedException();
     }
 }

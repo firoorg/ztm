@@ -18,27 +18,9 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus.TransactionInterpreter
         }
 
         [Fact]
-        public void CanInterpret_WithNull_ShouldThrow()
+        public void SupportType_ShouldReturnSimpleSendV0()
         {
-            Assert.Throws<ArgumentNullException>(
-                "type",
-                () => this.subject.CanInterpret(null)
-            );
-        }
-
-        [Theory]
-        [InlineData(typeof(string))]
-        [InlineData(typeof(int))]
-        [InlineData(typeof(ExodusTransaction))]
-        public void CanInterpret_WithInvalidType_ShouldReturnFalse(Type type)
-        {
-            Assert.False(this.subject.CanInterpret(type));
-        }
-
-        [Fact]
-        public void CanInterpret_WithSimpleSendV0_ShouldSuccess()
-        {
-            Assert.True(this.subject.CanInterpret(typeof(SimpleSendV0)));
+            Assert.Equal(typeof(SimpleSendV0), this.subject.SupportType);
         }
 
         [Fact]

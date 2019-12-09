@@ -5,14 +5,12 @@ namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionInterpreter
 {
     public sealed class SimpleSendInterpreter : IExodusInterpreter
     {
-        public bool CanInterpret(Type type)
+        public Type SupportType
         {
-            if (type == null)
+            get
             {
-                throw new ArgumentNullException(nameof(type));
+                return typeof(SimpleSendV0);
             }
-
-            return type == typeof(SimpleSendV0);
         }
 
         public IEnumerable<BalanceChange> Interpret(ExodusTransaction transaction)
