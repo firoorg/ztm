@@ -12,10 +12,10 @@ namespace Ztm.Threading
         public static readonly TimeSpan MinDuration = TimeSpan.Zero;
 
         readonly Stopwatch stopwatch;
-        TimerStatus status;
-        int oneShotState; // 0 = not one shot, 1 = not fired, 2 = stopping by outside, 3 = stopping by inside
-        ShutdownGuard stopGuard;
-        System.Threading.Timer timer;
+        volatile TimerStatus status;
+        volatile int oneShotState; // 0 = not one shot, 1 = not fired, 2 = stopping by outside, 3 = stopping by inside
+        volatile ShutdownGuard stopGuard;
+        volatile System.Threading.Timer timer;
         volatile int elapsed;
 
         public Timer()
