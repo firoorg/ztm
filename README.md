@@ -1,5 +1,7 @@
 # Zcoin Tokens Manager
-[![Total alerts](https://img.shields.io/lgtm/alerts/g/zcoinofficial/ztm.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/zcoinofficial/ztm/alerts/) [![Language grade: C#](https://img.shields.io/lgtm/grade/csharp/g/zcoinofficial/ztm.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/zcoinofficial/ztm/context:csharp)
+![Continuous Integration](https://github.com/zcoinofficial/ztm/workflows/Continuous%20Integration/badge.svg)
+[![Total alerts](https://img.shields.io/lgtm/alerts/g/zcoinofficial/ztm.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/zcoinofficial/ztm/alerts/)
+[![Language grade: C#](https://img.shields.io/lgtm/grade/csharp/g/zcoinofficial/ztm.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/zcoinofficial/ztm/context:csharp)
 
 This is a service to provide rich API for manage tokens on Zcoin Exodus Protocol.
 
