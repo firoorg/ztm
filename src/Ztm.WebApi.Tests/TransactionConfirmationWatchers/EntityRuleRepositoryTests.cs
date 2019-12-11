@@ -9,13 +9,12 @@ using Xunit;
 using Ztm.Data.Entity.Testing;
 using Ztm.WebApi.Callbacks;
 using Ztm.WebApi.TransactionConfirmationWatchers;
-using CallbackResult = Ztm.WebApi.TransactionConfirmationWatchers.CallbackResult;
 
 namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
 {
     public class EntityRuleRepositoryTests : IDisposable
     {
-        readonly EntityRuleRepository<TestCallbackResult> subject;
+        readonly EntityRuleRepository subject;
         readonly EntityCallbackRepository callbackRepository;
         readonly TestMainDatabaseFactory dbFactory;
 
@@ -24,7 +23,7 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
         public EntityRuleRepositoryTests()
         {
             this.dbFactory = new TestMainDatabaseFactory();
-            this.subject = new EntityRuleRepository<TestCallbackResult>(dbFactory);
+            this.subject = new EntityRuleRepository(dbFactory);
             this.callbackRepository = new EntityCallbackRepository(dbFactory);
         }
 
@@ -37,8 +36,7 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
         public void Construct_WithNullDatabaseFactory_ShouldFail()
         {
             Assert.Throws<ArgumentNullException>(
-                "db",
-                () => new EntityRuleRepository<TestCallbackResult>(null)
+                "db", () => new EntityRuleRepository(null)
             );
         }
 
@@ -63,8 +61,10 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             Assert.Equal(10, watch.Confirmation);
             Assert.Equal(waitingTime, watch.WaitingTime);
             Assert.Equal(waitingTime, await this.subject.GetRemainingWaitingTimeAsync(watch.Id, CancellationToken.None));
-            Assert.Equal(successResult, watch.Success);
-            Assert.Equal(timeoutResult, watch.Timeout);
+            Assert.Equal(successResult.Status, (string)watch.Success.Status);
+            Assert.Equal(successResult.Data, (string)watch.Success.Data);
+            Assert.Equal(timeoutResult.Status, (string)watch.Timeout.Status);
+            Assert.Equal(timeoutResult.Data, (string)watch.Timeout.Data);
         }
 
         [Fact]
@@ -139,7 +139,7 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             var successResult = new TestCallbackResult(CallbackResult.StatusSuccess, "success");
             var timeoutResult = new TestCallbackResult(CallbackResult.StatusError, "timeout");
 
-            var watches = new List<Rule<TestCallbackResult>>();
+            var watches = new List<Rule>();
             watches.Add(await this.subject.AddAsync(transaction, 10, TimeSpan.FromMinutes(5),
                 successResult, timeoutResult, this.defaultCallback, CancellationToken.None));
 
@@ -183,7 +183,7 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             var successResult = new TestCallbackResult(CallbackResult.StatusSuccess, "success");
             var timeoutResult = new TestCallbackResult(CallbackResult.StatusError, "timeout");
 
-            var watches = new List<Rule<TestCallbackResult>>();
+            var watches = new List<Rule>();
             watches.Add(await this.subject.AddAsync(transaction, 10, TimeSpan.FromMinutes(5),
                 successResult, timeoutResult, this.defaultCallback, CancellationToken.None));
 

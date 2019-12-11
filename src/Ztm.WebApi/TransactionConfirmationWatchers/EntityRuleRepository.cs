@@ -12,7 +12,7 @@ using Ztm.WebApi.Callbacks;
 
 namespace Ztm.WebApi.TransactionConfirmationWatchers
 {
-    public class EntityRuleRepository<TCallbackResult> : IRuleRepository<TCallbackResult>
+    public class EntityRuleRepository : IRuleRepository
     {
         readonly IMainDatabaseFactory db;
 
@@ -26,8 +26,8 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
             this.db = db;
         }
 
-        public async Task<Rule<TCallbackResult>> AddAsync(
-            uint256 transaction, int confirmation, TimeSpan waitingTime, TCallbackResult successData, TCallbackResult timeoutData, Callback callback, CancellationToken cancellationToken)
+        public async Task<Rule> AddAsync(
+            uint256 transaction, int confirmation, TimeSpan waitingTime, CallbackResult successData, CallbackResult timeoutData, Callback callback, CancellationToken cancellationToken)
         {
             if (transaction == null)
             {
@@ -73,7 +73,7 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
             }
         }
 
-        public async Task<Rule<TCallbackResult>> GetAsync(Guid id, CancellationToken cancellationToken)
+        public async Task<Rule> GetAsync(Guid id, CancellationToken cancellationToken)
         {
             using (var db = this.db.CreateDbContext())
             {
@@ -86,7 +86,7 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
             }
         }
 
-        public async Task<IEnumerable<Rule<TCallbackResult>>> ListActiveAsync(CancellationToken cancellationToken)
+        public async Task<IEnumerable<Rule>> ListActiveAsync(CancellationToken cancellationToken)
         {
             using (var db = this.db.CreateDbContext())
             {
@@ -163,18 +163,18 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
             }
         }
 
-        public static Rule<TCallbackResult> ToDomain(
+        public static Rule ToDomain(
             Ztm.Data.Entity.Contexts.Main.TransactionConfirmationWatchingRule watch,
             Callback callback = null)
         {
-            return new Rule<TCallbackResult>(
+            return new Rule(
                 watch.Id,
                 watch.Transaction,
                 (RuleStatus)watch.Status,
                 watch.Confirmation,
                 watch.WaitingTime,
-                JsonConvert.DeserializeObject<TCallbackResult>(watch.SuccessData),
-                JsonConvert.DeserializeObject<TCallbackResult>(watch.TimeoutData),
+                JsonConvert.DeserializeObject(watch.SuccessData),
+                JsonConvert.DeserializeObject(watch.TimeoutData),
                 callback != null
                     ? callback
                     : (watch.Callback == null ? null : EntityCallbackRepository.ToDomain(watch.Callback)),

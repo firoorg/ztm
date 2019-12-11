@@ -8,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 using Ztm.Data.Entity.Contexts;
 using Ztm.Data.Entity.Contexts.Main;
 using Ztm.Zcoin.Watching;
-using Rule = Ztm.WebApi.TransactionConfirmationWatchers.Rule<Ztm.WebApi.TransactionConfirmationWatchers.CallbackResult>;
 
 namespace Ztm.WebApi.TransactionConfirmationWatchers
 {
@@ -122,7 +121,7 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
         {
             return new TransactionWatch<Rule>
             (
-                watch.Rule == null ? null : EntityRuleRepository<CallbackResult>.ToDomain(watch.Rule),
+                watch.Rule == null ? null : EntityRuleRepository.ToDomain(watch.Rule),
                 watch.StartBlock,
                 watch.Transaction,
                 watch.StartTime,

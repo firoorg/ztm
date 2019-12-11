@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Ztm.Zcoin.Watching;
-using Rule = Ztm.WebApi.TransactionConfirmationWatchers.Rule<Ztm.WebApi.TransactionConfirmationWatchers.CallbackResult>;
 
 namespace Ztm.WebApi.TransactionConfirmationWatchers
 {

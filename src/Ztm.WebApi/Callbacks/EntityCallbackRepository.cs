@@ -79,7 +79,7 @@ namespace Ztm.WebApi.Callbacks
             }
         }
 
-        public async Task<int> AddHistoryAsync(Guid id, CallbackResult result, CancellationToken cancellationToken)
+        public async Task<int> AddHistoryAsync(Guid id, dynamic result, CancellationToken cancellationToken)
         {
             if (result == null)
             {
@@ -88,7 +88,8 @@ namespace Ztm.WebApi.Callbacks
 
             using (var db = this.db.CreateDbContext())
             {
-                var history = await db.WebApiCallbackHistories.AddAsync(
+                var history = await db.WebApiCallbackHistories.AddAsync
+                (
                     new WebApiCallbackHistory
                     {
                         CallbackId = id,

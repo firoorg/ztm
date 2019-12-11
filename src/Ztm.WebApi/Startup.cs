@@ -50,9 +50,7 @@ namespace Ztm.WebApi
             // Transaction Confirmation Watcher.
             services.AddHttpClient<ICallbackExecuter, HttpCallbackExecuter>();
             services.AddTransient<ICallbackRepository, EntityCallbackRepository>();
-            services.AddTransient<
-                IRuleRepository<TransactionConfirmationWatchers.CallbackResult>,
-                EntityRuleRepository<TransactionConfirmationWatchers.CallbackResult>>();
+            services.AddTransient<IRuleRepository, EntityRuleRepository>();
             services.AddHostedService<TransactionConfirmationWatcher>();
             services.AddSingleton<IBlockListener, TransactionConfirmationWatcher>();
 

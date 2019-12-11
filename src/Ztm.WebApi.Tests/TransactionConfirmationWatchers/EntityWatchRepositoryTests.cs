@@ -10,7 +10,6 @@ using Ztm.Data.Entity.Testing;
 using Ztm.WebApi.Callbacks;
 using Ztm.WebApi.TransactionConfirmationWatchers;
 using Ztm.Zcoin.Watching;
-using Rule = Ztm.WebApi.TransactionConfirmationWatchers.Rule<Ztm.WebApi.TransactionConfirmationWatchers.CallbackResult>;
 
 namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
 {
@@ -18,14 +17,14 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
     {
         readonly TestMainDatabaseFactory databaseFactory;
         readonly EntityCallbackRepository callbackRepository;
-        readonly EntityRuleRepository<WebApi.TransactionConfirmationWatchers.CallbackResult> ruleRepository;
+        readonly EntityRuleRepository ruleRepository;
         readonly EntityWatchRepository subject;
 
         public EntityWatchRepositoryTests()
         {
             this.databaseFactory = new TestMainDatabaseFactory();
             this.callbackRepository = new EntityCallbackRepository(this.databaseFactory);
-            this.ruleRepository = new EntityRuleRepository<WebApi.TransactionConfirmationWatchers.CallbackResult>(this.databaseFactory);
+            this.ruleRepository = new EntityRuleRepository(this.databaseFactory);
             this.subject = new EntityWatchRepository(this.databaseFactory);
         }
 
@@ -189,8 +188,8 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
         async Task<Rule> GenerateRuleAsync()
         {
             var url = new Uri("https://zcoin.io");
-            var success = new WebApi.TransactionConfirmationWatchers.CallbackResult("success", "");
-            var fail = new WebApi.TransactionConfirmationWatchers.CallbackResult("fail", "");
+            var success = new FakeCallbackResult("success", "");
+            var fail = new FakeCallbackResult("fail", "");
             var callback = await this.callbackRepository.AddAsync(IPAddress.Loopback, url, CancellationToken.None);
             return await this.ruleRepository.AddAsync(uint256.One, 10, TimeSpan.FromHours(1), success, fail, callback, CancellationToken.None);
         }

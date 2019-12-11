@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
@@ -13,7 +12,6 @@ using Ztm.WebApi.Callbacks;
 using Ztm.Zcoin.Synchronization;
 using Ztm.Zcoin.Watching;
 
-using Rule = Ztm.WebApi.TransactionConfirmationWatchers.Rule<Ztm.WebApi.TransactionConfirmationWatchers.CallbackResult>;
 using Timer = Ztm.Threading.Timer;
 
 namespace Ztm.WebApi.TransactionConfirmationWatchers
@@ -24,7 +22,7 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
 
         // Providers
         readonly ICallbackRepository callbackRepository;
-        readonly IRuleRepository<CallbackResult> ruleRepository;
+        readonly IRuleRepository ruleRepository;
         readonly IWatchRepository watchRepository;
         readonly ICallbackExecuter callbackExecuter;
         readonly ILogger<TransactionConfirmationWatcher> logger;
@@ -35,7 +33,7 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
 
         public TransactionConfirmationWatcher(
             ICallbackRepository callbackRepository,
-            IRuleRepository<CallbackResult> ruleRepository,
+            IRuleRepository ruleRepository,
             IBlocksStorage blocks,
             ICallbackExecuter callbackExecuter,
             IWatchRepository watchRepository,
@@ -228,7 +226,7 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
                 }
                 catch (Exception ex) // lgtm [cs/catch-of-all-exceptions]
                 {
-                    this.logger.LogError("Timeout execution is fail.", ex);
+                    this.logger.LogError(ex, "Timeout execution is fail.");
                 }
                 finally
                 {
@@ -294,7 +292,7 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
             await ExecuteCallbackAsync(watch.Context.Callback, watch.Context.Success, CancellationToken.None);
         }
 
-        async Task ExecuteCallbackAsync(Callback callback, CallbackResult payload, CancellationToken cancellationToken)
+        async Task ExecuteCallbackAsync(Callback callback, dynamic payload, CancellationToken cancellationToken)
         {
             await this.callbackRepository.AddHistoryAsync(callback.Id, payload, cancellationToken);
 

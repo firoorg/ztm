@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Ztm.WebApi.TransactionConfirmationWatchers;
 using Ztm.Zcoin.Watching;
-using Rule = Ztm.WebApi.TransactionConfirmationWatchers.Rule<Ztm.WebApi.TransactionConfirmationWatchers.CallbackResult>;
 
 namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
 {
