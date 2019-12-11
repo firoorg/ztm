@@ -101,7 +101,7 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
 
             if (confirmation < 1)
             {
-                throw new ArgumentOutOfRangeException(nameof(confirmation), "Confirmation is less than zero.");
+                throw new ArgumentOutOfRangeException(nameof(confirmation), "The confirmations number is less than zero.");
             }
 
             if (!Timer.IsValidDuration(unconfirmedWaitingTime))
@@ -383,6 +383,7 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
                 if (await StopTimer(watch.Context))
                 {
                     await this.watchRepository.AddAsync(watch, cancellationToken);
+                    await this.ruleRepository.UpdateCurrentWatchIdAsync(watch.Context.Id, watch.Id, CancellationToken.None);
                 }
             }
         }
@@ -398,6 +399,8 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
                 await this.watchRepository.UpdateStatusAsync(watch.Id, WatchStatus.Rejected, cancellationToken);
                 await SetupTimerAsync(watch.Context);
             }
+
+            await this.ruleRepository.ClearCurrentWatchIdAsync(watch.Context.Id, CancellationToken.None);
         }
     }
 }

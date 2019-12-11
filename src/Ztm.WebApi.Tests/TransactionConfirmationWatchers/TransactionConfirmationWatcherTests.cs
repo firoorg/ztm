@@ -545,6 +545,21 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
 
             // Act.
             await this.handler.AddWatchesAsync(watches, CancellationToken.None);
+            _ = this.ruleRepository.Received(1)
+                .UpdateCurrentWatchIdAsync
+                (
+                    Arg.Is<Guid>(id => id == watch1.Id),
+                    Arg.Is<Guid>(id => id == watches[0].Id),
+                    Arg.Any<CancellationToken>()
+                );
+
+            _ = this.ruleRepository.Received(1)
+                .UpdateCurrentWatchIdAsync
+                (
+                    Arg.Is<Guid>(id => id == watch2.Id),
+                    Arg.Is<Guid>(id => id == watches[1].Id),
+                    Arg.Any<CancellationToken>()
+                );
         }
 
         [Fact]
@@ -724,6 +739,8 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
                     result => result.Status == WebApi.Callbacks.CallbackResult.StatusError
                 )
             );
+
+            _ = this.ruleRepository.Received(1).ClearCurrentWatchIdAsync(Arg.Is<Guid>(id => id == rule.Id), Arg.Any<CancellationToken>());
         }
 
         [Fact]
@@ -753,7 +770,11 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
                 await this.handler.RemoveWatchAsync(watchObj, WatchRemoveReason.BlockRemoved, CancellationToken.None);
             }
 
-            _ = this.callbackExecuter.Received(0);
+            _ = this.callbackExecuter.Received(0).Execute(
+                Arg.Any<Guid>(),
+                Arg.Any<Uri>(),
+                Arg.Any<CallbackResult>()
+            );
 
             Thread.Sleep(TimeSpan.FromMilliseconds(1000));
 
@@ -765,6 +786,8 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
                     result => result.Status == WebApi.Callbacks.CallbackResult.StatusError
                 )
             );
+
+            _ = this.ruleRepository.Received(1).ClearCurrentWatchIdAsync(Arg.Is<Guid>(id => id == watch.Id), Arg.Any<CancellationToken>());
         }
 
         [Fact]
@@ -789,6 +812,7 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
 
             // Assert.
             Assert.Empty(await this.handler.GetCurrentWatchesAsync(CancellationToken.None));
+            _ = this.ruleRepository.Received(1).ClearCurrentWatchIdAsync(Arg.Is<Guid>(id => id == watch.Id), Arg.Any<CancellationToken>());
         }
 
         [Fact]

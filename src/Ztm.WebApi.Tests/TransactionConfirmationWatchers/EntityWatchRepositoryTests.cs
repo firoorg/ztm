@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using NBitcoin;
 using Xunit;
 using Ztm.Data.Entity.Testing;
@@ -69,8 +70,17 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             // Act.
             await this.subject.AddAsync(watch, CancellationToken.None);
 
-            var updatedRule = await this.ruleRepository.GetAsync(rule.Id, CancellationToken.None);
-            Assert.Equal(watch.Id, updatedRule.CurrentWatchId);
+            // Assert.
+            using (var db = this.databaseFactory.CreateDbContext())
+            {
+                var retrieved = await db.TransactionConfirmationWatches
+                    .FirstOrDefaultAsync(w => w.Id == watch.Id, CancellationToken.None);
+
+                Assert.Equal(rule.Id, retrieved.RuleId);
+                Assert.Equal(watch.Id, retrieved.Id);
+                Assert.Equal(watch.StartBlock, retrieved.StartBlock);
+                Assert.Equal(watch.StartTime, DateTime.SpecifyKind(retrieved.StartTime, DateTimeKind.Utc));
+            }
         }
 
         [Fact]

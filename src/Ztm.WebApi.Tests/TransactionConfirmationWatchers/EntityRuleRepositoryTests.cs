@@ -9,6 +9,7 @@ using Xunit;
 using Ztm.Data.Entity.Testing;
 using Ztm.WebApi.Callbacks;
 using Ztm.WebApi.TransactionConfirmationWatchers;
+using Ztm.Zcoin.Watching;
 
 namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
 {
@@ -16,6 +17,7 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
     {
         readonly EntityRuleRepository subject;
         readonly EntityCallbackRepository callbackRepository;
+        readonly EntityWatchRepository watchRepository;
         readonly TestMainDatabaseFactory dbFactory;
 
         private Callback defaultCallback;
@@ -25,6 +27,7 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             this.dbFactory = new TestMainDatabaseFactory();
             this.subject = new EntityRuleRepository(dbFactory);
             this.callbackRepository = new EntityCallbackRepository(dbFactory);
+            this.watchRepository = new EntityWatchRepository(dbFactory);
         }
 
         public void Dispose()
@@ -65,6 +68,7 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             Assert.Equal(successResult.Data, (string)watch.SuccessResponse.Data);
             Assert.Equal(timeoutResult.Status, (string)watch.TimeoutResponse.Status);
             Assert.Equal(timeoutResult.Data, (string)watch.TimeoutResponse.Data);
+            Assert.Null(watch.CurrentWatchId);
         }
 
         [Fact]
@@ -94,6 +98,63 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
                 "callback",
                 () => this.subject.AddAsync(transaction, 0, timeout, successResult, timeoutResult, null, CancellationToken.None)
             );
+        }
+
+        [Fact]
+        public async Task ClearCurrentWatchIdAsync_WithNonExistRule_ShouldThrow()
+        {
+            await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => this.subject.ClearCurrentWatchIdAsync(Guid.NewGuid(), CancellationToken.None)
+            );
+        }
+
+        [Fact]
+        public async Task ClearCurrentWatchIdAsync_WithExistRule_ShouldSuccess()
+        {
+            // Arrange.
+            await this.CreateDefaultCallback();
+
+            var transaction = uint256.Parse("008b3395991c7893bb8a82d8389a48ded863af914d9cc31711554bc97e4723c0");
+            var successResult = new TestCallbackResult(CallbackResult.StatusSuccess, "success");
+            var timeoutResult = new TestCallbackResult(CallbackResult.StatusError, "timeout");
+            var waitingTime = TimeSpan.FromMinutes(5);
+
+            var rule = await this.subject.AddAsync(transaction, 10, waitingTime,
+                successResult, timeoutResult, this.defaultCallback, CancellationToken.None);
+
+            var watch = await this.CreateWatch(rule, uint256.One, uint256.One);
+            await this.subject.UpdateCurrentWatchIdAsync(rule.Id, watch.Id, CancellationToken.None);
+
+            // Act.
+            await this.subject.ClearCurrentWatchIdAsync(rule.Id, CancellationToken.None);
+
+            // Assert.
+            var updated = await this.subject.GetAsync(rule.Id, CancellationToken.None);
+
+            Assert.Null(updated.CurrentWatchId);
+        }
+
+        [Fact]
+        public async Task ClearCurrentWatchIdAsync_WithExistRuleAndNullCurrentWatchId_ShouldSuccess()
+        {
+            // Arrange.
+            await this.CreateDefaultCallback();
+
+            var transaction = uint256.Parse("008b3395991c7893bb8a82d8389a48ded863af914d9cc31711554bc97e4723c0");
+            var successResult = new TestCallbackResult(CallbackResult.StatusSuccess, "success");
+            var timeoutResult = new TestCallbackResult(CallbackResult.StatusError, "timeout");
+            var waitingTime = TimeSpan.FromMinutes(5);
+
+            var rule = await this.subject.AddAsync(transaction, 10, waitingTime,
+                successResult, timeoutResult, this.defaultCallback, CancellationToken.None);
+
+            // Act.
+            await this.subject.ClearCurrentWatchIdAsync(rule.Id, CancellationToken.None);
+
+            // Assert.
+            var updated = await this.subject.GetAsync(rule.Id, CancellationToken.None);
+
+            Assert.Null(updated.CurrentWatchId);
         }
 
         [Fact]
@@ -247,6 +308,73 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             Assert.Equal(TimeSpan.FromMinutes(1), await this.subject.GetRemainingWaitingTimeAsync(watch.Id, CancellationToken.None));
         }
 
+        [Fact]
+        public async Task UpdateCurrentWatchIdAsync_WithNonExist_ShouldThrow()
+        {
+            // Arrange.
+            await this.CreateDefaultCallback();
+
+            var transaction = uint256.Parse("008b3395991c7893bb8a82d8389a48ded863af914d9cc31711554bc97e4723c0");
+            var successResult = new TestCallbackResult(CallbackResult.StatusSuccess, "success");
+            var timeoutResult = new TestCallbackResult(CallbackResult.StatusError, "timeout");
+            var waitingTime = TimeSpan.FromMinutes(5);
+
+            var rule = await this.subject.AddAsync(transaction, 10, waitingTime,
+                successResult, timeoutResult, this.defaultCallback, CancellationToken.None);
+
+            var watch = await this.CreateWatch(rule, uint256.One, uint256.One);
+
+            // Act && Assert.
+            await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => this.subject.UpdateCurrentWatchIdAsync(Guid.NewGuid(), watch.Id, CancellationToken.None)
+            );
+        }
+
+        [Fact]
+        public async Task UpdateCurrentWatchIdAsync_WithExistRuleAndInvalidWatchId_ShouldThrow()
+        {
+            // Arrange.
+            await this.CreateDefaultCallback();
+
+            var transaction = uint256.Parse("008b3395991c7893bb8a82d8389a48ded863af914d9cc31711554bc97e4723c0");
+            var successResult = new TestCallbackResult(CallbackResult.StatusSuccess, "success");
+            var timeoutResult = new TestCallbackResult(CallbackResult.StatusError, "timeout");
+            var waitingTime = TimeSpan.FromMinutes(5);
+
+            var rule = await this.subject.AddAsync(transaction, 10, waitingTime,
+                successResult, timeoutResult, this.defaultCallback, CancellationToken.None);
+
+            // Act & Assert.
+            await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => this.subject.UpdateCurrentWatchIdAsync(rule.Id, Guid.NewGuid(), CancellationToken.None)
+            );
+        }
+
+        [Fact]
+        public async Task UpdateCurrentWatchIdAsync_WithExistRuleAndExistWatch_ShouldSuccess()
+        {
+            // Arrange.
+            await this.CreateDefaultCallback();
+
+            var transaction = uint256.Parse("008b3395991c7893bb8a82d8389a48ded863af914d9cc31711554bc97e4723c0");
+            var successResult = new TestCallbackResult(CallbackResult.StatusSuccess, "success");
+            var timeoutResult = new TestCallbackResult(CallbackResult.StatusError, "timeout");
+            var waitingTime = TimeSpan.FromMinutes(5);
+
+            var rule = await this.subject.AddAsync(transaction, 10, waitingTime,
+                successResult, timeoutResult, this.defaultCallback, CancellationToken.None);
+
+            var watch = await this.CreateWatch(rule, uint256.One, uint256.One);
+
+            // Act.
+            await this.subject.UpdateCurrentWatchIdAsync(rule.Id, watch.Id, CancellationToken.None);
+
+            // Assert.
+            var updated = await this.subject.GetAsync(rule.Id, CancellationToken.None);
+
+            Assert.Equal(watch.Id, updated.CurrentWatchId);
+        }
+
         async Task CreateDefaultCallback()
         {
             this.defaultCallback = await this.callbackRepository.AddAsync
@@ -255,6 +383,13 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
                 new Uri("http://zcoin.io"),
                 CancellationToken.None
             );
+        }
+
+        async Task<TransactionWatch<Rule>> CreateWatch(Rule rule, uint256 startBlock, uint256 tx)
+        {
+            var watch = new TransactionWatch<Rule>(rule, startBlock, tx);
+            await this.watchRepository.AddAsync(watch, CancellationToken.None);
+            return watch;
         }
 
         sealed class TestCallbackResult : Ztm.WebApi.Callbacks.CallbackResult

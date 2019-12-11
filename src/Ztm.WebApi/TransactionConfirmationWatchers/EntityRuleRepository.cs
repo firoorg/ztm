@@ -27,7 +27,7 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
         }
 
         public async Task<Rule> AddAsync(
-            uint256 transaction, int confirmation, TimeSpan waitingTime, CallbackResult successResponse, CallbackResult timeoutResponse, Callback callback, CancellationToken cancellationToken)
+            uint256 transaction, int confirmations, TimeSpan waitingTime, CallbackResult successResponse, CallbackResult timeoutResponse, Callback callback, CancellationToken cancellationToken)
         {
             if (transaction == null)
             {
@@ -51,21 +51,23 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
 
             using (var db = this.db.CreateDbContext())
             {
-                var watch = await db.TransactionConfirmationWatchingRules
-                    .AddAsync(
+                var watch = await db.TransactionConfirmationWatchingRules.AddAsync
+                (
                     new TransactionConfirmationWatchingRuleModel
                     {
                         Id = Guid.NewGuid(),
                         CallbackId = callback.Id,
                         Transaction = transaction,
                         Status = (int)RuleStatus.Pending,
-                        Confirmation = confirmation,
+                        Confirmation = confirmations,
                         WaitingTime = waitingTime,
                         RemainingWaitingTime = waitingTime,
                         SuccessData = JsonConvert.SerializeObject(successResponse),
                         TimeoutData = JsonConvert.SerializeObject(timeoutResponse),
                         CurrentWatchId = null,
-                    }, cancellationToken);
+                    },
+                    cancellationToken
+                );
 
                 await db.SaveChangesAsync(cancellationToken);
 
@@ -73,76 +75,33 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
             }
         }
 
+        public async Task ClearCurrentWatchIdAsync(Guid id, CancellationToken cancellationToken)
+        {
+            using (var db = this.db.CreateDbContext())
+            {
+                var rule = await db.TransactionConfirmationWatchingRules
+                    .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+
+                if (rule == null)
+                {
+                    throw new KeyNotFoundException("The rule id is not existed.");
+                }
+
+                rule.CurrentWatchId = null;
+                await db.SaveChangesAsync(cancellationToken);
+            }
+        }
+
         public async Task<Rule> GetAsync(Guid id, CancellationToken cancellationToken)
         {
             using (var db = this.db.CreateDbContext())
             {
-                var watch = await db.TransactionConfirmationWatchingRules
+                var rule = await db.TransactionConfirmationWatchingRules
                     .Include(e => e.Callback)
                     .Include(e => e.CurrentWatch)
                     .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
-                return watch == null ? null : ToDomain(watch);
-            }
-        }
-
-        public async Task<IEnumerable<Rule>> ListActiveAsync(CancellationToken cancellationToken)
-        {
-            using (var db = this.db.CreateDbContext())
-            {
-                var watches = await db.TransactionConfirmationWatchingRules
-                    .Include(e => e.Callback)
-                    .Include(e => e.CurrentWatch)
-                    .Where(e => e.Status == (int)WatchStatus.Pending)
-                    .ToListAsync(cancellationToken);
-
-                return watches.Select(e => ToDomain(e));
-            }
-        }
-
-        public async Task SubtractRemainingWaitingTimeAsync(Guid id, TimeSpan consumedTime, CancellationToken cancellationToken)
-        {
-            using (var db = this.db.CreateDbContext())
-            {
-                var watch = await db.TransactionConfirmationWatchingRules
-                    .Include(e => e.Callback)
-                    .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
-
-                if (watch == null)
-                {
-                    throw new KeyNotFoundException("Watch id not found.");
-                }
-
-                if (consumedTime < TimeSpan.Zero)
-                {
-                    throw new ArgumentException("Consumed time could not be negative.");
-                }
-
-                watch.RemainingWaitingTime -= consumedTime;
-                watch.RemainingWaitingTime = watch.RemainingWaitingTime < TimeSpan.Zero
-                    ? TimeSpan.Zero
-                    : watch.RemainingWaitingTime;
-
-                await db.SaveChangesAsync(cancellationToken);
-            }
-        }
-
-        public async Task UpdateStatusAsync(Guid id, RuleStatus status, CancellationToken cancellationToken)
-        {
-            using (var db = this.db.CreateDbContext())
-            {
-                var watch = await db.TransactionConfirmationWatchingRules
-                    .Include(e => e.Callback)
-                    .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
-
-                if (watch == null)
-                {
-                    throw new KeyNotFoundException("Watch id not found");
-                }
-
-                watch.Status = (int)status;
-
-                await db.SaveChangesAsync(cancellationToken);
+                return rule == null ? null : ToDomain(rule);
             }
         }
 
@@ -150,35 +109,123 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
         {
             using (var db = this.db.CreateDbContext())
             {
-                var watch = await db.TransactionConfirmationWatchingRules
+                var rule = await db.TransactionConfirmationWatchingRules
                     .Include(e => e.Callback)
                     .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
-                if (watch == null)
+                if (rule == null)
                 {
-                    throw new KeyNotFoundException("Watch id not found.");
+                    throw new KeyNotFoundException("The rule id is not found.");
                 }
 
-                return watch.RemainingWaitingTime;
+                return rule.RemainingWaitingTime;
+            }
+        }
+
+        public async Task<IEnumerable<Rule>> ListActiveAsync(CancellationToken cancellationToken)
+        {
+            using (var db = this.db.CreateDbContext())
+            {
+                var rules = await db.TransactionConfirmationWatchingRules
+                    .Include(e => e.Callback)
+                    .Include(e => e.CurrentWatch)
+                    .Where(e => e.Status == (int)WatchStatus.Pending)
+                    .ToListAsync(cancellationToken);
+
+                return rules.Select(e => ToDomain(e));
+            }
+        }
+
+        public async Task SubtractRemainingWaitingTimeAsync(Guid id, TimeSpan consumedTime, CancellationToken cancellationToken)
+        {
+            using (var db = this.db.CreateDbContext())
+            {
+                var rule = await db.TransactionConfirmationWatchingRules
+                    .Include(e => e.Callback)
+                    .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+
+                if (rule == null)
+                {
+                    throw new KeyNotFoundException("The rule id is not found.");
+                }
+
+                if (consumedTime < TimeSpan.Zero)
+                {
+                    throw new ArgumentException("The consumed time is negative.");
+                }
+
+                rule.RemainingWaitingTime -= consumedTime;
+                rule.RemainingWaitingTime = rule.RemainingWaitingTime < TimeSpan.Zero
+                    ? TimeSpan.Zero
+                    : rule.RemainingWaitingTime;
+
+                await db.SaveChangesAsync(cancellationToken);
+            }
+        }
+
+        public async Task UpdateCurrentWatchIdAsync(Guid id, Guid watchId, CancellationToken cancellationToken)
+        {
+            using (var db = this.db.CreateDbContext())
+            using (var tx = await db.Database.BeginTransactionAsync(cancellationToken))
+            {
+                var watch = await db.TransactionConfirmationWatches
+                    .FirstOrDefaultAsync(w => w.Id == watchId, cancellationToken);
+
+                if (watch == null)
+                {
+                    throw new KeyNotFoundException("The watch id is not found.");
+                }
+
+                var rule = await db.TransactionConfirmationWatchingRules
+                    .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+
+                if (rule == null)
+                {
+                    throw new KeyNotFoundException("The rule id is not found.");
+                }
+
+                rule.CurrentWatchId = watchId;
+
+                await db.SaveChangesAsync(cancellationToken);
+                tx.Commit();
+            }
+        }
+
+        public async Task UpdateStatusAsync(Guid id, RuleStatus status, CancellationToken cancellationToken)
+        {
+            using (var db = this.db.CreateDbContext())
+            {
+                var rule = await db.TransactionConfirmationWatchingRules
+                    .Include(e => e.Callback)
+                    .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+
+                if (rule == null)
+                {
+                    throw new KeyNotFoundException("The rule id is not found.");
+                }
+
+                rule.Status = (int)status;
+
+                await db.SaveChangesAsync(cancellationToken);
             }
         }
 
         public static Rule ToDomain(
-            Ztm.Data.Entity.Contexts.Main.TransactionConfirmationWatchingRule watch,
+            Ztm.Data.Entity.Contexts.Main.TransactionConfirmationWatchingRule rule,
             Callback callback = null)
         {
             return new Rule(
-                watch.Id,
-                watch.Transaction,
-                (RuleStatus)watch.Status,
-                watch.Confirmation,
-                watch.WaitingTime,
-                JsonConvert.DeserializeObject(watch.SuccessData),
-                JsonConvert.DeserializeObject(watch.TimeoutData),
+                rule.Id,
+                rule.Transaction,
+                (RuleStatus)rule.Status,
+                rule.Confirmation,
+                rule.WaitingTime,
+                JsonConvert.DeserializeObject(rule.SuccessData),
+                JsonConvert.DeserializeObject(rule.TimeoutData),
                 callback != null
                     ? callback
-                    : (watch.Callback == null ? null : EntityCallbackRepository.ToDomain(watch.Callback)),
-                watch.CurrentWatchId
+                    : (rule.Callback == null ? null : EntityCallbackRepository.ToDomain(rule.Callback)),
+                rule.CurrentWatchId
             );
         }
     }
