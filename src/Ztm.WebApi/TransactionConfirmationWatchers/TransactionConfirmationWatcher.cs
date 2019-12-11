@@ -90,8 +90,8 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
             int confirmation,
             TimeSpan unconfirmedWaitingTime,
             Callback callback,
-            CallbackResult successData,
-            CallbackResult timeoutData,
+            CallbackResult successResponse,
+            CallbackResult timeoutResponse,
             CancellationToken cancellationToken)
         {
             if (transaction == null)
@@ -114,14 +114,14 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
                 throw new ArgumentNullException(nameof(callback));
             }
 
-            if (successData == null)
+            if (successResponse == null)
             {
-                throw new ArgumentNullException(nameof(successData));
+                throw new ArgumentNullException(nameof(successResponse));
             }
 
-            if (timeoutData == null)
+            if (timeoutResponse == null)
             {
-                throw new ArgumentNullException(nameof(timeoutData));
+                throw new ArgumentNullException(nameof(timeoutResponse));
             }
 
             var rule = await this.ruleRepository.AddAsync
@@ -129,8 +129,8 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
                 transaction,
                 confirmation,
                 unconfirmedWaitingTime,
-                successData,
-                timeoutData,
+                successResponse,
+                timeoutResponse,
                 callback,
                 cancellationToken
             );
@@ -222,7 +222,7 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
                 try
                 {
                     await this.ruleRepository.UpdateStatusAsync(rule.Id, RuleStatus.Timeout, CancellationToken.None);
-                    await ExecuteCallbackAsync(rule.Callback, rule.Timeout, CancellationToken.None);
+                    await ExecuteCallbackAsync(rule.Callback, rule.TimeoutResponse, CancellationToken.None);
                 }
                 catch (Exception ex) // lgtm [cs/catch-of-all-exceptions]
                 {
@@ -289,7 +289,7 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
         async Task ConfirmAsync(TransactionWatch<Rule> watch, CancellationToken cancellationToken)
         {
             await this.ruleRepository.UpdateStatusAsync(watch.Context.Id, RuleStatus.Success, cancellationToken);
-            await ExecuteCallbackAsync(watch.Context.Callback, watch.Context.Success, CancellationToken.None);
+            await ExecuteCallbackAsync(watch.Context.Callback, watch.Context.SuccessResponse, CancellationToken.None);
         }
 
         async Task ExecuteCallbackAsync(Callback callback, dynamic payload, CancellationToken cancellationToken)
@@ -351,7 +351,7 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
             switch (type)
             {
                 case ConfirmationType.Confirmed:
-                    if (confirmation >= watch.Context.Confirmation)
+                    if (confirmation >= watch.Context.Confirmations)
                     {
                         await ConfirmAsync(watch, cancellationToken);
                         return true;

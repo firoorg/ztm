@@ -180,14 +180,14 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             );
 
             _ = Assert.ThrowsAsync<ArgumentNullException>(
-                "successData",
+                "successResponse",
                 () => this.subject.AddTransactionAsync(
                     builder.transaction, builder.confirmation, builder.timeout,
                     callback, null, builder.timeoutData, CancellationToken.None)
             );
 
             _ = Assert.ThrowsAsync<ArgumentNullException>(
-                "timeoutData",
+                "timeoutResponse",
                 () => this.subject.AddTransactionAsync(
                     builder.transaction, builder.confirmation, builder.timeout,
                     callback, builder.successData, null, CancellationToken.None)
@@ -905,8 +905,8 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
                         var old = mockedWatchs[id];
 
                         mockedWatchs[id] = new Rule(
-                            old.Id, old.Transaction, status, old.Confirmation, old.WaitingTime,
-                            old.Success, old.Timeout, old.Callback, old.CurrentWatchId);
+                            old.Id, old.Transaction, status, old.Confirmations, old.WaitingTime,
+                            old.SuccessResponse, old.TimeoutResponse, old.Callback, old.CurrentWatchId);
                     }
                 );
 

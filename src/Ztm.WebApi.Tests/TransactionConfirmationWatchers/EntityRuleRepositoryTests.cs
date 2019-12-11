@@ -58,13 +58,13 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             // Assert.
             Assert.NotEqual(Guid.Empty, watch.Id);
             Assert.Equal(transaction, watch.Transaction);
-            Assert.Equal(10, watch.Confirmation);
+            Assert.Equal(10, watch.Confirmations);
             Assert.Equal(waitingTime, watch.WaitingTime);
             Assert.Equal(waitingTime, await this.subject.GetRemainingWaitingTimeAsync(watch.Id, CancellationToken.None));
-            Assert.Equal(successResult.Status, (string)watch.Success.Status);
-            Assert.Equal(successResult.Data, (string)watch.Success.Data);
-            Assert.Equal(timeoutResult.Status, (string)watch.Timeout.Status);
-            Assert.Equal(timeoutResult.Data, (string)watch.Timeout.Data);
+            Assert.Equal(successResult.Status, (string)watch.SuccessResponse.Status);
+            Assert.Equal(successResult.Data, (string)watch.SuccessResponse.Data);
+            Assert.Equal(timeoutResult.Status, (string)watch.TimeoutResponse.Status);
+            Assert.Equal(timeoutResult.Data, (string)watch.TimeoutResponse.Data);
         }
 
         [Fact]
@@ -81,12 +81,12 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             );
 
             await Assert.ThrowsAsync<ArgumentNullException>(
-                "successData",
+                "successResponse",
                 () => this.subject.AddAsync(transaction, 0, timeout, null, timeoutResult, this.defaultCallback, CancellationToken.None)
             );
 
             await Assert.ThrowsAsync<ArgumentNullException>(
-                "timeoutData",
+                "timeoutResponse",
                 () => this.subject.AddAsync(transaction, 0, timeout, successResult, null, this.defaultCallback, CancellationToken.None)
             );
 
@@ -116,10 +116,10 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             // Assert.
             Assert.Equal(watch.Id, retrieved.Id);
             Assert.Equal(watch.Transaction, retrieved.Transaction);
-            Assert.Equal(watch.Confirmation, retrieved.Confirmation);
+            Assert.Equal(watch.Confirmations, retrieved.Confirmations);
             Assert.Equal(watch.WaitingTime, retrieved.WaitingTime);
-            Assert.Equal(watch.Success, retrieved.Success);
-            Assert.Equal(watch.Timeout, retrieved.Timeout);
+            Assert.Equal(watch.SuccessResponse, retrieved.SuccessResponse);
+            Assert.Equal(watch.TimeoutResponse, retrieved.TimeoutResponse);
             Assert.Equal(this.defaultCallback, retrieved.Callback);
         }
 
@@ -157,10 +157,10 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             Assert.Equal(2, retrieved.Count());
             Assert.Equal(watches[0].Id, retrieved[0].Id);
             Assert.Equal(watches[0].Transaction, retrieved[0].Transaction);
-            Assert.Equal(watches[0].Confirmation, retrieved[0].Confirmation);
+            Assert.Equal(watches[0].Confirmations, retrieved[0].Confirmations);
             Assert.Equal(watches[0].WaitingTime, retrieved[0].WaitingTime);
-            Assert.Equal(watches[0].Success, retrieved[0].Success);
-            Assert.Equal(watches[0].Timeout, retrieved[0].Timeout);
+            Assert.Equal(watches[0].SuccessResponse, retrieved[0].SuccessResponse);
+            Assert.Equal(watches[0].TimeoutResponse, retrieved[0].TimeoutResponse);
             Assert.Equal(watches[0].Callback, retrieved[0].Callback);
 
             Assert.Equal(watches[1].Id, retrieved[1].Id);

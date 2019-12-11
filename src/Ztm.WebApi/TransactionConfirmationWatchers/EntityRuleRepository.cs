@@ -27,21 +27,21 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
         }
 
         public async Task<Rule> AddAsync(
-            uint256 transaction, int confirmation, TimeSpan waitingTime, CallbackResult successData, CallbackResult timeoutData, Callback callback, CancellationToken cancellationToken)
+            uint256 transaction, int confirmation, TimeSpan waitingTime, CallbackResult successResponse, CallbackResult timeoutResponse, Callback callback, CancellationToken cancellationToken)
         {
             if (transaction == null)
             {
                 throw new ArgumentNullException(nameof(transaction));
             }
 
-            if (successData == null)
+            if (successResponse == null)
             {
-                throw new ArgumentNullException(nameof(successData));
+                throw new ArgumentNullException(nameof(successResponse));
             }
 
-            if (timeoutData == null)
+            if (timeoutResponse == null)
             {
-                throw new ArgumentNullException(nameof(timeoutData));
+                throw new ArgumentNullException(nameof(timeoutResponse));
             }
 
             if (callback == null)
@@ -62,8 +62,8 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
                         Confirmation = confirmation,
                         WaitingTime = waitingTime,
                         RemainingWaitingTime = waitingTime,
-                        SuccessData = JsonConvert.SerializeObject(successData),
-                        TimeoutData = JsonConvert.SerializeObject(timeoutData),
+                        SuccessData = JsonConvert.SerializeObject(successResponse),
+                        TimeoutData = JsonConvert.SerializeObject(timeoutResponse),
                         CurrentWatchId = null,
                     }, cancellationToken);
 

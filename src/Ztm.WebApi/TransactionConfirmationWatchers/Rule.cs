@@ -10,20 +10,50 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
             Guid id,
             uint256 transaction,
             RuleStatus status,
-            int confirmation,
+            int confirmations,
             TimeSpan waitingTime,
-            dynamic success,
-            dynamic timeout,
+            dynamic successResponse,
+            dynamic timeoutResponse,
             Callback callback,
             Guid? currentWatchId)
         {
+            if (transaction == null)
+            {
+                throw new ArgumentNullException(nameof(transaction));
+            }
+
+            if (successResponse == null)
+            {
+                throw new ArgumentNullException(nameof(successResponse));
+            }
+
+            if (timeoutResponse == null)
+            {
+                throw new ArgumentNullException(nameof(timeoutResponse));
+            }
+
+            if (callback == null)
+            {
+                throw new ArgumentNullException(nameof(callback));
+            }
+
+            if (confirmations <= 0)
+            {
+                throw new ArgumentException("The confirmations is lesser than 1.", nameof(confirmations));
+            }
+
+            if (waitingTime < TimeSpan.Zero)
+            {
+                throw new ArgumentException("The waitingTime is negative.", nameof(waitingTime));
+            }
+
             this.Id = id;
             this.Transaction = transaction;
             this.Status = status;
-            this.Confirmation = confirmation;
+            this.Confirmations = confirmations;
             this.WaitingTime = waitingTime;
-            this.Success = success;
-            this.Timeout = timeout;
+            this.SuccessResponse = successResponse;
+            this.TimeoutResponse = timeoutResponse;
             this.Callback = callback;
             this.CurrentWatchId = currentWatchId;
         }
@@ -31,10 +61,10 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
         public Guid Id { get; }
         public uint256 Transaction { get; }
         public RuleStatus Status { get; }
-        public int Confirmation { get; }
+        public int Confirmations { get; }
         public TimeSpan WaitingTime { get; }
-        public dynamic Success { get; }
-        public dynamic Timeout { get; }
+        public dynamic SuccessResponse { get; }
+        public dynamic TimeoutResponse { get; }
         public Callback Callback { get; }
         public Guid? CurrentWatchId { get; }
     }

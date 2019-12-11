@@ -14,8 +14,8 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
             uint256 transaction,
             int confirmation,
             TimeSpan unconfirmedWaitingTime,
-            CallbackResult successData,
-            CallbackResult timeoutData,
+            CallbackResult successResponse,
+            CallbackResult timeoutResponse,
             Callback callback,
             CancellationToken cancellationToken
         );
