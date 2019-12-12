@@ -8,21 +8,24 @@ namespace Ztm.WebApi.AddressPools
 {
     public sealed class RpcAddressGenerator : IAddressGenerator
     {
-        readonly IZcoinRpcClient client;
+        readonly IZcoinRpcClientFactory factory;
 
-        public RpcAddressGenerator(IZcoinRpcClient client)
+        public RpcAddressGenerator(IZcoinRpcClientFactory factory)
         {
-            if (client == null)
+            if (factory == null)
             {
-                throw new ArgumentNullException(nameof(client));
+                throw new ArgumentNullException(nameof(factory));
             }
 
-            this.client = client;
+            this.factory = factory;
         }
 
-        public Task<BitcoinAddress> GenerateAsync(CancellationToken cancellationToken)
+        public async Task<BitcoinAddress> GenerateAsync(CancellationToken cancellationToken)
         {
-            return this.client.GetNewAddressAsync(cancellationToken);
+            using (var client = await this.factory.CreateRpcClientAsync(cancellationToken))
+            {
+                return await client.GetNewAddressAsync(cancellationToken);
+            }
         }
     }
 }

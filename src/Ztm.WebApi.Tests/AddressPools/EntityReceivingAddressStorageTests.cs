@@ -90,10 +90,9 @@ namespace Ztm.WebApi.Tests.AddressPools
         }
 
         [Fact]
-        public async Task GetTask_NonExist_ShouldThrow()
+        public async Task GetAsync_WithNonExist_ShouldReturnNull()
         {
-            await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => this.subject.GetAsync(Guid.NewGuid(), CancellationToken.None));
+            Assert.Null(await this.subject.GetAsync(Guid.NewGuid(), CancellationToken.None));
         }
 
         [Fact]

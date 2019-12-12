@@ -73,12 +73,7 @@ namespace Ztm.WebApi.AddressPools
                     .Include(e => e.Reservations)
                     .SingleOrDefaultAsync(r => r.Id == id);
 
-                if (recv == null)
-                {
-                    throw new KeyNotFoundException("The address id is not found.");
-                }
-
-                return ToDomain(recv);
+                return recv == null ? null : ToDomain(recv);
             }
         }
 

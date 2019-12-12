@@ -37,7 +37,7 @@ namespace Ztm.WebApi
             services.AddMvc(ConfigureMvc).SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 
             // Address Pools
-            UseAddressPools(services);
+            services.UseAddressPool();
 
             // Fundamentals Services.
             services.AddSingleton<Network>(CreateZcoinNetwork);
@@ -92,15 +92,6 @@ namespace Ztm.WebApi
                 config.Network.Type,
                 RPCCredentialString.Parse($"{config.Rpc.UserName}:{config.Rpc.Password}")
             );
-        }
-
-        void UseAddressPools(IServiceCollection services)
-        {
-            services.AddTransient<IAddressChoser, LessUsageFirstChoser>();
-            services.AddTransient<IAddressGenerator, RpcAddressGenerator>();
-            services.AddTransient<IReceivingAddressStorage, EntityReceivingAddressStorage>();
-
-            services.AddSingleton<IReceivingAddressPool, ReceivingAddressPool>();
         }
     }
 }
