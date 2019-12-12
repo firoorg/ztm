@@ -1,15 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using NBitcoin;
 
-namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionInterpreter
+namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionRetrievers
 {
-    public class Interpreter : IInterpreter
+    public class TransactionRetriever : ITransactionRetriever
     {
-        readonly IDictionary<Type, IExodusInterpreter> transactionInterpreter;
+        readonly IDictionary<Type, IExodusTransactionRetriever> transactionInterpreter;
 
-        public Interpreter(IEnumerable<IExodusInterpreter> transactionInterpreters)
+        public TransactionRetriever(IEnumerable<IExodusTransactionRetriever> transactionInterpreters)
         {
             if (transactionInterpreters == null)
             {
@@ -19,7 +21,7 @@ namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionInterpreter
             this.transactionInterpreter = transactionInterpreters.ToDictionary(i => i.SupportType);
         }
 
-        public IEnumerable<BalanceChange> Interpret(Transaction transaction)
+        public Task<IEnumerable<BalanceChange>> GetBalanceChangesAsync(Transaction transaction, CancellationToken cancellationToken)
         {
             if (transaction == null)
             {
@@ -38,7 +40,7 @@ namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionInterpreter
                     TransactionFieldException.TypeField, "The value is unknown transaction type.");
             }
 
-            return interpreter.Interpret(ex);
+            return interpreter.GetBalanceChangesAsync(ex, cancellationToken);
         }
     }
 }

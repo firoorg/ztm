@@ -3,9 +3,9 @@ using NBitcoin;
 using Xunit;
 using Ztm.Testing;
 using Ztm.Zcoin.NBitcoin.Exodus;
-using Ztm.Zcoin.NBitcoin.Exodus.TransactionInterpreter;
+using Ztm.Zcoin.NBitcoin.Exodus.TransactionRetrievers;
 
-namespace Ztm.Zcoin.NBitcoin.Tests.Exodus.TransactionInterpreter
+namespace Ztm.Zcoin.NBitcoin.Tests.Exodus.TransactionRetrievers
 {
     public sealed class BalanceChangeTests
     {

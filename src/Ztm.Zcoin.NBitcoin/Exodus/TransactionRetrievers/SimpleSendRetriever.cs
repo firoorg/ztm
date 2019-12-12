@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
-namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionInterpreter
+namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionRetrievers
 {
-    public sealed class SimpleSendInterpreter : IExodusInterpreter
+    public sealed class SimpleSendRetriever : IExodusTransactionRetriever
     {
         public Type SupportType
         {
@@ -13,7 +16,8 @@ namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionInterpreter
             }
         }
 
-        public IEnumerable<BalanceChange> Interpret(ExodusTransaction transaction)
+        public Task<IEnumerable<BalanceChange>> GetBalanceChangesAsync(
+            ExodusTransaction transaction, CancellationToken cancellationToken)
         {
             if (transaction == null)
             {
@@ -22,11 +26,13 @@ namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionInterpreter
 
             var simpleSend = (SimpleSendV0)transaction;
 
-            return new BalanceChange[]
+            var changes = new BalanceChange[]
             {
                 new BalanceChange(simpleSend.Sender, PropertyAmount.Negate(simpleSend.Amount), simpleSend.Property),
                 new BalanceChange(simpleSend.Receiver, simpleSend.Amount, simpleSend.Property),
             };
+
+            return Task.FromResult(changes.AsEnumerable());
         }
     }
 }

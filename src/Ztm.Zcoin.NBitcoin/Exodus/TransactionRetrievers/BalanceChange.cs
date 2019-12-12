@@ -1,7 +1,7 @@
 using System;
 using NBitcoin;
 
-namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionInterpreter
+namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionRetrievers
 {
     public sealed class BalanceChange : IEquatable<BalanceChange>
     {

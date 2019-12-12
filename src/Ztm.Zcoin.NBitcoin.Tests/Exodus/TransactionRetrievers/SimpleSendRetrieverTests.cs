@@ -1,20 +1,21 @@
 using System;
 using System.Linq;
-using NBitcoin;
+using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 using Ztm.Testing;
 using Ztm.Zcoin.NBitcoin.Exodus;
-using Ztm.Zcoin.NBitcoin.Exodus.TransactionInterpreter;
+using Ztm.Zcoin.NBitcoin.Exodus.TransactionRetrievers;
 
-namespace Ztm.Zcoin.NBitcoin.Tests.Exodus.TransactionInterpreter
+namespace Ztm.Zcoin.NBitcoin.Tests.Exodus.TransactionRetrievers
 {
-    public sealed class SimpleSendInterpreterTests
+    public sealed class SimpleSendRetrieverTests
     {
-        readonly SimpleSendInterpreter subject;
+        readonly SimpleSendRetriever subject;
 
-        public SimpleSendInterpreterTests()
+        public SimpleSendRetrieverTests()
         {
-            this.subject = new SimpleSendInterpreter();
+            this.subject = new SimpleSendRetriever();
         }
 
         [Fact]
@@ -24,16 +25,16 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus.TransactionInterpreter
         }
 
         [Fact]
-        public void Interpret_WithNullExodusTransaction_ShouldThrow()
+        public async Task GetBalanceChangesAsync_WithNullExodusTransaction_ShouldThrow()
         {
-            Assert.Throws<ArgumentNullException>(
+            await Assert.ThrowsAsync<ArgumentNullException>(
                 "transaction",
-                () => this.subject.Interpret(null)
+                () => this.subject.GetBalanceChangesAsync(null, CancellationToken.None)
             );
         }
 
         [Fact]
-        public void Interpret_WithSimepleSend_ShouldReturnBalanceChanges()
+        public async Task GetBalanceChangesAsync_WithSimepleSend_ShouldReturnBalanceChanges()
         {
             // Arrange.
             var sender = TestAddress.Regtest1;
@@ -44,7 +45,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus.TransactionInterpreter
             var tx = new SimpleSendV0(sender, receiver, property, amount);
 
             // Act.
-            var changes = this.subject.Interpret(tx);
+            var changes = await this.subject.GetBalanceChangesAsync(tx, CancellationToken.None);
 
             // Assert.
             Assert.NotNull(changes);

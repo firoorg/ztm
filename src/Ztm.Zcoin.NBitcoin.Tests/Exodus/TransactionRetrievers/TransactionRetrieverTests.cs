@@ -1,31 +1,33 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Threading;
+using System.Threading.Tasks;
 using NBitcoin;
 using NSubstitute;
 using Xunit;
 using Ztm.Testing;
-using Ztm.Zcoin.NBitcoin.Tests;
-using Ztm.Zcoin.NBitcoin.Tests.Exodus;
+using Ztm.Zcoin.NBitcoin.Exodus;
+using Ztm.Zcoin.NBitcoin.Exodus.TransactionRetrievers;
 
-namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionInterpreter
+namespace Ztm.Zcoin.NBitcoin.Tests.Exodus.TransactionRetrievers
 {
     public class InterpreterTests
     {
-        readonly IExodusInterpreter defaultInterpreter;
-        readonly IEnumerable<IExodusInterpreter> transactionInterpreters;
-        readonly Interpreter subject;
+        readonly IExodusTransactionRetriever defaultRetriever;
+        readonly IEnumerable<IExodusTransactionRetriever> transactionRetrievers;
+        readonly TransactionRetriever subject;
         public InterpreterTests()
         {
-            this.defaultInterpreter = Substitute.For<IExodusInterpreter>();
-            this.defaultInterpreter.SupportType.Returns(typeof(FakeExodusTransaction));
+            this.defaultRetriever = Substitute.For<IExodusTransactionRetriever>();
+            this.defaultRetriever.SupportType.Returns(typeof(FakeExodusTransaction));
 
-            this.transactionInterpreters = new Collection<IExodusInterpreter>
+            this.transactionRetrievers = new Collection<IExodusTransactionRetriever>
             {
-                this.defaultInterpreter,
+                this.defaultRetriever,
             };
 
-            this.subject = new Interpreter(this.transactionInterpreters);
+            this.subject = new TransactionRetriever(this.transactionRetrievers);
         }
 
         [Fact]
@@ -33,33 +35,33 @@ namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionInterpreter
         {
             Assert.Throws<ArgumentNullException>(
                 "transactionInterpreters",
-                () => new Interpreter(null)
+                () => new TransactionRetriever(null)
             );
         }
 
         [Fact]
-        public void Interpret_WithNullTransaction_ShouldThrow()
+        public async Task GetBalanceChangesAsync_WithNullTransaction_ShouldThrow()
         {
-            Assert.Throws<ArgumentNullException>(
+            await Assert.ThrowsAsync<ArgumentNullException>(
                 "transaction",
-                () => this.subject.Interpret(null)
+                () => this.subject.GetBalanceChangesAsync(null, CancellationToken.None)
             );
         }
 
         [Fact]
-        public void Interpret_WithoutExodusData_ShouldThrow()
+        public async Task GetBalanceChangesAsync_WithoutExodusData_ShouldThrow()
         {
             var tx =  Transaction.Parse(
                 ZcoinTransactionData.ZerocoinRemint, ZcoinNetworks.Instance.Regtest);
 
-            Assert.Throws<ArgumentException>(
+            await Assert.ThrowsAsync<ArgumentException>(
                 "transaction",
-                () => this.subject.Interpret(tx)
+                () => this.subject.GetBalanceChangesAsync(tx, CancellationToken.None)
             );
         }
 
         [Fact]
-        public void Interpret_WithUnsupportedExodusTransactionType_ShouldThrow()
+        public async Task GetBalanceChangesAsync_WithUnsupportedExodusTransactionType_ShouldThrow()
         {
             var tx =  Transaction.Parse(
                 ZcoinTransactionData.ZerocoinRemint, ZcoinNetworks.Instance.Regtest);
@@ -69,13 +71,13 @@ namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionInterpreter
             tx.SetExodusTransaction(unsupported);
             #pragma warning restore CS0618
 
-            Assert.Throws<TransactionFieldException>(
-                () => this.subject.Interpret(tx)
+            await Assert.ThrowsAsync<TransactionFieldException>(
+                () => this.subject.GetBalanceChangesAsync(tx, CancellationToken.None)
             );
         }
 
         [Fact]
-        public void Interpret_WithSupportedType_ShouldSuccess()
+        public async Task GetBalanceChangesAsync_WithSupportedType_ShouldSuccess()
         {
             // Arrange.
             var tx =  Transaction.Parse(
@@ -95,13 +97,24 @@ namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionInterpreter
                 new BalanceChange(address, amount, property)
             };
 
-            this.defaultInterpreter.Interpret(Arg.Is<ExodusTransaction>(t => exodus == t)).Returns(changes);
+            var cancellationToken = new CancellationToken(false);
+
+            this.defaultRetriever.GetBalanceChangesAsync
+            (
+                Arg.Is<ExodusTransaction>(t => exodus == t),
+                Arg.Is<CancellationToken>(c => c == cancellationToken)
+            ).Returns(changes);
 
             // Act.
-            var retrievedChanges = this.subject.Interpret(tx);
+            var retrievedChanges = await this.subject.GetBalanceChangesAsync(tx, cancellationToken);
 
             // Assert.
-            this.defaultInterpreter.Received(1).Interpret(Arg.Is<ExodusTransaction>(t => exodus == t));
+            _ = this.defaultRetriever.Received(1).GetBalanceChangesAsync
+            (
+                Arg.Is<ExodusTransaction>(t => exodus == t),
+                Arg.Is<CancellationToken>(c => c == cancellationToken)
+            );
+
             Assert.Equal(changes, retrievedChanges);
         }
     }
