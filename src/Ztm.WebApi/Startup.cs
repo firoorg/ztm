@@ -7,11 +7,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using NBitcoin.RPC;
+using Newtonsoft.Json.Serialization;
 using Ztm.Configuration;
 using Ztm.Data.Entity.Contexts;
 using Ztm.Data.Entity.Postgres;
 using Ztm.Hosting.AspNetCore;
 using Ztm.WebApi.Binders;
+using Ztm.WebApi.AddressPools;
 using Ztm.WebApi.Callbacks;
 using Ztm.WebApi.TransactionConfirmationWatchers;
 using Ztm.Zcoin.NBitcoin;
@@ -38,7 +40,18 @@ namespace Ztm.WebApi
         public void ConfigureServices(IServiceCollection services)
         {
             // ASP.NET Services.
-            services.AddMvc(ConfigureMvc).SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+            services.AddMvc(ConfigureMvc)
+                    .SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
+                    .AddJsonOptions(o =>
+                    {
+                        o.SerializerSettings.ContractResolver = new DefaultContractResolver()
+                        {
+                            NamingStrategy = new SnakeCaseNamingStrategy()
+                        };
+                    });
+
+            // Address Pools
+            services.UseAddressPool();
 
             // Fundamentals Services.
             services.AddBackgroundServiceExceptionHandler();

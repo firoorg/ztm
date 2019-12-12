@@ -71,6 +71,7 @@ namespace Ztm.Hosting.Tests
             {
                 // Act.
                 await this.subject.StartAsync(cancellationToken);
+                await this.subject.StopAsync(CancellationToken.None);
 
                 // Assert.
                 this.subject.StubbedExecuteAsync.Verify(
@@ -94,11 +95,6 @@ namespace Ztm.Hosting.Tests
                 await this.subject.StartAsync(cancellationToken);
 
                 // Assert.
-                this.subject.StubbedExecuteAsync.Verify(
-                    f => f(It.Is<CancellationToken>(t => t != cancellationToken)),
-                    Times.Once()
-                );
-
                 this.subject.Invoking(s => s.StartAsync(CancellationToken.None))
                             .Should().ThrowExactly<InvalidOperationException>();
             });
@@ -115,6 +111,7 @@ namespace Ztm.Hosting.Tests
 
                 // Act.
                 await this.subject.StartAsync(cancellationToken);
+                await this.subject.StopAsync(CancellationToken.None);
 
                 // Assert.
                 this.subject.StubbedExecuteAsync.Verify(
@@ -236,16 +233,6 @@ namespace Ztm.Hosting.Tests
 
                 // Assert.
                 await Assert.ThrowsAnyAsync<OperationCanceledException>(() => stop);
-
-                this.subject.StubbedExecuteAsync.Verify(
-                    f => f(It.IsNotIn<CancellationToken>(CancellationToken.None)),
-                    Times.Once()
-                );
-
-                this.exceptionHandler.Verify(
-                    h => h.RunAsync(It.IsAny<Type>(), It.IsAny<Exception>(), It.IsAny<CancellationToken>()),
-                    Times.Never()
-                );
             }, cancellationSource => cancellationSource.Cancel());
         }
     }
