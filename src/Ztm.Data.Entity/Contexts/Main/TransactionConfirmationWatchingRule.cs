@@ -11,7 +11,7 @@ namespace Ztm.Data.Entity.Contexts.Main
         public uint256 Transaction { get; set; }
         public int Status { get; set; }
         public int Confirmation { get; set; }
-        public TimeSpan WaitingTime { get; set; }
+        public TimeSpan OriginalWaitingTime { get; set; }
         public TimeSpan RemainingWaitingTime { get; set; }
         public string SuccessData { get; set; }
         public string TimeoutData { get; set; }

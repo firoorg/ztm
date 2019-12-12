@@ -22,26 +22,22 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
 
             Assert.Throws<ArgumentNullException>(
                 "transaction",
-                () => new Rule(id, null, confirmation, waitingTime, successResponse,
-                    timeoutResponse, callback, null)
+                () => new Rule(id, null, confirmation, waitingTime, successResponse, timeoutResponse, callback)
             );
 
             Assert.Throws<ArgumentNullException>(
                 "successResponse",
-                () => new Rule(id, tx, confirmation, waitingTime, null,
-                    timeoutResponse, callback, null)
+                () => new Rule(id, tx, confirmation, waitingTime, null, timeoutResponse, callback)
             );
 
             Assert.Throws<ArgumentNullException>(
                 "timeoutResponse",
-                () => new Rule(id, tx, confirmation, waitingTime, successResponse,
-                    null, callback, null)
+                () => new Rule(id, tx, confirmation, waitingTime, successResponse, null, callback)
             );
 
             Assert.Throws<ArgumentNullException>(
                 "callback",
-                () => new Rule(id, tx, confirmation, waitingTime, successResponse,
-                    timeoutResponse, null, null)
+                () => new Rule(id, tx, confirmation, waitingTime, successResponse, timeoutResponse, null)
             );
         }
 
@@ -60,7 +56,7 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
 
             Assert.Throws<ArgumentException>(
                 "confirmations",
-                () => new Rule(id, tx, confirmation, waitingTime, successResponse, timeoutResponse,callback, null)
+                () => new Rule(id, tx, confirmation, waitingTime, successResponse, timeoutResponse,callback)
             );
         }
 
@@ -75,38 +71,38 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
             var callback = new Callback(Guid.Empty, IPAddress.Loopback, DateTime.Now, false, new Uri("https://zcoin.io"));
 
             Assert.Throws<ArgumentException>(
-                "waitingTime",
-                () => new Rule(id, tx, confirmation, TimeSpan.MinValue, successResponse, timeoutResponse,callback, null)
+                "originalWaitingTime",
+                () => new Rule(id, tx, confirmation, TimeSpan.MinValue, successResponse, timeoutResponse,callback)
             );
 
             Assert.Throws<ArgumentException>(
-                "waitingTime",
-                () => new Rule(id, tx, confirmation, TimeSpan.FromTicks(-1), successResponse, timeoutResponse,callback, null)
+                "originalWaitingTime",
+                () => new Rule(id, tx, confirmation, TimeSpan.FromTicks(-1), successResponse, timeoutResponse,callback)
             );
 
             Assert.Throws<ArgumentException>(
-                "waitingTime",
-                () => new Rule(id, tx, confirmation, TimeSpan.FromSeconds(-1), successResponse, timeoutResponse,callback, null)
+                "originalWaitingTime",
+                () => new Rule(id, tx, confirmation, TimeSpan.FromSeconds(-1), successResponse, timeoutResponse,callback)
             );
 
             Assert.Throws<ArgumentException>(
-                "waitingTime",
-                () => new Rule(id, tx, confirmation, TimeSpan.FromMinutes(-1), successResponse, timeoutResponse,callback, null)
+                "originalWaitingTime",
+                () => new Rule(id, tx, confirmation, TimeSpan.FromMinutes(-1), successResponse, timeoutResponse,callback)
             );
 
             Assert.Throws<ArgumentException>(
-                "waitingTime",
-                () => new Rule(id, tx, confirmation, TimeSpan.FromMilliseconds(-1), successResponse, timeoutResponse,callback, null)
+                "originalWaitingTime",
+                () => new Rule(id, tx, confirmation, TimeSpan.FromMilliseconds(-1), successResponse, timeoutResponse,callback)
             );
 
             Assert.Throws<ArgumentException>(
-                "waitingTime",
-                () => new Rule(id, tx, confirmation, TimeSpan.FromHours(-1), successResponse, timeoutResponse,callback, null)
+                "originalWaitingTime",
+                () => new Rule(id, tx, confirmation, TimeSpan.FromHours(-1), successResponse, timeoutResponse,callback)
             );
 
             Assert.Throws<ArgumentException>(
-                "waitingTime",
-                () => new Rule(id, tx, confirmation, TimeSpan.FromDays(-1), successResponse, timeoutResponse,callback, null)
+                "originalWaitingTime",
+                () => new Rule(id, tx, confirmation, TimeSpan.FromDays(-1), successResponse, timeoutResponse,callback)
             );
         }
     }

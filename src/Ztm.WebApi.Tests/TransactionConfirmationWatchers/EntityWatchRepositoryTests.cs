@@ -161,9 +161,6 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
 
             var updated = watches.First();
             Assert.Equal(watch.Id, updated.Id);
-
-            var updatedRule = await this.ruleRepository.GetAsync(rule.Id, CancellationToken.None);
-            Assert.Null(updatedRule.CurrentWatchId);
         }
 
         [Fact]

@@ -60,7 +60,7 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
                         Transaction = transaction,
                         Status = (int)RuleStatus.Pending,
                         Confirmation = confirmations,
-                        WaitingTime = waitingTime,
+                        OriginalWaitingTime = waitingTime,
                         RemainingWaitingTime = waitingTime,
                         SuccessData = JsonConvert.SerializeObject(successResponse),
                         TimeoutData = JsonConvert.SerializeObject(timeoutResponse),
@@ -139,14 +139,14 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
             }
         }
 
-        public async Task<IEnumerable<Rule>> ListActiveAsync(CancellationToken cancellationToken)
+        public async Task<IEnumerable<Rule>> ListWaitingAsync(CancellationToken cancellationToken)
         {
             using (var db = this.db.CreateDbContext())
             {
                 var rules = await db.TransactionConfirmationWatchingRules
                     .Include(e => e.Callback)
                     .Include(e => e.CurrentWatch)
-                    .Where(e => e.Status == (int)WatchStatus.Pending)
+                    .Where(e => e.Status == (int)WatchStatus.Pending && e.CurrentWatchId == null)
                     .ToListAsync(cancellationToken);
 
                 return rules.Select(e => ToDomain(e));
@@ -235,13 +235,12 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
                 rule.Id,
                 rule.Transaction,
                 rule.Confirmation,
-                rule.WaitingTime,
+                rule.OriginalWaitingTime,
                 JsonConvert.DeserializeObject(rule.SuccessData),
                 JsonConvert.DeserializeObject(rule.TimeoutData),
                 callback != null
                     ? callback
-                    : (rule.Callback == null ? null : EntityCallbackRepository.ToDomain(rule.Callback)),
-                rule.CurrentWatchId
+                    : (rule.Callback == null ? null : EntityCallbackRepository.ToDomain(rule.Callback))
             );
         }
     }

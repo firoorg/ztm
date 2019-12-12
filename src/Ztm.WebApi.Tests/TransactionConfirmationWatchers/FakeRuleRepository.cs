@@ -23,14 +23,14 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
         {
             var id = Guid.NewGuid();
 
-            var rule = new Rule(id, transaction, confirmation, unconfirmedWaitingTime, successResponse, timeoutResponse,
-                callback, null);
+            var rule = new Rule(id, transaction, confirmation, unconfirmedWaitingTime, successResponse, timeoutResponse, callback);
 
             this.rules.Add(id, new RuleWithAdditionalDatas
             {
                 Rule = rule,
                 RemainingTime = unconfirmedWaitingTime,
                 Status = RuleStatus.Pending,
+                CurrentWatchId = null,
             });
 
             return Task.FromResult(rule);
@@ -41,15 +41,8 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             this.update(id,
                 (old) =>
                 {
-                    var builder = new RuleBuilder(old.Rule);
-                    builder.CurrentWatchId = null;
-
-                    return new RuleWithAdditionalDatas
-                    {
-                        Rule = builder.Build(),
-                        RemainingTime = old.RemainingTime,
-                        Status = old.Status
-                    };
+                    old.CurrentWatchId = null;
+                    return old;
                 }
             );
 
@@ -86,7 +79,7 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             throw new KeyNotFoundException();
         }
 
-        public virtual Task<IEnumerable<Rule>> ListActiveAsync(CancellationToken cancellationToken)
+        public virtual Task<IEnumerable<Rule>> ListWaitingAsync(CancellationToken cancellationToken)
         {
             return Task.FromResult(this.rules.Where(r => r.Value.Status == RuleStatus.Pending).Select(r => r.Value.Rule).AsEnumerable());
         }
@@ -110,15 +103,8 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             this.update(id,
                 (old) =>
                 {
-                    var builder = new RuleBuilder(old.Rule);
-                    builder.CurrentWatchId = watchId;
-
-                    return new RuleWithAdditionalDatas
-                    {
-                        Rule = builder.Build(),
-                        RemainingTime = old.RemainingTime,
-                        Status = old.Status
-                    };
+                    old.CurrentWatchId = watchId;
+                    return old;
                 }
             );
 
@@ -130,12 +116,8 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             this.update(id,
                 (old) =>
                 {
-                    return new RuleWithAdditionalDatas
-                    {
-                        Rule = old.Rule,
-                        RemainingTime = old.RemainingTime,
-                        Status = status
-                    };
+                    old.Status = status;
+                    return old;
                 }
             );
 
@@ -162,6 +144,7 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
         public Rule Rule { get; set; }
         public TimeSpan RemainingTime { get; set; }
         public RuleStatus Status { get; set; }
+        public Guid? CurrentWatchId { get; set; }
     }
 
     class RuleBuilder
@@ -173,23 +156,21 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
         public dynamic SuccessResponse { get; set; }
         public dynamic TimeoutResponse { get; set; }
         public Callback Callback { get; set; }
-        public Guid? CurrentWatchId { get; set; }
 
         public RuleBuilder(Rule old)
         {
             Id = old.Id;
             Transaction = old.Transaction;
             Confirmations = old.Confirmations;
-            WaitingTime = old.WaitingTime;
+            WaitingTime = old.OriginalWaitingTime;
             SuccessResponse = old.SuccessResponse;
             TimeoutResponse = old.TimeoutResponse;
             Callback = old.Callback;
-            CurrentWatchId = old.CurrentWatchId;
         }
 
         public Rule Build() {
             return new Rule(Id, Transaction, Confirmations, WaitingTime, SuccessResponse,
-                TimeoutResponse, Callback, CurrentWatchId);
+                TimeoutResponse, Callback);
         }
     }
 }

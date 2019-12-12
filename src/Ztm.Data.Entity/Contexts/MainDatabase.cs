@@ -149,7 +149,7 @@ namespace Ztm.Data.Entity.Contexts
             builder.Property(e => e.Transaction).IsRequired();
             builder.Property(e => e.Status).IsRequired();
             builder.Property(e => e.Confirmation).IsRequired();
-            builder.Property(e => e.WaitingTime).IsRequired();
+            builder.Property(e => e.OriginalWaitingTime).IsRequired();
             builder.Property(e => e.RemainingWaitingTime).IsRequired();
             builder.Property(e => e.SuccessData).IsRequired();
             builder.Property(e => e.TimeoutData).IsRequired();

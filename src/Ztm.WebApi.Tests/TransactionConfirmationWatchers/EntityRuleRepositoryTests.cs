@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using NBitcoin;
 using Xunit;
 using Ztm.Data.Entity.Testing;
@@ -62,13 +63,12 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             Assert.NotEqual(Guid.Empty, watch.Id);
             Assert.Equal(transaction, watch.Transaction);
             Assert.Equal(10, watch.Confirmations);
-            Assert.Equal(waitingTime, watch.WaitingTime);
+            Assert.Equal(waitingTime, watch.OriginalWaitingTime);
             Assert.Equal(waitingTime, await this.subject.GetRemainingWaitingTimeAsync(watch.Id, CancellationToken.None));
             Assert.Equal(successResult.Status, (string)watch.SuccessResponse.Status);
             Assert.Equal(successResult.Data, (string)watch.SuccessResponse.Data);
             Assert.Equal(timeoutResult.Status, (string)watch.TimeoutResponse.Status);
             Assert.Equal(timeoutResult.Data, (string)watch.TimeoutResponse.Data);
-            Assert.Null(watch.CurrentWatchId);
         }
 
         [Fact]
@@ -129,9 +129,11 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             await this.subject.ClearCurrentWatchIdAsync(rule.Id, CancellationToken.None);
 
             // Assert.
-            var updated = await this.subject.GetAsync(rule.Id, CancellationToken.None);
-
-            Assert.Null(updated.CurrentWatchId);
+            using (var db = this.dbFactory.CreateDbContext())
+            {
+                var updated = await db.TransactionConfirmationWatchingRules.FirstOrDefaultAsync(r => r.Id == rule.Id);
+                Assert.Null(updated.CurrentWatchId);
+            }
         }
 
         [Fact]
@@ -152,9 +154,11 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             await this.subject.ClearCurrentWatchIdAsync(rule.Id, CancellationToken.None);
 
             // Assert.
-            var updated = await this.subject.GetAsync(rule.Id, CancellationToken.None);
-
-            Assert.Null(updated.CurrentWatchId);
+            using (var db = this.dbFactory.CreateDbContext())
+            {
+                var updated = await db.TransactionConfirmationWatchingRules.FirstOrDefaultAsync(r => r.Id == rule.Id);
+                Assert.Null(updated.CurrentWatchId);
+            }
         }
 
         [Fact]
@@ -178,7 +182,7 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             Assert.Equal(rule.Id, retrieved.Id);
             Assert.Equal(rule.Transaction, retrieved.Transaction);
             Assert.Equal(rule.Confirmations, retrieved.Confirmations);
-            Assert.Equal(rule.WaitingTime, retrieved.WaitingTime);
+            Assert.Equal(rule.OriginalWaitingTime, retrieved.OriginalWaitingTime);
             Assert.Equal(rule.SuccessResponse, retrieved.SuccessResponse);
             Assert.Equal(rule.TimeoutResponse, retrieved.TimeoutResponse);
             Assert.Equal(this.defaultCallback, retrieved.Callback);
@@ -220,7 +224,7 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
         }
 
         [Fact]
-        public async Task ListActiveAsync_WithNonEmptyList_ShouldSuccess()
+        public async Task ListWaitingAsync_WithNonEmptyList_ShouldSuccess()
         {
             // Arrange.
             await this.CreateDefaultCallback();
@@ -241,14 +245,14 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
                 .ToList();
 
             // Act.
-            var retrieved = (await this.subject.ListActiveAsync(CancellationToken.None)).ToList();
+            var retrieved = (await this.subject.ListWaitingAsync(CancellationToken.None)).ToList();
 
             // Assert.
             Assert.Equal(2, retrieved.Count());
             Assert.Equal(watches[0].Id, retrieved[0].Id);
             Assert.Equal(watches[0].Transaction, retrieved[0].Transaction);
             Assert.Equal(watches[0].Confirmations, retrieved[0].Confirmations);
-            Assert.Equal(watches[0].WaitingTime, retrieved[0].WaitingTime);
+            Assert.Equal(watches[0].OriginalWaitingTime, retrieved[0].OriginalWaitingTime);
             Assert.Equal(watches[0].SuccessResponse, retrieved[0].SuccessResponse);
             Assert.Equal(watches[0].TimeoutResponse, retrieved[0].TimeoutResponse);
             Assert.Equal(watches[0].Callback, retrieved[0].Callback);
@@ -260,7 +264,7 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
         [Fact]
         public async Task ListActiveAsync_WithEmptyList_ShouldReturnEmptyIEnumerable()
         {
-            Assert.Empty(await this.subject.ListActiveAsync(CancellationToken.None));
+            Assert.Empty(await this.subject.ListWaitingAsync(CancellationToken.None));
         }
 
         [Fact]
@@ -280,7 +284,7 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             await this.subject.UpdateStatusAsync(watches.Last().Id, RuleStatus.Success, CancellationToken.None);
 
             // Act.
-            var retrieved = (await this.subject.ListActiveAsync(CancellationToken.None)).ToList();
+            var retrieved = (await this.subject.ListWaitingAsync(CancellationToken.None)).ToList();
 
             // Assert.
             Assert.Empty(retrieved);
@@ -399,9 +403,11 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             await this.subject.UpdateCurrentWatchIdAsync(rule.Id, watch.Id, CancellationToken.None);
 
             // Assert.
-            var updated = await this.subject.GetAsync(rule.Id, CancellationToken.None);
-
-            Assert.Equal(watch.Id, updated.CurrentWatchId);
+            using (var db = this.dbFactory.CreateDbContext())
+            {
+                var updated = await db.TransactionConfirmationWatchingRules.FirstOrDefaultAsync(r => r.Id == rule.Id);
+                Assert.Equal(watch.Id, updated.CurrentWatchId);
+            }
         }
 
         async Task CreateDefaultCallback()

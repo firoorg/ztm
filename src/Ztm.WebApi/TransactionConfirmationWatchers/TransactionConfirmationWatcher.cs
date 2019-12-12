@@ -147,9 +147,9 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            var rules = await this.ruleRepository.ListActiveAsync(cancellationToken);
+            var rules = await this.ruleRepository.ListWaitingAsync(cancellationToken);
 
-            foreach (var rule in rules.Where(r => r.CurrentWatchId == null))
+            foreach (var rule in rules)
             {
                 await SetupTimerAsync(rule);
             }

@@ -10,11 +10,10 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
             Guid id,
             uint256 transaction,
             int confirmations,
-            TimeSpan waitingTime,
+            TimeSpan originalWaitingTime,
             dynamic successResponse,
             dynamic timeoutResponse,
-            Callback callback,
-            Guid? currentWatchId)
+            Callback callback)
         {
             if (transaction == null)
             {
@@ -41,28 +40,26 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
                 throw new ArgumentException("The confirmations is lesser than 1.", nameof(confirmations));
             }
 
-            if (waitingTime < TimeSpan.Zero)
+            if (originalWaitingTime < TimeSpan.Zero)
             {
-                throw new ArgumentException("The waitingTime is negative.", nameof(waitingTime));
+                throw new ArgumentException("The waitingTime is negative.", nameof(originalWaitingTime));
             }
 
             this.Id = id;
             this.Transaction = transaction;
             this.Confirmations = confirmations;
-            this.WaitingTime = waitingTime;
+            this.OriginalWaitingTime = originalWaitingTime;
             this.SuccessResponse = successResponse;
             this.TimeoutResponse = timeoutResponse;
             this.Callback = callback;
-            this.CurrentWatchId = currentWatchId;
         }
 
         public Guid Id { get; }
         public uint256 Transaction { get; }
         public int Confirmations { get; }
-        public TimeSpan WaitingTime { get; }
+        public TimeSpan OriginalWaitingTime { get; }
         public dynamic SuccessResponse { get; }
         public dynamic TimeoutResponse { get; }
         public Callback Callback { get; }
-        public Guid? CurrentWatchId { get; }
     }
 }
