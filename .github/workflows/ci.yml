@@ -20,15 +20,32 @@ jobs:
     - name: Unit Test
       run: |
         Get-ChildItem -Path src -Filter *.Tests -Directory | ForEach-Object {
+            $name = $_.Name
             $path = $_.FullName
+            $params = @(
+                "test",
+                "--no-build",
+                "-v normal",
+                "--collect `"Code Coverage`"",
+                "-r coverage-reports",
+                $path
+            )
 
-            $runner = Start-Process -FilePath dotnet.exe -ArgumentList test, --no-build, -v=normal, $path -NoNewWindow -PassThru -Wait
+            $runner = Start-Process -FilePath dotnet.exe -ArgumentList $params -NoNewWindow -PassThru -Wait
 
             if ($runner.ExitCode -ne 0) {
                 exit $runner.ExitCode
             }
 
             Write-Host
+
+            $coverage = Start-Process -FilePath "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Team Tools\Dynamic Code Coverage Tools\CodeCoverage.exe" -ArgumentList analyze, /output:$name.coveragexml, coverage-reports\$name.coverage -NoNewWindow -PassThru -Wait
+
+            if ($coverage.ExitCode -ne 0) {
+                exit $coverage.ExitCode
+            }
+
+            Remove-Item -Path coverage-reports\$name.coverage
         }
     - name: Create Release
       shell: cmd
@@ -51,6 +68,11 @@ jobs:
       with:
         name: e2e-runner
         path: e2e-runner
+    - name: Archive Coverage Reports
+      uses: actions/upload-artifact@v1
+      with:
+        name: coverage-reports
+        path: coverage-reports
   e2e:
     name: E2E Test
     needs: build
