@@ -85,7 +85,6 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
 
                 switch (status)
                 {
-                    case WatchStatus.Error:
                     case WatchStatus.Rejected:
                     case WatchStatus.Success:
                         break;

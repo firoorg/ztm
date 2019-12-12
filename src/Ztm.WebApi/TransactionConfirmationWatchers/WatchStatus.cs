@@ -4,7 +4,6 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
     {
         Pending = 0,
         Success = 1,
-        Rejected = 2,
-        Error = 3
+        Rejected = 2
     }
 }

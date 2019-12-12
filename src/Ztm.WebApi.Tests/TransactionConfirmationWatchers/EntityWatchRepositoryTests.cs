@@ -87,7 +87,7 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
         public async Task ListAsync_EmptyWatch_ShouldReturnEmpty()
         {
             var watches = await this.subject.ListAsync(
-                WatchStatus.Error,
+                WatchStatus.Rejected,
                 CancellationToken.None
             );
 
@@ -140,7 +140,7 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
         public async Task UpdateStatusAsync_WithNonExistId_ShouldThrow()
         {
             await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => this.subject.UpdateStatusAsync(Guid.NewGuid(), WatchStatus.Error, CancellationToken.None));
+                () => this.subject.UpdateStatusAsync(Guid.NewGuid(), WatchStatus.Success, CancellationToken.None));
         }
 
         [Fact]

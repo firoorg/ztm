@@ -482,9 +482,6 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
                 .Returns(transaction);
 
             var (block, _) = GenerateBlock();
-            this.blockStorage
-                .GetByTransactionAsync(transaction.GetHash(), Arg.Any<CancellationToken>())
-                .Returns((block, 1));
 
             builder.timeout = TimeSpan.FromMilliseconds(500);
             await builder.Call(this.subject.AddTransactionAsync);

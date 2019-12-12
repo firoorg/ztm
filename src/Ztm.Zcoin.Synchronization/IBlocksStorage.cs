@@ -10,8 +10,6 @@ namespace Ztm.Zcoin.Synchronization
 
         Task<(Block block, int height)> GetAsync(uint256 hash, CancellationToken cancellationToken);
 
-        Task<(Block block, int height)> GetByTransactionAsync(uint256 hash, CancellationToken cancellationToken);
-
         Task<Block> GetAsync(int height, CancellationToken cancellationToken);
 
         Task<Block> GetFirstAsync(CancellationToken cancellationToken);
