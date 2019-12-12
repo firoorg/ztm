@@ -122,6 +122,23 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
             }
         }
 
+        public async Task<RuleStatus> GetStatusAsync(Guid id, CancellationToken cancellationToken)
+        {
+            using (var db = this.db.CreateDbContext())
+            {
+                var rule = await db.TransactionConfirmationWatchingRules
+                    .Include(e => e.Callback)
+                    .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+
+                if (rule == null)
+                {
+                    throw new KeyNotFoundException("The rule id is not found.");
+                }
+
+                return (RuleStatus)rule.Status;
+            }
+        }
+
         public async Task<IEnumerable<Rule>> ListActiveAsync(CancellationToken cancellationToken)
         {
             using (var db = this.db.CreateDbContext())
@@ -217,7 +234,6 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
             return new Rule(
                 rule.Id,
                 rule.Transaction,
-                (RuleStatus)rule.Status,
                 rule.Confirmation,
                 rule.WaitingTime,
                 JsonConvert.DeserializeObject(rule.SuccessData),

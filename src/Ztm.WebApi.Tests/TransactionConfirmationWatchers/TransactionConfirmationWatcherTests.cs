@@ -26,7 +26,7 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
         readonly ITransactionConfirmationWatcherHandler<Rule> handler;
 
         readonly ICallbackRepository callbackRepository;
-        readonly IRuleRepository ruleRepository;
+        readonly FakeRuleRepository ruleRepository;
         readonly IBlocksStorage blockStorage;
         readonly IWatchRepository watchRepository;
         readonly ICallbackExecuter callbackExecuter;
@@ -39,7 +39,7 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
         public TransactionConfirmationWatcherTests()
         {
             this.callbackRepository = Substitute.For<ICallbackRepository>();
-            this.ruleRepository = Substitute.For<IRuleRepository>();
+            this.ruleRepository = Substitute.ForPartsOf<FakeRuleRepository>();
 
             this.blockStorage = Substitute.For<IBlocksStorage>();
             this.blockStorage
@@ -63,7 +63,6 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             this.defaultUrl = new Uri("http://zcoin.io");
 
             MockCallbackRepository();
-            MockRuleRepository();
         }
 
         public void Dispose()
@@ -392,7 +391,8 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             Thread.Sleep(TimeSpan.FromMilliseconds(1000));
 
             // Assert.
-            _ = this.ruleRepository.Received(1).UpdateStatusAsync(Arg.Any<Guid>(), Arg.Any<RuleStatus>(), Arg.Any<CancellationToken>());
+            _ = this.ruleRepository.Received(1)
+                .UpdateStatusAsync(Arg.Any<Guid>(), Arg.Any<RuleStatus>(), Arg.Any<CancellationToken>());
 
             _ = this.callbackExecuter.Received(1)
                 .Execute
@@ -402,11 +402,12 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
                     Arg.Any<WebApi.Callbacks.CallbackResult>()
                 );
 
-            _ = this.callbackRepository.Received(0).SetCompletedAsyc
-            (
-                Arg.Any<Guid>(),
-                Arg.Any<CancellationToken>()
-            );
+            _ = this.callbackRepository.Received(0)
+                .SetCompletedAsyc
+                (
+                    Arg.Any<Guid>(),
+                    Arg.Any<CancellationToken>()
+                );
         }
 
         [Fact]
@@ -900,99 +901,6 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
 
             mockedBlocks[generatedBlock.Item1.GetHash()] = generatedBlock;
             return generatedBlock.ToValueTuple();
-        }
-
-        Dictionary<Guid, Rule> mockedWatchs;
-        Dictionary<Guid, TimeSpan> mockedRemainingTimes;
-
-        void MockRuleRepository()
-        {
-            mockedWatchs = new Dictionary<Guid, Rule>();
-            mockedRemainingTimes = new Dictionary<Guid, TimeSpan>();
-
-            this.ruleRepository
-                .When
-                (
-                    w => w.UpdateStatusAsync(
-                        Arg.Any<Guid>(),
-                        Arg.Any<RuleStatus>(),
-                        Arg.Any<CancellationToken>()
-                    )
-                )
-                .Do
-                (
-                    w =>
-                    {
-                        var id = w.ArgAt<Guid>(0);
-                        var status = w.ArgAt<RuleStatus>(1);
-
-                        var old = mockedWatchs[id];
-
-                        mockedWatchs[id] = new Rule(
-                            old.Id, old.Transaction, status, old.Confirmations, old.WaitingTime,
-                            old.SuccessResponse, old.TimeoutResponse, old.Callback, old.CurrentWatchId);
-                    }
-                );
-
-            this.ruleRepository
-                .AddAsync
-                (
-                    Arg.Any<uint256>(),
-                    Arg.Any<int>(),
-                    Arg.Any<TimeSpan>(),
-                    Arg.Any<CallbackResult>(),
-                    Arg.Any<CallbackResult>(),
-                    Arg.Any<Callback>(),
-                    Arg.Any<CancellationToken>()
-                )
-                .Returns
-                (
-                    info =>
-                    {
-                        var watch = new Rule
-                        (
-                            Guid.NewGuid(),
-                            info.ArgAt<uint256>(0),
-                            RuleStatus.Pending,
-                            info.ArgAt<int>(1),
-                            info.ArgAt<TimeSpan>(2),
-                            info.ArgAt<CallbackResult>(3),
-                            info.ArgAt<CallbackResult>(4),
-                            info.ArgAt<Callback>(5),
-                            null
-                        );
-
-                        mockedWatchs[watch.Id] = watch;
-                        mockedRemainingTimes[watch.Id] = watch.WaitingTime;
-
-                        return Task.FromResult(watch);
-                    }
-                );
-
-                this.ruleRepository
-                    .GetAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-                    .Returns(info => mockedWatchs[info.ArgAt<Guid>(0)]);
-
-                this.ruleRepository
-                    .ListActiveAsync(Arg.Any<CancellationToken>())
-                    .Returns(info => mockedWatchs.Where(w => w.Value.Status == RuleStatus.Pending).Select(w => w.Value));
-
-                this.ruleRepository
-                    .When(w => w.SubtractRemainingWaitingTimeAsync(Arg.Any<Guid>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>()))
-                    .Do(w => {
-                        var id = w.ArgAt<Guid>(0);
-                        var consumed = w.ArgAt<TimeSpan>(1);
-
-                        mockedRemainingTimes[id] -= consumed;
-                    });
-
-                this.ruleRepository
-                    .GetRemainingWaitingTimeAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-                    .Returns(w => {
-                        var id = w.ArgAt<Guid>(0);
-
-                        return mockedRemainingTimes[id];
-                    });
         }
 
         void MockCallbackRepository()

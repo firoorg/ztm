@@ -168,19 +168,19 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
             var timeoutResult = new TestCallbackResult(CallbackResult.StatusError, "timeout");
             var timeout = TimeSpan.FromMinutes(5);
 
-            var watch = await this.subject.AddAsync(transaction, 10, timeout,
+            var rule = await this.subject.AddAsync(transaction, 10, timeout,
                 successResult, timeoutResult, this.defaultCallback, CancellationToken.None);
 
             // Act.
-            var retrieved = await this.subject.GetAsync(watch.Id, CancellationToken.None);
+            var retrieved = await this.subject.GetAsync(rule.Id, CancellationToken.None);
 
             // Assert.
-            Assert.Equal(watch.Id, retrieved.Id);
-            Assert.Equal(watch.Transaction, retrieved.Transaction);
-            Assert.Equal(watch.Confirmations, retrieved.Confirmations);
-            Assert.Equal(watch.WaitingTime, retrieved.WaitingTime);
-            Assert.Equal(watch.SuccessResponse, retrieved.SuccessResponse);
-            Assert.Equal(watch.TimeoutResponse, retrieved.TimeoutResponse);
+            Assert.Equal(rule.Id, retrieved.Id);
+            Assert.Equal(rule.Transaction, retrieved.Transaction);
+            Assert.Equal(rule.Confirmations, retrieved.Confirmations);
+            Assert.Equal(rule.WaitingTime, retrieved.WaitingTime);
+            Assert.Equal(rule.SuccessResponse, retrieved.SuccessResponse);
+            Assert.Equal(rule.TimeoutResponse, retrieved.TimeoutResponse);
             Assert.Equal(this.defaultCallback, retrieved.Callback);
         }
 
@@ -188,6 +188,35 @@ namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
         public async Task GetAsync_NonExistWatch_ShouldReturnNull()
         {
             Assert.Null(await this.subject.GetAsync(Guid.NewGuid(), CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task GetStatusAsync_WithNonExistRule_ShouldThrow()
+        {
+            await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => this.subject.GetStatusAsync(Guid.NewGuid(), CancellationToken.None)
+            );
+        }
+
+        [Fact]
+        public async Task GetStatusAsync_WithExistRule_ShouldSuccess()
+        {
+            // Arrange.
+            await this.CreateDefaultCallback();
+
+            var transaction = uint256.Parse("008b3395991c7893bb8a82d8389a48ded863af914d9cc31711554bc97e4723c0");
+            var successResult = new TestCallbackResult(CallbackResult.StatusSuccess, "success");
+            var timeoutResult = new TestCallbackResult(CallbackResult.StatusError, "timeout");
+            var timeout = TimeSpan.FromMinutes(5);
+
+            var rule = await this.subject.AddAsync(transaction, 10, timeout,
+                successResult, timeoutResult, this.defaultCallback, CancellationToken.None);
+
+            // Act.
+            var status = await this.subject.GetStatusAsync(rule.Id, CancellationToken.None);
+
+            // Assert.
+            Assert.Equal(RuleStatus.Pending, status);
         }
 
         [Fact]

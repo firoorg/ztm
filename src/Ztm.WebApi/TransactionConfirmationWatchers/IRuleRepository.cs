@@ -23,6 +23,7 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
         Task ClearCurrentWatchIdAsync(Guid id, CancellationToken cancellationToken);
         Task<Rule> GetAsync(Guid id, CancellationToken cancellationToken);
         Task<TimeSpan> GetRemainingWaitingTimeAsync(Guid id, CancellationToken cancellationToken);
+        Task<RuleStatus> GetStatusAsync(Guid id, CancellationToken cancellationToken);
         Task<IEnumerable<Rule>> ListActiveAsync(CancellationToken cancellationToken);
         Task SubtractRemainingWaitingTimeAsync(Guid id, TimeSpan remainingTime, CancellationToken cancellationToken);
         Task UpdateCurrentWatchIdAsync(Guid id, Guid watchId, CancellationToken cancellationToken);

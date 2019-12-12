@@ -9,7 +9,6 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
         public Rule(
             Guid id,
             uint256 transaction,
-            RuleStatus status,
             int confirmations,
             TimeSpan waitingTime,
             dynamic successResponse,
@@ -49,7 +48,6 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
 
             this.Id = id;
             this.Transaction = transaction;
-            this.Status = status;
             this.Confirmations = confirmations;
             this.WaitingTime = waitingTime;
             this.SuccessResponse = successResponse;
@@ -60,7 +58,6 @@ namespace Ztm.WebApi.TransactionConfirmationWatchers
 
         public Guid Id { get; }
         public uint256 Transaction { get; }
-        public RuleStatus Status { get; }
         public int Confirmations { get; }
         public TimeSpan WaitingTime { get; }
         public dynamic SuccessResponse { get; }
