@@ -12,6 +12,7 @@ using Ztm.Data.Entity.Contexts;
 using Ztm.Data.Entity.Postgres;
 using Ztm.Hosting.AspNetCore;
 using Ztm.WebApi.Binders;
+using Ztm.WebApi.AddressPools;
 using Ztm.Zcoin.NBitcoin;
 using Ztm.Zcoin.NBitcoin.Exodus;
 using Ztm.Zcoin.Rpc;
@@ -45,6 +46,9 @@ namespace Ztm.WebApi
                             NamingStrategy = new SnakeCaseNamingStrategy()
                         };
                     });
+
+            // Address Pools
+            services.UseAddressPool();
 
             // Fundamentals Services.
             services.AddBackgroundServiceExceptionHandler();
