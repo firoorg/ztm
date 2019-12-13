@@ -1,0 +1,7 @@
+{
+  "name": "dotnet-test",
+  "dependencies": {
+    "@actions/core": "^1.2.0",
+    "@actions/exec": "^1.0.2"
+  }
+}
