@@ -1,5 +1,6 @@
 const core = require('@actions/core');
 const exec = require('@actions/exec');
+const io = require('@actions/io');
 const fs = require('fs');
 const path = require('path');
 
@@ -51,6 +52,8 @@ async function run() {
     let result = core.getInput('result', { required: false });
     let coverage = core.getInput('coverage-cmd', { required: false });
     let report = core.getInput('report', { required: false });
+
+    await io.mkdirP(report);
 
     for (let file of fs.readdirSync(projects, { withFileTypes: true })) {
       if (!file.isDirectory() || !/.+\.Tests$/.test(file.name)) {
