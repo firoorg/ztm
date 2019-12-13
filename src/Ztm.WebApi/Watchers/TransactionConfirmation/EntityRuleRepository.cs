@@ -10,7 +10,7 @@ using Ztm.Data.Entity.Contexts;
 using TransactionConfirmationWatchingRuleModel = Ztm.Data.Entity.Contexts.Main.TransactionConfirmationWatchingRule;
 using Ztm.WebApi.Callbacks;
 
-namespace Ztm.WebApi.TransactionConfirmationWatchers
+namespace Ztm.WebApi.Watchers.TransactionConfirmation
 {
     public class EntityRuleRepository : IRuleRepository
     {

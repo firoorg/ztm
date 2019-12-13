@@ -10,14 +10,14 @@ using NBitcoin;
 using NSubstitute;
 using Xunit;
 using Ztm.WebApi.Callbacks;
-using Ztm.WebApi.TransactionConfirmationWatchers;
+using Ztm.WebApi.Watchers.TransactionConfirmation;
 using Ztm.Zcoin.NBitcoin;
 using Ztm.Zcoin.Synchronization;
 using Ztm.Zcoin.Watching;
 
 using Callback = Ztm.WebApi.Callbacks.Callback;
 
-namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
+namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 {
     public sealed class TransactionConfirmationWatcherTests : IDisposable
     {

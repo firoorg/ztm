@@ -1,5 +1,4 @@
 using System;
-using System.Net.Http;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -15,7 +14,7 @@ using Ztm.Hosting.AspNetCore;
 using Ztm.WebApi.Binders;
 using Ztm.WebApi.AddressPools;
 using Ztm.WebApi.Callbacks;
-using Ztm.WebApi.TransactionConfirmationWatchers;
+using Ztm.WebApi.Watchers.TransactionConfirmation;
 using Ztm.Zcoin.NBitcoin;
 using Ztm.Zcoin.NBitcoin.Exodus;
 using Ztm.Zcoin.Rpc;

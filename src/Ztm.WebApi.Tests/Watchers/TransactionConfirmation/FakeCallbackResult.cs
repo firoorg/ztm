@@ -1,6 +1,6 @@
 using Ztm.WebApi.Callbacks;
 
-namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
+namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 {
     sealed class FakeCallbackResult : CallbackResult
     {

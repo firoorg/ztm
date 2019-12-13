@@ -5,9 +5,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using Ztm.WebApi.Callbacks;
-using Ztm.WebApi.TransactionConfirmationWatchers;
+using Ztm.WebApi.Watchers.TransactionConfirmation;
 
-namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
+namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 {
     public class FakeRuleRepository : IRuleRepository
     {

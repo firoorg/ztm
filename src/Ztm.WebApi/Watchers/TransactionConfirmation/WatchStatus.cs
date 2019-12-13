@@ -1,4 +1,4 @@
-namespace Ztm.WebApi.TransactionConfirmationWatchers
+namespace Ztm.WebApi.Watchers.TransactionConfirmation
 {
     public enum WatchStatus
     {

@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Ztm.WebApi.TransactionConfirmationWatchers;
+using Ztm.WebApi.Watchers.TransactionConfirmation;
 using Ztm.Zcoin.Watching;
 
-namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
+namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 {
     public class FakeWatchRepository : IWatchRepository
     {

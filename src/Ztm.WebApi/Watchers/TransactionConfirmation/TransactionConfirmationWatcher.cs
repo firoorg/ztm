@@ -14,7 +14,7 @@ using Ztm.Zcoin.Watching;
 
 using Timer = Ztm.Threading.Timer;
 
-namespace Ztm.WebApi.TransactionConfirmationWatchers
+namespace Ztm.WebApi.Watchers.TransactionConfirmation
 {
     public sealed class TransactionConfirmationWatcher : ITransactionConfirmationWatcher, IHostedService, IBlockListener, ITransactionConfirmationWatcherHandler<Rule>, IDisposable
     {

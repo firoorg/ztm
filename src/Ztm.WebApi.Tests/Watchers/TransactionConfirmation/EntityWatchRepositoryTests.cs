@@ -9,10 +9,10 @@ using NBitcoin;
 using Xunit;
 using Ztm.Data.Entity.Testing;
 using Ztm.WebApi.Callbacks;
-using Ztm.WebApi.TransactionConfirmationWatchers;
+using Ztm.WebApi.Watchers.TransactionConfirmation;
 using Ztm.Zcoin.Watching;
 
-namespace Ztm.WebApi.Tests.TransactionConfirmationWatchers
+namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 {
     public sealed class EntityWatchRepositoryTests : IDisposable
     {

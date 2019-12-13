@@ -3,9 +3,10 @@ using System.Net;
 using NBitcoin;
 using Xunit;
 using Ztm.WebApi.Callbacks;
-using Ztm.WebApi.Tests.TransactionConfirmationWatchers;
+using Ztm.WebApi.Tests.Watchers.TransactionConfirmation;
+using Ztm.WebApi.Watchers.TransactionConfirmation;
 
-namespace Ztm.WebApi.TransactionConfirmationWatchers
+namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 {
     public class RuleTests
     {

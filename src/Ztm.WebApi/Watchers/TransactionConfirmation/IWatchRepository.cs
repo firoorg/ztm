@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Ztm.Zcoin.Watching;
 
-namespace Ztm.WebApi.TransactionConfirmationWatchers
+namespace Ztm.WebApi.Watchers.TransactionConfirmation
 {
     public interface IWatchRepository
     {

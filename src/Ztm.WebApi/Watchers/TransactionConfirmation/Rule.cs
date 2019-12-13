@@ -2,7 +2,7 @@ using System;
 using NBitcoin;
 using Ztm.WebApi.Callbacks;
 
-namespace Ztm.WebApi.TransactionConfirmationWatchers
+namespace Ztm.WebApi.Watchers.TransactionConfirmation
 {
     public class Rule
     {

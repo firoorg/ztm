@@ -8,7 +8,7 @@ using Ztm.Data.Entity.Contexts;
 using Ztm.Data.Entity.Contexts.Main;
 using Ztm.Zcoin.Watching;
 
-namespace Ztm.WebApi.TransactionConfirmationWatchers
+namespace Ztm.WebApi.Watchers.TransactionConfirmation
 {
     public sealed class EntityWatchRepository : IWatchRepository
     {
