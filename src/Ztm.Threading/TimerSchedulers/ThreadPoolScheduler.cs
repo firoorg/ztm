@@ -5,7 +5,20 @@ namespace Ztm.Threading.TimerSchedulers
 {
     public sealed class ThreadPoolScheduler : ITimerScheduler
     {
+        /// <summary>
+        /// Maximum duration that supported by this scheduler.
+        /// </summary>
+        /// <remarks>
+        /// This is the maximum value that supported by <see cref="System.Threading.Timer"/>.
+        /// </remarks>
         public static readonly TimeSpan MaxDuration = TimeSpan.FromMilliseconds(4294967294);
+
+        /// <summary>
+        /// Minimum duration that supported by this scheduler.
+        /// </summary>
+        /// <remarks>
+        /// This is the minimum value that supported by <see cref="System.Threading.Timer"/>.
+        /// </remarks>
         public static readonly TimeSpan MinDuration = TimeSpan.Zero;
 
         public bool IsValidDuration(TimeSpan duration)
