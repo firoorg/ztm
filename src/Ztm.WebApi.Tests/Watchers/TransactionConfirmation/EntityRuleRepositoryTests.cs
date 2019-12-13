@@ -101,15 +101,15 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
         }
 
         [Fact]
-        public async Task ClearCurrentWatchIdAsync_WithNonExistRule_ShouldThrow()
+        public async Task ClearCurrentWatchAsync_WithNonExistRule_ShouldThrow()
         {
             await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => this.subject.ClearCurrentWatchIdAsync(Guid.NewGuid(), CancellationToken.None)
+                () => this.subject.ClearCurrentWatchAsync(Guid.NewGuid(), CancellationToken.None)
             );
         }
 
         [Fact]
-        public async Task ClearCurrentWatchIdAsync_WithExistRule_ShouldSuccess()
+        public async Task ClearCurrentWatchAsync_WithExistRule_ShouldSuccess()
         {
             // Arrange.
             await this.CreateDefaultCallback();
@@ -123,10 +123,10 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
                 successResult, timeoutResult, this.defaultCallback, CancellationToken.None);
 
             var watch = await this.CreateWatch(rule, uint256.One, uint256.One);
-            await this.subject.UpdateCurrentWatchIdAsync(rule.Id, watch.Id, CancellationToken.None);
+            await this.subject.UpdateCurrentWatchAsync(rule.Id, watch.Id, CancellationToken.None);
 
             // Act.
-            await this.subject.ClearCurrentWatchIdAsync(rule.Id, CancellationToken.None);
+            await this.subject.ClearCurrentWatchAsync(rule.Id, CancellationToken.None);
 
             // Assert.
             using (var db = this.dbFactory.CreateDbContext())
@@ -137,7 +137,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
         }
 
         [Fact]
-        public async Task ClearCurrentWatchIdAsync_WithExistRuleAndNullCurrentWatchId_ShouldSuccess()
+        public async Task ClearCurrentWatchAsync_WithExistRuleAndNullCurrentWatchId_ShouldSuccess()
         {
             // Arrange.
             await this.CreateDefaultCallback();
@@ -151,7 +151,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
                 successResult, timeoutResult, this.defaultCallback, CancellationToken.None);
 
             // Act.
-            await this.subject.ClearCurrentWatchIdAsync(rule.Id, CancellationToken.None);
+            await this.subject.ClearCurrentWatchAsync(rule.Id, CancellationToken.None);
 
             // Assert.
             using (var db = this.dbFactory.CreateDbContext())
@@ -342,7 +342,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
         }
 
         [Fact]
-        public async Task UpdateCurrentWatchIdAsync_WithNonExist_ShouldThrow()
+        public async Task UpdateCurrentWatchAsync_WithNonExist_ShouldThrow()
         {
             // Arrange.
             await this.CreateDefaultCallback();
@@ -359,12 +359,12 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 
             // Act && Assert.
             await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => this.subject.UpdateCurrentWatchIdAsync(Guid.NewGuid(), watch.Id, CancellationToken.None)
+                () => this.subject.UpdateCurrentWatchAsync(Guid.NewGuid(), watch.Id, CancellationToken.None)
             );
         }
 
         [Fact]
-        public async Task UpdateCurrentWatchIdAsync_WithExistRuleAndInvalidWatchId_ShouldThrow()
+        public async Task UpdateCurrentWatchAsync_WithExistRuleAndInvalidWatchId_ShouldThrow()
         {
             // Arrange.
             await this.CreateDefaultCallback();
@@ -379,12 +379,12 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 
             // Act & Assert.
             await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => this.subject.UpdateCurrentWatchIdAsync(rule.Id, Guid.NewGuid(), CancellationToken.None)
+                () => this.subject.UpdateCurrentWatchAsync(rule.Id, Guid.NewGuid(), CancellationToken.None)
             );
         }
 
         [Fact]
-        public async Task UpdateCurrentWatchIdAsync_WithExistRuleAndExistWatch_ShouldSuccess()
+        public async Task UpdateCurrentWatchAsync_WithExistRuleAndExistWatch_ShouldSuccess()
         {
             // Arrange.
             await this.CreateDefaultCallback();
@@ -400,7 +400,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             var watch = await this.CreateWatch(rule, uint256.One, uint256.One);
 
             // Act.
-            await this.subject.UpdateCurrentWatchIdAsync(rule.Id, watch.Id, CancellationToken.None);
+            await this.subject.UpdateCurrentWatchAsync(rule.Id, watch.Id, CancellationToken.None);
 
             // Assert.
             using (var db = this.dbFactory.CreateDbContext())

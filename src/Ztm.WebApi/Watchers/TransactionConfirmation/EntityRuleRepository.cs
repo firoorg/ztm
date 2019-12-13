@@ -75,7 +75,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             }
         }
 
-        public async Task ClearCurrentWatchIdAsync(Guid id, CancellationToken cancellationToken)
+        public async Task ClearCurrentWatchAsync(Guid id, CancellationToken cancellationToken)
         {
             using (var db = this.db.CreateDbContext())
             {
@@ -180,7 +180,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             }
         }
 
-        public async Task UpdateCurrentWatchIdAsync(Guid id, Guid watchId, CancellationToken cancellationToken)
+        public async Task UpdateCurrentWatchAsync(Guid id, Guid watchId, CancellationToken cancellationToken)
         {
             using (var db = this.db.CreateDbContext())
             using (var tx = await db.Database.BeginTransactionAsync(cancellationToken))

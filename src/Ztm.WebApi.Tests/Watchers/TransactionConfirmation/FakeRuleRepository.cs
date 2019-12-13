@@ -36,7 +36,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             return Task.FromResult(rule);
         }
 
-        public virtual Task ClearCurrentWatchIdAsync(Guid id, CancellationToken cancellationToken)
+        public virtual Task ClearCurrentWatchAsync(Guid id, CancellationToken cancellationToken)
         {
             this.update(id,
                 (old) =>
@@ -84,12 +84,12 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             return Task.FromResult(this.rules.Where(r => r.Value.Status == RuleStatus.Pending).Select(r => r.Value.Rule).AsEnumerable());
         }
 
-        public virtual Task SubtractRemainingWaitingTimeAsync(Guid id, TimeSpan remainingTime, CancellationToken cancellationToken)
+        public virtual Task SubtractRemainingWaitingTimeAsync(Guid id, TimeSpan consumedTime, CancellationToken cancellationToken)
         {
             this.update(id,
                 (old) =>
                 {
-                    old.RemainingTime -= remainingTime;
+                    old.RemainingTime -= consumedTime;
                     old.RemainingTime = old.RemainingTime < TimeSpan.Zero ? TimeSpan.Zero : old.RemainingTime;
                     return old;
                 }
@@ -98,7 +98,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             return Task.CompletedTask;
         }
 
-        public virtual Task UpdateCurrentWatchIdAsync(Guid id, Guid watchId, CancellationToken cancellationToken)
+        public virtual Task UpdateCurrentWatchAsync(Guid id, Guid watchId, CancellationToken cancellationToken)
         {
             this.update(id,
                 (old) =>

@@ -383,13 +383,15 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
                 if (await StopTimer(watch.Context))
                 {
                     await this.watchRepository.AddAsync(watch, cancellationToken);
-                    await this.ruleRepository.UpdateCurrentWatchIdAsync(watch.Context.Id, watch.Id, CancellationToken.None);
+                    await this.ruleRepository.UpdateCurrentWatchAsync(watch.Context.Id, watch.Id, CancellationToken.None);
                 }
             }
         }
 
         async Task IWatcherHandler<TransactionWatch<Rule>, Rule>.RemoveWatchAsync(TransactionWatch<Rule> watch, WatchRemoveReason reason, CancellationToken cancellationToken)
         {
+            await this.ruleRepository.ClearCurrentWatchAsync(watch.Context.Id, CancellationToken.None);
+
             if (reason.HasFlag(WatchRemoveReason.Completed))
             {
                 await this.watchRepository.UpdateStatusAsync(watch.Id, WatchStatus.Success, cancellationToken);
@@ -399,8 +401,6 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
                 await this.watchRepository.UpdateStatusAsync(watch.Id, WatchStatus.Rejected, cancellationToken);
                 await SetupTimerAsync(watch.Context);
             }
-
-            await this.ruleRepository.ClearCurrentWatchIdAsync(watch.Context.Id, CancellationToken.None);
         }
     }
 }

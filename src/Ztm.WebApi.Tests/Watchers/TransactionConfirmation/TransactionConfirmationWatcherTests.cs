@@ -544,7 +544,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             // Act.
             await this.handler.AddWatchesAsync(watches, CancellationToken.None);
             _ = this.ruleRepository.Received(1)
-                .UpdateCurrentWatchIdAsync
+                .UpdateCurrentWatchAsync
                 (
                     Arg.Is<Guid>(id => id == watch1.Id),
                     Arg.Is<Guid>(id => id == watches[0].Id),
@@ -552,7 +552,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
                 );
 
             _ = this.ruleRepository.Received(1)
-                .UpdateCurrentWatchIdAsync
+                .UpdateCurrentWatchAsync
                 (
                     Arg.Is<Guid>(id => id == watch2.Id),
                     Arg.Is<Guid>(id => id == watches[1].Id),
@@ -738,7 +738,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
                 )
             );
 
-            _ = this.ruleRepository.Received(1).ClearCurrentWatchIdAsync(Arg.Is<Guid>(id => id == rule.Id), Arg.Any<CancellationToken>());
+            _ = this.ruleRepository.Received(1).ClearCurrentWatchAsync(Arg.Is<Guid>(id => id == rule.Id), Arg.Any<CancellationToken>());
         }
 
         [Fact]
@@ -785,7 +785,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
                 )
             );
 
-            _ = this.ruleRepository.Received(1).ClearCurrentWatchIdAsync(Arg.Is<Guid>(id => id == watch.Id), Arg.Any<CancellationToken>());
+            _ = this.ruleRepository.Received(1).ClearCurrentWatchAsync(Arg.Is<Guid>(id => id == watch.Id), Arg.Any<CancellationToken>());
         }
 
         [Fact]
@@ -810,7 +810,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 
             // Assert.
             Assert.Empty(await this.handler.GetCurrentWatchesAsync(CancellationToken.None));
-            _ = this.ruleRepository.Received(1).ClearCurrentWatchIdAsync(Arg.Is<Guid>(id => id == watch.Id), Arg.Any<CancellationToken>());
+            _ = this.ruleRepository.Received(1).ClearCurrentWatchAsync(Arg.Is<Guid>(id => id == watch.Id), Arg.Any<CancellationToken>());
         }
 
         [Fact]
