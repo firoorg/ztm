@@ -33,7 +33,7 @@ async function runTest(project, options = {}) {
     let container = fs.readdirSync(result)[0];
     let coverage = fs.readdirSync(path.join(result, container))[0];
 
-    await exec.exec(options.coverage.tool, [
+    await exec.exec(options.coverage.cmd, [
       'analyze',
       `/output:${options.coverage.report}`,
       path.join(result, container, coverage)
@@ -49,7 +49,7 @@ async function run() {
     let build = core.getInput('build', { required: true }) === 'true';
     let verbose = core.getInput('verbose', { required: true });
     let result = core.getInput('result', { required: false });
-    let coverage = core.getInput('coverage-tool', { required: false });
+    let coverage = core.getInput('coverage-cmd', { required: false });
     let report = core.getInput('report', { required: false });
 
     for (let file of fs.readdirSync(projects, { withFileTypes: true })) {
@@ -62,7 +62,7 @@ async function run() {
         verbose: verbose,
         coverage: {
           result: result,
-          tool: coverage,
+          cmd: coverage,
           report: path.join(report, `${file.name}.coveragexml`)
         }
       });

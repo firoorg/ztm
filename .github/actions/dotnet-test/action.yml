@@ -15,8 +15,8 @@ inputs:
   result:
     description: Path to directory to store test result
     required: false
-  coverage-tool:
-    description: Path to CodeCoverage.exe
+  coverage-cmd:
+    description: Command to execute CodeCoverage.exe
     required: false
   report:
     description: Path to a directory to store coverage reports

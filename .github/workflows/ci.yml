@@ -23,7 +23,8 @@ jobs:
         projects: src
         build: false
         result: test-results
-        coverage-tool: C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Team Tools\Dynamic Code Coverage Tools\CodeCoverage.exe
+        coverage-cmd: >
+          "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Team Tools\Dynamic Code Coverage Tools\CodeCoverage.exe"
         report: coverage-reports
     - name: Create Release
       shell: cmd
