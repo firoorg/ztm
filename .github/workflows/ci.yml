@@ -18,35 +18,13 @@ jobs:
       shell: cmd
       run: dotnet.exe build src\Ztm.sln
     - name: Unit Test
-      run: |
-        Get-ChildItem -Path src -Filter *.Tests -Directory | ForEach-Object {
-            $name = $_.Name
-            $path = $_.FullName
-            $params = @(
-                "test",
-                "--no-build",
-                "-v normal",
-                "--collect `"Code Coverage`"",
-                "-r coverage-reports",
-                $path
-            )
-
-            $runner = Start-Process -FilePath dotnet.exe -ArgumentList $params -NoNewWindow -PassThru -Wait
-
-            if ($runner.ExitCode -ne 0) {
-                exit $runner.ExitCode
-            }
-
-            Write-Host
-
-            $coverage = Start-Process -FilePath "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Team Tools\Dynamic Code Coverage Tools\CodeCoverage.exe" -ArgumentList analyze, /output:$name.coveragexml, coverage-reports\$name.coverage -NoNewWindow -PassThru -Wait
-
-            if ($coverage.ExitCode -ne 0) {
-                exit $coverage.ExitCode
-            }
-
-            Remove-Item -Path coverage-reports\$name.coverage
-        }
+      uses: ./.github/actions/dotnet-test
+      with:
+        projects: src
+        build: false
+        result: test-results
+        coverage-tool: C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Team Tools\Dynamic Code Coverage Tools\CodeCoverage.exe
+        report: coverage-reports
     - name: Create Release
       shell: cmd
       run: dotnet.exe publish -o "%GITHUB_WORKSPACE%\release" -r linux-musl-x64 -c Release src\Ztm.WebApi
