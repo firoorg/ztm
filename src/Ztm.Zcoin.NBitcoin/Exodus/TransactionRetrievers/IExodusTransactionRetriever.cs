@@ -7,7 +7,7 @@ namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionRetrievers
 {
     public interface IExodusTransactionRetriever
     {
-        Type SupportType { get; }
+        int SupportedId { get; }
         Task<IEnumerable<BalanceChange>> GetBalanceChangesAsync(ExodusTransaction transaction, CancellationToken cancellationToken);
     }
 }

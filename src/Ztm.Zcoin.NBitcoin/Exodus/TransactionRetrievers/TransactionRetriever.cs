@@ -9,16 +9,16 @@ namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionRetrievers
 {
     public class TransactionRetriever : ITransactionRetriever
     {
-        readonly IDictionary<Type, IExodusTransactionRetriever> transactionInterpreter;
+        readonly IDictionary<int, IExodusTransactionRetriever> transactionRetrievers;
 
-        public TransactionRetriever(IEnumerable<IExodusTransactionRetriever> transactionInterpreters)
+        public TransactionRetriever(IEnumerable<IExodusTransactionRetriever> transactionRetrievers)
         {
-            if (transactionInterpreters == null)
+            if (transactionRetrievers == null)
             {
-                throw new ArgumentNullException(nameof(transactionInterpreters));
+                throw new ArgumentNullException(nameof(transactionRetrievers));
             }
 
-            this.transactionInterpreter = transactionInterpreters.ToDictionary(i => i.SupportType);
+            this.transactionRetrievers = transactionRetrievers.ToDictionary(i => i.SupportedId);
         }
 
         public Task<IEnumerable<BalanceChange>> GetBalanceChangesAsync(Transaction transaction, CancellationToken cancellationToken)
@@ -31,16 +31,15 @@ namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionRetrievers
             var ex = transaction.GetExodusTransaction();
             if (ex == null)
             {
-                throw new ArgumentException("The transaction does not contain exodus data.", nameof(transaction));
+                return Task.FromResult<IEnumerable<BalanceChange>>(null);
             }
 
-            if (!this.transactionInterpreter.TryGetValue(ex.GetType(), out var interpreter))
+            if (!this.transactionRetrievers.TryGetValue(ex.Id, out var retriever))
             {
-                throw new TransactionFieldException(
-                    TransactionFieldException.TypeField, "The value is unknown transaction type.");
+                throw new TransactionException("The Exodus transaction type is not supported.");
             }
 
-            return interpreter.GetBalanceChangesAsync(ex, cancellationToken);
+            return retriever.GetBalanceChangesAsync(ex, cancellationToken);
         }
     }
 }

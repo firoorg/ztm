@@ -19,9 +19,9 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus.TransactionRetrievers
         }
 
         [Fact]
-        public void SupportType_ShouldReturnSimpleSendV0()
+        public void SupportedId_ShouldReturnStaticIdOfSimpleSendV0()
         {
-            Assert.Equal(typeof(SimpleSendV0), this.subject.SupportType);
+            Assert.Equal(SimpleSendV0.StaticId, this.subject.SupportedId);
         }
 
         [Fact]

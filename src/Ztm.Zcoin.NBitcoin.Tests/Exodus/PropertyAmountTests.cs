@@ -408,5 +408,32 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
             // Assert.
             Assert.Equal(new PropertyAmount(expected), negated);
         }
+
+        [Fact]
+        public void NegateOperator_WithMinValue_ShouldThrow()
+        {
+            var v = new PropertyAmount(long.MinValue);
+            Assert.Throws<OverflowException>(
+                () => -v
+            );
+        }
+
+        [Theory]
+        [InlineData(long.MaxValue, -long.MaxValue)]
+        [InlineData(1, -1)]
+        [InlineData(0, 0)]
+        [InlineData(-1, 1)]
+        [InlineData(long.MinValue + 1, long.MaxValue)]
+        public void NegateOperator_WithNagatableAmount_ShouldReturnNagatedValue(long value, long expected)
+        {
+            // Arrange.
+            var amount = new PropertyAmount(value);
+
+            // Act.
+            var negated = -amount;
+
+            // Assert.
+            Assert.Equal(new PropertyAmount(expected), negated);
+        }
     }
 }

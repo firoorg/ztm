@@ -8,11 +8,11 @@ namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionRetrievers
 {
     public sealed class SimpleSendRetriever : IExodusTransactionRetriever
     {
-        public Type SupportType
+        public int SupportedId
         {
             get
             {
-                return typeof(SimpleSendV0);
+                return SimpleSendV0.StaticId;
             }
         }
 

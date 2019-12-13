@@ -113,6 +113,11 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
             }
         }
 
+        public static PropertyAmount operator-(PropertyAmount amount)
+        {
+            return new PropertyAmount(checked(-amount.value));
+        }
+
         public static bool operator<(PropertyAmount first, PropertyAmount second)
         {
             return first.value < second.value;
@@ -135,12 +140,7 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
 
         public static PropertyAmount Negate(PropertyAmount amount)
         {
-            if (amount.value == long.MinValue)
-            {
-                throw new OverflowException("The negated value is overflow.");
-            }
-
-            return new PropertyAmount(-amount.Indivisible);
+            return -amount;
         }
     }
 }

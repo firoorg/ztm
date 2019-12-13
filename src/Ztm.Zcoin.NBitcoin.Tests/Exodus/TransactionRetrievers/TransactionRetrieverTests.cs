@@ -14,13 +14,15 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus.TransactionRetrievers
 {
     public class InterpreterTests
     {
+        readonly int supportedId;
         readonly IExodusTransactionRetriever defaultRetriever;
         readonly IEnumerable<IExodusTransactionRetriever> transactionRetrievers;
         readonly TransactionRetriever subject;
         public InterpreterTests()
         {
+            this.supportedId = 1;
             this.defaultRetriever = Substitute.For<IExodusTransactionRetriever>();
-            this.defaultRetriever.SupportType.Returns(typeof(FakeExodusTransaction));
+            this.defaultRetriever.SupportedId.Returns(this.supportedId);
 
             this.transactionRetrievers = new Collection<IExodusTransactionRetriever>
             {
@@ -34,7 +36,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus.TransactionRetrievers
         public void Construct_WithNullArgs_ShouldThrow()
         {
             Assert.Throws<ArgumentNullException>(
-                "transactionInterpreters",
+                "transactionRetrievers",
                 () => new TransactionRetriever(null)
             );
         }
@@ -49,15 +51,12 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus.TransactionRetrievers
         }
 
         [Fact]
-        public async Task GetBalanceChangesAsync_WithoutExodusData_ShouldThrow()
+        public async Task GetBalanceChangesAsync_WithoutExodusData_ShouldRetrieveNull()
         {
             var tx =  Transaction.Parse(
                 ZcoinTransactionData.ZerocoinRemint, ZcoinNetworks.Instance.Regtest);
 
-            await Assert.ThrowsAsync<ArgumentException>(
-                "transaction",
-                () => this.subject.GetBalanceChangesAsync(tx, CancellationToken.None)
-            );
+            Assert.Null(await this.subject.GetBalanceChangesAsync(tx, CancellationToken.None));
         }
 
         [Fact]
@@ -65,13 +64,14 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus.TransactionRetrievers
         {
             var tx =  Transaction.Parse(
                 ZcoinTransactionData.ZerocoinRemint, ZcoinNetworks.Instance.Regtest);
-            var unsupported = new FakeUnsupportedExodusTransaction(TestAddress.Regtest1, TestAddress.Regtest2);
+            var upsupportedId = int.MaxValue;
+            var unsupported = new FakeExodusTransaction(TestAddress.Regtest1, TestAddress.Regtest2, upsupportedId, 1);
 
             #pragma warning disable CS0618
             tx.SetExodusTransaction(unsupported);
             #pragma warning restore CS0618
 
-            await Assert.ThrowsAsync<TransactionFieldException>(
+            await Assert.ThrowsAsync<TransactionException>(
                 () => this.subject.GetBalanceChangesAsync(tx, CancellationToken.None)
             );
         }
@@ -82,7 +82,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus.TransactionRetrievers
             // Arrange.
             var tx =  Transaction.Parse(
                 ZcoinTransactionData.ZerocoinRemint, ZcoinNetworks.Instance.Regtest);
-            var exodus = new FakeExodusTransaction(TestAddress.Regtest1, TestAddress.Regtest2);
+            var exodus = new FakeExodusTransaction(TestAddress.Regtest1, TestAddress.Regtest2, this.supportedId, 0);
 
             #pragma warning disable CS0618
             tx.SetExodusTransaction(exodus);
@@ -117,16 +117,5 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus.TransactionRetrievers
 
             Assert.Equal(changes, retrievedChanges);
         }
-    }
-
-    class FakeUnsupportedExodusTransaction : ExodusTransaction
-    {
-        public FakeUnsupportedExodusTransaction(BitcoinAddress sender, BitcoinAddress receiver) : base(sender, receiver)
-        {
-        }
-
-        public override int Id => throw new NotImplementedException();
-
-        public override int Version => throw new NotImplementedException();
     }
 }
