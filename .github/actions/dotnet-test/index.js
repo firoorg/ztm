@@ -40,7 +40,7 @@ async function runTest(project, options = {}) {
       path.join(result, container, coverage)
     ]);
 
-    fs.rmdirSync(path.join(result, container), { recursive: true });
+    await io.rmRF(path.join(result, container));
   }
 }
 
