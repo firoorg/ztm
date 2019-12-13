@@ -5,6 +5,7 @@ const path = require('path');
 
 async function runTest(project, options = {}) {
   // run tests
+  let result = options.coverage ? options.coverage.result : undefined;
   let args = ['test'];
 
   if (!options.build) {
@@ -16,11 +17,11 @@ async function runTest(project, options = {}) {
     args.push(options.verbose);
   }
 
-  if (options.coverage && options.coverage.result) {
+  if (result) {
     args.push('--collect');
     args.push('Code Coverage');
     args.push('-r');
-    args.push(options.coverage.result);
+    args.push(result);
   }
 
   args.push(project);
@@ -28,17 +29,17 @@ async function runTest(project, options = {}) {
   await exec.exec('dotnet', args);
 
   // process coverage report
-  if (options.coverage && options.coverage.result) {
-    let container = fs.readdirSync(options.coverage.result)[0];
-    let coverage = fs.readdirSync(container)[0];
+  if (result) {
+    let container = fs.readdirSync(result)[0];
+    let coverage = fs.readdirSync(path.join(result, container))[0];
 
     await exec.exec(options.coverage.tool, [
       'analyze',
       `/output:${options.coverage.report}`,
-      path.join(options.coverage.result, container, coverage)
+      path.join(result, container, coverage)
     ]);
 
-    fs.rmdirSync(path.join(options.coverage.result, container), { recursive: true });
+    fs.rmdirSync(path.join(result, container), { recursive: true });
   }
 }
 
