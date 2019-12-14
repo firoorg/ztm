@@ -1,5 +1,7 @@
 using System.Linq.Expressions;
+using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NBitcoin;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.Mapping;
 using NpgsqlTypes;
@@ -17,17 +19,13 @@ namespace Ztm.Data.Entity.Postgres.Mapping
         {
         }
 
-        protected override RelationalTypeMapping Clone(RelationalTypeMappingParameters parameters)
-            => new UInt256TypeMapping(parameters);
+        public override RelationalTypeMapping Clone(string storeType, int? size)
+            => new UInt256TypeMapping(Parameters.WithStoreTypeAndSize(storeType, size));
+
+        public override CoreTypeMapping Clone(ValueConverter converter)
+            => new UInt256TypeMapping(Parameters.WithComposedConverter(converter));
 
         protected override string GenerateNonNullSqlLiteral(object value)
             => @"'\x" + (uint256)value + @"'";
-
-        public override Expression GenerateCodeLiteral(object value)
-            => Expression.Call(
-                typeof(uint256).GetMethod("Parse", new[] {typeof(string)}),
-                Expression.Constant(
-                    @"'\x" + (uint256)value + @"'"));
-
     }
 }

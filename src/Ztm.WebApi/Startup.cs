@@ -38,7 +38,7 @@ namespace Ztm.WebApi
         {
             // ASP.NET Services.
             services.AddMvc(ConfigureMvc)
-                    .SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
+                    .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
                     .AddJsonOptions(o =>
                     {
                         o.SerializerSettings.ContractResolver = new DefaultContractResolver()
