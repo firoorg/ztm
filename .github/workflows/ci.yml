@@ -18,18 +18,14 @@ jobs:
       shell: cmd
       run: dotnet.exe build src\Ztm.sln
     - name: Unit Test
-      run: |
-        Get-ChildItem -Path src -Filter *.Tests -Directory | ForEach-Object {
-            $path = $_.FullName
-
-            $runner = Start-Process -FilePath dotnet.exe -ArgumentList test, --no-build, -v=normal, $path -NoNewWindow -PassThru -Wait
-
-            if ($runner.ExitCode -ne 0) {
-                exit $runner.ExitCode
-            }
-
-            Write-Host
-        }
+      uses: ./.github/actions/dotnet-test
+      with:
+        projects: src
+        build: false
+        result: test-results
+        coverage-cmd: >
+          "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Team Tools\Dynamic Code Coverage Tools\CodeCoverage.exe"
+        report: coverage-reports
     - name: Create Release
       shell: cmd
       run: dotnet.exe publish -o "%GITHUB_WORKSPACE%\release" -r linux-musl-x64 -c Release src\Ztm.WebApi
@@ -51,6 +47,11 @@ jobs:
       with:
         name: e2e-runner
         path: e2e-runner
+    - name: Archive Coverage Reports
+      uses: actions/upload-artifact@v1
+      with:
+        name: coverage-reports
+        path: coverage-reports
   e2e:
     name: E2E Test
     needs: build
