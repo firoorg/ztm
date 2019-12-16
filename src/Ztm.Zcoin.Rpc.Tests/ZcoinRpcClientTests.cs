@@ -751,6 +751,19 @@ namespace Ztm.Zcoin.Rpc.Tests
             Assert.Equal(exodusTransaction, block.Transactions.Last().GetExodusTransaction());
         }
 
+        [Fact]
+        public async Task GetBlockAsync_GenesisBlock_ShouldSuccess()
+        {
+            // Arrange.
+            var genesis = this.node.Network.GetGenesis();
+
+            // Act.
+            var block = await this.subject.GetBlockAsync(genesis.GetHash(), CancellationToken.None);
+
+            // Assert.
+            Assert.Equal(genesis.GetHash(), block.GetHash());
+            Assert.Equal(genesis.Transactions.First().GetHash(), block.Transactions.First().GetHash());
+        }
 
         [Fact]
         public async Task GetBlockAsync_ByHeight_WhichContiainsExodusTransaction_ShouldSuccess()
@@ -779,6 +792,20 @@ namespace Ztm.Zcoin.Rpc.Tests
             Assert.Equal(2, block.Transactions.Count);
             Assert.Null(block.Transactions.First().GetExodusTransaction());
             Assert.Equal(exodusTransaction, block.Transactions.Last().GetExodusTransaction());
+        }
+
+        [Fact]
+        public async Task GetBlockAsync_ByHeight_GenesisBlock_ShouldSuccess()
+        {
+            // Arrange.
+            var genesis = this.node.Network.GetGenesis();
+
+            // Act.
+            var block = await this.subject.GetBlockAsync(0, CancellationToken.None);
+
+            // Assert.
+            Assert.Equal(genesis.GetHash(), block.GetHash());
+            Assert.Equal(genesis.Transactions.First().GetHash(), block.Transactions.First().GetHash());
         }
 
         [Fact]

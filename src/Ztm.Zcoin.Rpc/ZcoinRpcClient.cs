@@ -445,6 +445,11 @@ namespace Ztm.Zcoin.Rpc
 
         async Task TryDecodeExodusTransactionAndSetAsync(Transaction transaction)
         {
+            if (transaction.GetHash() == this.client.Network.GetGenesis().Transactions.First().GetHash())
+            {
+                return;
+            }
+
             var exodusTransaction = await TryDecodeExodusTransaction(transaction);
             if (exodusTransaction != null)
             {
