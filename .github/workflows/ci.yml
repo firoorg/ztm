@@ -17,15 +17,39 @@ jobs:
     - name: Build
       shell: cmd
       run: dotnet.exe build src\Ztm.sln
+    - name: Build E2E Runner
+      shell: cmd
+      run: dotnet.exe build src\Ztm.EndToEndTests
     - name: Unit Test
-      uses: ./.github/actions/dotnet-test
+      shell: cmd
+      run: dotnet.exe test --no-build -r test-results --collect "Code Coverage" -v normal src\Ztm.sln
+    - name: Transform Test Results
+      run: |
+        $tool = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Team Tools\Dynamic Code Coverage Tools\CodeCoverage.exe"
+
+        New-Item -Path coverage-reports -ItemType Directory | Out-Null
+
+        Get-ChildItem -Path test-results -Filter *.coverage -Recurse -File | ForEach-Object {
+            $name = $_.Directory.Name
+            $input = $_.FullName
+            $args = @(
+              "analyze",
+              "/output:coverage-reports\$name.coveragexml",
+              $input
+            )
+
+            $transform = Start-Process -FilePath $tool -ArgumentList $args -NoNewWindow -PassThru -Wait
+
+            if ($transform.ExitCode -ne 0) {
+              exit $transform.ExitCode
+            }
+        }
+    - name: Upload Coverage Reports
+      uses: codecov/codecov-action@v1.0.5
       with:
-        projects: src
-        build: false
-        result: test-results
-        coverage-cmd: >
-          "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Team Tools\Dynamic Code Coverage Tools\CodeCoverage.exe"
-        report: coverage-reports
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: coverage-reports\*.coveragexml
+        fail_ci_if_error: true
     - name: Create Release
       shell: cmd
       run: dotnet.exe publish -o "%GITHUB_WORKSPACE%\release" -r linux-musl-x64 -c Release src\Ztm.WebApi
@@ -47,11 +71,6 @@ jobs:
       with:
         name: e2e-runner
         path: e2e-runner
-    - name: Archive Coverage Reports
-      uses: actions/upload-artifact@v1
-      with:
-        name: coverage-reports
-        path: coverage-reports
   e2e:
     name: E2E Test
     needs: build
