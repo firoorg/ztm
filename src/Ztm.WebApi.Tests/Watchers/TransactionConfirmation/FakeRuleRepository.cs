@@ -36,19 +36,6 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             return Task.FromResult(rule);
         }
 
-        public virtual Task ClearCurrentWatchAsync(Guid id, CancellationToken cancellationToken)
-        {
-            this.update(id,
-                (old) =>
-                {
-                    old.CurrentWatchId = null;
-                    return old;
-                }
-            );
-
-            return Task.CompletedTask;
-        }
-
         public virtual Task<Rule> GetAsync(Guid id, CancellationToken cancellationToken)
         {
             if (this.rules.TryGetValue(id, out var data))
@@ -98,7 +85,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             return Task.CompletedTask;
         }
 
-        public virtual Task UpdateCurrentWatchAsync(Guid id, Guid watchId, CancellationToken cancellationToken)
+        public virtual Task UpdateCurrentWatchAsync(Guid id, Guid? watchId, CancellationToken cancellationToken)
         {
             this.update(id,
                 (old) =>

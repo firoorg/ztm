@@ -101,15 +101,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
         }
 
         [Fact]
-        public async Task ClearCurrentWatchAsync_WithNonExistRule_ShouldThrow()
-        {
-            await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => this.subject.ClearCurrentWatchAsync(Guid.NewGuid(), CancellationToken.None)
-            );
-        }
-
-        [Fact]
-        public async Task ClearCurrentWatchAsync_WithExistRule_ShouldSuccess()
+        public async Task UpdateCurrentWatchAsync_WithNullValue_ShouldBeCleared()
         {
             // Arrange.
             await this.CreateDefaultCallback();
@@ -126,32 +118,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             await this.subject.UpdateCurrentWatchAsync(rule.Id, watch.Id, CancellationToken.None);
 
             // Act.
-            await this.subject.ClearCurrentWatchAsync(rule.Id, CancellationToken.None);
-
-            // Assert.
-            using (var db = this.dbFactory.CreateDbContext())
-            {
-                var updated = await db.TransactionConfirmationWatchingRules.FirstOrDefaultAsync(r => r.Id == rule.Id);
-                Assert.Null(updated.CurrentWatchId);
-            }
-        }
-
-        [Fact]
-        public async Task ClearCurrentWatchAsync_WithExistRuleAndNullCurrentWatchId_ShouldSuccess()
-        {
-            // Arrange.
-            await this.CreateDefaultCallback();
-
-            var transaction = uint256.Parse("008b3395991c7893bb8a82d8389a48ded863af914d9cc31711554bc97e4723c0");
-            var successResult = new TestCallbackResult(CallbackResult.StatusSuccess, "success");
-            var timeoutResult = new TestCallbackResult(CallbackResult.StatusError, "timeout");
-            var waitingTime = TimeSpan.FromMinutes(5);
-
-            var rule = await this.subject.AddAsync(transaction, 10, waitingTime,
-                successResult, timeoutResult, this.defaultCallback, CancellationToken.None);
-
-            // Act.
-            await this.subject.ClearCurrentWatchAsync(rule.Id, CancellationToken.None);
+            await this.subject.UpdateCurrentWatchAsync(rule.Id, null, CancellationToken.None);
 
             // Assert.
             using (var db = this.dbFactory.CreateDbContext())
@@ -342,6 +309,24 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
         }
 
         [Fact]
+        public async Task SubtractRemainingWaitingTimeAsync_WithNegativeTimeSpan_ShouldThrow()
+        {
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
+                "consumedTime",
+                () => this.subject.SubtractRemainingWaitingTimeAsync(Guid.NewGuid(), TimeSpan.FromTicks(-1), CancellationToken.None)
+            );
+        }
+
+        [Fact]
+        public async Task SubtractRemainingWaitingTimeAsync_WithZeroTimeSpan_ShouldThrow()
+        {
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
+                "consumedTime",
+                () => this.subject.SubtractRemainingWaitingTimeAsync(Guid.NewGuid(), TimeSpan.Zero, CancellationToken.None)
+            );
+        }
+
+        [Fact]
         public async Task UpdateCurrentWatchAsync_WithNonExist_ShouldThrow()
         {
             // Arrange.
@@ -360,26 +345,6 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             // Act && Assert.
             await Assert.ThrowsAsync<KeyNotFoundException>(
                 () => this.subject.UpdateCurrentWatchAsync(Guid.NewGuid(), watch.Id, CancellationToken.None)
-            );
-        }
-
-        [Fact]
-        public async Task UpdateCurrentWatchAsync_WithExistRuleAndInvalidWatchId_ShouldThrow()
-        {
-            // Arrange.
-            await this.CreateDefaultCallback();
-
-            var transaction = uint256.Parse("008b3395991c7893bb8a82d8389a48ded863af914d9cc31711554bc97e4723c0");
-            var successResult = new TestCallbackResult(CallbackResult.StatusSuccess, "success");
-            var timeoutResult = new TestCallbackResult(CallbackResult.StatusError, "timeout");
-            var waitingTime = TimeSpan.FromMinutes(5);
-
-            var rule = await this.subject.AddAsync(transaction, 10, waitingTime,
-                successResult, timeoutResult, this.defaultCallback, CancellationToken.None);
-
-            // Act & Assert.
-            await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => this.subject.UpdateCurrentWatchAsync(rule.Id, Guid.NewGuid(), CancellationToken.None)
             );
         }
 

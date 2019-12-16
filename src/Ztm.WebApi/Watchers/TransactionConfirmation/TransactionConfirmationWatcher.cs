@@ -390,7 +390,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
 
         async Task IWatcherHandler<TransactionWatch<Rule>, Rule>.RemoveWatchAsync(TransactionWatch<Rule> watch, WatchRemoveReason reason, CancellationToken cancellationToken)
         {
-            await this.ruleRepository.ClearCurrentWatchAsync(watch.Context.Id, CancellationToken.None);
+            await this.ruleRepository.UpdateCurrentWatchAsync(watch.Context.Id, null, CancellationToken.None);
 
             if (reason.HasFlag(WatchRemoveReason.Completed))
             {
