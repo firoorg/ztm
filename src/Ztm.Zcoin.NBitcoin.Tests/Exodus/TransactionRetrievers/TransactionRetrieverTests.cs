@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,24 +11,24 @@ using Ztm.Zcoin.NBitcoin.Exodus.TransactionRetrievers;
 
 namespace Ztm.Zcoin.NBitcoin.Tests.Exodus.TransactionRetrievers
 {
-    public class InterpreterTests
+    public sealed class TransactionRetrieverTests
     {
         readonly int supportedId;
         readonly IExodusTransactionRetriever defaultRetriever;
-        readonly IEnumerable<IExodusTransactionRetriever> transactionRetrievers;
         readonly TransactionRetriever subject;
-        public InterpreterTests()
+
+        public TransactionRetrieverTests()
         {
             this.supportedId = 1;
             this.defaultRetriever = Substitute.For<IExodusTransactionRetriever>();
             this.defaultRetriever.SupportedId.Returns(this.supportedId);
 
-            this.transactionRetrievers = new Collection<IExodusTransactionRetriever>
+            var transactionRetrievers = new Collection<IExodusTransactionRetriever>
             {
                 this.defaultRetriever,
             };
 
-            this.subject = new TransactionRetriever(this.transactionRetrievers);
+            this.subject = new TransactionRetriever(transactionRetrievers);
         }
 
         [Fact]

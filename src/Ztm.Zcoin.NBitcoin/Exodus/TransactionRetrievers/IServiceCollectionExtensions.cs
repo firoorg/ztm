@@ -6,10 +6,10 @@ namespace Ztm.Zcoin.NBitcoin.Exodus.TransactionRetrievers
     {
         public static void AddExodusTransactionRetriever(this IServiceCollection service)
         {
-            // Exodus transaction interpreters
+            // Exodus transaction retrievers
             service.AddSingleton<IExodusTransactionRetriever, SimpleSendRetriever>();
 
-            // Main interpreter
+            // Main retriever
             service.AddSingleton<ITransactionRetriever, TransactionRetriever>();
         }
     }
