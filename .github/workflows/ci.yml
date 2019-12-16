@@ -25,7 +25,7 @@ jobs:
       run: dotnet.exe build src\Ztm.EndToEndTests
     - name: Unit Test
       shell: cmd
-      run: dotnet.exe test --no-build -r test-results --collect "Code Coverage" -v normal src\Ztm.sln
+      run: dotnet.exe test --no-build -r test-results --collect "Code Coverage" src\Ztm.sln
     - name: Transform Test Results
       run: |
         $tool = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Team Tools\Dynamic Code Coverage Tools\CodeCoverage.exe"
