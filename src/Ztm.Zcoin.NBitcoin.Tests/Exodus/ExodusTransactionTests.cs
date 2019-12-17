@@ -9,7 +9,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
         [Fact]
         public void Constructor_WithNullSender_ShouldSuccess()
         {
-            var tx = new TestExodusTransaction(null, null);
+            var tx = new FakeExodusTransaction(null, null);
 
             Assert.Null(tx.Sender);
         }
@@ -18,7 +18,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
         public void Constructor_WithNonNullSender_ShouldSuccess()
         {
             var sender = BitcoinAddress.Create("TQmbucVmyc8YWrxA8YcirCdJwcFLYK9PPH", ZcoinNetworks.Instance.Regtest);
-            var tx = new TestExodusTransaction(sender, null);
+            var tx = new FakeExodusTransaction(sender, null);
 
             Assert.Same(sender, tx.Sender);
         }
@@ -26,7 +26,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
         [Fact]
         public void Constructor_WithNullReceiver_ShouldSuccess()
         {
-            var tx = new TestExodusTransaction(null, null);
+            var tx = new FakeExodusTransaction(null, null);
 
             Assert.Null(tx.Receiver);
         }
@@ -35,7 +35,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
         public void Constructor_WithNonNullReceiver_ShouldSuccess()
         {
             var receiver = BitcoinAddress.Create("TQmbucVmyc8YWrxA8YcirCdJwcFLYK9PPH", ZcoinNetworks.Instance.Regtest);
-            var tx = new TestExodusTransaction(null, receiver);
+            var tx = new FakeExodusTransaction(null, receiver);
 
             Assert.Same(receiver, tx.Receiver);
         }

@@ -1,0 +1,27 @@
+name: Run .NET Tests
+description: Run all .NET test projects
+inputs:
+  projects:
+    description: Path to a directory that contains test projects
+    required: true
+  build:
+    description: Build before running tests
+    required: false
+    default: true
+  verbose:
+    description: Verbose level
+    required: false
+    default: normal
+  result:
+    description: Path to directory to store test result
+    required: false
+  coverage-cmd:
+    description: Command to execute CodeCoverage.exe
+    required: false
+  report:
+    description: Path to a directory to store coverage reports
+    required: false
+    default: CoverageReports
+runs:
+  using: node12
+  main: index.js
