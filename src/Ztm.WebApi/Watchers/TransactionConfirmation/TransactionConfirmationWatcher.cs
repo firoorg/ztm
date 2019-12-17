@@ -104,7 +104,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
                 throw new ArgumentOutOfRangeException(nameof(confirmation), "The confirmations number is less than zero.");
             }
 
-            if (!Timer.IsValidDuration(unconfirmedWaitingTime))
+            if (!Timer.DefaultScheduler.IsValidDuration(unconfirmedWaitingTime))
             {
                 throw new ArgumentOutOfRangeException(nameof(unconfirmedWaitingTime), "UnconfirmedWaitingTime is invalid duration.");
             }

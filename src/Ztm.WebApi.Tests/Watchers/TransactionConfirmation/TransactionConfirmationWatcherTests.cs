@@ -161,13 +161,13 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 
             _ = Assert.ThrowsAsync<ArgumentOutOfRangeException>(
                 () => this.subject.AddTransactionAsync(
-                    builder.transaction, builder.confirmation, Ztm.Threading.Timer.MinDuration - TimeSpan.FromSeconds(1),
+                    builder.transaction, builder.confirmation, Ztm.Threading.TimerSchedulers.ThreadPoolScheduler.MaxDuration - TimeSpan.FromSeconds(1),
                     callback, builder.successData, builder.timeoutData, CancellationToken.None)
             );
 
             _ = Assert.ThrowsAsync<ArgumentOutOfRangeException>(
                 () => this.subject.AddTransactionAsync(
-                    builder.transaction, builder.confirmation, Ztm.Threading.Timer.MaxDuration + TimeSpan.FromSeconds(1),
+                    builder.transaction, builder.confirmation, Ztm.Threading.TimerSchedulers.ThreadPoolScheduler.MinDuration + TimeSpan.FromSeconds(1),
                     callback, builder.successData, builder.timeoutData, CancellationToken.None)
             );
 
