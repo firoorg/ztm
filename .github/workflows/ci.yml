@@ -50,7 +50,7 @@ jobs:
         }
     - name: Upload Coverage Reports
       env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        CODECOV_TOKEN: fd50d6ec-a3dd-4815-9ed1-b9b92ce6c063
       shell: cmd
       run: codecov.exe --required -f coverage-reports\*.coveragexml
     - name: Create Release
