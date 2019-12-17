@@ -54,7 +54,13 @@ jobs:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       run: |
         $files = Get-ChildItem -Path coverage-reports -Filter *.coveragexml -File | Join-String -Property Name -Separator " " -OutputPrefix coverage-reports\
-        $uploader = Start-Process -FilePath codecov.exe -ArgumentList -f, $files, --required -NoNewWindow -PassThru -Wait
+        $args = @(
+          "-f",
+          $files,
+          "--required"
+        )
+
+        $uploader = Start-Process -FilePath codecov.exe -ArgumentList $args -NoNewWindow -PassThru -Wait
 
         if ($uploader.ExitCode -ne 0) {
           exit $uploader.ExitCode
