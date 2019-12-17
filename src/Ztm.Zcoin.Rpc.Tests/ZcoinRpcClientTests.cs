@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,7 +37,9 @@ namespace Ztm.Zcoin.Rpc.Tests
 
                 this.transactionEncoder = Substitute.For<ITransactionEncoder>();
 
-                this.subject = new ZcoinRpcClient(this.node.CreateRPCClient(), this.transactionEncoder);
+                var genesisTransactions = new HashSet<uint256>(this.node.Network.GetGenesis().Transactions.Select(t => t.GetHash()));
+
+                this.subject = new ZcoinRpcClient(this.node.CreateRPCClient(), this.transactionEncoder, genesisTransactions);
             }
             catch
             {
@@ -53,14 +56,21 @@ namespace Ztm.Zcoin.Rpc.Tests
         [Fact]
         public void Construct_WithNullArgs_ShouldThrow()
         {
+            var genesisTransactions = new HashSet<uint256>();
+
             Assert.Throws<ArgumentNullException>(
                 "client",
-                () => new ZcoinRpcClient(null, this.transactionEncoder)
+                () => new ZcoinRpcClient(null, this.transactionEncoder, genesisTransactions)
             );
 
             Assert.Throws<ArgumentNullException>(
                 "exodusEncoder",
-                () => new ZcoinRpcClient(this.node.CreateRPCClient(), null)
+                () => new ZcoinRpcClient(this.node.CreateRPCClient(), null, genesisTransactions)
+            );
+
+            Assert.Throws<ArgumentNullException>(
+                "genesisTransactions",
+                () => new ZcoinRpcClient(this.node.CreateRPCClient(), this.transactionEncoder, null)
             );
         }
 

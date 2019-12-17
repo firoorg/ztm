@@ -18,7 +18,7 @@ namespace Ztm.Zcoin.Rpc
         readonly ITransactionEncoder exodusEncoder;
         readonly HashSet<uint256> genesisTransactions;
 
-        public ZcoinRpcClient(RPCClient client, ITransactionEncoder exodusEncoder)
+        public ZcoinRpcClient(RPCClient client, ITransactionEncoder exodusEncoder, HashSet<uint256> genesisTransactions)
         {
             if (client == null)
             {
@@ -30,12 +30,14 @@ namespace Ztm.Zcoin.Rpc
                 throw new ArgumentNullException(nameof(exodusEncoder));
             }
 
+            if (genesisTransactions == null)
+            {
+                throw new ArgumentNullException(nameof(genesisTransactions));
+            }
+
             this.client = client;
             this.exodusEncoder = exodusEncoder;
-
-            this.genesisTransactions = new HashSet<uint256>(
-                this.client.Network.GetGenesis().Transactions.Select(t => t.GetHash()));
-
+            this.genesisTransactions = genesisTransactions;
         }
 
         public void Dispose()
