@@ -35,11 +35,8 @@ jobs:
         Get-ChildItem -Path test-results -Filter *.coverage -Recurse -File | ForEach-Object {
             $name = $_.Directory.Name
             $input = $_.FullName
-            $args = @(
-              "analyze",
-              "/output:coverage-reports\$name.coveragexml",
-              $input
-            )
+            $output = "coverage-reports\$name.coveragexml"
+            $args = @("analyze", "/output:$output", $input)
 
             Write-Host -Object "Processing $input"
 
@@ -48,12 +45,14 @@ jobs:
             if ($transform.ExitCode -ne 0) {
               exit $transform.ExitCode
             }
+
+            Write-Host -Object "Generated $output"
         }
     - name: Upload Coverage Reports
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       run: |
-        $files = Get-ChildItem -Path coverage-reports -Filter *.coveragexml -File | Join-String -Property Name -Separator " " -OutputPrefix coverage-reports\
+        $files = Get-ChildItem -Path coverage-reports -Filter *.coveragexml -File | Join-String -Property Name -Separator " " -OutputPrefix "coverage-reports\"
         $args = @(
           "-f",
           $files,
