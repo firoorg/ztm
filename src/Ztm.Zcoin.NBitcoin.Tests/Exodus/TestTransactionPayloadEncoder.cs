@@ -18,7 +18,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
                 Arg.Any<BitcoinAddress>(),
                 Arg.Any<BinaryReader>(),
                 Arg.Any<int>()
-            ).Returns(call => new TestExodusTransaction(
+            ).Returns(call => new FakeExodusTransaction(
                 call.ArgAt<BitcoinAddress>(0),
                 call.ArgAt<BitcoinAddress>(1),
                 Type,
