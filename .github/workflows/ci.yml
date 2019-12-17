@@ -51,19 +51,8 @@ jobs:
     - name: Upload Coverage Reports
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      run: |
-        $files = Get-ChildItem -Path coverage-reports -Filter *.coveragexml -File | Join-String -Property Name -Separator " " -OutputPrefix "coverage-reports\"
-        $args = @(
-          "-f",
-          $files,
-          "--required"
-        )
-
-        $uploader = Start-Process -FilePath codecov.exe -ArgumentList $args -NoNewWindow -PassThru -Wait
-
-        if ($uploader.ExitCode -ne 0) {
-          exit $uploader.ExitCode
-        }
+      shell: cmd
+      run: codecov.exe --required -f coverage-reports\*.coveragexml
     - name: Create Release
       shell: cmd
       run: dotnet.exe publish -o "%GITHUB_WORKSPACE%\release" -r linux-musl-x64 -c Release src\Ztm.WebApi
