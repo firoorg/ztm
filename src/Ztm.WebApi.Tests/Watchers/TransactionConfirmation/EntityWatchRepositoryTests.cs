@@ -55,8 +55,8 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
         {
             var watch = new TransactionWatch<Rule>(null, uint256.One, uint256.One);
 
-            _ = Assert.ThrowsAsync<ArgumentNullException>(
-                "Context",
+            _ = Assert.ThrowsAsync<ArgumentException>(
+                "watch",
                 () => this.subject.AddAsync(watch, CancellationToken.None));
         }
 
@@ -173,7 +173,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             await this.subject.AddAsync(watch, CancellationToken.None);
 
             // Act & Assert.
-            await Assert.ThrowsAsync<InvalidOperationException>(
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
                 () => this.subject.UpdateStatusAsync(watch.Id, WatchStatus.Pending, CancellationToken.None));
         }
 
@@ -195,8 +195,8 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
         async Task<Rule> GenerateRuleAsync()
         {
             var url = new Uri("https://zcoin.io");
-            var success = new FakeCallbackResult("success", "");
-            var fail = new FakeCallbackResult("fail", "");
+            var success = new CallbackResult("success", "");
+            var fail = new CallbackResult("fail", "");
             var callback = await this.callbackRepository.AddAsync(IPAddress.Loopback, url, CancellationToken.None);
             return await this.ruleRepository.AddAsync(uint256.One, 10, TimeSpan.FromHours(1), success, fail, callback, CancellationToken.None);
         }

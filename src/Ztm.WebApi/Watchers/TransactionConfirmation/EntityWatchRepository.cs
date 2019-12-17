@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,7 +34,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
 
             if (watch.Context == null)
             {
-                throw new ArgumentNullException(nameof(watch.Context));
+                throw new ArgumentException("Watch does not contain context.", nameof(watch));
             }
 
             using (var db = this.db.CreateDbContext())
@@ -60,6 +61,8 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             using (var db = this.db.CreateDbContext())
             {
                 return await db.TransactionConfirmationWatches
+                    .Include(w => w.Rule)
+                    .ThenInclude(r => r.Callback)
                     .Where(w => (int)status == w.Status)
                     .Select(w => ToDomain(w))
                     .ToListAsync(cancellationToken);
@@ -69,6 +72,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
         public async Task UpdateStatusAsync(Guid id, WatchStatus status, CancellationToken cancellationToken)
         {
             using (var db = this.db.CreateDbContext())
+            using (var tx = await db.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken))
             {
                 var watch = await db.TransactionConfirmationWatches
                     .Where(w => w.Id == id).FirstOrDefaultAsync(cancellationToken);
@@ -89,12 +93,13 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
                     case WatchStatus.Success:
                         break;
                     default:
-                        throw new InvalidOperationException("New status is not allowed to set.");
-
+                        throw new ArgumentOutOfRangeException("New status is not allowed to set.");
                 }
 
                 watch.Status = (int)status;
                 await db.SaveChangesAsync(cancellationToken);
+
+                tx.Commit();
             }
         }
 
@@ -102,7 +107,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
         {
             return new TransactionWatch<Rule>
             (
-                watch.Rule == null ? null : EntityRuleRepository.ToDomain(watch.Rule),
+                EntityRuleRepository.ToDomain(watch.Rule),
                 watch.StartBlock,
                 watch.Transaction,
                 watch.StartTime,

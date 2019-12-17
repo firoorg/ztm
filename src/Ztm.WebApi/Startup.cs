@@ -60,7 +60,8 @@ namespace Ztm.WebApi
             services.AddSingleton<IMainDatabaseFactory, MainDatabaseFactory>();
 
             // Transaction Confirmation Watcher.
-            services.AddHttpClient<ICallbackExecuter, HttpCallbackExecuter>();
+            services.AddHttpClient();
+            services.AddTransient<ICallbackExecuter, HttpCallbackExecuter>();
             services.AddTransient<ICallbackRepository, EntityCallbackRepository>();
             services.AddSingleton<IRuleRepository, EntityRuleRepository>();
             services.AddSingleton<IWatchRepository, EntityWatchRepository>();

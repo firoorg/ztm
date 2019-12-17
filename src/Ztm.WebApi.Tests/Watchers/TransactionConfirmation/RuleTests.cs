@@ -17,8 +17,8 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             var tx = uint256.One;
             var confirmation = 1;
             var waitingTime = TimeSpan.FromDays(1);
-            var successResponse = new FakeCallbackResult("success", "");
-            var timeoutResponse = new FakeCallbackResult("timeout", "");
+            var successResponse = new CallbackResult("success", "");
+            var timeoutResponse = new CallbackResult("timeout", "");
             var callback = new Callback(Guid.Empty, IPAddress.Loopback, DateTime.Now, false, new Uri("https://zcoin.io"));
 
             Assert.Throws<ArgumentNullException>(
@@ -51,8 +51,8 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             var id = Guid.NewGuid();
             var tx = uint256.One;
             var waitingTime = TimeSpan.FromDays(1);
-            var successResponse = new FakeCallbackResult("success", "");
-            var timeoutResponse = new FakeCallbackResult("timeout", "");
+            var successResponse = new CallbackResult("success", "");
+            var timeoutResponse = new CallbackResult("timeout", "");
             var callback = new Callback(Guid.Empty, IPAddress.Loopback, DateTime.Now, false, new Uri("https://zcoin.io"));
 
             Assert.Throws<ArgumentException>(
@@ -67,8 +67,8 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             var id = Guid.NewGuid();
             var tx = uint256.One;
             var confirmation = 1;
-            var successResponse = new FakeCallbackResult("success", "");
-            var timeoutResponse = new FakeCallbackResult("timeout", "");
+            var successResponse = new CallbackResult("success", "");
+            var timeoutResponse = new CallbackResult("timeout", "");
             var callback = new Callback(Guid.Empty, IPAddress.Loopback, DateTime.Now, false, new Uri("https://zcoin.io"));
 
             Assert.Throws<ArgumentException>(

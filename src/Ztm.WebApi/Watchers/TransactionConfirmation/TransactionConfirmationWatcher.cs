@@ -298,7 +298,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
 
             try
             {
-                await this.callbackExecuter.Execute(callback.Id, callback.Url, payload);
+                await this.callbackExecuter.ExecuteAsync(callback.Id, callback.Url, payload, CancellationToken.None);
             }
             catch (Exception ex) // lgtm [cs/catch-of-all-exceptions]
             {

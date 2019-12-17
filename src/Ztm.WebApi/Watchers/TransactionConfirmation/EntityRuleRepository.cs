@@ -8,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 using NBitcoin;
 using Newtonsoft.Json;
 using Ztm.Data.Entity.Contexts;
-using Ztm.Data.Entity.Contexts.Main;
 using Ztm.WebApi.Callbacks;
 using EntityModel = Ztm.Data.Entity.Contexts.Main.TransactionConfirmationWatchingRule;
 
@@ -28,7 +27,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             this.db = db;
         }
 
-        public static Rule ToDomain(TransactionConfirmationWatchingRule rule, Callback callback = null)
+        public static Rule ToDomain(EntityModel rule, Callback callback = null)
         {
             return new Rule
             (
@@ -161,7 +160,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             }
 
             using (var db = this.db.CreateDbContext())
-            using (var tx = db.Database.BeginTransaction(IsolationLevel.RepeatableRead))
+            using (var tx = await db.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken))
             {
                 var rule = await db.TransactionConfirmationWatchingRules
                     .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
@@ -184,7 +183,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
         public async Task UpdateCurrentWatchAsync(Guid id, Guid? watchId, CancellationToken cancellationToken)
         {
             using (var db = this.db.CreateDbContext())
-            using (var tx = db.Database.BeginTransaction(IsolationLevel.RepeatableRead))
+            using (var tx = await db.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken))
             {
                 var rule = await db.TransactionConfirmationWatchingRules
                     .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);

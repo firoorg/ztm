@@ -118,7 +118,7 @@ namespace Ztm.WebApi.Tests.Callbacks
 
             // Act.
             await this.subject.AddHistoryAsync(
-                callback.Id, new TestCallbackResult(CallbackResult.StatusUpdate, data), CancellationToken.None);
+                callback.Id, new CallbackResult(CallbackResult.StatusUpdate, data), CancellationToken.None);
 
             // Assert.
             WebApiCallbackHistory history;
@@ -144,9 +144,9 @@ namespace Ztm.WebApi.Tests.Callbacks
 
             // Act.
             await this.subject.AddHistoryAsync(
-                callback.Id, new TestCallbackResult(CallbackResult.StatusUpdate, data), CancellationToken.None);
+                callback.Id, new CallbackResult(CallbackResult.StatusUpdate, data), CancellationToken.None);
             await this.subject.AddHistoryAsync(
-                callback.Id, new TestCallbackResult(CallbackResult.StatusUpdate, data), CancellationToken.None);
+                callback.Id, new CallbackResult(CallbackResult.StatusUpdate, data), CancellationToken.None);
 
             // Assert.
             var histories = new List<WebApiCallbackHistory>();
@@ -171,17 +171,5 @@ namespace Ztm.WebApi.Tests.Callbacks
                 () => this.subject.AddHistoryAsync(Guid.NewGuid(), null, CancellationToken.None)
             );
         }
-    }
-
-    sealed class TestCallbackResult : CallbackResult
-    {
-        public TestCallbackResult(string status, object data)
-        {
-            this.Status = status;
-            this.Data = data;
-        }
-
-        public override string Status { get; }
-        public override object Data { get; }
     }
 }

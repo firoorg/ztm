@@ -51,8 +51,8 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             await this.CreateDefaultCallback();
 
             var transaction = uint256.Parse("008b3395991c7893bb8a82d8389a48ded863af914d9cc31711554bc97e4723c0");
-            var successResult = new TestCallbackResult(CallbackResult.StatusSuccess, "success");
-            var timeoutResult = new TestCallbackResult(CallbackResult.StatusError, "timeout");
+            var successResult = new CallbackResult(CallbackResult.StatusSuccess, "success");
+            var timeoutResult = new CallbackResult(CallbackResult.StatusError, "timeout");
             var waitingTime = TimeSpan.FromMinutes(5);
 
             // Act.
@@ -75,8 +75,8 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
         public async Task AddAsync_WithInvalidArgs_ShouldThrow()
         {
             var transaction = uint256.Parse("008b3395991c7893bb8a82d8389a48ded863af914d9cc31711554bc97e4723c0");
-            var successResult = new TestCallbackResult(CallbackResult.StatusSuccess, "success");
-            var timeoutResult = new TestCallbackResult(CallbackResult.StatusError, "timeout");
+            var successResult = new CallbackResult(CallbackResult.StatusSuccess, "success");
+            var timeoutResult = new CallbackResult(CallbackResult.StatusError, "timeout");
             var timeout = TimeSpan.FromMinutes(5);
 
             await Assert.ThrowsAsync<ArgumentNullException>(
@@ -107,8 +107,8 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             await this.CreateDefaultCallback();
 
             var transaction = uint256.Parse("008b3395991c7893bb8a82d8389a48ded863af914d9cc31711554bc97e4723c0");
-            var successResult = new TestCallbackResult(CallbackResult.StatusSuccess, "success");
-            var timeoutResult = new TestCallbackResult(CallbackResult.StatusError, "timeout");
+            var successResult = new CallbackResult(CallbackResult.StatusSuccess, "success");
+            var timeoutResult = new CallbackResult(CallbackResult.StatusError, "timeout");
             var waitingTime = TimeSpan.FromMinutes(5);
 
             var rule = await this.subject.AddAsync(transaction, 10, waitingTime,
@@ -135,8 +135,8 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             await this.CreateDefaultCallback();
 
             var transaction = uint256.Parse("008b3395991c7893bb8a82d8389a48ded863af914d9cc31711554bc97e4723c0");
-            var successResult = new TestCallbackResult(CallbackResult.StatusSuccess, "success");
-            var timeoutResult = new TestCallbackResult(CallbackResult.StatusError, "timeout");
+            var successResult = new CallbackResult(CallbackResult.StatusSuccess, "success");
+            var timeoutResult = new CallbackResult(CallbackResult.StatusError, "timeout");
             var timeout = TimeSpan.FromMinutes(5);
 
             var rule = await this.subject.AddAsync(transaction, 10, timeout,
@@ -176,8 +176,8 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             await this.CreateDefaultCallback();
 
             var transaction = uint256.Parse("008b3395991c7893bb8a82d8389a48ded863af914d9cc31711554bc97e4723c0");
-            var successResult = new TestCallbackResult(CallbackResult.StatusSuccess, "success");
-            var timeoutResult = new TestCallbackResult(CallbackResult.StatusError, "timeout");
+            var successResult = new CallbackResult(CallbackResult.StatusSuccess, "success");
+            var timeoutResult = new CallbackResult(CallbackResult.StatusError, "timeout");
             var timeout = TimeSpan.FromMinutes(5);
 
             var rule = await this.subject.AddAsync(transaction, 10, timeout,
@@ -197,8 +197,8 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             await this.CreateDefaultCallback();
 
             var transaction = uint256.Parse("008b3395991c7893bb8a82d8389a48ded863af914d9cc31711554bc97e4723c0");
-            var successResult = new TestCallbackResult(CallbackResult.StatusSuccess, "success");
-            var timeoutResult = new TestCallbackResult(CallbackResult.StatusError, "timeout");
+            var successResult = new CallbackResult(CallbackResult.StatusSuccess, "success");
+            var timeoutResult = new CallbackResult(CallbackResult.StatusError, "timeout");
 
             var watches = new List<Rule>();
             watches.Add(await this.subject.AddAsync(transaction, 10, TimeSpan.FromMinutes(5),
@@ -241,8 +241,8 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             await this.CreateDefaultCallback();
 
             var transaction = uint256.Parse("008b3395991c7893bb8a82d8389a48ded863af914d9cc31711554bc97e4723c0");
-            var successResult = new TestCallbackResult(CallbackResult.StatusSuccess, "success");
-            var timeoutResult = new TestCallbackResult(CallbackResult.StatusError, "timeout");
+            var successResult = new CallbackResult(CallbackResult.StatusSuccess, "success");
+            var timeoutResult = new CallbackResult(CallbackResult.StatusError, "timeout");
 
             var watches = new List<Rule>();
             watches.Add(await this.subject.AddAsync(transaction, 10, TimeSpan.FromMinutes(5),
@@ -272,8 +272,8 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             await this.CreateDefaultCallback();
 
             var transaction = uint256.Parse("008b3395991c7893bb8a82d8389a48ded863af914d9cc31711554bc97e4723c0");
-            var successResult = new TestCallbackResult(CallbackResult.StatusSuccess, "success");
-            var timeoutResult = new TestCallbackResult(CallbackResult.StatusError, "timeout");
+            var successResult = new CallbackResult(CallbackResult.StatusSuccess, "success");
+            var timeoutResult = new CallbackResult(CallbackResult.StatusError, "timeout");
             var waitingTime = TimeSpan.FromMinutes(5);
 
             var watch = await this.subject.AddAsync(transaction, 10, waitingTime,
@@ -293,8 +293,8 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             await this.CreateDefaultCallback();
 
             var transaction = uint256.Parse("008b3395991c7893bb8a82d8389a48ded863af914d9cc31711554bc97e4723c0");
-            var successResult = new TestCallbackResult(CallbackResult.StatusSuccess, "success");
-            var timeoutResult = new TestCallbackResult(CallbackResult.StatusError, "timeout");
+            var successResult = new CallbackResult(CallbackResult.StatusSuccess, "success");
+            var timeoutResult = new CallbackResult(CallbackResult.StatusError, "timeout");
             var waitingTime = TimeSpan.FromMinutes(5);
 
             var watch = await this.subject.AddAsync(transaction, 10, waitingTime,
@@ -333,8 +333,8 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             await this.CreateDefaultCallback();
 
             var transaction = uint256.Parse("008b3395991c7893bb8a82d8389a48ded863af914d9cc31711554bc97e4723c0");
-            var successResult = new TestCallbackResult(CallbackResult.StatusSuccess, "success");
-            var timeoutResult = new TestCallbackResult(CallbackResult.StatusError, "timeout");
+            var successResult = new CallbackResult(CallbackResult.StatusSuccess, "success");
+            var timeoutResult = new CallbackResult(CallbackResult.StatusError, "timeout");
             var waitingTime = TimeSpan.FromMinutes(5);
 
             var rule = await this.subject.AddAsync(transaction, 10, waitingTime,
@@ -355,8 +355,8 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             await this.CreateDefaultCallback();
 
             var transaction = uint256.Parse("008b3395991c7893bb8a82d8389a48ded863af914d9cc31711554bc97e4723c0");
-            var successResult = new TestCallbackResult(CallbackResult.StatusSuccess, "success");
-            var timeoutResult = new TestCallbackResult(CallbackResult.StatusError, "timeout");
+            var successResult = new CallbackResult(CallbackResult.StatusSuccess, "success");
+            var timeoutResult = new CallbackResult(CallbackResult.StatusError, "timeout");
             var waitingTime = TimeSpan.FromMinutes(5);
 
             var rule = await this.subject.AddAsync(transaction, 10, waitingTime,
@@ -390,35 +390,6 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             var watch = new TransactionWatch<Rule>(rule, startBlock, tx);
             await this.watchRepository.AddAsync(watch, CancellationToken.None);
             return watch;
-        }
-
-        sealed class TestCallbackResult : Ztm.WebApi.Callbacks.CallbackResult
-        {
-            public TestCallbackResult(string status, object data)
-            {
-                this.Status = status;
-                this.Data = data;
-            }
-
-            public override string Status { get; }
-            public override object Data { get; }
-
-            public override bool Equals(object other)
-            {
-                if (other == null || other.GetType() != GetType())
-                {
-                    return false;
-                }
-
-                var otherResult = (TestCallbackResult)other;
-                return this.Status == otherResult.Status
-                    && this.Data.ToString() == otherResult.Data.ToString();
-            }
-
-            public override int GetHashCode()
-            {
-                return HashCode.Combine(Status, Data);
-            }
         }
     }
 }
