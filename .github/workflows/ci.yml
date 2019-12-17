@@ -16,7 +16,7 @@ jobs:
       run: dotnet.exe tool install --global dotnet-ef --version 3.0.0
     - name: Install Coverage Uploader
       shell: cmd
-      run: choco install codecov --no-progress
+      run: dotnet.exe tool install --global Codecov.Tool
     - name: Build
       shell: cmd
       run: dotnet.exe build src\Ztm.sln
