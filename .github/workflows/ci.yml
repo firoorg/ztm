@@ -103,7 +103,7 @@ jobs:
     - name: Create Docker Network
       run: docker network create $DOCKER_NETWORK
     - name: Start PostgreSQL
-      run: docker run --rm -d --name $DOCKER_DB_MAIN --network $DOCKER_NETWORK postgres:10
+      run: docker run --rm -d --name $DOCKER_DB_MAIN --volume $GITHUB_WORKSPACE/release/Ztm.Data.Entity.Postgres.sql:/docker-entrypoint-initdb.d/init.sql:ro --network $DOCKER_NETWORK postgres:10
     - name: Start Zcoin Daemon
       run: docker run --rm -d --name $DOCKER_ZCOIND --network $DOCKER_NETWORK zcoinofficial/zcoind:latest -regtest -exodus -dandelion=0 -rpcuser=zcoin -rpcpassword=zcoin -rpcallowip=0.0.0.0/0 -zmqpubhashblock=tcp://0.0.0.0:28332
     - name: Configure ZTM
