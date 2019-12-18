@@ -39,21 +39,17 @@ namespace Ztm.WebApi.Tests.Callbacks
         [Fact]
         public async Task ExecuteAsync_WithNullArguments_ShouldThrow()
         {
-            var r = new CallbackResult("", "");
+            var result = new CallbackResult("", "");
+            var url = new Uri("https://zcoin.io/callback");
 
             await Assert.ThrowsAsync<ArgumentNullException>(
                 "url",
-                () => this.subject.ExecuteAsync(Guid.Empty, null, r, CancellationToken.None)
+                () => this.subject.ExecuteAsync(Guid.Empty, null, result, CancellationToken.None)
             );
-        }
 
-        [Fact]
-        public async Task ExecuteAsync_WithNullResult_ShouldThrow()
-        {
             await Assert.ThrowsAsync<ArgumentNullException>(
                 "result",
-                () => this.subject.ExecuteAsync(Guid.Empty, new Uri("https://zcoin.io/callback"),
-                    null, CancellationToken.None)
+                () => this.subject.ExecuteAsync(Guid.Empty, url, null, CancellationToken.None)
             );
         }
 
