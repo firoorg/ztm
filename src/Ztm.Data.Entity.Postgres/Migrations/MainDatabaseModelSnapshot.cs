@@ -119,35 +119,6 @@ namespace Ztm.Data.Entity.Postgres.Migrations
                     b.ToTable("Transactions");
                 });
 
-            modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.TransactionConfirmationWatch", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<Guid>("CallbackId");
-
-                    b.Property<int>("Confirmation");
-
-                    b.Property<DateTime>("Due");
-
-                    b.Property<string>("SuccessData")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<string>("TimeoutData")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<uint256>("Transaction")
-                        .IsRequired();
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CallbackId");
-
-                    b.ToTable("TransactionConfirmationWatches");
-                });
-
             modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.WebApiCallback", b =>
                 {
                     b.Property<Guid>("Id");
@@ -217,14 +188,6 @@ namespace Ztm.Data.Entity.Postgres.Migrations
                     b.HasOne("Ztm.Data.Entity.Contexts.Main.Transaction", "Transaction")
                         .WithMany("Outputs")
                         .HasForeignKey("TransactionHash")
-                        .OnDelete(DeleteBehavior.Cascade);
-                });
-
-            modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.TransactionConfirmationWatch", b =>
-                {
-                    b.HasOne("Ztm.Data.Entity.Contexts.Main.WebApiCallback", "Callback")
-                        .WithMany()
-                        .HasForeignKey("CallbackId")
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
