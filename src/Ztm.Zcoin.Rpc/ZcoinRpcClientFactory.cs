@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
@@ -14,6 +16,7 @@ namespace Ztm.Zcoin.Rpc
         readonly NetworkType networkType;
         readonly RPCCredentialString credential;
         readonly ITransactionEncoder exodusEncoder;
+        readonly HashSet<uint256> genesisTransactions;
 
         public ZcoinRpcClientFactory(Uri server, NetworkType type, RPCCredentialString credential, ITransactionEncoder exodusEncoder)
         {
@@ -36,6 +39,10 @@ namespace Ztm.Zcoin.Rpc
             this.networkType = type;
             this.credential = credential;
             this.exodusEncoder = exodusEncoder;
+
+            var network = ZcoinNetworks.Instance.GetNetwork(this.networkType);
+            this.genesisTransactions = new HashSet<uint256>(
+                network.GetGenesis().Transactions.Select(t => t.GetHash()));
         }
 
         public async Task<IZcoinRpcClient> CreateRpcClientAsync(CancellationToken cancellationToken)
@@ -45,7 +52,7 @@ namespace Ztm.Zcoin.Rpc
 
             await client.ScanRPCCapabilitiesAsync();
 
-            return new ZcoinRpcClient(client, exodusEncoder);
+            return new ZcoinRpcClient(client, exodusEncoder, genesisTransactions);
         }
     }
 }
