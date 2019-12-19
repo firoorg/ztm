@@ -7,13 +7,13 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v1
-    - name: Setup .NET Core 2.2
+    - name: Setup .NET Core 2.1
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: '2.2.207'
+        dotnet-version: '2.1.14'
     - name: Install EF CLI
       shell: cmd
-      run: dotnet.exe tool install --global dotnet-ef --version 3.0.0
+      run: dotnet.exe tool install --global dotnet-ef --version 3.1.0
     - name: Build
       shell: cmd
       run: dotnet.exe build src\Ztm.sln
@@ -64,7 +64,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: '2.2.207'
+        dotnet-version: '2.1.14'
     - name: Get Release Artifact
       uses: actions/download-artifact@v1
       with:
