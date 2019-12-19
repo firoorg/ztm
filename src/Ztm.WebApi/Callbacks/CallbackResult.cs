@@ -22,15 +22,15 @@ namespace Ztm.WebApi.Callbacks
         public string Status { get; }
         public object Data { get; }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object other)
         {
-            if (obj == null && obj.GetType() != obj.GetType())
+            if (other == null || other.GetType() != GetType())
             {
                 return false;
             }
 
-            var other = (CallbackResult)obj;
-            return Status.Equals(other.Status) && Data.Equals(other.Data);
+            var otherResult = (CallbackResult)other;
+            return Status.Equals(otherResult.Status) && Data.Equals(otherResult.Data);
         }
 
         public override int GetHashCode()
