@@ -15,6 +15,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             Callback callback,
             CallbackResult successData,
             CallbackResult timeoutData,
+            string note,
             CancellationToken cancellationToken);
     }
 }

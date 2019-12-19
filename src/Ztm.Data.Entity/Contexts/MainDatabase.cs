@@ -175,6 +175,7 @@ namespace Ztm.Data.Entity.Contexts
         protected virtual void ConfigureTransactionConfirmationWatcherRule(
             EntityTypeBuilder<TransactionConfirmationWatcherRule> builder)
         {
+            builder.Property(e => e.Id).IsRequired();
             builder.Property(e => e.CallbackId).IsRequired();
             builder.Property(e => e.Transaction).IsRequired();
             builder.Property(e => e.Status).IsRequired();
@@ -183,6 +184,9 @@ namespace Ztm.Data.Entity.Contexts
             builder.Property(e => e.RemainingWaitingTime).IsRequired();
             builder.Property(e => e.SuccessData).IsRequired();
             builder.Property(e => e.TimeoutData).IsRequired();
+            builder.Property(e => e.CreatedAt).IsRequired();
+            builder.Property(e => e.CurrentWatchId);
+            builder.Property(e => e.Note);
 
             builder.HasKey(e => e.Id);
             builder.HasIndex(e => e.CallbackId);

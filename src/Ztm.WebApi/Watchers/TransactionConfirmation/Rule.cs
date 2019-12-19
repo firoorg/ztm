@@ -13,7 +13,9 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             TimeSpan originalWaitingTime,
             CallbackResult successResponse,
             CallbackResult timeoutResponse,
-            Callback callback)
+            Callback callback,
+            DateTime createdAt,
+            string note)
         {
             if (transaction == null)
             {
@@ -52,6 +54,8 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             this.SuccessResponse = successResponse;
             this.TimeoutResponse = timeoutResponse;
             this.Callback = callback;
+            this.CreatedAt = createdAt;
+            this.Note = note;
         }
 
         public Guid Id { get; }
@@ -61,5 +65,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
         public CallbackResult SuccessResponse { get; }
         public CallbackResult TimeoutResponse { get; }
         public Callback Callback { get; }
+        public DateTime CreatedAt { get; }
+        public string Note { get; }
     }
 }

@@ -141,7 +141,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             var builder = new WatchArgsBuilder(this.callbackRepository);
 
             var callback = await this.callbackRepository.AddAsync(
-                builder.url,
+                builder.ip,
                 builder.callbackUrl,
                 CancellationToken.None);
 
@@ -149,47 +149,47 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             _ = Assert.ThrowsAsync<ArgumentNullException>(
                 "transaction",
                 () => this.subject.AddTransactionAsync(
-                    null, builder.confirmation, builder.timeout,
-                    callback, builder.successData, builder.timeoutData, CancellationToken.None)
+                    null, builder.confirmations, builder.timeout,
+                    callback, builder.successData, builder.timeoutData, null, CancellationToken.None)
             );
 
             _ = Assert.ThrowsAsync<ArgumentOutOfRangeException>(
                 () => this.subject.AddTransactionAsync(
                     builder.transaction, 0, builder.timeout,
-                    callback, builder.successData, builder.timeoutData, CancellationToken.None)
+                    callback, builder.successData, builder.timeoutData, null, CancellationToken.None)
             );
 
             _ = Assert.ThrowsAsync<ArgumentOutOfRangeException>(
                 () => this.subject.AddTransactionAsync(
-                    builder.transaction, builder.confirmation, Ztm.Threading.TimerSchedulers.ThreadPoolScheduler.MaxDuration - TimeSpan.FromSeconds(1),
-                    callback, builder.successData, builder.timeoutData, CancellationToken.None)
+                    builder.transaction, builder.confirmations, Ztm.Threading.TimerSchedulers.ThreadPoolScheduler.MaxDuration - TimeSpan.FromSeconds(1),
+                    callback, builder.successData, builder.timeoutData, null, CancellationToken.None)
             );
 
             _ = Assert.ThrowsAsync<ArgumentOutOfRangeException>(
                 () => this.subject.AddTransactionAsync(
-                    builder.transaction, builder.confirmation, Ztm.Threading.TimerSchedulers.ThreadPoolScheduler.MinDuration + TimeSpan.FromSeconds(1),
-                    callback, builder.successData, builder.timeoutData, CancellationToken.None)
+                    builder.transaction, builder.confirmations, Ztm.Threading.TimerSchedulers.ThreadPoolScheduler.MinDuration + TimeSpan.FromSeconds(1),
+                    callback, builder.successData, builder.timeoutData, null, CancellationToken.None)
             );
 
             _ = Assert.ThrowsAsync<ArgumentNullException>(
                 "callback",
                 () => this.subject.AddTransactionAsync(
-                    builder.transaction, builder.confirmation, builder.timeout,
-                    null, builder.successData, builder.timeoutData, CancellationToken.None)
+                    builder.transaction, builder.confirmations, builder.timeout,
+                    null, builder.successData, builder.timeoutData, null, CancellationToken.None)
             );
 
             _ = Assert.ThrowsAsync<ArgumentNullException>(
                 "successResponse",
                 () => this.subject.AddTransactionAsync(
-                    builder.transaction, builder.confirmation, builder.timeout,
-                    callback, null, builder.timeoutData, CancellationToken.None)
+                    builder.transaction, builder.confirmations, builder.timeout,
+                    callback, null, builder.timeoutData, null, CancellationToken.None)
             );
 
             _ = Assert.ThrowsAsync<ArgumentNullException>(
                 "timeoutResponse",
                 () => this.subject.AddTransactionAsync(
-                    builder.transaction, builder.confirmation, builder.timeout,
-                    callback, builder.successData, null, CancellationToken.None)
+                    builder.transaction, builder.confirmations, builder.timeout,
+                    callback, builder.successData, null, null, CancellationToken.None)
             );
         }
 
@@ -250,7 +250,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             block.AddTransaction(Transaction.Create(ZcoinNetworks.Instance.Regtest));
 
             var builder = new WatchArgsBuilder(this.callbackRepository);
-            builder.confirmation = 10;
+            builder.confirmations = 10;
             builder.timeout = TimeSpan.FromMilliseconds(500);
             builder.transaction = block.Transactions[0].GetHash();
 
@@ -324,30 +324,31 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             builder.timeout = TimeSpan.FromMilliseconds(500);
 
             // Act.
-            await builder.Call(this.subject.AddTransactionAsync);
+            var rule = await builder.Call(this.subject.AddTransactionAsync);
             Thread.Sleep(TimeSpan.FromMilliseconds(1000));
 
             // Assert.
             _ = this.callbackRepository.Received(1).AddAsync
             (
-                Arg.Any<IPAddress>(),
-                Arg.Any<Uri>(),
+                Arg.Is<IPAddress>(ip => ip == builder.ip),
+                Arg.Is<Uri>(url => url == builder.callbackUrl),
                 Arg.Any<CancellationToken>()
             );
 
             _ = this.ruleRepository.Received(1).AddAsync
             (
-                Arg.Any<uint256>(),
-                Arg.Any<int>(),
-                Arg.Any<TimeSpan>(),
-                Arg.Any<CallbackResult>(),
-                Arg.Any<CallbackResult>(),
-                Arg.Any<Callback>(),
+                Arg.Is<uint256>(tx => tx == builder.transaction),
+                Arg.Is<int>(confirmations => confirmations == builder.confirmations),
+                Arg.Is<TimeSpan>(t => t == builder.timeout),
+                Arg.Is<CallbackResult>(r => r == builder.successData),
+                Arg.Is<CallbackResult>(r => r == builder.timeoutData),
+                Arg.Is<Callback>(c => c == rule.Callback),
+                Arg.Is<string>(n => n == builder.note),
                 Arg.Any<CancellationToken>()
             );
 
             _ = this.callbackExecuter.Received(1).ExecuteAsync(
-                Arg.Any<Guid>(),
+                Arg.Is<Guid>(id => id == rule.Callback.Id),
                 this.defaultUrl,
                 Arg.Is<CallbackResult>
                 (
@@ -358,14 +359,14 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 
             _ = this.callbackRepository.Received(1).AddHistoryAsync
             (
-                Arg.Any<Guid>(),
-                Arg.Any<CallbackResult>(),
+                Arg.Is<Guid>(id => id == rule.Callback.Id),
+                Arg.Is<CallbackResult>(r => r == rule.TimeoutResponse),
                 Arg.Any<CancellationToken>()
             );
 
             _ = this.callbackRepository.Received(1).SetCompletedAsyc
             (
-                Arg.Any<Guid>(),
+                Arg.Is<Guid>(id => id == rule.Callback.Id),
                 Arg.Any<CancellationToken>()
             );
         }
@@ -654,7 +655,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             var builder = new WatchArgsBuilder(this.callbackRepository);
 
             builder.timeout = TimeSpan.FromSeconds(2);
-            builder.confirmation = 10;
+            builder.confirmations = 10;
             var watch = await builder.Call(this.subject.AddTransactionAsync);
 
             var watches = new List<TransactionWatch<Rule>>()
@@ -665,7 +666,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             await this.handler.AddWatchesAsync(watches, CancellationToken.None);
 
             // Act.
-            for (var confirmation = 1; confirmation <= builder.confirmation; confirmation++)
+            for (var confirmation = 1; confirmation <= builder.confirmations; confirmation++)
             {
                 await this.handler.ConfirmationUpdateAsync(watches[0], confirmation, ConfirmationType.Confirmed, CancellationToken.None);
             }
@@ -692,7 +693,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             var builder = new WatchArgsBuilder(this.callbackRepository);
 
             builder.timeout = TimeSpan.FromSeconds(1);
-            builder.confirmation = 10;
+            builder.confirmations = 10;
             var watch = await builder.Call(this.subject.AddTransactionAsync);
 
             var watches = new List<TransactionWatch<Rule>>()
@@ -703,12 +704,12 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             await this.handler.AddWatchesAsync(watches, CancellationToken.None);
 
             // Act.
-            for (var confirmation = 1; confirmation < builder.confirmation; confirmation++)
+            for (var confirmation = 1; confirmation < builder.confirmations; confirmation++)
             {
                 await this.handler.ConfirmationUpdateAsync(watches[0], confirmation, ConfirmationType.Confirmed, CancellationToken.None);
             }
             Thread.Sleep(TimeSpan.FromSeconds(2));
-            await this.handler.ConfirmationUpdateAsync(watches[0], builder.confirmation, ConfirmationType.Confirmed, CancellationToken.None);
+            await this.handler.ConfirmationUpdateAsync(watches[0], builder.confirmations, ConfirmationType.Confirmed, CancellationToken.None);
 
             // Assert.
             _ = this.callbackExecuter.Received(1).ExecuteAsync
@@ -729,7 +730,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             // Arrange.
             var builder = new WatchArgsBuilder(this.callbackRepository);
             builder.timeout = TimeSpan.FromMilliseconds(500);
-            builder.confirmation = 10;
+            builder.confirmations = 10;
 
             var rule = await builder.Call(this.subject.AddTransactionAsync);
 
@@ -766,7 +767,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             var builder = new WatchArgsBuilder(this.callbackRepository);
 
             builder.timeout = TimeSpan.FromMilliseconds(500);
-            builder.confirmation = 10;
+            builder.confirmations = 10;
             var watch = await builder.Call(this.subject.AddTransactionAsync);
 
             var watches = new List<TransactionWatch<Rule>>()
@@ -818,7 +819,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             var builder = new WatchArgsBuilder(this.callbackRepository);
 
             builder.timeout = TimeSpan.FromSeconds(1);
-            builder.confirmation = 10;
+            builder.confirmations = 10;
             var watch = await builder.Call(this.subject.AddTransactionAsync);
 
             var watches = new List<TransactionWatch<Rule>>()
@@ -849,12 +850,13 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 
             var callback = await this.callbackRepository.AddAsync
             (
-                builder.url, builder.callbackUrl, CancellationToken.None
+                builder.ip, builder.callbackUrl, CancellationToken.None
             );
 
             _ = await this.ruleRepository.AddAsync
             (
-                builder.transaction, builder.confirmation, builder.timeout, builder.successData, builder.timeoutData, callback, CancellationToken.None
+                builder.transaction, builder.confirmations, builder.timeout, builder.successData, builder.timeoutData,
+                callback, null, CancellationToken.None
             );
 
             // Completed watch
@@ -869,7 +871,8 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 
             var watch = await this.ruleRepository.AddAsync
             (
-                builder.transaction, builder.confirmation, builder.timeout, builder.successData, builder.timeoutData, completedCallback, CancellationToken.None
+                builder.transaction, builder.confirmations, builder.timeout, builder.successData, builder.timeoutData,
+                completedCallback, null, CancellationToken.None
             );
 
             await this.ruleRepository.UpdateStatusAsync(watch.Id, RuleStatus.Success, CancellationToken.None);
@@ -954,12 +957,13 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
         public class WatchArgsBuilder
         {
             public uint256 transaction;
-            public int confirmation;
+            public int confirmations;
             public TimeSpan timeout;
-            public IPAddress url;
+            public IPAddress ip;
             public Uri callbackUrl;
             public CallbackResult successData;
             public CallbackResult timeoutData;
+            public string note;
             public CancellationToken cancellationToken;
 
             readonly ICallbackRepository callbackRepository;
@@ -969,27 +973,29 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
                 this.callbackRepository = callbackRepository;
 
                 this.transaction = uint256.Parse("7396ddaa275ed5492564277efc0844b4aeaa098020bc8d4b4dbc489134e49afd");
-                this.confirmation = 10;
+                this.confirmations = 10;
                 this.timeout = TimeSpan.FromSeconds(1);
-                this.url = IPAddress.Loopback;
+                this.ip = IPAddress.Loopback;
                 this.callbackUrl = new Uri("http://zcoin.io");
                 this.successData = new CallbackResult(CallbackResult.StatusSuccess, "success");
                 this.timeoutData = new CallbackResult(CallbackResult.StatusError, "timeout");
+                this.note = "Test note";
                 this.cancellationToken = CancellationToken.None;
             }
 
             public async Task<T> Call<T>(Func<uint256, int, TimeSpan, Callback,
                 CallbackResult,
                 CallbackResult,
+                string,
                 CancellationToken, Task<T>> func)
             {
                 var callback = await this.callbackRepository.AddAsync(
-                    this.url,
+                    this.ip,
                     this.callbackUrl,
                     CancellationToken.None);
 
-                return await func(transaction, confirmation, timeout, callback,
-                    successData, timeoutData, cancellationToken);
+                return await func(transaction, confirmations, timeout, callback,
+                    successData, timeoutData, note, cancellationToken);
             }
         }
     }
