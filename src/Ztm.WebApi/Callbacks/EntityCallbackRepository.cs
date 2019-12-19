@@ -104,7 +104,7 @@ namespace Ztm.WebApi.Callbacks
 
             using (var db = this.db.CreateDbContext())
             {
-                var history = await db.WebApiCallbackHistories.AddAsync
+                await db.WebApiCallbackHistories.AddAsync
                 (
                     new WebApiCallbackHistory
                     {
