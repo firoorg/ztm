@@ -113,6 +113,11 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
             }
         }
 
+        public static PropertyAmount operator-(PropertyAmount amount)
+        {
+            return new PropertyAmount(checked(-amount.value));
+        }
+
         public static bool operator<(PropertyAmount first, PropertyAmount second)
         {
             return first.value < second.value;
@@ -131,6 +136,11 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
         public static bool operator>=(PropertyAmount first, PropertyAmount second)
         {
             return first.value >= second.value;
+        }
+
+        public static PropertyAmount Negate(PropertyAmount amount)
+        {
+            return -amount;
         }
     }
 }

@@ -3,49 +3,48 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Ztm.ObjectModel;
+using Ztm.Threading.TimerSchedulers;
 
 namespace Ztm.Threading
 {
     public sealed class Timer
     {
-        public static readonly TimeSpan MaxDuration = TimeSpan.FromMilliseconds(4294967294);
-        public static readonly TimeSpan MinDuration = TimeSpan.Zero;
-
         readonly Stopwatch stopwatch;
         volatile TimerStatus status;
         volatile int oneShotState; // 0 = not one shot, 1 = not fired, 2 = stopping by outside, 3 = stopping by inside
         volatile ShutdownGuard stopGuard;
-        volatile System.Threading.Timer timer;
+        volatile object schedule;
         volatile int elapsed;
 
-        public Timer()
+        public Timer(ITimerScheduler scheduler = null)
         {
             this.stopwatch = new Stopwatch();
+
+            Scheduler = scheduler ?? DefaultScheduler;
         }
+
+        public static ITimerScheduler DefaultScheduler { get; } = new ThreadPoolScheduler();
 
         public int ElapsedCount => this.elapsed;
 
         public TimeSpan ElapsedTime => this.stopwatch.Elapsed;
 
+        public ITimerScheduler Scheduler { get; }
+
         public TimerStatus Status => this.status;
 
         public event EventHandler<TimerElapsedEventArgs> Elapsed;
 
-        public static bool IsValidDuration(TimeSpan duration)
-        {
-            return duration >= MinDuration && duration <= MaxDuration;
-        }
-
         public void Start(TimeSpan due, TimeSpan? period, object context)
         {
-            if (!IsValidDuration(due))
+            if (!Scheduler.IsValidDuration(due))
             {
                 throw new ArgumentOutOfRangeException(nameof(due), due, "The value is not valid.");
             }
 
-            if (period.HasValue && !IsValidDuration(period.Value))
+            if (period != null && !Scheduler.IsValidDuration(period.Value))
             {
-                throw new ArgumentOutOfRangeException(nameof(period), period, "The value is not valid");
+                throw new ArgumentOutOfRangeException(nameof(period), period, "The value is not valid.");
             }
 
             if (Status != TimerStatus.Created)
@@ -53,29 +52,16 @@ namespace Ztm.Threading
                 throw new InvalidOperationException("The timer is already started.");
             }
 
-            // Prepare to start timer.
-            if (period.HasValue && period.Value == TimeSpan.Zero)
-            {
-                // If caller supply zero for period that mean they want to repeat timer every 0 seconds but
-                // System.Threading.Timer treat that value as one-shot timer instead. So we want to emulate the behvaior
-                // that caller expected.
-                period = TimeSpan.FromMilliseconds(1);
-            }
-
+            // Prepare to schedule callback.
             this.stopGuard = new ShutdownGuard();
-            this.oneShotState = period.HasValue ? 0 : 1;
-            this.status = TimerStatus.Started; // We need to change status here due to timer might elapsed immediately.
+            this.oneShotState = (period != null) ? 0 : 1;
+            this.status = TimerStatus.Started; // We need to change status here due to scheduling might elapsed immediately.
 
-            // Start timer.
+            // Schedule callback.
             try
             {
                 this.stopwatch.Restart();
-                this.timer = new System.Threading.Timer(
-                    TimerElapsedAsync,
-                    context,
-                    due,
-                    period.HasValue ? period.Value : Timeout.InfiniteTimeSpan
-                );
+                this.schedule = Scheduler.Schedule(due, period, OnElapsed, context);
             }
             catch
             {
@@ -110,14 +96,14 @@ namespace Ztm.Threading
 
         void Stop()
         {
-            this.timer.Dispose();
+            Scheduler.Stop(this.schedule);
             this.stopwatch.Stop();
             this.stopGuard.Dispose();
 
             this.status = TimerStatus.Stopped;
         }
 
-        async void TimerElapsedAsync(object context)
+        async void OnElapsed(object context)
         {
             if (!this.stopGuard.TryLock())
             {

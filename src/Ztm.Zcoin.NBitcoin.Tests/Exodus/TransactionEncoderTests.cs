@@ -70,7 +70,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
         public void Decode_WithValidTransactionType_ShouldInvokePayloadDecode()
         {
             // Arrange.
-            ExodusTransaction tx = new TestExodusTransaction(null, null);
+            ExodusTransaction tx = new FakeExodusTransaction(null, null);
             byte[] data;
 
             using (var stream = RawTransaction.Create(1, ExodusTransaction.MaxVersion))

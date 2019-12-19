@@ -1,149 +1,229 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using NSubstitute;
+using FluentAssertions;
+using Moq;
 using Xunit;
 
 namespace Ztm.Threading.Tests
 {
-    public class TimerTests
+    public sealed class TimerTests : IDisposable
     {
+        readonly Mock<ITimerScheduler> scheduler;
         readonly Timer subject;
 
         public TimerTests()
         {
-            this.subject = new Timer();
+            this.scheduler = new Mock<ITimerScheduler>();
+            this.subject = new Timer(this.scheduler.Object);
+        }
+
+        public void Dispose()
+        {
+            if (this.subject.Status == TimerStatus.Started)
+            {
+                this.subject.StopAsync(CancellationToken.None).Wait();
+            }
         }
 
         [Fact]
-        public void Constructor_WhenSucess_PropertiesShouldBeInitialized()
+        public void Constructor_WithNullScheduler_ShouldUseDefault()
         {
-            Assert.Equal(0, this.subject.ElapsedCount);
-            Assert.Equal(TimeSpan.Zero, this.subject.ElapsedTime);
-            Assert.Equal(TimerStatus.Created, this.subject.Status);
-        }
+            var subject = new Timer(null);
 
-        [Theory]
-        [InlineData(-1d)]
-        [InlineData(4294967295d)]
-        public void IsValidDuration_WithInvalidValue_ShouldReturnFalse(double millis)
-        {
-            Assert.False(Timer.IsValidDuration(TimeSpan.FromMilliseconds(millis)));
-        }
-
-        [Theory]
-        [InlineData(0d)]
-        [InlineData(4294967294d)]
-        public void IsValidDuration_WithValidValue_ShouldReturnTrue(double millis)
-        {
-            Assert.True(Timer.IsValidDuration(TimeSpan.FromMilliseconds(millis)));
-        }
-
-        [Theory]
-        [InlineData(-1d)]
-        [InlineData(4294967295d)]
-        public void Start_WithInvalidDue_ShouldThrow(double millis)
-        {
-            Assert.Throws<ArgumentOutOfRangeException>(
-                "due",
-                () => this.subject.Start(TimeSpan.FromMilliseconds(millis), null, null)
-            );
-        }
-
-        [Theory]
-        [InlineData(-1d)]
-        [InlineData(4294967295d)]
-        public void Start_WithInvalidPeriod_ShouldThrow(double millis)
-        {
-            Assert.Throws<ArgumentOutOfRangeException>(
-                "period",
-                () => this.subject.Start(TimeSpan.Zero, TimeSpan.FromMilliseconds(millis), null)
-            );
+            subject.Scheduler.Should().BeSameAs(Timer.DefaultScheduler);
         }
 
         [Fact]
-        public async Task Start_AlreadyStarted_ShouldThrow()
+        public void Constructor_WhenSucess_PropertiesShouldInitialized()
         {
+            this.subject.ElapsedCount.Should().Be(0);
+            this.subject.ElapsedTime.Should().Be(TimeSpan.Zero);
+            this.subject.Scheduler.Should().BeSameAs(this.scheduler.Object);
+            this.subject.Status.Should().Be(TimerStatus.Created);
+        }
+
+        [Fact]
+        public void DefaultScheduler_WhenGetting_ShouldReturnNonNull()
+        {
+            Timer.DefaultScheduler.Should().NotBeNull();
+        }
+
+        [Fact]
+        public void Start_WithInvalidDue_ShouldThrow()
+        {
+            this.scheduler.Setup(s => s.IsValidDuration(TimeSpan.MinValue))
+                          .Returns(false);
+
+            this.subject.Invoking(s => s.Start(TimeSpan.MinValue, null, null))
+                        .Should().ThrowExactly<ArgumentOutOfRangeException>()
+                        .And.ParamName.Should().Be("due");
+        }
+
+        [Fact]
+        public void Start_WithInvalidPeriod_ShouldThrow()
+        {
+            this.scheduler.Setup(s => s.IsValidDuration(TimeSpan.MinValue))
+                          .Returns(true);
+            this.scheduler.Setup(s => s.IsValidDuration(TimeSpan.MaxValue))
+                          .Returns(false);
+
+            this.subject.Invoking(s => s.Start(TimeSpan.MinValue, TimeSpan.MaxValue, null))
+                        .Should().ThrowExactly<ArgumentOutOfRangeException>()
+                        .And.ParamName.Should().Be("period");
+        }
+
+        [Fact]
+        public void Start_AlreadyStarted_ShouldThrow()
+        {
+            // Arrange.
+            this.scheduler.Setup(s => s.IsValidDuration(TimeSpan.Zero))
+                          .Returns(true);
+
             this.subject.Start(TimeSpan.Zero, TimeSpan.Zero, null);
 
-            try
-            {
-                Assert.Throws<InvalidOperationException>(() => this.subject.Start(TimeSpan.Zero, TimeSpan.Zero, null));
-            }
-            finally
-            {
-                await this.subject.StopAsync(CancellationToken.None);
-            }
+            // Act.
+            this.subject.Invoking(s => s.Start(TimeSpan.Zero, TimeSpan.Zero, null))
+                        .Should().ThrowExactly<InvalidOperationException>();
         }
 
         [Fact]
         public async Task Start_AlreadyStopped_ShouldThrow()
         {
+            // Arrange.
+            this.scheduler.Setup(s => s.IsValidDuration(TimeSpan.Zero))
+                          .Returns(true);
+
             this.subject.Start(TimeSpan.Zero, TimeSpan.Zero, null);
             await this.subject.StopAsync(CancellationToken.None);
 
-            Assert.Throws<InvalidOperationException>(() => this.subject.Start(TimeSpan.Zero, TimeSpan.Zero, null));
+            // Act.
+            this.subject.Invoking(s => s.Start(TimeSpan.Zero, TimeSpan.Zero, null))
+                        .Should().ThrowExactly<InvalidOperationException>();
         }
 
-        [Fact]
-        public async Task Start_WithNullPeriod_ShouldOneShot()
+        [Theory]
+        [InlineData(true, null)]
+        [InlineData(true, "abc")]
+        [InlineData(false, null)]
+        [InlineData(false, "abc")]
+        public void Start_WithValidArgs_ShouldScheduleHandler(bool oneshot, object context)
         {
             // Arrange.
-            var handler = Substitute.For<EventHandler<TimerElapsedEventArgs>>();
-            var context = new object();
+            var period = oneshot ? (TimeSpan?)null : TimeSpan.Zero;
 
-            this.subject.Elapsed += handler;
+            this.scheduler.Setup(s => s.IsValidDuration(TimeSpan.Zero))
+                          .Returns(true);
 
             // Act.
-            this.subject.Start(TimeSpan.Zero, null, context);
-            await Task.Delay(500); // Ensure timer is fired.
+            this.subject.Start(TimeSpan.Zero, period, context);
 
             // Assert.
-            Assert.Equal(TimerStatus.Stopped, this.subject.Status);
-            Assert.Equal(1, this.subject.ElapsedCount);
-            Assert.NotEqual(TimeSpan.Zero, this.subject.ElapsedTime);
-
-            handler.Received(1)(this.subject, Arg.Is<TimerElapsedEventArgs>(e => e.Context == context));
+            this.scheduler.Verify(
+                s => s.Schedule(TimeSpan.Zero, period, It.IsNotNull<Action<object>>(), context),
+                Times.Once()
+            );
         }
 
         [Fact]
-        public async Task StopAsync_NotStarted_ShouldThrow()
+        public void StopAsync_NotStarted_ShouldThrow()
         {
-            await Assert.ThrowsAsync<InvalidOperationException>(() => this.subject.StopAsync(CancellationToken.None));
+            this.subject.Invoking(s => s.StopAsync(CancellationToken.None))
+                        .Should().ThrowExactly<InvalidOperationException>();
         }
 
         [Fact]
         public async Task StopAsync_AlreadyStopped_ShouldThrow()
         {
+            // Arrange.
+            this.scheduler.Setup(s => s.IsValidDuration(TimeSpan.Zero))
+                          .Returns(true);
+
             this.subject.Start(TimeSpan.Zero, TimeSpan.Zero, null);
             await this.subject.StopAsync(CancellationToken.None);
 
-            await Assert.ThrowsAsync<InvalidOperationException>(() => this.subject.StopAsync(CancellationToken.None));
+            // Act.
+            this.subject.Invoking(s => s.StopAsync(CancellationToken.None))
+                        .Should().ThrowExactly<InvalidOperationException>();
         }
 
         [Fact]
-        public async Task StopAsync_WhenSucceeded_ShouldStopped()
+        public async Task StopAsync_NotElapsed_ShouldStopScheduler()
         {
             // Arrange.
-            var handler = Substitute.For<EventHandler<TimerElapsedEventArgs>>();
-            var context = new object();
+            var schedule = new object();
+            Action trigger = null;
+            var handler = new Mock<EventHandler<TimerElapsedEventArgs>>();
 
-            this.subject.Elapsed += handler;
-            this.subject.Start(TimeSpan.Zero, TimeSpan.Zero, context);
+            this.scheduler.Setup(s => s.IsValidDuration(It.IsAny<TimeSpan>()))
+                          .Returns(true);
+            this.scheduler.Setup(s => s.Schedule(
+                              It.IsAny<TimeSpan>(),
+                              It.IsAny<TimeSpan?>(),
+                              It.IsAny<Action<object>>(),
+                              It.IsAny<object>()
+                          ))
+                          .Returns(schedule)
+                          .Callback<TimeSpan, TimeSpan?, Action<object>, object>((d, p, h, c) => trigger = () => h(c));
 
-            await Task.Delay(2000);
+            this.subject.Elapsed += handler.Object;
+            this.subject.Start(TimeSpan.MaxValue, TimeSpan.Zero, null);
 
             // Act.
             await this.subject.StopAsync(CancellationToken.None);
 
-            await Task.Delay(1000); // Required to test if we handled internal timer queue correctly.
+            trigger(); // Emulate elapsed after stopped.
 
             // Assert.
-            Assert.Equal(TimerStatus.Stopped, this.subject.Status);
-            Assert.InRange(this.subject.ElapsedCount, 2, int.MaxValue);
-            Assert.NotEqual(TimeSpan.Zero, this.subject.ElapsedTime);
+            this.subject.ElapsedCount.Should().Be(0);
+            this.subject.ElapsedTime.Should().BeGreaterThan(TimeSpan.Zero);
+            this.subject.Status.Should().Be(TimerStatus.Stopped);
 
-            handler.Received(this.subject.ElapsedCount)(this.subject, Arg.Is<TimerElapsedEventArgs>(e => e.Context == context));
+            this.scheduler.Verify(s => s.Stop(schedule), Times.Once());
+
+            handler.Verify(h => h(It.IsAny<object>(), It.IsAny<TimerElapsedEventArgs>()), Times.Never());
+        }
+
+        [Fact]
+        public async Task StopAsync_AlreadyElapsed_ShouldThrow()
+        {
+            // Arrange.
+            var schedule = new object();
+            Action trigger = null;
+            var handler = new Mock<EventHandler<TimerElapsedEventArgs>>();
+            var context = new object();
+
+            this.scheduler.Setup(s => s.IsValidDuration(TimeSpan.Zero))
+                          .Returns(true);
+            this.scheduler.Setup(s => s.Schedule(It.IsAny<TimeSpan>(), It.IsAny<TimeSpan?>(), It.IsAny<Action<object>>(), It.IsAny<object>()))
+                          .Returns(schedule)
+                          .Callback<TimeSpan, TimeSpan?, Action<object>, object>((d, p, h, c) => trigger = () => h(c));
+
+            this.subject.Elapsed += handler.Object;
+            this.subject.Start(TimeSpan.Zero, null, context);
+
+            // Act.
+            trigger();
+
+            await this.subject.Invoking(s => s.StopAsync(CancellationToken.None))
+                              .Should().ThrowExactlyAsync<InvalidOperationException>();
+
+            // Assert.
+            this.subject.ElapsedCount.Should().Be(1);
+            this.subject.ElapsedTime.Should().BeGreaterThan(TimeSpan.Zero);
+            this.subject.Status.Should().Be(TimerStatus.Stopped);
+
+            this.scheduler.Verify(s => s.Stop(schedule), Times.Once());
+
+            handler.Verify(
+                h => h(
+                    this.subject,
+                    It.Is<TimerElapsedEventArgs>(
+                        e => e.Context == context && e.CancellationToken == CancellationToken.None
+                    )
+                ),
+                Times.Once()
+            );
         }
     }
 }

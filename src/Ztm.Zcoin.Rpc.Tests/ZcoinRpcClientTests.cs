@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,7 +37,9 @@ namespace Ztm.Zcoin.Rpc.Tests
 
                 this.transactionEncoder = Substitute.For<ITransactionEncoder>();
 
-                this.subject = new ZcoinRpcClient(this.node.CreateRPCClient(), this.transactionEncoder);
+                var genesisTransactions = new HashSet<uint256>(this.node.Network.GetGenesis().Transactions.Select(t => t.GetHash()));
+
+                this.subject = new ZcoinRpcClient(this.node.CreateRPCClient(), this.transactionEncoder, genesisTransactions);
             }
             catch
             {
@@ -53,14 +56,21 @@ namespace Ztm.Zcoin.Rpc.Tests
         [Fact]
         public void Construct_WithNullArgs_ShouldThrow()
         {
+            var genesisTransactions = new HashSet<uint256>();
+
             Assert.Throws<ArgumentNullException>(
                 "client",
-                () => new ZcoinRpcClient(null, this.transactionEncoder)
+                () => new ZcoinRpcClient(null, this.transactionEncoder, genesisTransactions)
             );
 
             Assert.Throws<ArgumentNullException>(
                 "exodusEncoder",
-                () => new ZcoinRpcClient(this.node.CreateRPCClient(), null)
+                () => new ZcoinRpcClient(this.node.CreateRPCClient(), null, genesisTransactions)
+            );
+
+            Assert.Throws<ArgumentNullException>(
+                "genesisTransactions",
+                () => new ZcoinRpcClient(this.node.CreateRPCClient(), this.transactionEncoder, null)
             );
         }
 
@@ -751,6 +761,19 @@ namespace Ztm.Zcoin.Rpc.Tests
             Assert.Equal(exodusTransaction, block.Transactions.Last().GetExodusTransaction());
         }
 
+        [Fact]
+        public async Task GetBlockAsync_GenesisBlock_ShouldSuccess()
+        {
+            // Arrange.
+            var genesis = this.node.Network.GetGenesis();
+
+            // Act.
+            var block = await this.subject.GetBlockAsync(genesis.GetHash(), CancellationToken.None);
+
+            // Assert.
+            Assert.Equal(genesis.GetHash(), block.GetHash());
+            Assert.Equal(genesis.Transactions.First().GetHash(), block.Transactions.First().GetHash());
+        }
 
         [Fact]
         public async Task GetBlockAsync_ByHeight_WhichContiainsExodusTransaction_ShouldSuccess()
@@ -779,6 +802,20 @@ namespace Ztm.Zcoin.Rpc.Tests
             Assert.Equal(2, block.Transactions.Count);
             Assert.Null(block.Transactions.First().GetExodusTransaction());
             Assert.Equal(exodusTransaction, block.Transactions.Last().GetExodusTransaction());
+        }
+
+        [Fact]
+        public async Task GetBlockAsync_ByHeight_GenesisBlock_ShouldSuccess()
+        {
+            // Arrange.
+            var genesis = this.node.Network.GetGenesis();
+
+            // Act.
+            var block = await this.subject.GetBlockAsync(0, CancellationToken.None);
+
+            // Assert.
+            Assert.Equal(genesis.GetHash(), block.GetHash());
+            Assert.Equal(genesis.Transactions.First().GetHash(), block.Transactions.First().GetHash());
         }
 
         [Fact]

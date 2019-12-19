@@ -14,22 +14,45 @@ jobs:
     - name: Install EF CLI
       shell: cmd
       run: dotnet.exe tool install --global dotnet-ef --version 3.1.0
+    - name: Install Coverage Uploader
+      shell: cmd
+      run: dotnet.exe tool install --global Codecov.Tool
     - name: Build
       shell: cmd
       run: dotnet.exe build src\Ztm.sln
+    - name: Build E2E Runner
+      shell: cmd
+      run: dotnet.exe build src\Ztm.EndToEndTests
     - name: Unit Test
+      shell: cmd
+      run: dotnet.exe test --no-build -r test-results --collect "Code Coverage" src\Ztm.sln
+    - name: Transform Test Results
       run: |
-        Get-ChildItem -Path src -Filter *.Tests -Directory | ForEach-Object {
-            $path = $_.FullName
+        $tool = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Team Tools\Dynamic Code Coverage Tools\CodeCoverage.exe"
 
-            $runner = Start-Process -FilePath dotnet.exe -ArgumentList test, --no-build, -v=normal, $path -NoNewWindow -PassThru -Wait
+        New-Item -Path coverage-reports -ItemType Directory | Out-Null
 
-            if ($runner.ExitCode -ne 0) {
-                exit $runner.ExitCode
+        Get-ChildItem -Path test-results -Filter *.coverage -Recurse -File | ForEach-Object {
+            $name = $_.Directory.Name
+            $input = $_.FullName
+            $output = "coverage-reports\$name.coveragexml"
+            $args = @("analyze", "/output:$output", $input)
+
+            Write-Host -Object "Processing $input"
+
+            $transform = Start-Process -FilePath $tool -ArgumentList $args -NoNewWindow -PassThru -Wait
+
+            if ($transform.ExitCode -ne 0) {
+              exit $transform.ExitCode
             }
 
-            Write-Host
+            Write-Host -Object "Generated $output"
         }
+    - name: Upload Coverage Reports
+      env:
+        CODECOV_TOKEN: fd50d6ec-a3dd-4815-9ed1-b9b92ce6c063
+      shell: cmd
+      run: codecov.exe --required -f coverage-reports\*.coveragexml
     - name: Create Release
       shell: cmd
       run: dotnet.exe publish -o "%GITHUB_WORKSPACE%\release" -r linux-musl-x64 -c Release src\Ztm.WebApi
@@ -80,7 +103,7 @@ jobs:
     - name: Create Docker Network
       run: docker network create $DOCKER_NETWORK
     - name: Start PostgreSQL
-      run: docker run --rm -d --name $DOCKER_DB_MAIN --network $DOCKER_NETWORK postgres:10
+      run: docker run --rm -d --name $DOCKER_DB_MAIN --volume $GITHUB_WORKSPACE/release/Ztm.Data.Entity.Postgres.sql:/docker-entrypoint-initdb.d/init.sql:ro --network $DOCKER_NETWORK postgres:10
     - name: Start Zcoin Daemon
       run: docker run --rm -d --name $DOCKER_ZCOIND --network $DOCKER_NETWORK zcoinofficial/zcoind:latest -regtest -exodus -dandelion=0 -rpcuser=zcoin -rpcpassword=zcoin -rpcallowip=0.0.0.0/0 -zmqpubhashblock=tcp://0.0.0.0:28332
     - name: Configure ZTM
