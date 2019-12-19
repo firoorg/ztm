@@ -48,7 +48,7 @@ namespace Ztm.WebApi.Callbacks
 
                 var response = await client.SendAsync(request, cancellationToken);
 
-                switch(response.StatusCode)
+                switch (response.StatusCode)
                 {
                 case HttpStatusCode.OK:
                 case HttpStatusCode.Accepted:

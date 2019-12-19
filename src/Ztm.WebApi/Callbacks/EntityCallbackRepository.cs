@@ -25,6 +25,22 @@ namespace Ztm.WebApi.Callbacks
             this.db = db;
         }
 
+        public static Callback ToDomain(WebApiCallback callback)
+        {
+            if (callback == null)
+            {
+                throw new ArgumentNullException(nameof(callback));
+            }
+
+            return new Callback(
+                callback.Id,
+                callback.RegisteredIp,
+                DateTime.SpecifyKind(callback.RegisteredTime, DateTimeKind.Utc),
+                callback.Completed,
+                callback.Url
+            );
+        }
+
         public async Task<Callback> AddAsync(IPAddress registeringIp, Uri url, CancellationToken cancellationToken)
         {
             if (registeringIp == null)
@@ -79,7 +95,7 @@ namespace Ztm.WebApi.Callbacks
             }
         }
 
-        public async Task<int> AddHistoryAsync(Guid id, dynamic result, CancellationToken cancellationToken)
+        public async Task AddHistoryAsync(Guid id, CallbackResult result, CancellationToken cancellationToken)
         {
             if (result == null)
             {
@@ -99,8 +115,6 @@ namespace Ztm.WebApi.Callbacks
                     }
                 );
                 await db.SaveChangesAsync(cancellationToken);
-
-                return history.Entity.Id;
             }
         }
 
@@ -114,22 +128,6 @@ namespace Ztm.WebApi.Callbacks
                 Completed = callback.Completed,
                 Url = callback.Url,
             };
-        }
-
-        public static Callback ToDomain(WebApiCallback callback)
-        {
-            if (callback == null)
-            {
-                throw new ArgumentNullException(nameof(callback));
-            }
-
-            return new Callback(
-                callback.Id,
-                callback.RegisteredIp,
-                DateTime.SpecifyKind(callback.RegisteredTime, DateTimeKind.Utc),
-                callback.Completed,
-                callback.Url
-            );
         }
     }
 }

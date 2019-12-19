@@ -49,7 +49,10 @@ namespace Ztm.WebApi
                         };
                     });
 
-            // Address Pools
+            // Http Client Factory.
+            services.AddHttpClient();
+
+            // Address Pools.
             services.UseAddressPool();
 
             // Fundamentals Services.
@@ -60,13 +63,18 @@ namespace Ztm.WebApi
             services.AddSingleton<IMainDatabaseFactory, MainDatabaseFactory>();
 
             // Transaction Confirmation Watcher.
-            services.AddHttpClient();
-            services.AddTransient<ICallbackExecuter, HttpCallbackExecuter>();
-            services.AddTransient<ICallbackRepository, EntityCallbackRepository>();
+            services.AddSingleton<ICallbackExecuter, HttpCallbackExecuter>();
+            services.AddSingleton<ICallbackRepository, EntityCallbackRepository>();
             services.AddSingleton<IRuleRepository, EntityRuleRepository>();
             services.AddSingleton<IWatchRepository, EntityWatchRepository>();
-            services.AddHostedService<TransactionConfirmationWatcher>();
-            services.AddSingleton<IBlockListener, TransactionConfirmationWatcher>();
+            services.AddSingleton<TransactionConfirmationWatcher>();
+            services.AddSingleton<IBlockListener>(
+                p => p.GetRequiredService<TransactionConfirmationWatcher>()
+            );
+
+            services.AddSingleton<Microsoft.Extensions.Hosting.IHostedService, TransactionConfirmationWatcher>(
+                p => p.GetRequiredService<TransactionConfirmationWatcher>()
+            );
 
             // Zcoin Interface Services.
             services.AddSingleton<IZcoinRpcClientFactory>(CreateZcoinRpcClientFactory);

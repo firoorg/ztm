@@ -11,8 +11,8 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             uint256 transaction,
             int confirmations,
             TimeSpan originalWaitingTime,
-            dynamic successResponse,
-            dynamic timeoutResponse,
+            CallbackResult successResponse,
+            CallbackResult timeoutResponse,
             Callback callback)
         {
             if (transaction == null)
@@ -58,8 +58,8 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
         public uint256 Transaction { get; }
         public int Confirmations { get; }
         public TimeSpan OriginalWaitingTime { get; }
-        public dynamic SuccessResponse { get; }
-        public dynamic TimeoutResponse { get; }
+        public CallbackResult SuccessResponse { get; }
+        public CallbackResult TimeoutResponse { get; }
         public Callback Callback { get; }
     }
 }

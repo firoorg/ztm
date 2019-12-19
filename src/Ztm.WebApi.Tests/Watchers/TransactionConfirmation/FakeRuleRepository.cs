@@ -140,8 +140,8 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
         public uint256 Transaction { get; set; }
         public int Confirmations { get; set; }
         public TimeSpan WaitingTime { get; set; }
-        public dynamic SuccessResponse { get; set; }
-        public dynamic TimeoutResponse { get; set; }
+        public CallbackResult SuccessResponse { get; set; }
+        public CallbackResult TimeoutResponse { get; set; }
         public Callback Callback { get; set; }
 
         public RuleBuilder(Rule old)

@@ -292,7 +292,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             await ExecuteCallbackAsync(watch.Context.Callback, watch.Context.SuccessResponse, CancellationToken.None);
         }
 
-        async Task ExecuteCallbackAsync(Callback callback, dynamic payload, CancellationToken cancellationToken)
+        async Task ExecuteCallbackAsync(Callback callback, CallbackResult payload, CancellationToken cancellationToken)
         {
             await this.callbackRepository.AddHistoryAsync(callback.Id, payload, cancellationToken);
 

@@ -93,7 +93,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
                     case WatchStatus.Success:
                         break;
                     default:
-                        throw new ArgumentOutOfRangeException("New status is not allowed to set.");
+                        throw new ArgumentOutOfRangeException(nameof(status), "New status is not allowed to set.");
                 }
 
                 watch.Status = (int)status;

@@ -35,8 +35,8 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
                 rule.Transaction,
                 rule.Confirmation,
                 rule.OriginalWaitingTime,
-                JsonConvert.DeserializeObject(rule.SuccessData),
-                JsonConvert.DeserializeObject(rule.TimeoutData),
+                JsonConvert.DeserializeObject<CallbackResult>(rule.SuccessData),
+                JsonConvert.DeserializeObject<CallbackResult>(rule.TimeoutData),
                 callback != null
                     ? callback
                     : (rule.Callback == null ? null : EntityCallbackRepository.ToDomain(rule.Callback))
