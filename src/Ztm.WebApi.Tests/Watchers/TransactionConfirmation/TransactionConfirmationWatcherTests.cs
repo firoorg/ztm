@@ -196,25 +196,30 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
         [Fact]
         public async Task AddTransactionAsync_AndPushNoEvent_ShouldTimeout()
         {
-            // Arrange.
-            await this.Initialize(CancellationToken.None);
-            var builder = new WatchArgsBuilder(this.callbackRepository);
-            builder.timeout = TimeSpan.FromMilliseconds(200);
+            using (var elapsed = new ManualResetEventSlim())
+            {
+                // Arrange.
+                await this.Initialize(CancellationToken.None);
+                var builder = new WatchArgsBuilder(this.callbackRepository);
+                builder.timeout = TimeSpan.FromMilliseconds(200);
+                this.callbackExecuter.When(e => e.ExecuteAsync(Arg.Any<Guid>(),Arg.Any<Uri>(), Arg.Any<CallbackResult>(), Arg.Any<CancellationToken>()))
+                                     .Do(c => elapsed.Set());
 
-            // Act.
-            await builder.Call(this.subject.AddTransactionAsync);
-            Thread.Sleep(TimeSpan.FromMilliseconds(300));
+                // Act.
+                await builder.Call(this.subject.AddTransactionAsync);
+                elapsed.Wait(1500);
 
-            // Assert.
-            _ = this.callbackExecuter
-                .Received(1)
-                .ExecuteAsync
-                (
-                    Arg.Any<Guid>(),
-                    Arg.Any<Uri>(),
-                    Arg.Is<CallbackResult>(r => r.Status == CallbackResult.StatusError),
-                    Arg.Any<CancellationToken>()
-                );
+                // Assert.
+                _ = this.callbackExecuter
+                    .Received(1)
+                    .ExecuteAsync
+                    (
+                        Arg.Any<Guid>(),
+                        Arg.Any<Uri>(),
+                        Arg.Is<CallbackResult>(r => r.Status == CallbackResult.StatusError),
+                        Arg.Any<CancellationToken>()
+                    );
+            }
         }
 
         [Fact]
