@@ -8,7 +8,7 @@ namespace Ztm.Data.Entity.Contexts.Main
     {
         public Guid Id { get; set; }
         public Guid CallbackId { get; set; }
-        public uint256 Transaction { get; set; }
+        public uint256 TransactionHash { get; set; }
         public int Status { get; set; }
         public int Confirmation { get; set; }
         public TimeSpan OriginalWaitingTime { get; set; }

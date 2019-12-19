@@ -62,7 +62,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 
             // Assert.
             Assert.NotEqual(Guid.Empty, rule.Id);
-            Assert.Equal(transaction, rule.Transaction);
+            Assert.Equal(transaction, rule.TransactionHash);
             Assert.Equal(10, rule.Confirmations);
             Assert.Equal(waitingTime, rule.OriginalWaitingTime);
             Assert.Equal(waitingTime, await this.subject.GetRemainingWaitingTimeAsync(rule.Id, CancellationToken.None));
@@ -151,7 +151,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 
             // Assert.
             Assert.Equal(rule.Id, retrieved.Id);
-            Assert.Equal(rule.Transaction, retrieved.Transaction);
+            Assert.Equal(rule.TransactionHash, retrieved.TransactionHash);
             Assert.Equal(rule.Confirmations, retrieved.Confirmations);
             Assert.Equal(rule.OriginalWaitingTime, retrieved.OriginalWaitingTime);
             Assert.Equal(rule.SuccessResponse, retrieved.SuccessResponse);
@@ -222,7 +222,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             // Assert.
             Assert.Equal(2, retrieved.Count());
             Assert.Equal(watches[0].Id, retrieved[0].Id);
-            Assert.Equal(watches[0].Transaction, retrieved[0].Transaction);
+            Assert.Equal(watches[0].TransactionHash, retrieved[0].TransactionHash);
             Assert.Equal(watches[0].Confirmations, retrieved[0].Confirmations);
             Assert.Equal(watches[0].OriginalWaitingTime, retrieved[0].OriginalWaitingTime);
             Assert.Equal(watches[0].SuccessResponse, retrieved[0].SuccessResponse);

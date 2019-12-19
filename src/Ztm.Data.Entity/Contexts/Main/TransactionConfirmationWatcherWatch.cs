@@ -7,9 +7,9 @@ namespace Ztm.Data.Entity.Contexts.Main
     {
         public Guid Id { get; set; }
         public Guid RuleId { get; set; }
-        public uint256 StartBlock { get; set; }
+        public uint256 StartBlockHash { get; set; }
         public DateTime StartTime { get; set; }
-        public uint256 Transaction { get; set; }
+        public uint256 TransactionHash { get; set; }
         public int Status { get; set; }
 
         public TransactionConfirmationWatcherRule Rule { get; set; }

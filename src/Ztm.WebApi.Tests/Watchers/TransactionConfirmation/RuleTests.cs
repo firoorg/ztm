@@ -21,7 +21,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             var callback = new Callback(Guid.Empty, IPAddress.Loopback, DateTime.Now, false, new Uri("https://zcoin.io"));
 
             Assert.Throws<ArgumentNullException>(
-                "transaction",
+                "transactionHash",
                 () => new Rule(id, null, confirmation, waitingTime, successResponse, timeoutResponse, callback, DateTime.UtcNow, null)
             );
 
@@ -125,7 +125,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 
             // Assert.
             Assert.Equal(id, rule.Id);
-            Assert.Equal(tx, rule.Transaction);
+            Assert.Equal(tx, rule.TransactionHash);
             Assert.Equal(confirmations, rule.Confirmations);
             Assert.Equal(waitingTime, rule.OriginalWaitingTime);
             Assert.Equal(successResponse, rule.SuccessResponse);

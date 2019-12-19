@@ -45,9 +45,9 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
                     {
                         Id = watch.Id,
                         RuleId = watch.Context.Id,
-                        StartBlock = watch.StartBlock,
+                        StartBlockHash = watch.StartBlock,
                         StartTime = watch.StartTime,
-                        Transaction = watch.TransactionId,
+                        TransactionHash = watch.TransactionId,
                         Status = (int)WatchStatus.Pending,
                     }
                 );
@@ -108,8 +108,8 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             return new TransactionWatch<Rule>
             (
                 EntityRuleRepository.ToDomain(watch.Rule),
-                watch.StartBlock,
-                watch.Transaction,
+                watch.StartBlockHash,
+                watch.TransactionHash,
                 watch.StartTime,
                 watch.Id
             );

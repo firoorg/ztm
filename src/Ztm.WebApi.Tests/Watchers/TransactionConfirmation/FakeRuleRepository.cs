@@ -137,7 +137,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
     class RuleBuilder
     {
         public Guid Id { get; set; }
-        public uint256 Transaction { get; set; }
+        public uint256 TransactionHash { get; set; }
         public int Confirmations { get; set; }
         public TimeSpan WaitingTime { get; set; }
         public CallbackResult SuccessResponse { get; set; }
@@ -147,7 +147,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
         public RuleBuilder(Rule old)
         {
             Id = old.Id;
-            Transaction = old.Transaction;
+            TransactionHash = old.TransactionHash;
             Confirmations = old.Confirmations;
             WaitingTime = old.OriginalWaitingTime;
             SuccessResponse = old.SuccessResponse;
@@ -156,7 +156,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
         }
 
         public Rule Build() {
-            return new Rule(Id, Transaction, Confirmations, WaitingTime, SuccessResponse,
+            return new Rule(Id, TransactionHash, Confirmations, WaitingTime, SuccessResponse,
                 TimeoutResponse, Callback, DateTime.UtcNow, null);
         }
     }

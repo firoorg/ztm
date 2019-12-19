@@ -8,7 +8,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
     {
         public Rule(
             Guid id,
-            uint256 transaction,
+            uint256 transactionHash,
             int confirmations,
             TimeSpan originalWaitingTime,
             CallbackResult successResponse,
@@ -17,9 +17,9 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             DateTime createdAt,
             string note)
         {
-            if (transaction == null)
+            if (transactionHash == null)
             {
-                throw new ArgumentNullException(nameof(transaction));
+                throw new ArgumentNullException(nameof(transactionHash));
             }
 
             if (successResponse == null)
@@ -48,7 +48,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             }
 
             this.Id = id;
-            this.Transaction = transaction;
+            this.TransactionHash = transactionHash;
             this.Confirmations = confirmations;
             this.OriginalWaitingTime = originalWaitingTime;
             this.SuccessResponse = successResponse;
@@ -59,7 +59,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
         }
 
         public Guid Id { get; }
-        public uint256 Transaction { get; }
+        public uint256 TransactionHash { get; }
         public int Confirmations { get; }
         public TimeSpan OriginalWaitingTime { get; }
         public CallbackResult SuccessResponse { get; }

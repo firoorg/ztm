@@ -32,7 +32,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             return new Rule
             (
                 rule.Id,
-                rule.Transaction,
+                rule.TransactionHash,
                 rule.Confirmation,
                 rule.OriginalWaitingTime,
                 JsonConvert.DeserializeObject<CallbackResult>(rule.SuccessData),
@@ -77,7 +77,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
                     {
                         Id = Guid.NewGuid(),
                         CallbackId = callback.Id,
-                        Transaction = transaction,
+                        TransactionHash = transaction,
                         Status = (int)RuleStatus.Pending,
                         Confirmation = confirmations,
                         OriginalWaitingTime = waitingTime,

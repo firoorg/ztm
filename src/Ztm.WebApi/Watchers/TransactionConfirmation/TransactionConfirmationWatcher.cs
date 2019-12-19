@@ -187,10 +187,10 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             {
                 Dictionary<Guid, Timer> timers;
 
-                if (!this.timers.TryGetValue(rule.Transaction, out timers))
+                if (!this.timers.TryGetValue(rule.TransactionHash, out timers))
                 {
                     timers = new Dictionary<Guid, Timer>();
-                    this.timers.Add(rule.Transaction, timers);
+                    this.timers.Add(rule.TransactionHash, timers);
                 }
 
                 timers.Add(rule.Id, timer);
@@ -244,7 +244,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
 
             try
             {
-                if (!this.timers.TryGetValue(rule.Transaction, out var timers))
+                if (!this.timers.TryGetValue(rule.TransactionHash, out var timers))
                 {
                     throw new KeyNotFoundException("Transaction is not found.");
                 }
@@ -253,7 +253,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
 
                 if (timers.Count == 0)
                 {
-                    this.timers.Remove(rule.Transaction);
+                    this.timers.Remove(rule.TransactionHash);
                 }
             }
             finally
@@ -268,7 +268,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
 
             try
             {
-                if (this.timers.TryGetValue(rule.Transaction, out var txTimers) && txTimers.TryGetValue(rule.Id, out var timer))
+                if (this.timers.TryGetValue(rule.TransactionHash, out var txTimers) && txTimers.TryGetValue(rule.Id, out var timer))
                 {
                     await timer.StopAsync(CancellationToken.None);
                     if (timer.ElapsedCount == 0)

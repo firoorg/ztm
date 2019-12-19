@@ -590,8 +590,8 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 
             var watches = new List<TransactionWatch<Rule>>()
             {
-                new TransactionWatch<Rule>(watch1, uint256.Zero, watch1.Transaction),
-                new TransactionWatch<Rule>(watch2, uint256.Zero, watch1.Transaction),
+                new TransactionWatch<Rule>(watch1, uint256.Zero, watch1.TransactionHash),
+                new TransactionWatch<Rule>(watch2, uint256.Zero, watch1.TransactionHash),
             };
 
             await this.handler.AddWatchesAsync(watches, CancellationToken.None);

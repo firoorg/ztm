@@ -78,7 +78,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 
                 Assert.Equal(rule.Id, retrieved.RuleId);
                 Assert.Equal(watch.Id, retrieved.Id);
-                Assert.Equal(watch.StartBlock, retrieved.StartBlock);
+                Assert.Equal(watch.StartBlock, retrieved.StartBlockHash);
                 Assert.Equal(watch.StartTime, DateTime.SpecifyKind(retrieved.StartTime, DateTimeKind.Utc));
             }
         }
