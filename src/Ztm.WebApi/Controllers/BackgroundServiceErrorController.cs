@@ -40,7 +40,7 @@ namespace Ztm.WebApi.Controllers
                     Service = e.Service.FullName,
                     Error = e.Exception.Message,
                     Detail = e.Exception.StackTrace
-                }).AsEnumerable();
+                }).ToList();
 
                 details.Errors = errors;
             }

@@ -1,8 +1,7 @@
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
-using Ztm.WebApi.Models;
 
-namespace Ztm.WebApi.Controllers
+namespace Ztm.WebApi.Models
 {
     public sealed class BackgroundServiceErrorProblemDetails : ProblemDetails
     {

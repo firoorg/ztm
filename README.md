@@ -9,7 +9,7 @@ This is a service to provide rich API for manage tokens on Zcoin Exodus Protocol
 
 ### Requirements
 
-- .NET Core 2.2
+- .NET Core 2.1
 
 ### Build
 
