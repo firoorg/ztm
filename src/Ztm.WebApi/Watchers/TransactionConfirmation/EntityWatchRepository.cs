@@ -39,9 +39,9 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
 
             using (var db = this.db.CreateDbContext())
             {
-                await db.TransactionConfirmationWatches.AddAsync
+                await db.TransactionConfirmationWatcherWatches.AddAsync
                 (
-                    new TransactionConfirmationWatch
+                    new TransactionConfirmationWatcherWatch
                     {
                         Id = watch.Id,
                         RuleId = watch.Context.Id,
@@ -60,7 +60,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
         {
             using (var db = this.db.CreateDbContext())
             {
-                return await db.TransactionConfirmationWatches
+                return await db.TransactionConfirmationWatcherWatches
                     .Include(w => w.Rule)
                     .ThenInclude(r => r.Callback)
                     .Where(w => (int)status == w.Status)
@@ -74,7 +74,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             using (var db = this.db.CreateDbContext())
             using (var tx = await db.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken))
             {
-                var watch = await db.TransactionConfirmationWatches
+                var watch = await db.TransactionConfirmationWatcherWatches
                     .Where(w => w.Id == id).FirstOrDefaultAsync(cancellationToken);
 
                 if (watch == null)
@@ -103,7 +103,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             }
         }
 
-        TransactionWatch<Rule> ToDomain(TransactionConfirmationWatch watch)
+        TransactionWatch<Rule> ToDomain(TransactionConfirmationWatcherWatch watch)
         {
             return new TransactionWatch<Rule>
             (

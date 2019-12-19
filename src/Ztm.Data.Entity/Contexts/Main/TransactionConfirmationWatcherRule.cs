@@ -4,7 +4,7 @@ using NBitcoin;
 
 namespace Ztm.Data.Entity.Contexts.Main
 {
-    public sealed class TransactionConfirmationWatchingRule
+    public sealed class TransactionConfirmationWatcherRule
     {
         public Guid Id { get; set; }
         public Guid CallbackId { get; set; }
@@ -18,7 +18,7 @@ namespace Ztm.Data.Entity.Contexts.Main
         public Guid? CurrentWatchId { get; set; }
 
         public WebApiCallback Callback { get; set; }
-        public TransactionConfirmationWatch CurrentWatch { get; set; }
-        public Collection<TransactionConfirmationWatch> Watches { get; set; }
+        public TransactionConfirmationWatcherWatch CurrentWatch { get; set; }
+        public Collection<TransactionConfirmationWatcherWatch> Watches { get; set; }
     }
 }

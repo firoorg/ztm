@@ -34,9 +34,9 @@ namespace Ztm.Data.Entity.Contexts
 
         public DbSet<WebApiCallbackHistory> WebApiCallbackHistories { get; set; }
 
-        public DbSet<TransactionConfirmationWatchingRule> TransactionConfirmationWatchingRules { get; set; }
+        public DbSet<TransactionConfirmationWatcherRule> TransactionConfirmationWatcherRules { get; set; }
 
-        public DbSet<TransactionConfirmationWatch> TransactionConfirmationWatches { get; set; }
+        public DbSet<TransactionConfirmationWatcherWatch> TransactionConfirmationWatcherWatches { get; set; }
 
         protected virtual void ConfigureBlock(EntityTypeBuilder<Block> builder)
         {
@@ -172,8 +172,8 @@ namespace Ztm.Data.Entity.Contexts
                    .OnDelete(DeleteBehavior.Cascade);
         }
 
-        protected virtual void ConfigureTransactionConfirmationWatchingRule(
-            EntityTypeBuilder<TransactionConfirmationWatchingRule> builder)
+        protected virtual void ConfigureTransactionConfirmationWatcherRule(
+            EntityTypeBuilder<TransactionConfirmationWatcherRule> builder)
         {
             builder.Property(e => e.CallbackId).IsRequired();
             builder.Property(e => e.Transaction).IsRequired();
@@ -199,8 +199,8 @@ namespace Ztm.Data.Entity.Contexts
                    .OnDelete(DeleteBehavior.SetNull);
         }
 
-        protected virtual void ConfirgureTransactionConfirmationWatch(
-            EntityTypeBuilder<TransactionConfirmationWatch> builder)
+        protected virtual void ConfirgureTransactionConfirmationWatcherWatch(
+            EntityTypeBuilder<TransactionConfirmationWatcherWatch> builder)
         {
             builder.Property(e => e.Id).IsRequired().ValueGeneratedNever();
             builder.Property(e => e.RuleId).IsRequired();
@@ -229,8 +229,8 @@ namespace Ztm.Data.Entity.Contexts
             modelBuilder.Entity<Transaction>(ConfigureTransaction);
             modelBuilder.Entity<WebApiCallback>(ConfigureWebApiCallback);
             modelBuilder.Entity<WebApiCallbackHistory>(ConfigureWebApiCallbackHistory);
-            modelBuilder.Entity<TransactionConfirmationWatchingRule>(ConfigureTransactionConfirmationWatchingRule);
-            modelBuilder.Entity<TransactionConfirmationWatch>(ConfirgureTransactionConfirmationWatch);
+            modelBuilder.Entity<TransactionConfirmationWatcherRule>(ConfigureTransactionConfirmationWatcherRule);
+            modelBuilder.Entity<TransactionConfirmationWatcherWatch>(ConfirgureTransactionConfirmationWatcherWatch);
         }
     }
 }

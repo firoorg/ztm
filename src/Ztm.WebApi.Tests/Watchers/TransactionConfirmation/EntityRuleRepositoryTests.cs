@@ -123,7 +123,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             // Assert.
             using (var db = this.dbFactory.CreateDbContext())
             {
-                var updated = await db.TransactionConfirmationWatchingRules.FirstOrDefaultAsync(r => r.Id == rule.Id);
+                var updated = await db.TransactionConfirmationWatcherRules.FirstOrDefaultAsync(r => r.Id == rule.Id);
                 Assert.Null(updated.CurrentWatchId);
             }
         }
@@ -370,7 +370,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             // Assert.
             using (var db = this.dbFactory.CreateDbContext())
             {
-                var updated = await db.TransactionConfirmationWatchingRules.FirstOrDefaultAsync(r => r.Id == rule.Id);
+                var updated = await db.TransactionConfirmationWatcherRules.FirstOrDefaultAsync(r => r.Id == rule.Id);
                 Assert.Equal(watch.Id, updated.CurrentWatchId);
             }
         }

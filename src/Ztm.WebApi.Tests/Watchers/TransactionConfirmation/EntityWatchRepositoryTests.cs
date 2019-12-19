@@ -73,7 +73,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             // Assert.
             using (var db = this.databaseFactory.CreateDbContext())
             {
-                var retrieved = await db.TransactionConfirmationWatches
+                var retrieved = await db.TransactionConfirmationWatcherWatches
                     .FirstOrDefaultAsync(w => w.Id == watch.Id, CancellationToken.None);
 
                 Assert.Equal(rule.Id, retrieved.RuleId);

@@ -40,10 +40,10 @@ namespace Ztm.Data.Entity.Postgres
             builder.Property(e => e.Data).HasColumnType("jsonb");
         }
 
-        protected override void ConfigureTransactionConfirmationWatchingRule(
-            EntityTypeBuilder<TransactionConfirmationWatchingRule> builder)
+        protected override void ConfigureTransactionConfirmationWatcherRule(
+            EntityTypeBuilder<TransactionConfirmationWatcherRule> builder)
         {
-            base.ConfigureTransactionConfirmationWatchingRule(builder);
+            base.ConfigureTransactionConfirmationWatcherRule(builder);
 
             builder.Property(e => e.SuccessData).HasColumnType("jsonb");
             builder.Property(e => e.TimeoutData).HasColumnType("jsonb");

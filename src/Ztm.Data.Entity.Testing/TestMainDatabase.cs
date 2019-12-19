@@ -60,16 +60,16 @@ namespace Ztm.Data.Entity.Testing
             builder.Property(e => e.Hash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
         }
 
-        protected override void ConfigureTransactionConfirmationWatchingRule(EntityTypeBuilder<TransactionConfirmationWatchingRule> builder)
+        protected override void ConfigureTransactionConfirmationWatcherRule(EntityTypeBuilder<TransactionConfirmationWatcherRule> builder)
         {
-            base.ConfigureTransactionConfirmationWatchingRule(builder);
+            base.ConfigureTransactionConfirmationWatcherRule(builder);
 
             builder.Property(e => e.Transaction).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
         }
 
-        protected override void ConfirgureTransactionConfirmationWatch(EntityTypeBuilder<TransactionConfirmationWatch> builder)
+        protected override void ConfirgureTransactionConfirmationWatcherWatch(EntityTypeBuilder<TransactionConfirmationWatcherWatch> builder)
         {
-            base.ConfirgureTransactionConfirmationWatch(builder);
+            base.ConfirgureTransactionConfirmationWatcherWatch(builder);
 
             builder.Property(e => e.StartBlock).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
             builder.Property(e => e.Transaction).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
