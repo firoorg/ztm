@@ -40,14 +40,13 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
                 callback != null
                     ? callback
                     : (rule.Callback == null ? null : EntityCallbackRepository.ToDomain(rule.Callback)),
-                DateTime.SpecifyKind(rule.CreatedAt, DateTimeKind.Utc),
-                rule.Note
+                DateTime.SpecifyKind(rule.CreatedAt, DateTimeKind.Utc)
             );
         }
 
         public async Task<Rule> AddAsync(
             uint256 transaction, int confirmations, TimeSpan waitingTime, CallbackResult successResponse,
-            CallbackResult timeoutResponse, Callback callback, string note, CancellationToken cancellationToken)
+            CallbackResult timeoutResponse, Callback callback, CancellationToken cancellationToken)
         {
             if (transaction == null)
             {
@@ -86,7 +85,6 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
                         TimeoutData = JsonConvert.SerializeObject(timeoutResponse),
                         CurrentWatchId = null,
                         CreatedAt = DateTime.UtcNow,
-                        Note = note,
                     },
                     cancellationToken
                 );

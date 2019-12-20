@@ -19,11 +19,11 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
         }
 
         public virtual Task<Rule> AddAsync(uint256 transaction, int confirmation, TimeSpan unconfirmedWaitingTime,
-            CallbackResult successResponse, CallbackResult timeoutResponse, Callback callback, string note, CancellationToken cancellationToken)
+            CallbackResult successResponse, CallbackResult timeoutResponse, Callback callback, CancellationToken cancellationToken)
         {
             var id = Guid.NewGuid();
 
-            var rule = new Rule(id, transaction, confirmation, unconfirmedWaitingTime, successResponse, timeoutResponse, callback, DateTime.UtcNow, note);
+            var rule = new Rule(id, transaction, confirmation, unconfirmedWaitingTime, successResponse, timeoutResponse, callback, DateTime.UtcNow);
 
             this.rules.Add(id, new RuleWithAdditionalDatas
             {
@@ -157,7 +157,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 
         public Rule Build() {
             return new Rule(Id, TransactionHash, Confirmations, WaitingTime, SuccessResponse,
-                TimeoutResponse, Callback, DateTime.UtcNow, null);
+                TimeoutResponse, Callback, DateTime.UtcNow);
         }
     }
 }

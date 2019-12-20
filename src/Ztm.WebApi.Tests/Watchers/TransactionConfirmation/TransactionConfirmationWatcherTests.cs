@@ -150,46 +150,46 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
                 "transaction",
                 () => this.subject.AddTransactionAsync(
                     null, builder.confirmations, builder.timeout,
-                    callback, builder.successData, builder.timeoutData, null, CancellationToken.None)
+                    callback, builder.successData, builder.timeoutData, CancellationToken.None)
             );
 
             _ = Assert.ThrowsAsync<ArgumentOutOfRangeException>(
                 () => this.subject.AddTransactionAsync(
                     builder.transaction, 0, builder.timeout,
-                    callback, builder.successData, builder.timeoutData, null, CancellationToken.None)
+                    callback, builder.successData, builder.timeoutData, CancellationToken.None)
             );
 
             _ = Assert.ThrowsAsync<ArgumentOutOfRangeException>(
                 () => this.subject.AddTransactionAsync(
                     builder.transaction, builder.confirmations, Ztm.Threading.TimerSchedulers.ThreadPoolScheduler.MaxDuration - TimeSpan.FromSeconds(1),
-                    callback, builder.successData, builder.timeoutData, null, CancellationToken.None)
+                    callback, builder.successData, builder.timeoutData, CancellationToken.None)
             );
 
             _ = Assert.ThrowsAsync<ArgumentOutOfRangeException>(
                 () => this.subject.AddTransactionAsync(
                     builder.transaction, builder.confirmations, Ztm.Threading.TimerSchedulers.ThreadPoolScheduler.MinDuration + TimeSpan.FromSeconds(1),
-                    callback, builder.successData, builder.timeoutData, null, CancellationToken.None)
+                    callback, builder.successData, builder.timeoutData, CancellationToken.None)
             );
 
             _ = Assert.ThrowsAsync<ArgumentNullException>(
                 "callback",
                 () => this.subject.AddTransactionAsync(
                     builder.transaction, builder.confirmations, builder.timeout,
-                    null, builder.successData, builder.timeoutData, null, CancellationToken.None)
+                    null, builder.successData, builder.timeoutData, CancellationToken.None)
             );
 
             _ = Assert.ThrowsAsync<ArgumentNullException>(
                 "successResponse",
                 () => this.subject.AddTransactionAsync(
                     builder.transaction, builder.confirmations, builder.timeout,
-                    callback, null, builder.timeoutData, null, CancellationToken.None)
+                    callback, null, builder.timeoutData, CancellationToken.None)
             );
 
             _ = Assert.ThrowsAsync<ArgumentNullException>(
                 "timeoutResponse",
                 () => this.subject.AddTransactionAsync(
                     builder.transaction, builder.confirmations, builder.timeout,
-                    callback, builder.successData, null, null, CancellationToken.None)
+                    callback, builder.successData, null, CancellationToken.None)
             );
         }
 
@@ -348,7 +348,6 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
                 Arg.Is<CallbackResult>(r => r == builder.successData),
                 Arg.Is<CallbackResult>(r => r == builder.timeoutData),
                 Arg.Is<Callback>(c => c == rule.Callback),
-                Arg.Is<string>(n => n == builder.note),
                 Arg.Any<CancellationToken>()
             );
 
@@ -860,8 +859,8 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 
             _ = await this.ruleRepository.AddAsync
             (
-                builder.transaction, builder.confirmations, builder.timeout, builder.successData, builder.timeoutData,
-                callback, null, CancellationToken.None
+                builder.transaction, builder.confirmations, builder.timeout, builder.successData,
+                builder.timeoutData, callback, CancellationToken.None
             );
 
             // Completed watch
@@ -876,8 +875,8 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 
             var watch = await this.ruleRepository.AddAsync
             (
-                builder.transaction, builder.confirmations, builder.timeout, builder.successData, builder.timeoutData,
-                completedCallback, null, CancellationToken.None
+                builder.transaction, builder.confirmations, builder.timeout, builder.successData,
+                builder.timeoutData, completedCallback, CancellationToken.None
             );
 
             await this.ruleRepository.UpdateStatusAsync(watch.Id, RuleStatus.Success, CancellationToken.None);
@@ -968,7 +967,6 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             public Uri callbackUrl;
             public CallbackResult successData;
             public CallbackResult timeoutData;
-            public string note;
             public CancellationToken cancellationToken;
 
             readonly ICallbackRepository callbackRepository;
@@ -984,14 +982,12 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
                 this.callbackUrl = new Uri("http://zcoin.io");
                 this.successData = new CallbackResult(CallbackResult.StatusSuccess, "success");
                 this.timeoutData = new CallbackResult(CallbackResult.StatusError, "timeout");
-                this.note = "Test note";
                 this.cancellationToken = CancellationToken.None;
             }
 
             public async Task<T> Call<T>(Func<uint256, int, TimeSpan, Callback,
                 CallbackResult,
                 CallbackResult,
-                string,
                 CancellationToken, Task<T>> func)
             {
                 var callback = await this.callbackRepository.AddAsync(
@@ -1000,7 +996,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
                     CancellationToken.None);
 
                 return await func(transaction, confirmations, timeout, callback,
-                    successData, timeoutData, note, cancellationToken);
+                    successData, timeoutData, cancellationToken);
             }
         }
     }

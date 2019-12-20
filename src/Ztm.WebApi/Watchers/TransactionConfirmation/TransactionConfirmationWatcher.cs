@@ -92,7 +92,6 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             Callback callback,
             CallbackResult successResponse,
             CallbackResult timeoutResponse,
-            string note,
             CancellationToken cancellationToken)
         {
             if (transaction == null)
@@ -133,7 +132,6 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
                 successResponse,
                 timeoutResponse,
                 callback,
-                note,
                 cancellationToken
             );
 

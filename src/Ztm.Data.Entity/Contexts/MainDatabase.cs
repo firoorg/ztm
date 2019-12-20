@@ -158,7 +158,6 @@ namespace Ztm.Data.Entity.Contexts
             builder.Property(e => e.TimeoutData).IsRequired();
             builder.Property(e => e.CreatedAt).IsRequired();
             builder.Property(e => e.CurrentWatchId);
-            builder.Property(e => e.Note);
 
             builder.HasKey(e => e.Id);
 

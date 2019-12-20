@@ -14,8 +14,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             CallbackResult successResponse,
             CallbackResult timeoutResponse,
             Callback callback,
-            DateTime createdAt,
-            string note)
+            DateTime createdAt)
         {
             if (transactionHash == null)
             {
@@ -55,7 +54,6 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             this.TimeoutResponse = timeoutResponse;
             this.Callback = callback;
             this.CreatedAt = createdAt;
-            this.Note = note;
         }
 
         public Guid Id { get; }
@@ -66,6 +64,5 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
         public CallbackResult TimeoutResponse { get; }
         public Callback Callback { get; }
         public DateTime CreatedAt { get; }
-        public string Note { get; }
     }
 }

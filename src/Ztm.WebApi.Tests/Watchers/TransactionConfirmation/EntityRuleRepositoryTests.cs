@@ -54,11 +54,10 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             var successResult = new CallbackResult(CallbackResult.StatusSuccess, "success");
             var timeoutResult = new CallbackResult(CallbackResult.StatusError, "timeout");
             var waitingTime = TimeSpan.FromMinutes(5);
-            var note = "Test note";
 
             // Act.
             var rule = await this.subject.AddAsync(transaction, 10, waitingTime,
-                successResult, timeoutResult, this.defaultCallback, note, CancellationToken.None);
+                successResult, timeoutResult, this.defaultCallback, CancellationToken.None);
 
             // Assert.
             Assert.NotEqual(Guid.Empty, rule.Id);
@@ -70,7 +69,6 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             Assert.Equal(successResult.Data, (string)rule.SuccessResponse.Data);
             Assert.Equal(timeoutResult.Status, rule.TimeoutResponse.Status);
             Assert.Equal(timeoutResult.Data, (string)rule.TimeoutResponse.Data);
-            Assert.Equal(note, rule.Note);
 
         }
 
@@ -84,22 +82,22 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 
             await Assert.ThrowsAsync<ArgumentNullException>(
                 "transaction",
-                () => this.subject.AddAsync(null, 0, timeout, successResult, timeoutResult, this.defaultCallback, null, CancellationToken.None)
+                () => this.subject.AddAsync(null, 0, timeout, successResult, timeoutResult, this.defaultCallback, CancellationToken.None)
             );
 
             await Assert.ThrowsAsync<ArgumentNullException>(
                 "successResponse",
-                () => this.subject.AddAsync(transaction, 0, timeout, null, timeoutResult, this.defaultCallback, null, CancellationToken.None)
+                () => this.subject.AddAsync(transaction, 0, timeout, null, timeoutResult, this.defaultCallback, CancellationToken.None)
             );
 
             await Assert.ThrowsAsync<ArgumentNullException>(
                 "timeoutResponse",
-                () => this.subject.AddAsync(transaction, 0, timeout, successResult, null, this.defaultCallback, null, CancellationToken.None)
+                () => this.subject.AddAsync(transaction, 0, timeout, successResult, null, this.defaultCallback, CancellationToken.None)
             );
 
             await Assert.ThrowsAsync<ArgumentNullException>(
                 "callback",
-                () => this.subject.AddAsync(transaction, 0, timeout, successResult, timeoutResult, null, null, CancellationToken.None)
+                () => this.subject.AddAsync(transaction, 0, timeout, successResult, timeoutResult, null, CancellationToken.None)
             );
         }
 
@@ -115,7 +113,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             var waitingTime = TimeSpan.FromMinutes(5);
 
             var rule = await this.subject.AddAsync(transaction, 10, waitingTime,
-                successResult, timeoutResult, this.defaultCallback, null, CancellationToken.None);
+                successResult, timeoutResult, this.defaultCallback, CancellationToken.None);
 
             var watch = await this.CreateWatch(rule, uint256.One, uint256.One);
             await this.subject.UpdateCurrentWatchAsync(rule.Id, watch.Id, CancellationToken.None);
@@ -141,10 +139,9 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             var successResult = new CallbackResult(CallbackResult.StatusSuccess, "success");
             var timeoutResult = new CallbackResult(CallbackResult.StatusError, "timeout");
             var timeout = TimeSpan.FromMinutes(5);
-            var note = "Test note";
 
             var rule = await this.subject.AddAsync(transaction, 10, timeout,
-                successResult, timeoutResult, this.defaultCallback, note, CancellationToken.None);
+                successResult, timeoutResult, this.defaultCallback, CancellationToken.None);
 
             // Act.
             var retrieved = await this.subject.GetAsync(rule.Id, CancellationToken.None);
@@ -157,7 +154,6 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             Assert.Equal(rule.SuccessResponse, retrieved.SuccessResponse);
             Assert.Equal(rule.TimeoutResponse, retrieved.TimeoutResponse);
             Assert.Equal(this.defaultCallback, retrieved.Callback);
-            Assert.Equal(note, retrieved.Note);
         }
 
         [Fact]
@@ -186,7 +182,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             var timeout = TimeSpan.FromMinutes(5);
 
             var rule = await this.subject.AddAsync(transaction, 10, timeout,
-                successResult, timeoutResult, this.defaultCallback, null, CancellationToken.None);
+                successResult, timeoutResult, this.defaultCallback, CancellationToken.None);
 
             // Act.
             var status = await this.subject.GetStatusAsync(rule.Id, CancellationToken.None);
@@ -207,10 +203,10 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 
             var watches = new List<Rule>();
             watches.Add(await this.subject.AddAsync(transaction, 10, TimeSpan.FromMinutes(5),
-                successResult, timeoutResult, this.defaultCallback, null, CancellationToken.None));
+                successResult, timeoutResult, this.defaultCallback, CancellationToken.None));
 
             watches.Add(await this.subject.AddAsync(transaction, 11, TimeSpan.FromHours(6),
-                successResult, timeoutResult, this.defaultCallback, null, CancellationToken.None));
+                successResult, timeoutResult, this.defaultCallback, CancellationToken.None));
 
             watches = watches.Select(async watch => await this.subject.GetAsync(watch.Id, CancellationToken.None))
                 .Select(watche => watche.Result)
@@ -251,7 +247,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 
             var watches = new List<Rule>();
             watches.Add(await this.subject.AddAsync(transaction, 10, TimeSpan.FromMinutes(5),
-                successResult, timeoutResult, this.defaultCallback, null, CancellationToken.None));
+                successResult, timeoutResult, this.defaultCallback, CancellationToken.None));
 
             await this.subject.UpdateStatusAsync(watches.Last().Id, RuleStatus.Success, CancellationToken.None);
 
@@ -282,7 +278,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             var waitingTime = TimeSpan.FromMinutes(5);
 
             var watch = await this.subject.AddAsync(transaction, 10, waitingTime,
-                successResult, timeoutResult, this.defaultCallback, null, CancellationToken.None);
+                successResult, timeoutResult, this.defaultCallback, CancellationToken.None);
 
             // Act.
             await this.subject.SubtractRemainingWaitingTimeAsync(watch.Id, TimeSpan.FromMinutes(6), CancellationToken.None);
@@ -303,7 +299,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             var waitingTime = TimeSpan.FromMinutes(5);
 
             var watch = await this.subject.AddAsync(transaction, 10, waitingTime,
-                successResult, timeoutResult, this.defaultCallback, null, CancellationToken.None);
+                successResult, timeoutResult, this.defaultCallback, CancellationToken.None);
 
             // Act.
             await this.subject.SubtractRemainingWaitingTimeAsync(watch.Id, TimeSpan.FromMinutes(4), CancellationToken.None);
@@ -343,7 +339,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             var waitingTime = TimeSpan.FromMinutes(5);
 
             var rule = await this.subject.AddAsync(transaction, 10, waitingTime,
-                successResult, timeoutResult, this.defaultCallback, null, CancellationToken.None);
+                successResult, timeoutResult, this.defaultCallback, CancellationToken.None);
 
             var watch = await this.CreateWatch(rule, uint256.One, uint256.One);
 
@@ -365,7 +361,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             var waitingTime = TimeSpan.FromMinutes(5);
 
             var rule = await this.subject.AddAsync(transaction, 10, waitingTime,
-                successResult, timeoutResult, this.defaultCallback, null, CancellationToken.None);
+                successResult, timeoutResult, this.defaultCallback, CancellationToken.None);
 
             var watch = await this.CreateWatch(rule, uint256.One, uint256.One);
 

@@ -17,7 +17,6 @@ namespace Ztm.Data.Entity.Contexts.Main
         public string TimeoutData { get; set; }
         public DateTime CreatedAt { get; set; }
         public Guid? CurrentWatchId { get; set; }
-        public string Note { get; set; }
 
         public WebApiCallback Callback { get; set; }
         public TransactionConfirmationWatcherWatch CurrentWatch { get; set; }

@@ -198,7 +198,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             var success = new CallbackResult("success", "");
             var fail = new CallbackResult("fail", "");
             var callback = await this.callbackRepository.AddAsync(IPAddress.Loopback, url, CancellationToken.None);
-            return await this.ruleRepository.AddAsync(uint256.One, 10, TimeSpan.FromHours(1), success, fail, callback, null, CancellationToken.None);
+            return await this.ruleRepository.AddAsync(uint256.One, 10, TimeSpan.FromHours(1), success, fail, callback, CancellationToken.None);
         }
     }
 }
