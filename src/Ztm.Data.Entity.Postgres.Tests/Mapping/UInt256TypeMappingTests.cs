@@ -1,7 +1,7 @@
 using Xunit;
 using Ztm.Data.Entity.Postgres.Mapping;
 
-namespace Ztm.Data.Entity.Postgres.Tests
+namespace Ztm.Data.Entity.Postgres.Tests.Mapping
 {
     public sealed class UInt256TypeMappingTests
     {
