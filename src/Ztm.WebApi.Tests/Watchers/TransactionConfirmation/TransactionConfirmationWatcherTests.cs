@@ -155,18 +155,21 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             );
 
             await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
+                "confirmation",
                 () => this.subject.AddTransactionAsync(
                     builder.Transaction, 0, builder.Timeout,
                     callback, builder.SuccessData, builder.TimeoutData, CancellationToken.None)
             );
 
             await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
+                "unconfirmedWaitingTime",
                 () => this.subject.AddTransactionAsync(
                     builder.Transaction, builder.Confirmations, Ztm.Threading.TimerSchedulers.ThreadPoolScheduler.MaxDuration + TimeSpan.FromSeconds(1),
                     callback, builder.SuccessData, builder.TimeoutData, CancellationToken.None)
             );
 
             await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
+                "unconfirmedWaitingTime",
                 () => this.subject.AddTransactionAsync(
                     builder.Transaction, builder.Confirmations, Ztm.Threading.TimerSchedulers.ThreadPoolScheduler.MinDuration - TimeSpan.FromSeconds(1),
                     callback, builder.SuccessData, builder.TimeoutData, CancellationToken.None)
@@ -539,7 +542,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
         public async Task AddTransactionAsync_WithOnChainTransactionAndFork_ShouldBeResumeAndTimeout()
         {
             // Arrange.
-            var transaction = Transaction.Parse(TransactionData.Transaction1, ZcoinNetworks.Instance.Regtest);
+            var transaction = Transaction.Parse(TestTransaction.Raw1, ZcoinNetworks.Instance.Regtest);
             var builder = new WatchArgsBuilder(this.callbackRepository);
             builder.Transaction = transaction.GetHash();
 
@@ -573,8 +576,8 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
         public async Task CreateContextsAsync_WithValidArgs_ShouldSuccess()
         {
             // Arrange.
-            var tx = Transaction.Parse(TransactionData.Transaction1, ZcoinNetworks.Instance.Mainnet);
-            var untrackedTx = Transaction.Parse(TransactionData.Transaction2, ZcoinNetworks.Instance.Mainnet);
+            var tx = Transaction.Parse(TestTransaction.Raw1, ZcoinNetworks.Instance.Mainnet);
+            var untrackedTx = Transaction.Parse(TestTransaction.Raw2, ZcoinNetworks.Instance.Mainnet);
 
             var builder = new WatchArgsBuilder(this.callbackRepository);
 
@@ -899,7 +902,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
         public async Task Initialize_WithNonEmptyRepository_ShouldInitializeWatches()
         {
             // Arrange.
-            var tx = Transaction.Parse(TransactionData.Transaction1, ZcoinNetworks.Instance.Mainnet);
+            var tx = Transaction.Parse(TestTransaction.Raw1, ZcoinNetworks.Instance.Mainnet);
 
             var builder = new WatchArgsBuilder(this.callbackRepository);
             builder.Timeout = TimeSpan.FromSeconds(1);
