@@ -27,7 +27,7 @@ namespace Ztm.WebApi.Controllers
         public ActionResult BackgroundServiceError()
         {
             var feature = HttpContext.Features.Get<IBackgroundServiceExceptionHandlerFeature>();
-            var details = new ProblemDetails()
+            var details = new BackgroundServiceErrorProblemDetails()
             {
                 Status = (int)HttpStatusCode.InternalServerError,
                 Title = "The required background services was stopped unexpectedly."
@@ -42,7 +42,7 @@ namespace Ztm.WebApi.Controllers
                     Detail = e.Exception.StackTrace
                 }).ToList();
 
-                details.Extensions.Add("errors", errors);
+                details.Errors = errors;
             }
 
             return StatusCode(details.Status.Value, details);

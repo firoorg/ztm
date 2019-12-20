@@ -11,9 +11,8 @@ namespace Ztm.Data.Entity.Postgres
         public TypeMappingSource(
             TypeMappingSourceDependencies dependencies,
             RelationalTypeMappingSourceDependencies relationalDependencies,
-            ISqlGenerationHelper sqlGenerationHelper,
             INpgsqlOptions npgsqlOptions = null) :
-            base(dependencies, relationalDependencies, sqlGenerationHelper, npgsqlOptions)
+            base(dependencies, relationalDependencies, npgsqlOptions)
         {
         }
 

@@ -59,11 +59,11 @@ namespace Ztm.WebApi.Tests.Controllers
             var result = this.subject.BackgroundServiceError().Should().BeOfType<ObjectResult>().Subject;
 
             // Assert.
-            var response = result.Value.Should().BeOfType<ProblemDetails>().Subject;
+            var response = result.Value.Should().BeOfType<BackgroundServiceErrorProblemDetails>().Subject;
 
             response.Status.Should().Be((int)HttpStatusCode.InternalServerError);
             response.Title.Should().NotBeNull();
-            response.Extensions.Should().BeEmpty();
+            response.Errors.Should().BeNull();
 
             result.StatusCode.Should().Be((int)HttpStatusCode.InternalServerError);
         }
@@ -82,11 +82,11 @@ namespace Ztm.WebApi.Tests.Controllers
             var result = this.subject.BackgroundServiceError().Should().BeOfType<ObjectResult>().Subject;
 
             // Assert.
-            var response = result.Value.Should().BeOfType<ProblemDetails>().Subject;
+            var response = result.Value.Should().BeOfType<BackgroundServiceErrorProblemDetails>().Subject;
 
             response.Status.Should().Be((int)HttpStatusCode.InternalServerError);
             response.Title.Should().NotBeNull();
-            response.Extensions.Should().BeEmpty();
+            response.Errors.Should().BeNull();
 
             result.StatusCode.Should().Be((int)HttpStatusCode.InternalServerError);
         }
@@ -119,16 +119,15 @@ namespace Ztm.WebApi.Tests.Controllers
             var result = this.subject.BackgroundServiceError().Should().BeOfType<ObjectResult>().Subject;
 
             // Assert.
-            var response = result.Value.Should().BeOfType<ProblemDetails>().Subject;
+            var response = result.Value.Should().BeOfType<BackgroundServiceErrorProblemDetails>().Subject;
 
             response.Status.Should().Be((int)HttpStatusCode.InternalServerError);
             response.Title.Should().NotBeNull();
-            response.Extensions.Should().HaveCount(1)
-                               .And.ContainKey("errors")
-                               .WhichValue.Should().BeAssignableTo<IEnumerable<BackgroundServiceError>>()
-                               .Which.Should().ContainSingle(
-                                   e => e.Service == typeof(string).FullName && e.Error == message && e.Detail != null
-                                );
+            response.Errors.Should().HaveCount(1)
+                           .And.BeAssignableTo<IEnumerable<BackgroundServiceError>>()
+                           .Which.Should().ContainSingle(
+                               e => e.Service == typeof(string).FullName && e.Error == message && e.Detail != null
+                           );
 
             result.StatusCode.Should().Be((int)HttpStatusCode.InternalServerError);
         }
