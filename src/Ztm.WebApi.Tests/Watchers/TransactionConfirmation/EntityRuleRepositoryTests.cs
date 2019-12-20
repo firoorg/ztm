@@ -14,7 +14,7 @@ using Ztm.Zcoin.Watching;
 
 namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 {
-    public class EntityRuleRepositoryTests : IDisposable
+    public sealed class EntityRuleRepositoryTests : IDisposable
     {
         readonly EntityRuleRepository subject;
         readonly EntityCallbackRepository callbackRepository;
@@ -267,9 +267,9 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
         }
 
         [Fact]
-        public void SetRemainingWaitingTimeAsync_WithNotExist_ShouldThrow()
+        public async Task SetRemainingWaitingTimeAsync_WithNotExist_ShouldThrow()
         {
-            _ = Assert.ThrowsAsync<KeyNotFoundException>(
+            await Assert.ThrowsAsync<KeyNotFoundException>(
                 () => this.subject.SubtractRemainingWaitingTimeAsync(Guid.NewGuid(), TimeSpan.FromDays(1), CancellationToken.None)
             );
         }

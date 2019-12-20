@@ -8,7 +8,7 @@ using Ztm.Zcoin.Watching;
 
 namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 {
-    public class FakeWatchRepository : IWatchRepository
+    class FakeWatchRepository : IWatchRepository
     {
         readonly Dictionary<Guid, TransactionWatchWithStatus> watches;
 

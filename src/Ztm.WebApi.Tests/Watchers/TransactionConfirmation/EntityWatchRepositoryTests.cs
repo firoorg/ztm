@@ -43,21 +43,23 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
         }
 
         [Fact]
-        public void AddAsync_WithNullWatch_ShouldThrow()
+        public async Task AddAsync_WithNullWatch_ShouldThrow()
         {
-            _ = Assert.ThrowsAsync<ArgumentNullException>(
+            await Assert.ThrowsAsync<ArgumentNullException>(
                 "watch",
-                () => this.subject.AddAsync(null, CancellationToken.None));
+                () => this.subject.AddAsync(null, CancellationToken.None)
+            );
         }
 
         [Fact]
-        public void AddAsync_WithNullContext_ShouldThrow()
+        public async Task AddAsync_WithNullContext_ShouldThrow()
         {
             var watch = new TransactionWatch<Rule>(null, uint256.One, uint256.One);
 
-            _ = Assert.ThrowsAsync<ArgumentException>(
+            await Assert.ThrowsAsync<ArgumentException>(
                 "watch",
-                () => this.subject.AddAsync(watch, CancellationToken.None));
+                () => this.subject.AddAsync(watch, CancellationToken.None)
+            );
         }
 
         [Fact]
