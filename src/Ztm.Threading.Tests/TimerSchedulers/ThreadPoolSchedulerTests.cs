@@ -97,8 +97,8 @@ namespace Ztm.Threading.Tests.TimerSchedulers
             }
         }
 
-        [Fact(Skip = "This test is not reliable due to it need to assume that timer has been elapsed")]
-        public async Task Schedule_WithNonNullPeriod_ShouldNotOneShot()
+        [Fact]
+        public void Schedule_WithNonNullPeriod_ShouldNotOneShot()
         {
             using (var elapsed = new ManualResetEventSlim())
             {
@@ -111,8 +111,11 @@ namespace Ztm.Threading.Tests.TimerSchedulers
                 // Act.
                 this.schedule = this.subject.Schedule(TimeSpan.Zero, TimeSpan.Zero, this.handler.Object, context);
 
-                elapsed.Wait(1000);
-                await Task.Delay(1000); // A delay enough for timer to fire more than one.
+                if (elapsed.Wait(2000))
+                {
+                    elapsed.Reset();
+                    elapsed.Wait(2000); // Wait until timer to fire again.
+                }
 
                 this.subject.Stop(this.schedule);
 
