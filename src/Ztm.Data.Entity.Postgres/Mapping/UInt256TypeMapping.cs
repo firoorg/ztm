@@ -8,7 +8,7 @@ using NpgsqlTypes;
 
 namespace Ztm.Data.Entity.Postgres.Mapping
 {
-    class UInt256TypeMapping : NpgsqlTypeMapping
+    public class UInt256TypeMapping : NpgsqlTypeMapping
     {
         public UInt256TypeMapping() : base("bytea", typeof(uint256), NpgsqlDbType.Bytea)
         {
