@@ -194,6 +194,27 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
         }
 
         [Fact]
+        public async Task AddTransactionAsync_WithNullArguments_ShouldThrow()
+        {
+            var builder = new WatchArgsBuilder(this.callbackRepository);
+            var callback = await this.callbackRepository.AddAsync(
+                builder.ip,
+                builder.callbackUrl,
+                CancellationToken.None);
+
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
+                () => this.subject.AddTransactionAsync(
+                    uint256.One,
+                    10,
+                    TimeSpan.MinValue,
+                    callback,
+                    new CallbackResult("", ""),
+                    new CallbackResult("", ""),
+                    CancellationToken.None)
+            );
+        }
+
+        [Fact]
         public async Task AddTransactionAsync_AndPushNoEvent_ShouldTimeout()
         {
             using (var elapsed = new ManualResetEventSlim())
@@ -217,6 +238,38 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
                         Arg.Any<Guid>(),
                         Arg.Any<Uri>(),
                         Arg.Is<CallbackResult>(r => r.Status == CallbackResult.StatusError),
+                        Arg.Any<CancellationToken>()
+                    );
+            }
+        }
+
+        [Fact]
+        public async Task AddTransactionAsync_TimeoutAndFailToCallback_ShouldNotThrow()
+        {
+            using (var elapsed = new ManualResetEventSlim())
+            {
+                // Arrange.
+                await this.Initialize(CancellationToken.None);
+                var builder = new WatchArgsBuilder(this.callbackRepository);
+                builder.timeout = TimeSpan.FromMilliseconds(200);
+                this.ruleRepository.When(r => r.UpdateStatusAsync(Arg.Any<Guid>(), Arg.Any<RuleStatus>(), Arg.Any<CancellationToken>()))
+                                   .Throw(info => {
+                                       elapsed.Set();
+                                       return new Exception();
+                                   });
+
+                // Act.
+                await builder.Call(this.subject.AddTransactionAsync);
+                elapsed.Wait(1500);
+
+                // Assert.
+                _ = this.callbackExecuter
+                    .Received(0)
+                    .ExecuteAsync
+                    (
+                        Arg.Any<Guid>(),
+                        Arg.Any<Uri>(),
+                        Arg.Any<CallbackResult>(),
                         Arg.Any<CancellationToken>()
                     );
             }

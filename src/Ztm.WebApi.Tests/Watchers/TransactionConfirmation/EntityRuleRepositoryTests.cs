@@ -163,6 +163,14 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
         }
 
         [Fact]
+        public async Task GetRemainingWaitingTimeAsync_WithNonExistId_ShouldThrow()
+        {
+            await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => this.subject.GetRemainingWaitingTimeAsync(Guid.NewGuid(), CancellationToken.None)
+            );
+        }
+
+        [Fact]
         public async Task GetStatusAsync_WithNonExistRule_ShouldThrow()
         {
             await Assert.ThrowsAsync<KeyNotFoundException>(
@@ -374,6 +382,14 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
                 var updated = await db.TransactionConfirmationWatcherRules.FirstOrDefaultAsync(r => r.Id == rule.Id);
                 Assert.Equal(watch.Id, updated.CurrentWatchId);
             }
+        }
+
+        [Fact]
+        public async Task UpdateStatusAsync_WithNonExistId_ShouldThrow()
+        {
+            await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => this.subject.UpdateStatusAsync(Guid.NewGuid(), RuleStatus.Pending, CancellationToken.None)
+            );
         }
 
         async Task CreateDefaultCallback()

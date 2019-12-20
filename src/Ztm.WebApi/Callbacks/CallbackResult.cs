@@ -38,7 +38,11 @@ namespace Ztm.WebApi.Callbacks
             int h = 0;
 
             h ^= Status.GetHashCode();
-            h ^= Data.GetHashCode();
+
+            if (Data != null)
+            {
+                h ^= Data.GetHashCode();
+            }
 
             return h;
         }

@@ -88,5 +88,35 @@ namespace Ztm.WebApi.Tests.Callbacks
 
             Assert.True(this.subject.Equals(other));
         }
+
+        [Fact]
+        public void GetHashCode_WithSameValue_ShouldGetSameResult()
+        {
+            var other = new CallbackResult(this.subject.Status, this.subject.Data);
+
+            Assert.Equal(this.subject.GetHashCode(), other.GetHashCode());
+        }
+
+        [Fact]
+        public void GetHashCode_WithDifferenceValue_ShouldGetDifferenceResult()
+        {
+            CallbackResult other;
+
+            other = new CallbackResult(CallbackResult.StatusError, this.subject.Data);
+
+            Assert.NotEqual(this.subject.GetHashCode(), other.GetHashCode());
+
+            other = new CallbackResult(this.subject.Status, "Difference data");
+
+            Assert.NotEqual(this.subject.GetHashCode(), other.GetHashCode());
+        }
+
+        [Fact]
+        public void GetHashCode_WithNullData_ShouldSuccess()
+        {
+            var other = new CallbackResult(CallbackResult.StatusSuccess, null);
+
+            other.GetHashCode();
+        }
     }
 }

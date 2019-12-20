@@ -42,6 +42,41 @@ namespace Ztm.WebApi.Tests.Callbacks
         }
 
         [Fact]
+        public void ToDomain_WithNullValue_ShouldThrow()
+        {
+            Assert.Throws<ArgumentNullException>(
+                "callback",
+                () => EntityCallbackRepository.ToDomain(null)
+            );
+        }
+
+        [Fact]
+        public void ToDomain_WithValidValue_ShouldSuccess()
+        {
+            // Arrange.
+            var time = DateTime.UtcNow;
+            var url = new Uri("https://zcoin.io");
+            var entity = new WebApiCallback
+            {
+                Id = Guid.NewGuid(),
+                RegisteredIp = IPAddress.Loopback,
+                RegisteredTime = time,
+                Completed = true,
+                Url = url
+            };
+
+            // Act.
+            var model = EntityCallbackRepository.ToDomain(entity);
+
+            // Assert.
+            Assert.Equal(entity.Id, model.Id);
+            Assert.Equal(IPAddress.Loopback, model.RegisteredIp);
+            Assert.Equal(time, model.RegisteredTime);
+            Assert.True(model.Completed);
+            Assert.Equal(url, model.Url);
+        }
+
+        [Fact]
         public async Task AddAsync_WithValidArgs_ShouldSuccess()
         {
             // Act.

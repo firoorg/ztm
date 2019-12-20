@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Net;
 using System.Threading;
@@ -116,18 +115,6 @@ namespace Ztm.WebApi.Callbacks
                 );
                 await db.SaveChangesAsync(cancellationToken);
             }
-        }
-
-        static WebApiCallback ToEntity(Callback callback)
-        {
-            return new WebApiCallback
-            {
-                Id = callback.Id,
-                RegisteredIp = callback.RegisteredIp,
-                RegisteredTime = callback.RegisteredTime.ToUniversalTime(),
-                Completed = callback.Completed,
-                Url = callback.Url,
-            };
         }
     }
 }
