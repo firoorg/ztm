@@ -100,26 +100,31 @@ namespace Ztm.Threading.Tests.TimerSchedulers
         [Fact]
         public void Schedule_WithNonNullPeriod_ShouldNotOneShot()
         {
-            using (var elapsed = new ManualResetEventSlim())
+            using (var cde = new CountdownEvent(2))
             {
                 // Arrange.
                 var context = new object();
 
                 this.handler.Setup(f => f(It.IsAny<object>()))
-                            .Callback<object>(c => elapsed.Set());
+                            .Callback<object>(c =>
+                            {
+                                lock(cde)
+                                {
+                                    if (!cde.IsSet)
+                                    {
+                                        cde.Signal();
+                                    }
+                                }
+                            });
 
                 // Act.
                 this.schedule = this.subject.Schedule(TimeSpan.Zero, TimeSpan.Zero, this.handler.Object, context);
 
-                if (elapsed.Wait(2000))
-                {
-                    elapsed.Reset();
-                    elapsed.Wait(2000); // Wait until timer to fire again.
-                }
-
+                var success = cde.Wait(3000);
                 this.subject.Stop(this.schedule);
 
                 // Assert.
+                Assert.True(success);
                 this.handler.Verify(f => f(context), Times.AtLeast(2));
             }
         }
