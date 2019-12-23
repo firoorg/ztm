@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Ztm.Zcoin.Watching
 {
-    public interface IWatcherHandler<TWatch, TContext> where TWatch : Watch<TContext>
+    public interface IWatcherHandler<TContext, TWatch> where TWatch : Watch<TContext>
     {
         Task AddWatchesAsync(IEnumerable<TWatch> watches, CancellationToken cancellationToken);
 

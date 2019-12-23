@@ -7,15 +7,21 @@ using Ztm.Zcoin.Synchronization;
 
 namespace Ztm.Zcoin.Watching
 {
-    public abstract class ConfirmationWatcher<TWatch, TContext> : Watcher<TWatch, TContext>
+    public abstract class ConfirmationWatcher<TContext, TWatch, TConfirm> : Watcher<TContext, TWatch>
         where TWatch : Watch<TContext>
     {
-        readonly IConfirmationWatcherHandler<TWatch, TContext> handler;
+        readonly IConfirmationWatcherHandler<TContext, TWatch, TConfirm> handler;
         readonly IBlocksStorage blocks;
 
-        protected ConfirmationWatcher(IConfirmationWatcherHandler<TWatch, TContext> handler, IBlocksStorage blocks)
-            : base(handler)
+        protected ConfirmationWatcher(
+            IConfirmationWatcherHandler<TContext, TWatch, TConfirm> handler,
+            IBlocksStorage blocks) : base(handler)
         {
+            if (handler == null)
+            {
+                throw new ArgumentNullException(nameof(handler));
+            }
+
             if (blocks == null)
             {
                 throw new ArgumentNullException(nameof(blocks));
@@ -25,46 +31,45 @@ namespace Ztm.Zcoin.Watching
             this.blocks = blocks;
         }
 
-        protected override async Task<bool> ExecuteMatchedWatchAsync(
-            TWatch watch,
-            Block block,
-            int height,
-            BlockEventType blockEventType,
-            CancellationToken cancellationToken)
+        protected static ConfirmationType GetConfirmationType(BlockEventType eventType)
         {
-            // Get confirmation type.
-            ConfirmationType confirmationType;
-
-            switch (blockEventType)
+            switch (eventType)
             {
                 case BlockEventType.Added:
-                    confirmationType = ConfirmationType.Confirmed;
-                    break;
+                    return ConfirmationType.Confirmed;
                 case BlockEventType.Removing:
-                    confirmationType = ConfirmationType.Unconfirming;
-                    break;
+                    return ConfirmationType.Unconfirming;
                 default:
                     throw new ArgumentOutOfRangeException(
-                        nameof(blockEventType),
-                        blockEventType,
-                        "The value is not supported."
+                        nameof(eventType),
+                        eventType,
+                        "The value is not a valid event type."
                     );
             }
+        }
 
-            // Load watching block.
-            var currentHeight = height;
+        protected async Task<int> GetConfirmationAsync(
+            TWatch watch,
+            int currentHeight,
+            CancellationToken cancellationToken)
+        {
+            if (watch == null)
+            {
+                throw new ArgumentNullException(nameof(watch));
+            }
 
-            (block, height) = await this.blocks.GetAsync(watch.StartBlock, cancellationToken);
+            var (_, height) = await this.blocks.GetAsync(watch.StartBlock, cancellationToken);
 
             if (height > currentHeight)
             {
-                throw new ArgumentException("The value is not a valid current height.", nameof(height));
+                throw new ArgumentOutOfRangeException(
+                    nameof(currentHeight),
+                    currentHeight,
+                    "The value is not a valid current height."
+                );
             }
 
-            // Invoke handler.
-            var confirmation = currentHeight - height + 1;
-
-            return await this.handler.ConfirmationUpdateAsync(watch, confirmation, confirmationType, cancellationToken);
+            return currentHeight - height + 1;
         }
 
         protected override Task<IEnumerable<TWatch>> GetWatchesAsync(

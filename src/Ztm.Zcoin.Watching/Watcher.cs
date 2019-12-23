@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,11 +7,11 @@ using NBitcoin;
 
 namespace Ztm.Zcoin.Watching
 {
-    public abstract class Watcher<TWatch, TContext> where TWatch : Watch<TContext>
+    public abstract class Watcher<TContext, TWatch> where TWatch : Watch<TContext>
     {
-        readonly IWatcherHandler<TWatch, TContext> handler;
+        readonly IWatcherHandler<TContext, TWatch> handler;
 
-        protected Watcher(IWatcherHandler<TWatch, TContext> handler)
+        protected Watcher(IWatcherHandler<TContext, TWatch> handler)
         {
             if (handler == null)
             {
@@ -35,6 +34,11 @@ namespace Ztm.Zcoin.Watching
                 throw new ArgumentNullException(nameof(block));
             }
 
+            if (height < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(height), height, "The value is not valid height.");
+            }
+
             // First, inspect block and create new watches.
             if (eventType == BlockEventType.Added)
             {
@@ -47,20 +51,21 @@ namespace Ztm.Zcoin.Watching
             }
 
             // Load watches that match with the block and execute it.
-            foreach (var watch in await GetWatchesAsync(block, height, cancellationToken))
-            {
-                var success = await ExecuteMatchedWatchAsync(
-                    watch,
-                    block,
-                    height,
-                    eventType,
-                    CancellationToken.None
-                );
+            watches = await GetWatchesAsync(block, height, cancellationToken);
 
+            if (!watches.Any())
+            {
+                return;
+            }
+
+            var completed = await ExecuteWatchesAsync(watches, block, height, eventType, cancellationToken);
+
+            foreach (var watch in watches)
+            {
                 // Determine if we need to remove watch.
                 var removeReason = WatchRemoveReason.None;
 
-                if (success)
+                if (completed.Contains(watch))
                 {
                     removeReason |= WatchRemoveReason.Completed;
                 }
@@ -82,11 +87,11 @@ namespace Ztm.Zcoin.Watching
             int height,
             CancellationToken cancellationToken);
 
-        protected abstract Task<bool> ExecuteMatchedWatchAsync(
-            TWatch watch,
+        protected abstract Task<ISet<TWatch>> ExecuteWatchesAsync(
+            IEnumerable<TWatch> watches,
             Block block,
             int height,
-            BlockEventType blockEventType,
+            BlockEventType eventType,
             CancellationToken cancellationToken);
 
         protected abstract Task<IEnumerable<TWatch>> GetWatchesAsync(

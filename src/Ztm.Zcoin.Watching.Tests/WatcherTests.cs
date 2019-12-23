@@ -3,207 +3,295 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using FluentAssertions;
+using Moq;
 using NBitcoin;
-using NSubstitute;
 using Xunit;
-using Ztm.Zcoin.NBitcoin;
+using Ztm.Testing;
 
 namespace Ztm.Zcoin.Watching.Tests
 {
     public sealed class WatcherTests
     {
-        readonly IWatcherHandler<Watch<object>, object> handler;
-        readonly TestWatcher subject;
+        readonly Mock<IWatcherHandler<object, Watch<object>>> handler;
+        readonly FakeWatcher subject;
 
         public WatcherTests()
         {
-            this.handler = Substitute.For<IWatcherHandler<Watch<object>, object>>();
-            this.subject = new TestWatcher(this.handler);
-            this.subject.CreateWatches = Substitute.For<Func<Block, int, CancellationToken, IEnumerable<Watch<object>>>>();
-            this.subject.ExecuteMatchedWatch = Substitute.For<Func<Watch<object>, Block, int, BlockEventType, CancellationToken, bool>>();
-            this.subject.GetWatches = Substitute.For<Func<Block, int, CancellationToken, IEnumerable<Watch<object>>>>();
+            this.handler = new Mock<IWatcherHandler<object, Watch<object>>>();
+            this.subject = new FakeWatcher(this.handler.Object);
         }
 
         [Fact]
-        public void Constructor_WithNullStorage_ShouldThrow()
+        public void Constructor_WithNullHandler_ShouldThrow()
         {
-            Assert.Throws<ArgumentNullException>("handler", () => new TestWatcher(null));
+            Assert.Throws<ArgumentNullException>("handler", () => new FakeWatcher(null));
         }
 
         [Fact]
-        public async Task ExecuteAsync_WithNullBlock_ShouldThrow()
+        public void ExecuteAsync_WithNullBlock_ShouldThrow()
         {
-            await Assert.ThrowsAsync<ArgumentNullException>(
-                () => this.subject.ExecuteAsync(null, 0, BlockEventType.Added, CancellationToken.None)
-            );
+            this.subject.Invoking(s => s.ExecuteAsync(null, 0, BlockEventType.Added, CancellationToken.None))
+                        .Should().ThrowExactly<ArgumentNullException>()
+                        .And.ParamName.Should().Be("block");
+        }
+
+        [Theory]
+        [InlineData(-1)]
+        [InlineData(-2)]
+        public void ExecuteAsync_WithNegativeHeight_ShouldThrow(int height)
+        {
+            this.subject.Invoking(s => s.ExecuteAsync(TestBlock.Regtest0, height, BlockEventType.Added, CancellationToken.None))
+                        .Should().ThrowExactly<ArgumentOutOfRangeException>()
+                        .And.ParamName.Should().Be("height");
         }
 
         [Fact]
-        public async Task ExecuteAsync_WhenInvokeWithBlockAdded_ShouldInvokeCreateWatchesAsync()
+        public Task ExecuteAsync_CreateWatchesAsyncReturnEmptyList_ShouldNotInvokeAddWatchesAsync()
         {
-            // Arrange.
-            var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
-
-            this.subject.CreateWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch<object>>());
-            this.subject.GetWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch<object>>());
-
-            // Act.
-            using (var cancellationSource = new CancellationTokenSource())
+            return AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
             {
-                await this.subject.ExecuteAsync(block, 0, BlockEventType.Added, cancellationSource.Token);
+                // Arrange.
+                this.subject.StubbedCreateWatchesAsync.Setup(f => f(It.IsAny<Block>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                                                      .Returns(Task.FromResult(Enumerable.Empty<Watch<object>>()));
+
+                // Act.
+                await this.subject.ExecuteAsync(TestBlock.Regtest0, 0, BlockEventType.Added, cancellationToken);
 
                 // Assert.
-                this.subject.CreateWatches.Received(1)(block, 0, cancellationSource.Token);
-            }
-        }
-
-        [Fact]
-        public async Task ExecuteAsync_WhenInvoke_ShouldAlwaysInvokeGetWatchesAsync()
-        {
-            // Arrange.
-            var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
-
-            this.subject.CreateWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch<object>>());
-            this.subject.GetWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch<object>>());
-
-            // Act.
-            using (var cancellationSource = new CancellationTokenSource())
-            {
-                await this.subject.ExecuteAsync(block, 0, BlockEventType.Added, cancellationSource.Token);
-                await this.subject.ExecuteAsync(block, 0, BlockEventType.Removing, cancellationSource.Token);
-
-                // Assert.
-                this.subject.GetWatches.Received(2)(block, 0, cancellationSource.Token);
-            }
-        }
-
-        [Fact]
-        public async Task ExecuteAsync_CreateWatchesAsyncReturnEmptyList_ShouldNotInvokeAddWatchesAsync()
-        {
-            // Arrange.
-            var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
-
-            this.subject.CreateWatches(block, 0, Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch<object>>());
-            this.subject.GetWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch<object>>());
-
-            // Act.
-            await this.subject.ExecuteAsync(block, 0, BlockEventType.Added, CancellationToken.None);
-
-            // Assert.
-            _ = this.handler.Received(0).AddWatchesAsync(Arg.Any<IEnumerable<Watch<object>>>(), Arg.Any<CancellationToken>());
-        }
-
-        [Fact]
-        public async Task ExecuteAsync_CreateWatchesAsyncReturnNonEmptyList_ShouldInvokeAddWatchesAsync()
-        {
-            // Arrange.
-            var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
-            var watch = new Watch<object>(null, block.GetHash());
-
-            this.subject.CreateWatches(block, 0, Arg.Any<CancellationToken>()).Returns(new[] { watch });
-            this.subject.GetWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch<object>>());
-
-            // Act.
-            using (var cancellationSource = new CancellationTokenSource())
-            {
-                await this.subject.ExecuteAsync(block, 0, BlockEventType.Added, cancellationSource.Token);
-
-                // Assert.
-                _ = this.handler.Received(1).AddWatchesAsync(
-                    Arg.Is<IEnumerable<Watch<object>>>(l => l.SequenceEqual(new[] { watch })),
-                    cancellationSource.Token
+                this.subject.StubbedCreateWatchesAsync.Verify(
+                    f => f(TestBlock.Regtest0, 0, cancellationToken),
+                    Times.Once()
                 );
-            }
-        }
 
-        [Fact]
-        public async Task ExecuteAsync_GetWatchesAsyncReturnEmptyList_ShouldNotCallExecuteMatchedWatchAsync()
-        {
-            // Arrange.
-            var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
-
-            this.subject.CreateWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch<object>>());
-            this.subject.GetWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch<object>>());
-
-            // Act.
-            using (var cancellationSource = new CancellationTokenSource())
-            {
-                await this.subject.ExecuteAsync(block, 0, BlockEventType.Added, cancellationSource.Token);
-
-                // Assert.
-                this.subject.ExecuteMatchedWatch.Received(0)(
-                    Arg.Any<Watch<object>>(),
-                    Arg.Any<Block>(),
-                    Arg.Any<int>(),
-                    Arg.Any<BlockEventType>(),
-                    Arg.Any<CancellationToken>()
+                this.handler.Verify(
+                    h => h.AddWatchesAsync(It.IsAny<IEnumerable<Watch<object>>>(), It.IsAny<CancellationToken>()),
+                    Times.Never()
                 );
-            }
+            });
         }
 
         [Fact]
-        public async Task ExecuteAsync_ExecuteMatchedWatchAsyncReturnTrue_ShouldInvokeRemoveWatchAsync()
+        public Task ExecuteAsync_CreateWatchesAsyncReturnNonEmptyList_ShouldInvokeAddWatchesAsync()
         {
-            // Arrange.
-            var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
-            var watch = new Watch<object>(null, block.GetHash());
-
-            this.subject.CreateWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch<object>>());
-            this.subject.GetWatches(block, 0, Arg.Any<CancellationToken>()).Returns(new[] { watch });
-            this.subject.ExecuteMatchedWatch(watch, block, 0, BlockEventType.Added, Arg.Any<CancellationToken>()).Returns(true);
-
-            // Act.
-            using (var cancellationSource = new CancellationTokenSource())
+            return AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
             {
-                await this.subject.ExecuteAsync(block, 0, BlockEventType.Added, cancellationSource.Token);
+                // Arrange.
+                var watch = new Watch<object>(null, TestBlock.Regtest0.GetHash());
+
+                this.subject.StubbedCreateWatchesAsync.Setup(f => f(TestBlock.Regtest0, 0, cancellationToken))
+                                                      .Returns(Task.FromResult<IEnumerable<Watch<object>>>(new[] { watch }));
+
+                // Act.
+                await this.subject.ExecuteAsync(TestBlock.Regtest0, 0, BlockEventType.Added, cancellationToken);
 
                 // Assert.
-                this.subject.ExecuteMatchedWatch.Received(1)(watch, block, 0, BlockEventType.Added, CancellationToken.None);
-                _ = this.handler.Received(1).RemoveWatchAsync(watch, WatchRemoveReason.Completed, CancellationToken.None);
-            }
+                this.subject.StubbedCreateWatchesAsync.Verify(
+                    f => f(TestBlock.Regtest0, 0, cancellationToken),
+                    Times.Once()
+                );
+
+                this.handler.Verify(
+                    h => h.AddWatchesAsync(It.Is<IEnumerable<Watch<object>>>(l => l.Single() == watch), cancellationToken),
+                    Times.Once()
+                );
+            });
+        }
+
+        [Theory]
+        [InlineData(BlockEventType.Added)]
+        [InlineData(BlockEventType.Removing)]
+        public Task ExecuteAsync_GetWatchesAsyncReturnEmptyList_ShouldDoNothing(BlockEventType eventType)
+        {
+            return AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
+            {
+                // Arrange.
+                this.subject.StubbedGetWatchesAsync.Setup(f => f(TestBlock.Regtest0, 0, cancellationToken))
+                                                   .Returns(Task.FromResult(Enumerable.Empty<Watch<object>>()));
+
+                // Act.
+                await this.subject.ExecuteAsync(TestBlock.Regtest0, 0, eventType, cancellationToken);
+
+                // Assert.
+                this.subject.StubbedGetWatchesAsync.Verify(
+                    f => f(TestBlock.Regtest0, 0, cancellationToken),
+                    Times.Once()
+                );
+
+                this.subject.StubbedExecuteWatchesAsync.Verify(
+                    f => f(It.IsAny<IEnumerable<Watch<object>>>(), It.IsAny<Block>(), It.IsAny<int>(), It.IsAny<BlockEventType>(), It.IsAny<CancellationToken>()),
+                    Times.Never()
+                );
+
+                this.handler.Verify(
+                    h => h.RemoveWatchAsync(It.IsAny<Watch<object>>(), It.IsAny<WatchRemoveReason>(), It.IsAny<CancellationToken>()),
+                    Times.Never()
+                );
+            });
         }
 
         [Fact]
-        public async Task ExecuteAsync_ExecuteMatchedWatchAsyncReturnFalse_ShouldNotInvokeRemoveWatchAsync()
+        public Task ExecuteAsync_BlockAddedAndExecuteWatchesAsyncReturnEmptyList_ShouldNotRemoveAnyWatches()
         {
-            // Arrange.
-            var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
-            var watch = new Watch<object>(null, block.GetHash());
-
-            this.subject.CreateWatches(Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Enumerable.Empty<Watch<object>>());
-            this.subject.GetWatches(block, 0, Arg.Any<CancellationToken>()).Returns(new[] { watch });
-            this.subject.ExecuteMatchedWatch(watch, block, 0, BlockEventType.Added, Arg.Any<CancellationToken>()).Returns(false);
-
-            // Act.
-            using (var cancellationSource = new CancellationTokenSource())
+            return AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
             {
-                await this.subject.ExecuteAsync(block, 0, BlockEventType.Added, cancellationSource.Token);
+                // Arrange.
+                var watch = new Watch<object>(null, TestBlock.Regtest0.GetHash());
+                var watches = new[] { watch };
+
+                this.subject.StubbedGetWatchesAsync.Setup(f => f(TestBlock.Regtest0, 0, It.IsAny<CancellationToken>()))
+                                                   .Returns(Task.FromResult<IEnumerable<Watch<object>>>(watches));
+
+                this.subject.StubbedExecuteWatchesAsync.Setup(f => f(watches, TestBlock.Regtest0, 0, BlockEventType.Added, It.IsAny<CancellationToken>()))
+                                                       .Returns(Task.FromResult<ISet<Watch<object>>>(new HashSet<Watch<object>>()));
+
+                // Act.
+                await this.subject.ExecuteAsync(TestBlock.Regtest0, 0, BlockEventType.Added, cancellationToken);
 
                 // Assert.
-                this.subject.ExecuteMatchedWatch.Received(1)(watch, block, 0, BlockEventType.Added, CancellationToken.None);
-                _ = this.handler.Received(0).RemoveWatchAsync(Arg.Any<Watch<object>>(), Arg.Any<WatchRemoveReason>(), Arg.Any<CancellationToken>());
-            }
+                this.subject.StubbedGetWatchesAsync.Verify(
+                    f => f(TestBlock.Regtest0, 0, cancellationToken),
+                    Times.Once()
+                );
+
+                this.subject.StubbedExecuteWatchesAsync.Verify(
+                    f => f(watches, TestBlock.Regtest0, 0, BlockEventType.Added, cancellationToken),
+                    Times.Once()
+                );
+
+                this.handler.Verify(
+                    h => h.RemoveWatchAsync(It.IsAny<Watch<object>>(), It.IsAny<WatchRemoveReason>(), It.IsAny<CancellationToken>()),
+                    Times.Never()
+                );
+            });
         }
 
         [Fact]
-        public async Task BlockRemovingAsync_WatchingOnRemovingBlock_ShouldInvokeRemoveWatchAsync()
+        public Task ExecuteAsync_BlockAddedAndExecuteWatchesAsyncReturnNonEmptyList_ShouldRemoveReturnedWatches()
         {
-            // Arrange.
-            var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
-            var watch = new Watch<object>(null, block.GetHash());
-
-            this.subject.GetWatches(block, 0, Arg.Any<CancellationToken>()).Returns(new[] { watch });
-            this.subject.ExecuteMatchedWatch(Arg.Any<Watch<object>>(), Arg.Any<Block>(), Arg.Any<int>(), Arg.Any<BlockEventType>(), Arg.Any<CancellationToken>()).Returns(false);
-
-            // Act.
-            using (var cancellationSource = new CancellationTokenSource())
+            return AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
             {
-                await this.subject.ExecuteAsync(block, 0, BlockEventType.Removing, cancellationSource.Token);
+                // Arrange.
+                var watch1 = new Watch<object>(null, TestBlock.Regtest0.GetHash());
+                var watch2 = new Watch<object>(null, TestBlock.Regtest0.GetHash());
+                var watches = new[] { watch1, watch2 };
+                var removes = new HashSet<Watch<object>>() { watch2 };
+
+                this.subject.StubbedGetWatchesAsync.Setup(f => f(TestBlock.Regtest0, 0, It.IsAny<CancellationToken>()))
+                                                   .Returns(Task.FromResult<IEnumerable<Watch<object>>>(watches));
+
+                this.subject.StubbedExecuteWatchesAsync.Setup(f => f(watches, TestBlock.Regtest0, 0, BlockEventType.Added, It.IsAny<CancellationToken>()))
+                                                       .Returns(Task.FromResult<ISet<Watch<object>>>(removes));
+
+                // Act.
+                await this.subject.ExecuteAsync(TestBlock.Regtest0, 0, BlockEventType.Added, cancellationToken);
 
                 // Assert.
-                this.subject.ExecuteMatchedWatch.Received(1)(watch, block, 0, BlockEventType.Removing, CancellationToken.None);
-                _ = this.handler.Received(1).RemoveWatchAsync(watch, WatchRemoveReason.BlockRemoved, CancellationToken.None);
-            }
+                this.subject.StubbedGetWatchesAsync.Verify(
+                    f => f(TestBlock.Regtest0, 0, cancellationToken),
+                    Times.Once()
+                );
+
+                this.subject.StubbedExecuteWatchesAsync.Verify(
+                    f => f(watches, TestBlock.Regtest0, 0, BlockEventType.Added, cancellationToken),
+                    Times.Once()
+                );
+
+                this.handler.Verify(
+                    h => h.RemoveWatchAsync(watch2, WatchRemoveReason.Completed, CancellationToken.None),
+                    Times.Once()
+                );
+            });
+        }
+
+        [Fact]
+        public Task ExecuteAsync_BlockRemovingAndExecuteWatchesAsyncReturnEmptyList_ShouldRemoveWatchesForThatBlock()
+        {
+            return AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
+            {
+                // Arrange.
+                var watch1 = new Watch<object>(null, TestBlock.Regtest0.GetHash());
+                var watch2 = new Watch<object>(null, TestBlock.Regtest1.GetHash());
+                var watches = new[] { watch1, watch2 };
+
+                this.subject.StubbedGetWatchesAsync.Setup(f => f(TestBlock.Regtest1, 1, It.IsAny<CancellationToken>()))
+                                                   .Returns(Task.FromResult<IEnumerable<Watch<object>>>(watches));
+
+                this.subject.StubbedExecuteWatchesAsync.Setup(f => f(watches, TestBlock.Regtest1, 1, BlockEventType.Removing, It.IsAny<CancellationToken>()))
+                                                       .Returns(Task.FromResult<ISet<Watch<object>>>(new HashSet<Watch<object>>()));
+
+                // Act.
+                await this.subject.ExecuteAsync(TestBlock.Regtest1, 1, BlockEventType.Removing, cancellationToken);
+
+                // Assert.
+                this.subject.StubbedGetWatchesAsync.Verify(
+                    f => f(TestBlock.Regtest1, 1, cancellationToken),
+                    Times.Once()
+                );
+
+                this.subject.StubbedExecuteWatchesAsync.Verify(
+                    f => f(watches, TestBlock.Regtest1, 1, BlockEventType.Removing, cancellationToken),
+                    Times.Once()
+                );
+
+                this.handler.Verify(
+                    h => h.RemoveWatchAsync(watch2, WatchRemoveReason.BlockRemoved, CancellationToken.None),
+                    Times.Once()
+                );
+
+                this.handler.Verify(
+                    h => h.RemoveWatchAsync(watch1, It.IsAny<WatchRemoveReason>(), It.IsAny<CancellationToken>()),
+                    Times.Never()
+                );
+            });
+        }
+
+        [Fact]
+        public Task ExecuteAsync_BlockRemovingAndExecuteWatchesAsyncReturnNonEmptyList_ShouldRemoveReturnedWatchesAndForThatBlock()
+        {
+            return AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
+            {
+                // Arrange.
+                var watch1 = new Watch<object>(null, TestBlock.Regtest0.GetHash());
+                var watch2 = new Watch<object>(null, TestBlock.Regtest1.GetHash());
+                var watch3 = new Watch<object>(null, TestBlock.Regtest1.GetHash());
+                var watches = new[] { watch1, watch2, watch3 };
+
+                this.subject.StubbedGetWatchesAsync.Setup(f => f(TestBlock.Regtest1, 1, It.IsAny<CancellationToken>()))
+                                                   .Returns(Task.FromResult<IEnumerable<Watch<object>>>(watches));
+
+                this.subject.StubbedExecuteWatchesAsync.Setup(f => f(watches, TestBlock.Regtest1, 1, BlockEventType.Removing, It.IsAny<CancellationToken>()))
+                                                   .Returns(Task.FromResult<ISet<Watch<object>>>(new HashSet<Watch<object>> { watch2 }));
+
+                // Act.
+                await this.subject.ExecuteAsync(TestBlock.Regtest1, 1, BlockEventType.Removing, cancellationToken);
+
+                // Assert.
+                this.subject.StubbedGetWatchesAsync.Verify(
+                    f => f(TestBlock.Regtest1, 1, cancellationToken),
+                    Times.Once()
+                );
+
+                this.subject.StubbedExecuteWatchesAsync.Verify(
+                    f => f(watches, TestBlock.Regtest1, 1, BlockEventType.Removing, cancellationToken),
+                    Times.Once()
+                );
+
+                this.handler.Verify(
+                    h => h.RemoveWatchAsync(watch3, WatchRemoveReason.BlockRemoved, CancellationToken.None),
+                    Times.Once()
+                );
+
+                this.handler.Verify(
+                    h => h.RemoveWatchAsync(watch2, WatchRemoveReason.BlockRemoved | WatchRemoveReason.Completed, CancellationToken.None),
+                    Times.Once()
+                );
+
+                this.handler.Verify(
+                    h => h.RemoveWatchAsync(watch1, It.IsAny<WatchRemoveReason>(), It.IsAny<CancellationToken>()),
+                    Times.Never()
+                );
+            });
         }
     }
 }
