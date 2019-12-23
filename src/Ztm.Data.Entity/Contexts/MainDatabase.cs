@@ -28,6 +28,10 @@ namespace Ztm.Data.Entity.Contexts
 
         public DbSet<ReceivingAddressReservation> ReceivingAddressReservations { get; set; }
 
+        public DbSet<TransactionConfirmationWatcherRule> TransactionConfirmationWatcherRules { get; set; }
+
+        public DbSet<TransactionConfirmationWatcherWatch> TransactionConfirmationWatcherWatches { get; set; }
+
         public DbSet<Transaction> Transactions { get; set; }
 
         public DbSet<WebApiCallback> WebApiCallbacks { get; set; }
@@ -140,6 +144,61 @@ namespace Ztm.Data.Entity.Contexts
             builder.HasKey(e => e.Hash);
         }
 
+        protected virtual void ConfigureTransactionConfirmationWatcherRule(
+            EntityTypeBuilder<TransactionConfirmationWatcherRule> builder)
+        {
+            builder.Property(e => e.Id).IsRequired();
+            builder.Property(e => e.CallbackId).IsRequired();
+            builder.Property(e => e.TransactionHash).IsRequired();
+            builder.Property(e => e.Status).IsRequired();
+            builder.Property(e => e.Confirmation).IsRequired();
+            builder.Property(e => e.OriginalWaitingTime).IsRequired();
+            builder.Property(e => e.RemainingWaitingTime).IsRequired();
+            builder.Property(e => e.SuccessData).IsRequired();
+            builder.Property(e => e.TimeoutData).IsRequired();
+            builder.Property(e => e.CreatedAt).IsRequired();
+            builder.Property(e => e.CurrentWatchId);
+
+            builder.HasKey(e => e.Id);
+
+            builder.HasIndex(e => e.CallbackId);
+            builder.HasIndex(e => e.Status);
+
+            builder.HasOne(e => e.Callback)
+                   .WithMany()
+                   .HasForeignKey(e => e.CallbackId)
+                   .HasPrincipalKey(e => e.Id)
+                   .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(e => e.CurrentWatch)
+                   .WithMany()
+                   .HasForeignKey(e => e.CurrentWatchId)
+                   .HasPrincipalKey(e => e.Id)
+                   .OnDelete(DeleteBehavior.SetNull);
+        }
+
+        protected virtual void ConfirgureTransactionConfirmationWatcherWatch(
+            EntityTypeBuilder<TransactionConfirmationWatcherWatch> builder)
+        {
+            builder.Property(e => e.Id).IsRequired().ValueGeneratedNever();
+            builder.Property(e => e.RuleId).IsRequired();
+            builder.Property(e => e.StartBlockHash).IsRequired();
+            builder.Property(e => e.StartTime).IsRequired();
+            builder.Property(e => e.TransactionHash).IsRequired();
+            builder.Property(e => e.Status).IsRequired();
+
+            builder.HasKey(e => e.Id);
+
+            builder.HasIndex(e => e.RuleId);
+            builder.HasIndex(e => e.Status);
+
+            builder.HasOne(e => e.Rule)
+                   .WithMany(e => e.Watches)
+                   .HasForeignKey(e => e.RuleId)
+                   .HasPrincipalKey(e => e.Id)
+                   .OnDelete(DeleteBehavior.Cascade);
+        }
+
         protected virtual void ConfigureWebApiCallback(EntityTypeBuilder<WebApiCallback> builder)
         {
             builder.Property(e => e.Id).IsRequired().ValueGeneratedNever();
@@ -177,6 +236,8 @@ namespace Ztm.Data.Entity.Contexts
             modelBuilder.Entity<ReceivingAddress>(ConfigureReceivingAddress);
             modelBuilder.Entity<ReceivingAddressReservation>(ConfigureReceivingAddressReservation);
             modelBuilder.Entity<Transaction>(ConfigureTransaction);
+            modelBuilder.Entity<TransactionConfirmationWatcherRule>(ConfigureTransactionConfirmationWatcherRule);
+            modelBuilder.Entity<TransactionConfirmationWatcherWatch>(ConfirgureTransactionConfirmationWatcherWatch);
             modelBuilder.Entity<WebApiCallback>(ConfigureWebApiCallback);
             modelBuilder.Entity<WebApiCallbackHistory>(ConfigureWebApiCallbackHistory);
         }

@@ -8,13 +8,13 @@ using Newtonsoft.Json;
 using Ztm.Data.Entity.Contexts;
 using Ztm.Data.Entity.Contexts.Main;
 
-namespace Ztm.WebApi
+namespace Ztm.WebApi.Callbacks
 {
-    public class SqlCallbackRepository : ICallbackRepository
+    public class EntityCallbackRepository : ICallbackRepository
     {
         readonly IMainDatabaseFactory db;
 
-        public SqlCallbackRepository(IMainDatabaseFactory db)
+        public EntityCallbackRepository(IMainDatabaseFactory db)
         {
             if (db == null)
             {
@@ -22,6 +22,22 @@ namespace Ztm.WebApi
             }
 
             this.db = db;
+        }
+
+        public static Callback ToDomain(WebApiCallback callback)
+        {
+            if (callback == null)
+            {
+                throw new ArgumentNullException(nameof(callback));
+            }
+
+            return new Callback(
+                callback.Id,
+                callback.RegisteredIp,
+                DateTime.SpecifyKind(callback.RegisteredTime, DateTimeKind.Utc),
+                callback.Completed,
+                callback.Url
+            );
         }
 
         public async Task<Callback> AddAsync(IPAddress registeringIp, Uri url, CancellationToken cancellationToken)
@@ -87,7 +103,8 @@ namespace Ztm.WebApi
 
             using (var db = this.db.CreateDbContext())
             {
-                await db.WebApiCallbackHistories.AddAsync(
+                await db.WebApiCallbackHistories.AddAsync
+                (
                     new WebApiCallbackHistory
                     {
                         CallbackId = id,
@@ -98,29 +115,6 @@ namespace Ztm.WebApi
                 );
                 await db.SaveChangesAsync(cancellationToken);
             }
-        }
-
-        static WebApiCallback ToEntity(Callback callback)
-        {
-            return new WebApiCallback
-            {
-                Id = callback.Id,
-                RegisteredIp = callback.RegisteredIp,
-                RegisteredTime = callback.RegisteredTime.ToUniversalTime(),
-                Completed = callback.Completed,
-                Url = callback.Url,
-            };
-        }
-
-        static Callback ToDomain(WebApiCallback callback)
-        {
-            return new Callback(
-                callback.Id,
-                callback.RegisteredIp,
-                DateTime.SpecifyKind(callback.RegisteredTime, DateTimeKind.Utc),
-                callback.Completed,
-                callback.Url
-            );
         }
     }
 }

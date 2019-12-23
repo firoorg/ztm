@@ -8,22 +8,23 @@ using Newtonsoft.Json;
 using Xunit;
 using Ztm.Data.Entity.Contexts.Main;
 using Ztm.Data.Entity.Testing;
+using Ztm.WebApi.Callbacks;
 
-namespace Ztm.WebApi.Tests
+namespace Ztm.WebApi.Tests.Callbacks
 {
-    public class SqlCallbackRepositoryTests : IDisposable
+    public class EntityCallbackRepositoryTests : IDisposable
     {
-        readonly SqlCallbackRepository subject;
+        readonly EntityCallbackRepository subject;
         readonly TestMainDatabaseFactory dbFactory;
 
         readonly Uri defaultUrl;
 
-        public SqlCallbackRepositoryTests()
+        public EntityCallbackRepositoryTests()
         {
             this.defaultUrl = new Uri("http://zcoin.io");
 
             this.dbFactory = new TestMainDatabaseFactory();
-            this.subject = new SqlCallbackRepository(dbFactory);
+            this.subject = new EntityCallbackRepository(dbFactory);
         }
 
         public void Dispose()
@@ -36,8 +37,43 @@ namespace Ztm.WebApi.Tests
         {
             Assert.Throws<ArgumentNullException>(
                 "db",
-                () => new SqlCallbackRepository(null)
+                () => new EntityCallbackRepository(null)
             );
+        }
+
+        [Fact]
+        public void ToDomain_WithNullValue_ShouldThrow()
+        {
+            Assert.Throws<ArgumentNullException>(
+                "callback",
+                () => EntityCallbackRepository.ToDomain(null)
+            );
+        }
+
+        [Fact]
+        public void ToDomain_WithValidValue_ShouldSuccess()
+        {
+            // Arrange.
+            var time = DateTime.UtcNow;
+            var url = new Uri("https://zcoin.io");
+            var entity = new WebApiCallback
+            {
+                Id = Guid.NewGuid(),
+                RegisteredIp = IPAddress.Loopback,
+                RegisteredTime = time,
+                Completed = true,
+                Url = url
+            };
+
+            // Act.
+            var model = EntityCallbackRepository.ToDomain(entity);
+
+            // Assert.
+            Assert.Equal(entity.Id, model.Id);
+            Assert.Equal(IPAddress.Loopback, model.RegisteredIp);
+            Assert.Equal(time, model.RegisteredTime);
+            Assert.True(model.Completed);
+            Assert.Equal(url, model.Url);
         }
 
         [Fact]
@@ -117,7 +153,7 @@ namespace Ztm.WebApi.Tests
 
             // Act.
             await this.subject.AddHistoryAsync(
-                callback.Id, new TestCallbackResult(CallbackResult.StatusUpdate, data), CancellationToken.None);
+                callback.Id, new CallbackResult(CallbackResult.StatusUpdate, data), CancellationToken.None);
 
             // Assert.
             WebApiCallbackHistory history;
@@ -143,9 +179,9 @@ namespace Ztm.WebApi.Tests
 
             // Act.
             await this.subject.AddHistoryAsync(
-                callback.Id, new TestCallbackResult(CallbackResult.StatusUpdate, data), CancellationToken.None);
+                callback.Id, new CallbackResult(CallbackResult.StatusUpdate, data), CancellationToken.None);
             await this.subject.AddHistoryAsync(
-                callback.Id, new TestCallbackResult(CallbackResult.StatusUpdate, data), CancellationToken.None);
+                callback.Id, new CallbackResult(CallbackResult.StatusUpdate, data), CancellationToken.None);
 
             // Assert.
             var histories = new List<WebApiCallbackHistory>();
@@ -170,17 +206,5 @@ namespace Ztm.WebApi.Tests
                 () => this.subject.AddHistoryAsync(Guid.NewGuid(), null, CancellationToken.None)
             );
         }
-    }
-
-    sealed class TestCallbackResult : CallbackResult
-    {
-        public TestCallbackResult(string status, object data)
-        {
-            this.Status = status;
-            this.Data = data;
-        }
-
-        public override string Status { get; }
-        public override object Data { get; }
     }
 }

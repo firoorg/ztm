@@ -13,6 +13,8 @@ using Ztm.Data.Entity.Postgres;
 using Ztm.Hosting.AspNetCore;
 using Ztm.WebApi.Binders;
 using Ztm.WebApi.AddressPools;
+using Ztm.WebApi.Callbacks;
+using Ztm.WebApi.Watchers.TransactionConfirmation;
 using Ztm.Zcoin.NBitcoin;
 using Ztm.Zcoin.NBitcoin.Exodus;
 using Ztm.Zcoin.Rpc;
@@ -47,7 +49,10 @@ namespace Ztm.WebApi
                         };
                     });
 
-            // Address Pools
+            // Http Client Factory.
+            services.AddHttpClient();
+
+            // Address Pools.
             services.UseAddressPool();
 
             // Fundamentals Services.
@@ -56,6 +61,20 @@ namespace Ztm.WebApi
 
             // Database Services.
             services.AddSingleton<IMainDatabaseFactory, MainDatabaseFactory>();
+
+            // Transaction Confirmation Watcher.
+            services.AddSingleton<ICallbackExecuter, HttpCallbackExecuter>();
+            services.AddSingleton<ICallbackRepository, EntityCallbackRepository>();
+            services.AddSingleton<IRuleRepository, EntityRuleRepository>();
+            services.AddSingleton<IWatchRepository, EntityWatchRepository>();
+            services.AddSingleton<TransactionConfirmationWatcher>();
+            services.AddSingleton<IBlockListener>(
+                p => p.GetRequiredService<TransactionConfirmationWatcher>()
+            );
+
+            services.AddSingleton<Microsoft.Extensions.Hosting.IHostedService, TransactionConfirmationWatcher>(
+                p => p.GetRequiredService<TransactionConfirmationWatcher>()
+            );
 
             // Zcoin Interface Services.
             services.AddSingleton<IZcoinRpcClientFactory>(CreateZcoinRpcClientFactory);

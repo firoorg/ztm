@@ -59,5 +59,20 @@ namespace Ztm.Data.Entity.Testing
 
             builder.Property(e => e.Hash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
         }
+
+        protected override void ConfigureTransactionConfirmationWatcherRule(EntityTypeBuilder<TransactionConfirmationWatcherRule> builder)
+        {
+            base.ConfigureTransactionConfirmationWatcherRule(builder);
+
+            builder.Property(e => e.TransactionHash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
+        }
+
+        protected override void ConfirgureTransactionConfirmationWatcherWatch(EntityTypeBuilder<TransactionConfirmationWatcherWatch> builder)
+        {
+            base.ConfirgureTransactionConfirmationWatcherWatch(builder);
+
+            builder.Property(e => e.StartBlockHash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
+            builder.Property(e => e.TransactionHash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
+        }
     }
 }

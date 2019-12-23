@@ -10,9 +10,11 @@
     <PackageReference Include="FluentAssertions" Version="5.9.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Abstractions" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
+    <PackageReference Include="Microsoft.Data.SQLite" Version="3.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.2.6" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="2.2.6" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="2.2.4" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="2.2.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
     <PackageReference Include="Moq" Version="4.13.1" />
     <PackageReference Include="NBitcoin" Version="4.2.16" />
@@ -26,6 +28,7 @@
     <ProjectReference Include="..\Ztm.WebApi\Ztm.WebApi.csproj" />
     <ProjectReference Include="..\Ztm.Data.Entity.Testing\Ztm.Data.Entity.Testing.csproj" />
     <ProjectReference Include="..\Ztm.Testing\Ztm.Testing.csproj" />
+    <ProjectReference Include="..\Ztm.Zcoin.Watching\Ztm.Zcoin.Watching.csproj" />
   </ItemGroup>
 
 </Project>
