@@ -299,7 +299,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             Thread.Sleep(TimeSpan.FromSeconds(1));
 
             // Assert.
-            this.callbackExecuter.Received(0);
+            _ = this.callbackExecuter.Received(0).ExecuteAsync(Arg.Any<Guid>(), Arg.Any<Uri>(), Arg.Any<CallbackResult>(), Arg.Any<CancellationToken>());
         }
 
         [Fact]
@@ -316,11 +316,11 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             builder.Timeout = TimeSpan.FromMilliseconds(500);
             builder.Transaction = block.Transactions[0].GetHash();
 
-            await builder.Call(this.subject.AddTransactionAsync);
+            var rule = await builder.Call(this.subject.AddTransactionAsync);
 
             // Act.
             await this.blockListener.BlockAddedAsync(block, 1, CancellationToken.None);
-            for (var i = 0; i < 9; i++)
+            for (var i = 0; i < builder.Confirmations - 1; i++)
             {
                 int height;
                 (block, height) = GenerateBlock();
@@ -333,8 +333,8 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
                 .Received(1)
                 .ExecuteAsync
                 (
-                    Arg.Any<Guid>(),
-                    Arg.Any<Uri>(),
+                    rule.Callback.Id,
+                    rule.Callback.Url,
                     Arg.Is<CallbackResult>
                     (
                         r => r.Status == CallbackResult.StatusSuccess
@@ -356,7 +356,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             builder.Timeout = TimeSpan.FromMilliseconds(500);
             builder.Transaction = block.Transactions[0].GetHash();
 
-            await builder.Call(this.subject.AddTransactionAsync);
+            var rule = await builder.Call(this.subject.AddTransactionAsync);
 
             // Act.
             await this.blockListener.BlockAddedAsync(block, 1, CancellationToken.None);
@@ -368,8 +368,8 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
                 .Received(1)
                 .ExecuteAsync
                 (
-                    Arg.Any<Guid>(),
-                    Arg.Any<Uri>(),
+                    rule.Callback.Id,
+                    rule.Callback.Url,
                     Arg.Is<CallbackResult>
                     (
                         r => r.Status == CallbackResult.StatusError
@@ -408,7 +408,8 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
                 Arg.Any<CancellationToken>()
             );
 
-            _ = this.callbackExecuter.Received(1).ExecuteAsync(
+            _ = this.callbackExecuter.Received(1).ExecuteAsync
+            (
                 Arg.Is<Guid>(id => id == rule.Callback.Id),
                 this.defaultUrl,
                 Arg.Is<CallbackResult>
@@ -459,23 +460,23 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 
             // Assert.
             _ = this.ruleRepository.Received(1)
-                .UpdateStatusAsync(Arg.Any<Guid>(), Arg.Any<RuleStatus>(), Arg.Any<CancellationToken>());
+                    .UpdateStatusAsync(Arg.Any<Guid>(), Arg.Any<RuleStatus>(), Arg.Any<CancellationToken>());
 
             _ = this.callbackExecuter.Received(1)
-                .ExecuteAsync
-                (
-                    Arg.Any<Guid>(),
-                    Arg.Any<Uri>(),
-                    Arg.Any<CallbackResult>(),
-                    Arg.Any<CancellationToken>()
-                );
+                    .ExecuteAsync
+                    (
+                        Arg.Any<Guid>(),
+                        Arg.Any<Uri>(),
+                        Arg.Any<CallbackResult>(),
+                        Arg.Any<CancellationToken>()
+                    );
 
             _ = this.callbackRepository.Received(0)
-                .SetCompletedAsyc
-                (
-                    Arg.Any<Guid>(),
-                    Arg.Any<CancellationToken>()
-                );
+                    .SetCompletedAsyc
+                    (
+                        Arg.Any<Guid>(),
+                        Arg.Any<CancellationToken>()
+                    );
         }
 
         [Fact]
@@ -486,11 +487,11 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             builder.Timeout = TimeSpan.FromMilliseconds(500);
 
             // Act.
-            await builder.Call(this.subject.AddTransactionAsync);
+            var rule = await builder.Call(this.subject.AddTransactionAsync);
             Thread.Sleep(TimeSpan.FromMilliseconds(1000));
 
             // Assert.
-            _ = this.ruleRepository.Received(1).UpdateStatusAsync(Arg.Any<Guid>(), Arg.Any<RuleStatus>(), Arg.Any<CancellationToken>());
+            _ = this.ruleRepository.Received(1).UpdateStatusAsync(rule.Id, Arg.Any<RuleStatus>(), Arg.Any<CancellationToken>());
 
             _ = this.callbackExecuter.Received(1).ExecuteAsync
             (
@@ -613,21 +614,19 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 
             // Act.
             await this.handler.AddWatchesAsync(watches, CancellationToken.None);
-            _ = this.ruleRepository.Received(1)
-                .UpdateCurrentWatchAsync
-                (
-                    Arg.Is<Guid>(id => id == watch1.Id),
-                    Arg.Is<Guid>(id => id == watches[0].Id),
-                    Arg.Any<CancellationToken>()
-                );
+            _ = this.ruleRepository.Received(1).UpdateCurrentWatchAsync
+            (
+                Arg.Is<Guid>(id => id == watch1.Id),
+                Arg.Is<Guid>(id => id == watches[0].Id),
+                Arg.Any<CancellationToken>()
+            );
 
-            _ = this.ruleRepository.Received(1)
-                .UpdateCurrentWatchAsync
-                (
-                    Arg.Is<Guid>(id => id == watch2.Id),
-                    Arg.Is<Guid>(id => id == watches[1].Id),
-                    Arg.Any<CancellationToken>()
-                );
+            _ = this.ruleRepository.Received(1).UpdateCurrentWatchAsync
+            (
+                Arg.Is<Guid>(id => id == watch2.Id),
+                Arg.Is<Guid>(id => id == watches[1].Id),
+                Arg.Any<CancellationToken>()
+            );
         }
 
         [Fact]
@@ -672,7 +671,6 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
         }
 
         [Fact]
-        // Timer must be stopped but watch object still is in the handler
         public async Task ConfirmationUpdateAsync_WithValidWatch_ShouldSuccess()
         {
             // Arrange.
@@ -716,11 +714,11 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 
             builder.Timeout = TimeSpan.FromSeconds(2);
             builder.Confirmations = 10;
-            var watch = await builder.Call(this.subject.AddTransactionAsync);
+            var rule = await builder.Call(this.subject.AddTransactionAsync);
 
             var watches = new List<TransactionWatch<Rule>>()
             {
-                new TransactionWatch<Rule>(watch, uint256.Zero, builder.Transaction),
+                new TransactionWatch<Rule>(rule, uint256.Zero, builder.Transaction),
             };
 
             await this.handler.AddWatchesAsync(watches, CancellationToken.None);
@@ -735,8 +733,8 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             // Assert.
             _ = this.callbackExecuter.Received(1).ExecuteAsync
             (
-                Arg.Any<Guid>(),
-                Arg.Any<Uri>(),
+                rule.Callback.Id,
+                rule.Callback.Url,
                 Arg.Is<CallbackResult>
                 (
                     result => result.Status == CallbackResult.StatusSuccess
@@ -807,8 +805,8 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             // Assert.
             _ = this.callbackExecuter.Received(1).ExecuteAsync
             (
-                Arg.Any<Guid>(),
-                Arg.Any<Uri>(),
+                rule.Callback.Id,
+                rule.Callback.Url,
                 Arg.Is<CallbackResult>
                 (
                     result => result.Status == CallbackResult.StatusError
