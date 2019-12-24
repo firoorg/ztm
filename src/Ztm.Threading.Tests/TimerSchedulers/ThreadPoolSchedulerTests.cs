@@ -108,12 +108,12 @@ namespace Ztm.Threading.Tests.TimerSchedulers
                 this.handler.Setup(f => f(It.IsAny<object>()))
                             .Callback<object>(c =>
                             {
-                                lock(cde)
+                                try
                                 {
-                                    if (!cde.IsSet)
-                                    {
-                                        cde.Signal();
-                                    }
+                                    cde.Signal();
+                                }
+                                catch (InvalidOperationException)
+                                {
                                 }
                             });
 
