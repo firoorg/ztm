@@ -144,21 +144,11 @@ namespace Ztm.Zcoin.Watching.Tests
                 );
 
                 this.handler.Verify(
-                    h => h.RemoveWatchAsync(
-                        watch2,
-                        It.Is<WatchRemoveReason>(r => r.HasFlag(WatchRemoveReason.Completed)),
+                    h => h.RemoveCompletedWatchesAsync(
+                        new[] { watch2 },
                         CancellationToken.None
                     ),
                     Times.Once()
-                );
-
-                this.handler.Verify(
-                    h => h.RemoveWatchAsync(
-                        watch1,
-                        It.IsAny<WatchRemoveReason>(),
-                        It.IsAny<CancellationToken>()
-                    ),
-                    Times.Never()
                 );
             });
         }

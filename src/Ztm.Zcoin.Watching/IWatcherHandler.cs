@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using NBitcoin;
 
 namespace Ztm.Zcoin.Watching
 {
@@ -8,6 +9,8 @@ namespace Ztm.Zcoin.Watching
     {
         Task AddWatchesAsync(IEnumerable<TWatch> watches, CancellationToken cancellationToken);
 
-        Task RemoveWatchAsync(TWatch watch, WatchRemoveReason reason, CancellationToken cancellationToken);
+        Task RemoveBlockRemovingWatchesAsync(uint256 block, CancellationToken cancellationToken);
+
+        Task RemoveCompletedWatchesAsync(IEnumerable<TWatch> watches, CancellationToken cancellationToken);
     }
 }

@@ -179,30 +179,13 @@ namespace Ztm.Zcoin.Watching.Tests
                 );
 
                 this.handler.Verify(
-                    h => h.RemoveWatchAsync(
-                        watch1,
-                        It.Is<WatchRemoveReason>(r => r.HasFlag(WatchRemoveReason.Completed)),
+                    h => h.RemoveCompletedWatchesAsync(
+                        It.Is<IEnumerable<BalanceWatch<object, int>>>(
+                            l => l.Count() == 2 && l.Contains(watch1) && l.Contains(watch2)
+                        ),
                         CancellationToken.None
                     ),
                     Times.Once()
-                );
-
-                this.handler.Verify(
-                    h => h.RemoveWatchAsync(
-                        watch2,
-                        It.Is<WatchRemoveReason>(r => r.HasFlag(WatchRemoveReason.Completed)),
-                        CancellationToken.None
-                    ),
-                    Times.Once()
-                );
-
-                this.handler.Verify(
-                    h => h.RemoveWatchAsync(
-                        watch3,
-                        It.Is<WatchRemoveReason>(r => r.HasFlag(WatchRemoveReason.Completed)),
-                        CancellationToken.None
-                    ),
-                    Times.Never()
                 );
             });
         }

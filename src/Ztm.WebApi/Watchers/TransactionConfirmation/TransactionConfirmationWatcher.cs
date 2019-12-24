@@ -11,8 +11,8 @@ using Ztm.Threading;
 using Ztm.WebApi.Callbacks;
 using Ztm.Zcoin.Synchronization;
 using Ztm.Zcoin.Watching;
-
 using Timer = Ztm.Threading.Timer;
+using Watch = Ztm.Zcoin.Watching.TransactionWatch<Ztm.WebApi.Watchers.TransactionConfirmation.Rule>;
 
 namespace Ztm.WebApi.Watchers.TransactionConfirmation
 {
@@ -286,7 +286,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             return false;
         }
 
-        async Task ConfirmAsync(TransactionWatch<Rule> watch, CancellationToken cancellationToken)
+        async Task ConfirmAsync(Watch watch, CancellationToken cancellationToken)
         {
             await this.ruleRepository.UpdateStatusAsync(watch.Context.Id, RuleStatus.Success, cancellationToken);
             await ExecuteCallbackAsync(watch.Context.Callback, watch.Context.SuccessResponse, CancellationToken.None);
@@ -346,8 +346,8 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             return Enumerable.Empty<Rule>();
         }
 
-        async Task<bool> IConfirmationWatcherHandler<Rule, TransactionWatch<Rule>, TransactionWatch<Rule>>.ConfirmationUpdateAsync(
-            TransactionWatch<Rule> watch,
+        async Task<bool> IConfirmationWatcherHandler<Rule, Watch, Watch>.ConfirmationUpdateAsync(
+            Watch watch,
             int confirmation,
             ConfirmationType type,
             CancellationToken cancellationToken)
@@ -370,13 +370,13 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             return false;
         }
 
-        Task<IEnumerable<TransactionWatch<Rule>>> IConfirmationWatcherHandler<Rule, TransactionWatch<Rule>, TransactionWatch<Rule>>.GetCurrentWatchesAsync(
+        Task<IEnumerable<Watch>> IConfirmationWatcherHandler<Rule, Watch, Watch>.GetCurrentWatchesAsync(
             CancellationToken cancellationToken)
         {
-            return this.watchRepository.ListAsync(WatchStatus.Pending, cancellationToken);
+            return this.watchRepository.ListPendingAsync(null, cancellationToken);
         }
 
-        async Task IWatcherHandler<Rule, TransactionWatch<Rule>>.AddWatchesAsync(IEnumerable<TransactionWatch<Rule>> watches, CancellationToken cancellationToken)
+        async Task IWatcherHandler<Rule, Watch>.AddWatchesAsync(IEnumerable<Watch> watches, CancellationToken cancellationToken)
         {
             if (watches == null)
             {
@@ -393,21 +393,28 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             }
         }
 
-        async Task IWatcherHandler<Rule, TransactionWatch<Rule>>.RemoveWatchAsync(
-            TransactionWatch<Rule> watch,
-            WatchRemoveReason reason,
+        async Task IWatcherHandler<Rule, Watch>.RemoveBlockRemovingWatchesAsync(
+            uint256 block,
             CancellationToken cancellationToken)
         {
-            await this.ruleRepository.UpdateCurrentWatchAsync(watch.Context.Id, null, CancellationToken.None);
+            var watches = await this.watchRepository.ListPendingAsync(block, cancellationToken);
 
-            if (reason.HasFlag(WatchRemoveReason.Completed))
+            foreach (var watch in watches)
             {
-                await this.watchRepository.UpdateStatusAsync(watch.Id, WatchStatus.Success, cancellationToken);
-            }
-            else if (reason.HasFlag(WatchRemoveReason.BlockRemoved))
-            {
-                await this.watchRepository.UpdateStatusAsync(watch.Id, WatchStatus.Rejected, cancellationToken);
+                await this.ruleRepository.UpdateCurrentWatchAsync(watch.Context.Id, null, CancellationToken.None);
+                await this.watchRepository.UpdateStatusAsync(watch.Id, WatchStatus.Rejected, CancellationToken.None);
                 await SetupTimerAsync(watch.Context);
+            }
+        }
+
+        async Task IWatcherHandler<Rule, Watch>.RemoveCompletedWatchesAsync(
+            IEnumerable<Watch> watches,
+            CancellationToken cancellationToken)
+        {
+            foreach (var watch in watches)
+            {
+                await this.ruleRepository.UpdateCurrentWatchAsync(watch.Context.Id, null, CancellationToken.None);
+                await this.watchRepository.UpdateStatusAsync(watch.Id, WatchStatus.Success, CancellationToken.None);
             }
         }
     }

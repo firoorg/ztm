@@ -114,17 +114,38 @@ namespace Ztm.Zcoin.Watching.Tests
 
                 // Assert.
                 this.subject.StubbedGetWatchesAsync.Verify(
-                    f => f(TestBlock.Regtest0, 0, cancellationToken),
+                    f => f(
+                        TestBlock.Regtest0,
+                        0,
+                        cancellationToken
+                    ),
                     Times.Once()
                 );
 
                 this.subject.StubbedExecuteWatchesAsync.Verify(
-                    f => f(It.IsAny<IEnumerable<Watch<object>>>(), It.IsAny<Block>(), It.IsAny<int>(), It.IsAny<BlockEventType>(), It.IsAny<CancellationToken>()),
+                    f => f(
+                        It.IsAny<IEnumerable<Watch<object>>>(),
+                        It.IsAny<Block>(),
+                        It.IsAny<int>(),
+                        It.IsAny<BlockEventType>(),
+                        It.IsAny<CancellationToken>()
+                    ),
                     Times.Never()
                 );
 
                 this.handler.Verify(
-                    h => h.RemoveWatchAsync(It.IsAny<Watch<object>>(), It.IsAny<WatchRemoveReason>(), It.IsAny<CancellationToken>()),
+                    h => h.RemoveCompletedWatchesAsync(
+                        It.IsAny<IEnumerable<Watch<object>>>(),
+                        It.IsAny<CancellationToken>()
+                    ),
+                    Times.Never()
+                );
+
+                this.handler.Verify(
+                    h => h.RemoveBlockRemovingWatchesAsync(
+                        It.IsAny<uint256>(),
+                        It.IsAny<CancellationToken>()
+                    ),
                     Times.Never()
                 );
             });
@@ -150,17 +171,38 @@ namespace Ztm.Zcoin.Watching.Tests
 
                 // Assert.
                 this.subject.StubbedGetWatchesAsync.Verify(
-                    f => f(TestBlock.Regtest0, 0, cancellationToken),
+                    f => f(
+                        TestBlock.Regtest0,
+                        0,
+                        cancellationToken
+                    ),
                     Times.Once()
                 );
 
                 this.subject.StubbedExecuteWatchesAsync.Verify(
-                    f => f(watches, TestBlock.Regtest0, 0, BlockEventType.Added, cancellationToken),
+                    f => f(
+                        watches,
+                        TestBlock.Regtest0,
+                        0,
+                        BlockEventType.Added,
+                        cancellationToken
+                    ),
                     Times.Once()
                 );
 
                 this.handler.Verify(
-                    h => h.RemoveWatchAsync(It.IsAny<Watch<object>>(), It.IsAny<WatchRemoveReason>(), It.IsAny<CancellationToken>()),
+                    h => h.RemoveCompletedWatchesAsync(
+                        It.IsAny<IEnumerable<Watch<object>>>(),
+                        It.IsAny<CancellationToken>()
+                    ),
+                    Times.Never()
+                );
+
+                this.handler.Verify(
+                    h => h.RemoveBlockRemovingWatchesAsync(
+                        It.IsAny<uint256>(),
+                        It.IsAny<CancellationToken>()
+                    ),
                     Times.Never()
                 );
             });
@@ -198,8 +240,13 @@ namespace Ztm.Zcoin.Watching.Tests
                 );
 
                 this.handler.Verify(
-                    h => h.RemoveWatchAsync(watch2, WatchRemoveReason.Completed, CancellationToken.None),
+                    h => h.RemoveCompletedWatchesAsync(removes, CancellationToken.None),
                     Times.Once()
+                );
+
+                this.handler.Verify(
+                    h => h.RemoveBlockRemovingWatchesAsync(It.IsAny<uint256>(), It.IsAny<CancellationToken>()),
+                    Times.Never()
                 );
             });
         }
@@ -225,23 +272,39 @@ namespace Ztm.Zcoin.Watching.Tests
 
                 // Assert.
                 this.subject.StubbedGetWatchesAsync.Verify(
-                    f => f(TestBlock.Regtest1, 1, cancellationToken),
+                    f => f(
+                        TestBlock.Regtest1,
+                        1,
+                        cancellationToken
+                    ),
                     Times.Once()
                 );
 
                 this.subject.StubbedExecuteWatchesAsync.Verify(
-                    f => f(watches, TestBlock.Regtest1, 1, BlockEventType.Removing, cancellationToken),
+                    f => f(
+                        watches,
+                        TestBlock.Regtest1,
+                        1,
+                        BlockEventType.Removing,
+                        cancellationToken
+                    ),
                     Times.Once()
                 );
 
                 this.handler.Verify(
-                    h => h.RemoveWatchAsync(watch2, WatchRemoveReason.BlockRemoved, CancellationToken.None),
-                    Times.Once()
-                );
-
-                this.handler.Verify(
-                    h => h.RemoveWatchAsync(watch1, It.IsAny<WatchRemoveReason>(), It.IsAny<CancellationToken>()),
+                    h => h.RemoveCompletedWatchesAsync(
+                        It.IsAny<IEnumerable<Watch<object>>>(),
+                        It.IsAny<CancellationToken>()
+                    ),
                     Times.Never()
+                );
+
+                this.handler.Verify(
+                    h => h.RemoveBlockRemovingWatchesAsync(
+                        TestBlock.Regtest1.GetHash(),
+                        CancellationToken.None
+                    ),
+                    Times.Once()
                 );
             });
         }
@@ -256,12 +319,13 @@ namespace Ztm.Zcoin.Watching.Tests
                 var watch2 = new Watch<object>(null, TestBlock.Regtest1.GetHash());
                 var watch3 = new Watch<object>(null, TestBlock.Regtest1.GetHash());
                 var watches = new[] { watch1, watch2, watch3 };
+                var removes = new HashSet<Watch<object>> { watch2 };
 
                 this.subject.StubbedGetWatchesAsync.Setup(f => f(TestBlock.Regtest1, 1, It.IsAny<CancellationToken>()))
                                                    .Returns(Task.FromResult<IEnumerable<Watch<object>>>(watches));
 
                 this.subject.StubbedExecuteWatchesAsync.Setup(f => f(watches, TestBlock.Regtest1, 1, BlockEventType.Removing, It.IsAny<CancellationToken>()))
-                                                   .Returns(Task.FromResult<ISet<Watch<object>>>(new HashSet<Watch<object>> { watch2 }));
+                                                       .Returns(Task.FromResult<ISet<Watch<object>>>(removes));
 
                 // Act.
                 await this.subject.ExecuteAsync(TestBlock.Regtest1, 1, BlockEventType.Removing, cancellationToken);
@@ -278,18 +342,13 @@ namespace Ztm.Zcoin.Watching.Tests
                 );
 
                 this.handler.Verify(
-                    h => h.RemoveWatchAsync(watch3, WatchRemoveReason.BlockRemoved, CancellationToken.None),
+                    h => h.RemoveCompletedWatchesAsync(removes, CancellationToken.None),
                     Times.Once()
                 );
 
                 this.handler.Verify(
-                    h => h.RemoveWatchAsync(watch2, WatchRemoveReason.BlockRemoved | WatchRemoveReason.Completed, CancellationToken.None),
+                    h => h.RemoveBlockRemovingWatchesAsync(TestBlock.Regtest1.GetHash(), CancellationToken.None),
                     Times.Once()
-                );
-
-                this.handler.Verify(
-                    h => h.RemoveWatchAsync(watch1, It.IsAny<WatchRemoveReason>(), It.IsAny<CancellationToken>()),
-                    Times.Never()
                 );
             });
         }
