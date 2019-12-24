@@ -121,14 +121,9 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
                     .Include(w => w.Rule)
                     .ThenInclude(r => r.Callback);
 
-                if (startBlock != null)
-                {
-                    query = query.Where(w => w.Status == (int)status && w.StartBlockHash == startBlock);
-                }
-                else
-                {
-                    query = query.Where(w => w.Status == (int)status);
-                }
+                query = (startBlock != null)
+                    ? query.Where(w => w.Status == (int)status && w.StartBlockHash == startBlock)
+                    : query.Where(w => w.Status == (int)status);
 
                 entities = await query.ToListAsync(cancellationToken);
             }

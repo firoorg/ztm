@@ -50,7 +50,7 @@ namespace Ztm.Testing
                 throw new ArgumentNullException(nameof(inequal));
             }
 
-            subject.Equals(null).Should().BeFalse();
+            subject.Equals(null).Should().BeFalse(); // lgtm[cs/null-argument-to-equals]
             subject.Equals(new {}).Should().BeFalse();
 
             var equatable = subject as IEquatable<T>;

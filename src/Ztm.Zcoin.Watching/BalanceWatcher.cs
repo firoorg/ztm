@@ -71,7 +71,7 @@ namespace Ztm.Zcoin.Watching
                 // Get confirmation number for each change.
                 var changes = new Collection<ConfirmedBalanceChange<TContext, TAmount>>();
 
-                foreach (var watch in group)
+                foreach (var watch in group) // lgtm[cs/linq/missed-select]
                 {
                     var change = new ConfirmedBalanceChange<TContext, TAmount>(
                         watch.Context,
