@@ -33,7 +33,17 @@ Sample request to issue 1,000,000 tokens:
 ```json
 {
   "amount": 100000000000000,
+  "destination" : "aBydwLXzmGc7j4mr4CVf461NvBjBFk71U1",
   "note": "Initial tokens."
+}
+```
+
+Response:
+
+```json
+{
+  "tx": "7f32a54475a5da05a70fea560275b644be15fa84cdaa2a5cec70c56d20b0fad3",
+  "fee": 1000
 }
 ```
 
@@ -41,20 +51,11 @@ Sample request to issue 1,000,000 tokens:
 
 ```json
 {
-  "issuing_tx": "468b649441ca7fca165aed72bc4b69e1546dc0e1670d15137c684d49534e1b2c",
-  "transfer_tx": "7f32a54475a5da05a70fea560275b644be15fa84cdaa2a5cec70c56d20b0fad3"
+  "issuing_tx": "468b649441ca7fca165aed72bc4b69e1546dc0e1670d15137c684d49534e1b2c"
 }
 ```
 
 `tokens-issuing-timeout` callback:
-
-```json
-{
-  "tx": "468b649441ca7fca165aed72bc4b69e1546dc0e1670d15137c684d49534e1b2c"
-}
-```
-
-`tokens-transfer-timeout` callback:
 
 ```json
 {
