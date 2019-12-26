@@ -163,6 +163,7 @@ namespace Ztm.Zcoin.Rpc
             // Invoke RPC.
             var resp = await this.client.SendCommandAsync("exodus_gettransaction", transaction);
             var rawRefAddress = resp.Result.Value<string>("referenceaddress");
+            var rawBlockHash = resp.Result.Value<string>("blockhash");
 
             return new ExodusTransactionInformation
             {
@@ -174,7 +175,7 @@ namespace Ztm.Zcoin.Rpc
                 Confirmations = resp.Result.Value<int>("confirmations"),
                 Fee = Money.Parse(resp.Result.Value<string>("fee")),
                 Block = resp.Result.Value<int>("block"),
-                BlockHash = uint256.Parse(resp.Result.Value<string>("blockhash")),
+                BlockHash = rawBlockHash != null ? uint256.Parse(rawBlockHash) : null,
                 BlockTime = Utils.UnixTimeToDateTime(resp.Result.Value<long>("blocktime")),
                 Valid = resp.Result.Value<bool>("valid"),
                 InvalidReason = resp.Result.Value<string>("invalidreason"),

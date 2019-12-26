@@ -58,12 +58,14 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
 
         public async Task<IEnumerable<TransactionWatch<Rule>>> ListAsync(WatchStatus status, CancellationToken cancellationToken)
         {
+            var statusVal = (int)status;
+
             using (var db = this.db.CreateDbContext())
             {
                 return await db.TransactionConfirmationWatcherWatches
                     .Include(w => w.Rule)
                     .ThenInclude(r => r.Callback)
-                    .Where(w => (int)status == w.Status)
+                    .Where(w => statusVal == w.Status)
                     .Select(w => ToDomain(w))
                     .ToListAsync(cancellationToken);
             }

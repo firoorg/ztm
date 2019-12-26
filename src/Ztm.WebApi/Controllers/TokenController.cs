@@ -13,6 +13,7 @@ using Transaction = Ztm.WebApi.Models.Transaction;
 
 namespace Ztm.WebApi.Controllers
 {
+    [Route("api")]
     [ApiController]
     public class TokenController : ControllerBase
     {
@@ -62,7 +63,7 @@ namespace Ztm.WebApi.Controllers
         }
 
         [HttpPost("issue-tokens")]
-        public async Task<IActionResult> Issue([FromBody] Issuing issuing)
+        public async Task<IActionResult> Issue([FromBody] Issuing issueing)
         {
             using (var client = await this.factory.CreateRpcClientAsync(CancellationToken.None))
             {
@@ -72,9 +73,9 @@ namespace Ztm.WebApi.Controllers
                 (
                     property,
                     configuration.Property.Distributor.Address,
-                    issuing.Destination,
-                    issuing.Amount,
-                    issuing.Note,
+                    issueing.Destination,
+                    issueing.Amount,
+                    issueing.Note,
                     CancellationToken.None
                 );
 
@@ -115,7 +116,7 @@ namespace Ztm.WebApi.Controllers
 
         Task<Rule> AddRuleAsync(uint256 id, CallbackResult success, CallbackResult timeout, Callback callback, CancellationToken cancellationToken)
         {
-            return this.ruleRepository.AddAsync(id, 10, TimeSpan.FromDays(1), success, timeout, callback, cancellationToken);
+            return this.watcher.AddTransactionAsync(id, 10, TimeSpan.FromDays(1), callback, success, timeout, cancellationToken);
         }
     }
 

@@ -19,6 +19,7 @@ using Ztm.Zcoin.NBitcoin;
 using Ztm.Zcoin.NBitcoin.Exodus;
 using Ztm.Zcoin.Rpc;
 using Ztm.Zcoin.Synchronization;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Ztm.WebApi
 {
@@ -45,8 +46,13 @@ namespace Ztm.WebApi
                     {
                         o.SerializerSettings.ContractResolver = new DefaultContractResolver()
                         {
-                            NamingStrategy = new SnakeCaseNamingStrategy()
+                            NamingStrategy = new SnakeCaseNamingStrategy(),
                         };
+
+                        var config = this.config.GetZcoinSection();
+                        var network = ZcoinNetworks.Instance.GetNetwork(config.Network.Type);
+                        o.SerializerSettings.Converters.Add(new BitcoinAddressJsonConverter(network));
+                        o.SerializerSettings.Converters.Add(new UInt256JsonConverter());
                     });
 
             // Http Client Factory.
@@ -86,6 +92,14 @@ namespace Ztm.WebApi
 
             // Background Services.
             services.AddHostedService<BlocksSynchronizer>();
+
+            services.AddSingleton<ZcoinConfiguration>(
+                p => this.config.GetZcoinSection()
+            );
+
+            services.AddSingleton<ITransactionConfirmationWatcher, TransactionConfirmationWatcher>(
+                p => p.GetRequiredService<TransactionConfirmationWatcher>()
+            );
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
@@ -108,6 +122,7 @@ namespace Ztm.WebApi
             // Custom Model Binders.
             options.ModelBinderProviders.Insert(0, new BitcoinAddressModelBinderProvider());
             options.ModelBinderProviders.Insert(0, new PropertyAmountModelBinderProvider());
+            options.ModelMetadataDetailsProviders.Add(new SuppressChildValidationMetadataProvider(typeof(BitcoinAddress)));
         }
 
         Network CreateZcoinNetwork(IServiceProvider provider)
