@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using NBitcoin;
 
@@ -12,13 +11,13 @@ namespace Ztm.Zcoin.NBitcoin
 
         byte[] hashRootMTP;
         byte[] nBlockMTP;
-        readonly Collection<byte[]>[] nProofMTP;
+        readonly List<byte[]>[] nProofMTP;
 
         public MTPHashData()
         {
             hashRootMTP = new byte[16];
             nBlockMTP = new byte[MTP_L*2*128*8];
-            nProofMTP = new Collection<byte[]>[MTP_L*3];
+            nProofMTP = new List<byte[]>[MTP_L*3];
         }
 
         public byte[] BlockMTP
@@ -84,10 +83,10 @@ namespace Ztm.Zcoin.NBitcoin
                     foreach (var mtpData in nProofMTP[i])
                     {
                         Debug.Assert(mtpData.Length == 16);
-
                         stream.Inner.Write(mtpData, 0, mtpData.Length);
-                        stream.Counter.AddWritten(mtpData.Length);
                     }
+
+                    stream.Counter.AddWritten(16 * nProofMTP[i].Count);
                 }
             }
             else
@@ -105,15 +104,15 @@ namespace Ztm.Zcoin.NBitcoin
 
                     stream.ReadWrite(ref numberOfProofBlocks);
 
-                    nProofMTP[i] = new Collection<byte[]>();
+                    nProofMTP[i] = new List<byte[]>(numberOfProofBlocks);
 
                     for (byte j = 0; j < numberOfProofBlocks; j++)
                     {
                         var mtpData = stream.Inner.ReadBytes(16);
-                        stream.Counter.AddReaden(mtpData.Length);
-
                         nProofMTP[i].Add(mtpData);
                     }
+
+                    stream.Counter.AddReaden(16 * numberOfProofBlocks);
                 }
             }
         }
