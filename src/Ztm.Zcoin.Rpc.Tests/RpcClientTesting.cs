@@ -42,7 +42,7 @@ namespace Ztm.Zcoin.Rpc.Tests
                     new TransactionEncoder(ExodusEncoders)
                 );
 
-                this.subject = new Lazy<RpcClient>(CreateSubject, LazyThreadSafetyMode.ExecutionAndPublication);
+                this.subject = new Lazy<RpcClient>(CreateSubject, LazyThreadSafetyMode.ExecutionAndPublication); // lgtm[cs/virtual-call-in-constructor]
             }
             catch
             {
