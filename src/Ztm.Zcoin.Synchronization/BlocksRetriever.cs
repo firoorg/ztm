@@ -15,7 +15,7 @@ namespace Ztm.Zcoin.Synchronization
     public sealed class BlocksRetriever : IBlocksRetriever
     {
         readonly ZcoinConfiguration config;
-        readonly IZcoinRpcClientFactory rpc;
+        readonly IRpcFactory rpc;
         SubscriberSocket subscriber;
         NetMQPoller poller;
         SemaphoreSlim newBlockNotification; // lgtm[cs/missed-using-statement]
@@ -23,7 +23,7 @@ namespace Ztm.Zcoin.Synchronization
         Task retrieveBlocksTask;
         bool disposed;
 
-        public BlocksRetriever(IConfiguration config, IZcoinRpcClientFactory rpc)
+        public BlocksRetriever(IConfiguration config, IRpcFactory rpc)
         {
             if (config == null)
             {
@@ -165,7 +165,7 @@ namespace Ztm.Zcoin.Synchronization
                 // Get block.
                 Block block;
 
-                using (var rpc = await this.rpc.CreateRpcClientAsync(cancellationToken))
+                using (var rpc = await this.rpc.CreateChainInformationRpcAsync(cancellationToken))
                 {
                     try
                     {
