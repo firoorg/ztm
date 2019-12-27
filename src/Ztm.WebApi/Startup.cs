@@ -20,6 +20,7 @@ using Ztm.Zcoin.NBitcoin.Exodus;
 using Ztm.Zcoin.Rpc;
 using Ztm.Zcoin.Synchronization;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Newtonsoft.Json;
 
 namespace Ztm.WebApi
 {
@@ -65,6 +66,23 @@ namespace Ztm.WebApi
             services.AddBackgroundServiceExceptionHandler();
             services.AddSingleton<Network>(CreateZcoinNetwork);
 
+            services.AddSingleton<ZcoinConfiguration>(
+                p => this.config.GetZcoinSection()
+            );
+
+            services.AddSingleton<JsonSerializer>(
+                p =>
+                {
+                    var serializer = new JsonSerializer();
+
+                    var network = p.GetRequiredService<Network>();
+                    serializer.Converters.Add(new BitcoinAddressJsonConverter(network));
+                    serializer.Converters.Add(new UInt256JsonConverter());
+
+                    return serializer;
+                }
+            );
+
             // Database Services.
             services.AddSingleton<IMainDatabaseFactory, MainDatabaseFactory>();
 
@@ -82,6 +100,10 @@ namespace Ztm.WebApi
                 p => p.GetRequiredService<TransactionConfirmationWatcher>()
             );
 
+            services.AddSingleton<ITransactionConfirmationWatcher, TransactionConfirmationWatcher>(
+                p => p.GetRequiredService<TransactionConfirmationWatcher>()
+            );
+
             // Zcoin Interface Services.
             services.AddSingleton<IZcoinRpcClientFactory>(CreateZcoinRpcClientFactory);
             services.AddTransient<IBlocksRetriever, BlocksRetriever>();
@@ -92,14 +114,6 @@ namespace Ztm.WebApi
 
             // Background Services.
             services.AddHostedService<BlocksSynchronizer>();
-
-            services.AddSingleton<ZcoinConfiguration>(
-                p => this.config.GetZcoinSection()
-            );
-
-            services.AddSingleton<ITransactionConfirmationWatcher, TransactionConfirmationWatcher>(
-                p => p.GetRequiredService<TransactionConfirmationWatcher>()
-            );
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)

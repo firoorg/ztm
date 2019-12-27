@@ -27,7 +27,9 @@ namespace Ztm.Configuration.Tests
                 {"Zcoin:Property:Type", "Divisible"},
                 {"Zcoin:Property:Issuer", "Mainnet:a8ULhhDgfdSiXJhSZVdhb8EuDc6R3ogsaM"},
                 {"Zcoin:Property:Distributor", "Testnet:TEDC38GBncNgtd2pVXeDhLeUGwJmXsiJBA"},
-                {"Zcoin:ZeroMq:Address", "tcp://127.0.0.1:5555"}
+                {"Zcoin:ZeroMq:Address", "tcp://127.0.0.1:5555"},
+                {"Callback:TransactionConfirmation:Timeout", "1:00:00"},
+                {"Callback:TransactionConfirmation:RequiredConfirmation", "6"},
             });
 
             this.config = builder.Build();
@@ -59,6 +61,15 @@ namespace Ztm.Configuration.Tests
             Assert.Equal(NetworkType.Testnet, parsed.Property.Distributor.Type);
             Assert.Equal(BitcoinAddress.Create("TEDC38GBncNgtd2pVXeDhLeUGwJmXsiJBA", ZcoinNetworks.Instance.Testnet), parsed.Property.Distributor.Address);
             Assert.Equal("tcp://127.0.0.1:5555", parsed.ZeroMq.Address);
+        }
+
+        [Fact]
+        public void GetCallbackSection_WithCorrectConfiguration_ShouldSuccess()
+        {
+            var parsed = this.config.GetCallbackSection();
+
+            Assert.Equal(TimeSpan.FromHours(1), parsed.TransactionConfirmation.Timeout);
+            Assert.Equal(6, parsed.TransactionConfirmation.RequiredConfirmation);
         }
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using NBitcoin;
 using Ztm.Configuration;
 using Ztm.WebApi.Callbacks;
@@ -18,14 +19,14 @@ namespace Ztm.WebApi.Controllers
     public class TokenController : ControllerBase
     {
         readonly IZcoinRpcClientFactory factory;
-        readonly ZcoinConfiguration configuration;
+        readonly IConfiguration configuration;
         readonly ITransactionConfirmationWatcher watcher;
         readonly ICallbackRepository callbackRepository;
         readonly IRuleRepository ruleRepository;
 
         public TokenController(
             IZcoinRpcClientFactory factory,
-            ZcoinConfiguration configuration,
+            IConfiguration configuration,
             ITransactionConfirmationWatcher watcher,
             ICallbackRepository callbackRepository,
             IRuleRepository ruleRepository)
@@ -65,14 +66,16 @@ namespace Ztm.WebApi.Controllers
         [HttpPost("issue-tokens")]
         public async Task<IActionResult> Issue([FromBody] Issuing issueing)
         {
+            var zcoinConfig = this.configuration.GetZcoinSection();
+
             using (var client = await this.factory.CreateRpcClientAsync(CancellationToken.None))
             {
-                var property = new Property(this.configuration.Property.Id, this.configuration.Property.Type);
+                var property = new Property(zcoinConfig.Property.Id, zcoinConfig.Property.Type);
 
                 var tx = await client.GrantPropertyAsync
                 (
                     property,
-                    configuration.Property.Distributor.Address,
+                    zcoinConfig.Property.Distributor.Address,
                     issueing.Destination,
                     issueing.Amount,
                     issueing.Note,
@@ -116,7 +119,9 @@ namespace Ztm.WebApi.Controllers
 
         Task<Rule> AddRuleAsync(uint256 id, CallbackResult success, CallbackResult timeout, Callback callback, CancellationToken cancellationToken)
         {
-            return this.watcher.AddTransactionAsync(id, 10, TimeSpan.FromDays(1), callback, success, timeout, cancellationToken);
+            var config = this.configuration.GetCallbackSection();
+            return this.watcher.AddTransactionAsync(
+                id, config.TransactionConfirmation.RequiredConfirmation, config.TransactionConfirmation.Timeout, callback, success, timeout, cancellationToken);
         }
     }
 

@@ -24,7 +24,7 @@ namespace Ztm.WebApi.Tests.Callbacks
             this.defaultUrl = new Uri("http://zcoin.io");
 
             this.dbFactory = new TestMainDatabaseFactory();
-            this.subject = new EntityCallbackRepository(dbFactory);
+            this.subject = new EntityCallbackRepository(dbFactory, JsonSerializer.Create());
         }
 
         public void Dispose()
@@ -33,11 +33,16 @@ namespace Ztm.WebApi.Tests.Callbacks
         }
 
         [Fact]
-        public void ConstructSqlCallbackRepository_WithNullDatabaseFactory_ShouldThrow()
+        public void ConstructSqlCallbackRepository_WithNullArguments_ShouldThrow()
         {
             Assert.Throws<ArgumentNullException>(
                 "db",
-                () => new EntityCallbackRepository(null)
+                () => new EntityCallbackRepository(null, JsonSerializer.Create())
+            );
+
+            Assert.Throws<ArgumentNullException>(
+                "serializer",
+                () => new EntityCallbackRepository(this.dbFactory, null)
             );
         }
 

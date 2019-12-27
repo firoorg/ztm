@@ -43,7 +43,9 @@ Response:
 ```json
 {
   "tx": "7f32a54475a5da05a70fea560275b644be15fa84cdaa2a5cec70c56d20b0fad3",
-  "fee": 1000
+  "fee": {
+    "satoshi": 10400
+  }
 }
 ```
 

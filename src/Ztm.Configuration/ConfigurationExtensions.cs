@@ -13,5 +13,10 @@ namespace Ztm.Configuration
         {
             return config.GetSection("Zcoin").Get<ZcoinConfiguration>();
         }
+
+        public static CallbackConfiguration GetCallbackSection(this IConfiguration config)
+        {
+            return config.GetSection("Callback").Get<CallbackConfiguration>();
+        }
     }
 }
