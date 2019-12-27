@@ -84,11 +84,11 @@ namespace Ztm.Zcoin.Watching
 
                 // Invoke handler.
                 var confirm = new BalanceConfirmation<TContext, TAmount>(group.Key, changes);
-                var confirmation = changes.Min(c => c.Confirmation);
+                var confirmationCount = changes.Min(c => c.Confirmation);
 
                 var success = await this.handler.ConfirmationUpdateAsync(
                     confirm,
-                    confirmation,
+                    confirmationCount,
                     confirmationType,
                     CancellationToken.None
                 );

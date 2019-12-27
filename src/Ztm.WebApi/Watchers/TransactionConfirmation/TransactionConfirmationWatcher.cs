@@ -347,17 +347,17 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
         }
 
         async Task<bool> IConfirmationWatcherHandler<Rule, Watch, Watch>.ConfirmationUpdateAsync(
-            Watch watch,
-            int confirmation,
+            Watch confirm,
+            int count,
             ConfirmationType type,
             CancellationToken cancellationToken)
         {
             switch (type)
             {
                 case ConfirmationType.Confirmed:
-                    if (confirmation >= watch.Context.Confirmations)
+                    if (count >= confirm.Context.Confirmations)
                     {
-                        await ConfirmAsync(watch, cancellationToken);
+                        await ConfirmAsync(confirm, cancellationToken);
                         return true;
                     }
                     break;
@@ -393,11 +393,11 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             }
         }
 
-        async Task IWatcherHandler<Rule, Watch>.RemoveBlockRemovingWatchesAsync(
-            uint256 block,
+        async Task IWatcherHandler<Rule, Watch>.RemoveUncompletedWatchesAsync(
+            uint256 startedBlock,
             CancellationToken cancellationToken)
         {
-            var watches = await this.watchRepository.ListPendingAsync(block, cancellationToken);
+            var watches = await this.watchRepository.ListPendingAsync(startedBlock, cancellationToken);
 
             foreach (var watch in watches)
             {

@@ -15,7 +15,6 @@ using Ztm.WebApi.Watchers.TransactionConfirmation;
 using Ztm.Zcoin.NBitcoin;
 using Ztm.Zcoin.Synchronization;
 using Ztm.Zcoin.Watching;
-
 using Callback = Ztm.WebApi.Callbacks.Callback;
 
 namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
@@ -783,7 +782,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
         }
 
         [Fact]
-        public async Task RemoveBlockRemovingWatchesAsync_TimerShouldbeResume()
+        public async Task RemoveUncompletedWatchesAsync_TimerShouldbeResume()
         {
             // Arrange.
             var builder = new WatchArgsBuilder(this.callbackRepository);
@@ -799,7 +798,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             await this.handler.AddWatchesAsync(watches, CancellationToken.None);
 
             // Act.
-            await this.handler.RemoveBlockRemovingWatchesAsync(uint256.Zero, CancellationToken.None);
+            await this.handler.RemoveUncompletedWatchesAsync(uint256.Zero, CancellationToken.None);
             Thread.Sleep(TimeSpan.FromMilliseconds(1000));
 
             // Assert.
@@ -819,7 +818,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
         }
 
         [Fact]
-        public async Task RemoveBlockRemovingWatchesAsync_WithRemainingTimeout_ShouldNotExecuteTimeoutImmediately()
+        public async Task RemoveUncompletedWatchesAsync_WithRemainingTimeout_ShouldNotExecuteTimeoutImmediately()
         {
             // Arrange.
             var builder = new WatchArgsBuilder(this.callbackRepository);
@@ -840,7 +839,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             var updated = await this.ruleRepository.GetAsync(watch.Id, CancellationToken.None);
             Assert.True(await this.ruleRepository.GetRemainingWaitingTimeAsync(updated.Id, CancellationToken.None) < TimeSpan.FromSeconds(1));
 
-            await this.handler.RemoveBlockRemovingWatchesAsync(uint256.Zero, CancellationToken.None);
+            await this.handler.RemoveUncompletedWatchesAsync(uint256.Zero, CancellationToken.None);
 
             _ = this.callbackExecuter.Received(0).ExecuteAsync
             (

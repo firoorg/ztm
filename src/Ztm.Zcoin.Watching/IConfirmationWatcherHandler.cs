@@ -9,7 +9,7 @@ namespace Ztm.Zcoin.Watching
     {
         Task<bool> ConfirmationUpdateAsync(
             TConfirm confirm,
-            int confirmation,
+            int count,
             ConfirmationType type,
             CancellationToken cancellationToken);
 

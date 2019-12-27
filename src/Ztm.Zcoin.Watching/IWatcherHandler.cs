@@ -9,8 +9,8 @@ namespace Ztm.Zcoin.Watching
     {
         Task AddWatchesAsync(IEnumerable<TWatch> watches, CancellationToken cancellationToken);
 
-        Task RemoveBlockRemovingWatchesAsync(uint256 block, CancellationToken cancellationToken);
-
         Task RemoveCompletedWatchesAsync(IEnumerable<TWatch> watches, CancellationToken cancellationToken);
+
+        Task RemoveUncompletedWatchesAsync(uint256 startedBlock, CancellationToken cancellationToken);
     }
 }

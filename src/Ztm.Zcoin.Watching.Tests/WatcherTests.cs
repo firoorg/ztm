@@ -142,7 +142,7 @@ namespace Ztm.Zcoin.Watching.Tests
                 );
 
                 this.handler.Verify(
-                    h => h.RemoveBlockRemovingWatchesAsync(
+                    h => h.RemoveUncompletedWatchesAsync(
                         It.IsAny<uint256>(),
                         It.IsAny<CancellationToken>()
                     ),
@@ -199,7 +199,7 @@ namespace Ztm.Zcoin.Watching.Tests
                 );
 
                 this.handler.Verify(
-                    h => h.RemoveBlockRemovingWatchesAsync(
+                    h => h.RemoveUncompletedWatchesAsync(
                         It.IsAny<uint256>(),
                         It.IsAny<CancellationToken>()
                     ),
@@ -245,7 +245,7 @@ namespace Ztm.Zcoin.Watching.Tests
                 );
 
                 this.handler.Verify(
-                    h => h.RemoveBlockRemovingWatchesAsync(It.IsAny<uint256>(), It.IsAny<CancellationToken>()),
+                    h => h.RemoveUncompletedWatchesAsync(It.IsAny<uint256>(), It.IsAny<CancellationToken>()),
                     Times.Never()
                 );
             });
@@ -300,7 +300,7 @@ namespace Ztm.Zcoin.Watching.Tests
                 );
 
                 this.handler.Verify(
-                    h => h.RemoveBlockRemovingWatchesAsync(
+                    h => h.RemoveUncompletedWatchesAsync(
                         TestBlock.Regtest1.GetHash(),
                         CancellationToken.None
                     ),
@@ -347,7 +347,7 @@ namespace Ztm.Zcoin.Watching.Tests
                 );
 
                 this.handler.Verify(
-                    h => h.RemoveBlockRemovingWatchesAsync(TestBlock.Regtest1.GetHash(), CancellationToken.None),
+                    h => h.RemoveUncompletedWatchesAsync(TestBlock.Regtest1.GetHash(), CancellationToken.None),
                     Times.Once()
                 );
             });

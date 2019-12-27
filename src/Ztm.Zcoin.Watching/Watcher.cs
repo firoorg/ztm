@@ -69,7 +69,7 @@ namespace Ztm.Zcoin.Watching
             // Then remove watches that belong to the block is being removing.
             if (eventType == BlockEventType.Removing)
             {
-                await this.handler.RemoveBlockRemovingWatchesAsync(block.GetHash(), CancellationToken.None);
+                await this.handler.RemoveUncompletedWatchesAsync(block.GetHash(), CancellationToken.None);
             }
         }
 

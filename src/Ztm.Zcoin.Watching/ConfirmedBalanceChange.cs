@@ -22,12 +22,7 @@ namespace Ztm.Zcoin.Watching
 
         public override bool Equals(object obj)
         {
-            if (!base.Equals(obj))
-            {
-                return false;
-            }
-
-            return Confirmation == ((ConfirmedBalanceChange<TContext, TAmount>)obj).Confirmation;
+            return base.Equals(obj) && Confirmation == ((ConfirmedBalanceChange<TContext, TAmount>)obj).Confirmation;
         }
 
         public override int GetHashCode()
