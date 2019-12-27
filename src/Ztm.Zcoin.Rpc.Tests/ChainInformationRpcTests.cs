@@ -9,7 +9,7 @@ using Ztm.Zcoin.NBitcoin.Exodus;
 
 namespace Ztm.Zcoin.Rpc.Tests
 {
-    public sealed class ChainInformationRpcTests : RpcClientTests
+    public sealed class ChainInformationRpcTests : RpcClientTesting
     {
         new ChainInformationRpc Subject => (ChainInformationRpc)base.Subject;
 

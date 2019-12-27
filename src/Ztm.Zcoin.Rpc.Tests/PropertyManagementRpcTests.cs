@@ -9,7 +9,7 @@ using Ztm.Zcoin.NBitcoin.Exodus;
 
 namespace Ztm.Zcoin.Rpc.Tests
 {
-    public sealed class PropertyManagementRpcTests : RpcClientTests
+    public sealed class PropertyManagementRpcTests : RpcClientTesting
     {
         new PropertyManagementRpc Subject => (PropertyManagementRpc)base.Subject;
 

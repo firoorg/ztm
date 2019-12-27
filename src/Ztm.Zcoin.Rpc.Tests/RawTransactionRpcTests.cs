@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Ztm.Zcoin.Rpc.Tests
 {
-    public sealed class RawTransactionRpcTests : RpcClientTests
+    public sealed class RawTransactionRpcTests : RpcClientTesting
     {
         new RawTransactionRpc Subject => (RawTransactionRpc)base.Subject;
 

@@ -8,7 +8,7 @@ using Ztm.Testing;
 
 namespace Ztm.Zcoin.Rpc.Tests
 {
-    public sealed class WalletRpcTests : RpcClientTests
+    public sealed class WalletRpcTests : RpcClientTesting
     {
         new WalletRpc Subject => (WalletRpc)base.Subject;
 
