@@ -42,7 +42,7 @@ namespace Ztm.Zcoin.Watching.Tests
                 var changes = new Dictionary<BitcoinAddress, BalanceChange<object, int>>();
 
                 this.handler.Setup(h => h.GetBalanceChangesAsync(It.IsNotNull<Transaction>(), It.IsAny<CancellationToken>()))
-                            .Returns(Task.FromResult<IReadOnlyDictionary<BitcoinAddress, BalanceChange<object, int>>>(changes));
+                            .ReturnsAsync(changes);
 
                 // Act.
                 await this.subject.ExecuteAsync(TestBlock.Regtest0, 0, BlockEventType.Added, cancellationToken);
@@ -82,7 +82,7 @@ namespace Ztm.Zcoin.Watching.Tests
                 };
 
                 this.handler.Setup(h => h.GetBalanceChangesAsync(block.Transactions[0], It.IsAny<CancellationToken>()))
-                            .Returns(Task.FromResult<IReadOnlyDictionary<BitcoinAddress, BalanceChange<object, int>>>(changes));
+                            .ReturnsAsync(changes);
 
                 // Act.
                 await this.subject.ExecuteAsync(block, 0, BlockEventType.Added, cancellationToken);
@@ -126,19 +126,19 @@ namespace Ztm.Zcoin.Watching.Tests
                 var watches = new[] { watch1, watch2, watch3 };
 
                 this.handler.Setup(h => h.GetBalanceChangesAsync(It.IsAny<Transaction>(), It.IsAny<CancellationToken>()))
-                            .Returns(Task.FromResult<IReadOnlyDictionary<BitcoinAddress, BalanceChange<object, int>>>(new Dictionary<BitcoinAddress, BalanceChange<object, int>>()));
+                            .ReturnsAsync(new Dictionary<BitcoinAddress, BalanceChange<object, int>>());
 
                 this.handler.Setup(h => h.GetCurrentWatchesAsync(It.IsAny<CancellationToken>()))
-                            .Returns(Task.FromResult<IEnumerable<BalanceWatch<object, int>>>(watches));
+                            .ReturnsAsync(watches);
 
                 this.handler.Setup(h => h.ConfirmationUpdateAsync(It.Is<BalanceConfirmation<object, int>>(c => c.Address == TestAddress.Regtest1), 1, confirmationType, It.IsAny<CancellationToken>()))
-                            .Returns(Task.FromResult(true));
+                            .ReturnsAsync(true);
 
                 this.blocks.Setup(b => b.GetAsync(block0.GetHash(), It.IsAny<CancellationToken>()))
-                           .Returns(Task.FromResult((block0, 0)));
+                           .ReturnsAsync((block0, 0));
 
                 this.blocks.Setup(b => b.GetAsync(block1.GetHash(), It.IsAny<CancellationToken>()))
-                           .Returns(Task.FromResult((block1, 1)));
+                           .ReturnsAsync((block1, 1));
 
                 // Act.
                 await this.subject.ExecuteAsync(block1, 1, eventType, cancellationToken);
