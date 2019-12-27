@@ -29,7 +29,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
 
         // Dictionary from transaction to Dictionary from watch id to timer.
         readonly Dictionary<uint256, Dictionary<Guid, Timer>> timers;
-        readonly ReaderWriterLockSlim timerLock;
+        readonly SemaphoreSlim timersSemaphore;
 
         public TransactionConfirmationWatcher(
             ICallbackRepository callbackRepository,
@@ -82,7 +82,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             );
 
             this.timers = new Dictionary<uint256, Dictionary<Guid, Timer>>();
-            this.timerLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
+            this.timersSemaphore = new SemaphoreSlim(1, 1);
         }
 
         public async Task<Rule> AddTransactionAsync(
@@ -124,40 +124,57 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
                 throw new ArgumentNullException(nameof(timeoutResponse));
             }
 
-            var rule = await this.ruleRepository.AddAsync
-            (
-                transaction,
-                confirmation,
-                unconfirmedWaitingTime,
-                successResponse,
-                timeoutResponse,
-                callback,
-                cancellationToken
-            );
+            await this.timersSemaphore.WaitAsync();
+            try
+            {
+                var rule = await this.ruleRepository.AddAsync
+                (
+                    transaction,
+                    confirmation,
+                    unconfirmedWaitingTime,
+                    successResponse,
+                    timeoutResponse,
+                    callback,
+                    cancellationToken
+                );
 
-            await SetupTimerAsync(rule);
+                await SetupTimerAsync(rule);
 
-            return rule;
+                return rule;
+            }
+            finally
+            {
+                this.timersSemaphore.Release();
+            }
         }
 
         public void Dispose()
         {
-            this.timerLock.Dispose();
+            this.timersSemaphore.Dispose();
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             var rules = await this.ruleRepository.ListWaitingAsync(cancellationToken);
 
-            foreach (var rule in rules)
+            await this.timersSemaphore.WaitAsync();
+
+            try
             {
-                await SetupTimerAsync(rule);
+                foreach (var rule in rules)
+                {
+                    await SetupTimerAsync(rule);
+                }
+            }
+            finally
+            {
+                this.timersSemaphore.Release();
             }
         }
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
-            this.timerLock.EnterWriteLock();
+            await this.timersSemaphore.WaitAsync();
 
             try
             {
@@ -172,43 +189,37 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             }
             finally
             {
-                this.timerLock.ExitWriteLock();
+                this.timersSemaphore.Release();
             }
         }
 
+        // Thread Unsafe
         async Task SetupTimerAsync(Rule rule)
         {
             var timer = new Timer();
 
-            this.timerLock.EnterWriteLock();
+            Dictionary<Guid, Timer> timers;
+
+            if (!this.timers.TryGetValue(rule.TransactionHash, out timers))
+            {
+                timers = new Dictionary<Guid, Timer>();
+                this.timers.Add(rule.TransactionHash, timers);
+            }
+
+            timers.Add(rule.Id, timer);
+
             try
             {
-                Dictionary<Guid, Timer> timers;
+                await Task.Delay(100);
+                var remainingWaitingTime = await this.ruleRepository.GetRemainingWaitingTimeAsync(rule.Id, CancellationToken.None);
 
-                if (!this.timers.TryGetValue(rule.TransactionHash, out timers))
-                {
-                    timers = new Dictionary<Guid, Timer>();
-                    this.timers.Add(rule.TransactionHash, timers);
-                }
-
-                timers.Add(rule.Id, timer);
-
-                try
-                {
-                    var remainingWaitingTime = await this.ruleRepository.GetRemainingWaitingTimeAsync(rule.Id, CancellationToken.None);
-
-                    timer.Elapsed += OnTimeout;
-                    timer.Start(remainingWaitingTime < TimeSpan.Zero ? TimeSpan.Zero : remainingWaitingTime, null, rule);
-                }
-                catch
-                {
-                    timers.Remove(rule.Id);
-                    throw;
-                }
+                timer.Elapsed += OnTimeout;
+                timer.Start(remainingWaitingTime < TimeSpan.Zero ? TimeSpan.Zero : remainingWaitingTime, null, rule);
             }
-            finally
+            catch
             {
-                this.timerLock.ExitWriteLock();
+                timers.Remove(rule.Id);
+                throw;
             }
         }
 
@@ -216,7 +227,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
         {
             e.RegisterBackgroundTask(async cancellationToken =>
             {
-                this.timerLock.EnterWriteLock();
+                await this.timersSemaphore.WaitAsync();
 
                 var rule = (Rule)e.Context;
                 try
@@ -231,56 +242,40 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
                 finally
                 {
                     RemoveTimer(rule);
-                    this.timerLock.ExitWriteLock();
+                    this.timersSemaphore.Release();
                 }
             });
         }
 
+        // Thread Unsafe
         void RemoveTimer(Rule rule)
         {
-            this.timerLock.EnterWriteLock();
-
-            try
+            if (!this.timers.TryGetValue(rule.TransactionHash, out var timers))
             {
-                if (!this.timers.TryGetValue(rule.TransactionHash, out var timers))
-                {
-                    throw new KeyNotFoundException("Transaction is not found.");
-                }
-
-                timers.Remove(rule.Id);
-
-                if (timers.Count == 0)
-                {
-                    this.timers.Remove(rule.TransactionHash);
-                }
+                throw new KeyNotFoundException("Transaction is not found.");
             }
-            finally
+
+            timers.Remove(rule.Id);
+
+            if (timers.Count == 0)
             {
-                this.timerLock.ExitWriteLock();
+                this.timers.Remove(rule.TransactionHash);
             }
         }
 
+        // Thread Unsafe
         async Task<bool> StopTimer(Rule rule)
         {
-            this.timerLock.EnterWriteLock();
-
-            try
+            if (this.timers.TryGetValue(rule.TransactionHash, out var txTimers) && txTimers.TryGetValue(rule.Id, out var timer))
             {
-                if (this.timers.TryGetValue(rule.TransactionHash, out var txTimers) && txTimers.TryGetValue(rule.Id, out var timer))
+                await timer.StopAsync(CancellationToken.None);
+                if (timer.ElapsedCount == 0)
                 {
-                    await timer.StopAsync(CancellationToken.None);
-                    if (timer.ElapsedCount == 0)
-                    {
-                        RemoveTimer(rule);
-                        await this.ruleRepository.SubtractRemainingWaitingTimeAsync(rule.Id, timer.ElapsedTime, CancellationToken.None);
+                    RemoveTimer(rule);
+                    await this.ruleRepository.SubtractRemainingWaitingTimeAsync(rule.Id, timer.ElapsedTime, CancellationToken.None);
 
-                        return true;
-                    }
+                    return true;
                 }
-            }
-            finally
-            {
-                this.timerLock.ExitWriteLock();
             }
 
             return false;
@@ -321,7 +316,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
 
         async Task<IEnumerable<Rule>> ITransactionConfirmationWatcherHandler<Rule>.CreateContextsAsync(Transaction tx, CancellationToken cancellationToken)
         {
-            this.timerLock.EnterReadLock();
+            await this.timersSemaphore.WaitAsync();
 
             try
             {
@@ -340,7 +335,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             }
             finally
             {
-                this.timerLock.ExitReadLock();
+                this.timersSemaphore.Release();
             }
 
             return Enumerable.Empty<Rule>();
@@ -373,18 +368,27 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
 
         async Task IWatcherHandler<TransactionWatch<Rule>, Rule>.AddWatchesAsync(IEnumerable<TransactionWatch<Rule>> watches, CancellationToken cancellationToken)
         {
-            if (watches == null)
-            {
-                throw new ArgumentNullException(nameof(watches));
-            }
+            await this.timersSemaphore.WaitAsync();
 
-            foreach (var watch in watches) // lgtm [cs/linq/missed-where]
+            try
             {
-                if (await StopTimer(watch.Context))
+                if (watches == null)
                 {
-                    await this.watchRepository.AddAsync(watch, cancellationToken);
-                    await this.ruleRepository.UpdateCurrentWatchAsync(watch.Context.Id, watch.Id, CancellationToken.None);
+                    throw new ArgumentNullException(nameof(watches));
                 }
+
+                foreach (var watch in watches) // lgtm [cs/linq/missed-where]
+                {
+                    if (await StopTimer(watch.Context))
+                    {
+                        await this.watchRepository.AddAsync(watch, cancellationToken);
+                        await this.ruleRepository.UpdateCurrentWatchAsync(watch.Context.Id, watch.Id, CancellationToken.None);
+                    }
+                }
+            }
+            finally
+            {
+                this.timersSemaphore.Release();
             }
         }
 
@@ -399,7 +403,16 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             else if (reason.HasFlag(WatchRemoveReason.BlockRemoved))
             {
                 await this.watchRepository.UpdateStatusAsync(watch.Id, WatchStatus.Rejected, cancellationToken);
-                await SetupTimerAsync(watch.Context);
+
+                await this.timersSemaphore.WaitAsync();
+                try
+                {
+                    await SetupTimerAsync(watch.Context);
+                }
+                finally
+                {
+                    this.timersSemaphore.Release();
+                }
             }
         }
     }
