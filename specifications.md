@@ -53,7 +53,7 @@ Response:
 
 ```json
 {
-  "issuing_tx": "468b649441ca7fca165aed72bc4b69e1546dc0e1670d15137c684d49534e1b2c"
+  "tx": "468b649441ca7fca165aed72bc4b69e1546dc0e1670d15137c684d49534e1b2c"
 }
 ```
 
