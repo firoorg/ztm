@@ -402,7 +402,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             foreach (var watch in watches)
             {
                 await this.ruleRepository.UpdateCurrentWatchAsync(watch.Context.Id, null, CancellationToken.None);
-                await this.watchRepository.UpdateStatusAsync(watch.Id, WatchStatus.Rejected, CancellationToken.None);
+                await this.watchRepository.SetRejectedAsync(watch.Id, CancellationToken.None);
                 await SetupTimerAsync(watch.Context);
             }
         }
@@ -414,7 +414,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             foreach (var watch in watches)
             {
                 await this.ruleRepository.UpdateCurrentWatchAsync(watch.Context.Id, null, CancellationToken.None);
-                await this.watchRepository.UpdateStatusAsync(watch.Id, WatchStatus.Success, CancellationToken.None);
+                await this.watchRepository.SetSucceededAsync(watch.Id, CancellationToken.None);
             }
         }
     }

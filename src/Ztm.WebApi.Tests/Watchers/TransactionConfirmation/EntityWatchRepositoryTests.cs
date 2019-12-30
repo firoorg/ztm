@@ -105,8 +105,8 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             await this.subject.AddAsync(watch1, CancellationToken.None);
             await this.subject.AddAsync(watch2, CancellationToken.None);
 
-            await this.subject.UpdateStatusAsync(watch1.Id, WatchStatus.Rejected, CancellationToken.None);
-            await this.subject.UpdateStatusAsync(watch2.Id, WatchStatus.Success, CancellationToken.None);
+            await this.subject.SetRejectedAsync(watch1.Id, CancellationToken.None);
+            await this.subject.SetSucceededAsync(watch2.Id, CancellationToken.None);
 
             // Act.
             var result1 = await this.subject.ListPendingAsync(null, CancellationToken.None);
@@ -135,8 +135,8 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             await this.subject.AddAsync(watch3, CancellationToken.None);
             await this.subject.AddAsync(watch4, CancellationToken.None);
 
-            await this.subject.UpdateStatusAsync(watch1.Id, WatchStatus.Rejected, CancellationToken.None);
-            await this.subject.UpdateStatusAsync(watch2.Id, WatchStatus.Success, CancellationToken.None);
+            await this.subject.SetRejectedAsync(watch1.Id, CancellationToken.None);
+            await this.subject.SetSucceededAsync(watch2.Id, CancellationToken.None);
 
             // Act.
             var result1 = await this.subject.ListPendingAsync(null, CancellationToken.None);
@@ -166,7 +166,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             await this.subject.AddAsync(watch1, CancellationToken.None);
             await this.subject.AddAsync(watch2, CancellationToken.None);
 
-            await this.subject.UpdateStatusAsync(watch2.Id, WatchStatus.Success, CancellationToken.None);
+            await this.subject.SetSucceededAsync(watch2.Id, CancellationToken.None);
 
             // Act.
             var result1 = await this.subject.ListRejectedAsync(null, CancellationToken.None);
@@ -195,9 +195,9 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             await this.subject.AddAsync(watch3, CancellationToken.None);
             await this.subject.AddAsync(watch4, CancellationToken.None);
 
-            await this.subject.UpdateStatusAsync(watch2.Id, WatchStatus.Success, CancellationToken.None);
-            await this.subject.UpdateStatusAsync(watch3.Id, WatchStatus.Rejected, CancellationToken.None);
-            await this.subject.UpdateStatusAsync(watch4.Id, WatchStatus.Rejected, CancellationToken.None);
+            await this.subject.SetSucceededAsync(watch2.Id, CancellationToken.None);
+            await this.subject.SetRejectedAsync(watch3.Id, CancellationToken.None);
+            await this.subject.SetRejectedAsync(watch4.Id, CancellationToken.None);
 
             // Act.
             var result1 = await this.subject.ListRejectedAsync(null, CancellationToken.None);
@@ -227,7 +227,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             await this.subject.AddAsync(watch1, CancellationToken.None);
             await this.subject.AddAsync(watch2, CancellationToken.None);
 
-            await this.subject.UpdateStatusAsync(watch2.Id, WatchStatus.Rejected, CancellationToken.None);
+            await this.subject.SetRejectedAsync(watch2.Id, CancellationToken.None);
 
             // Act.
             var result1 = await this.subject.ListSucceededAsync(null, CancellationToken.None);
@@ -256,9 +256,9 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             await this.subject.AddAsync(watch3, CancellationToken.None);
             await this.subject.AddAsync(watch4, CancellationToken.None);
 
-            await this.subject.UpdateStatusAsync(watch2.Id, WatchStatus.Rejected, CancellationToken.None);
-            await this.subject.UpdateStatusAsync(watch3.Id, WatchStatus.Success, CancellationToken.None);
-            await this.subject.UpdateStatusAsync(watch4.Id, WatchStatus.Success, CancellationToken.None);
+            await this.subject.SetRejectedAsync(watch2.Id, CancellationToken.None);
+            await this.subject.SetSucceededAsync(watch3.Id, CancellationToken.None);
+            await this.subject.SetSucceededAsync(watch4.Id, CancellationToken.None);
 
             // Act.
             var result1 = await this.subject.ListSucceededAsync(null, CancellationToken.None);
@@ -270,14 +270,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
         }
 
         [Fact]
-        public async Task UpdateStatusAsync_WithNonExistId_ShouldThrow()
-        {
-            await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => this.subject.UpdateStatusAsync(Guid.NewGuid(), WatchStatus.Success, CancellationToken.None));
-        }
-
-        [Fact]
-        public async Task UpdateStatusAsync_ExistWatch_ShouldSuccess()
+        public async Task SetRejectedAsync_WithExistWatch_StatusShouldBeUpdated()
         {
             // Arrange.
             var rule = await GenerateRuleAsync();
@@ -286,7 +279,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             await this.subject.AddAsync(watch, CancellationToken.None);
 
             // Act.
-            await this.subject.UpdateStatusAsync(watch.Id, WatchStatus.Rejected, CancellationToken.None);
+            await this.subject.SetRejectedAsync(watch.Id, CancellationToken.None);
 
             // Assert.
             var watches = await this.subject.ListRejectedAsync(null, CancellationToken.None);
@@ -297,7 +290,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
         }
 
         [Fact]
-        public async Task UpdateStatusAsync_WithInvalidStatus_ShouldThrow()
+        public async Task SetSucceededAsync_WithExistWatch_StatusShouldBeUpdated()
         {
             // Arrange.
             var rule = await GenerateRuleAsync();
@@ -305,24 +298,15 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 
             await this.subject.AddAsync(watch, CancellationToken.None);
 
-            // Act & Assert.
-            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-                () => this.subject.UpdateStatusAsync(watch.Id, WatchStatus.Pending, CancellationToken.None));
-        }
+            // Act.
+            await this.subject.SetSucceededAsync(watch.Id, CancellationToken.None);
 
-        [Fact]
-        public async Task UpdateStatusAsync_FinalWatchObject_ShouldThrow()
-        {
-            // Arrange.
-            var rule = await GenerateRuleAsync();
-            var watch = new DomainModel(rule, uint256.One, uint256.One);
+            // Assert.
+            var watches = await this.subject.ListSucceededAsync(null, CancellationToken.None);
+            Assert.Single(watches);
 
-            await this.subject.AddAsync(watch, CancellationToken.None);
-            await this.subject.UpdateStatusAsync(watch.Id, WatchStatus.Rejected, CancellationToken.None);
-
-            // Act & Assert.
-            await Assert.ThrowsAsync<InvalidOperationException>(
-                () => this.subject.UpdateStatusAsync(watch.Id, WatchStatus.Success, CancellationToken.None));
+            var updated = watches.First();
+            Assert.Equal(watch.Id, updated.Id);
         }
 
         async Task<Rule> GenerateRuleAsync()

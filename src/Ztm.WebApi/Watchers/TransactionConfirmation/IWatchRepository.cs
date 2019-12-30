@@ -13,6 +13,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
         Task<IEnumerable<Watch>> ListPendingAsync(uint256 startBlock, CancellationToken cancellationToken);
         Task<IEnumerable<Watch>> ListRejectedAsync(uint256 startBlock, CancellationToken cancellationToken);
         Task<IEnumerable<Watch>> ListSucceededAsync(uint256 startBlock, CancellationToken cancellationToken);
-        Task UpdateStatusAsync(Guid id, WatchStatus status, CancellationToken cancellationToken);
+        Task SetRejectedAsync(Guid id, CancellationToken cancellationToken);
+        Task SetSucceededAsync(Guid id, CancellationToken cancellationToken);
     }
 }
