@@ -98,7 +98,7 @@ jobs:
       with:
         name: e2e-runner
         path: e2e-runner
-    - name: Fix File Permissions
+    - name: Fix File Permission
       run: chmod +x release/Ztm.WebApi
     - name: Create Docker Network
       run: docker network create $DOCKER_NETWORK
