@@ -190,6 +190,7 @@ namespace Ztm.Data.Entity.Contexts
             builder.HasKey(e => e.Id);
 
             builder.HasIndex(e => e.RuleId);
+            builder.HasIndex(e => e.StartBlockHash);
             builder.HasIndex(e => e.Status);
 
             builder.HasOne(e => e.Rule)

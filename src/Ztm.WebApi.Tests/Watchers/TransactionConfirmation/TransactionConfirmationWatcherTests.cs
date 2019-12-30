@@ -15,7 +15,6 @@ using Ztm.WebApi.Watchers.TransactionConfirmation;
 using Ztm.Zcoin.NBitcoin;
 using Ztm.Zcoin.Synchronization;
 using Ztm.Zcoin.Watching;
-
 using Callback = Ztm.WebApi.Callbacks.Callback;
 
 namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
@@ -783,7 +782,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
         }
 
         [Fact]
-        public async Task RemoveWatchAsync_TimerShouldbeResume()
+        public async Task RemoveUncompletedWatchesAsync_TimerShouldbeResume()
         {
             // Arrange.
             var builder = new WatchArgsBuilder(this.callbackRepository);
@@ -799,7 +798,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             await this.handler.AddWatchesAsync(watches, CancellationToken.None);
 
             // Act.
-            await this.handler.RemoveWatchAsync(watch, WatchRemoveReason.BlockRemoved, CancellationToken.None);
+            await this.handler.RemoveUncompletedWatchesAsync(uint256.Zero, CancellationToken.None);
             Thread.Sleep(TimeSpan.FromMilliseconds(1000));
 
             // Assert.
@@ -819,7 +818,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
         }
 
         [Fact]
-        public async Task RemoveWatchAsync_WithRemainingTimeout_ShouldNotExecuteTimeoutImmediately()
+        public async Task RemoveUncompletedWatchesAsync_WithRemainingTimeout_ShouldNotExecuteTimeoutImmediately()
         {
             // Arrange.
             var builder = new WatchArgsBuilder(this.callbackRepository);
@@ -840,10 +839,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             var updated = await this.ruleRepository.GetAsync(watch.Id, CancellationToken.None);
             Assert.True(await this.ruleRepository.GetRemainingWaitingTimeAsync(updated.Id, CancellationToken.None) < TimeSpan.FromSeconds(1));
 
-            foreach (var watchObj in watches)
-            {
-                await this.handler.RemoveWatchAsync(watchObj, WatchRemoveReason.BlockRemoved, CancellationToken.None);
-            }
+            await this.handler.RemoveUncompletedWatchesAsync(uint256.Zero, CancellationToken.None);
 
             _ = this.callbackExecuter.Received(0).ExecuteAsync
             (
@@ -871,7 +867,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
         }
 
         [Fact]
-        public async Task RemoveWatchAsync_WithExistKey_ShouldSuccess()
+        public async Task RemoveCompletedWatchesAsync_WithExistKey_ShouldSuccess()
         {
             // Arrange.
             var builder = new WatchArgsBuilder(this.callbackRepository);
@@ -888,7 +884,7 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
             await this.handler.AddWatchesAsync(watches, CancellationToken.None);
 
             // Act.
-            await this.handler.RemoveWatchAsync(watches[0], WatchRemoveReason.Completed, CancellationToken.None);
+            await this.handler.RemoveCompletedWatchesAsync(watches, CancellationToken.None);
 
             // Assert.
             Assert.Empty(await this.handler.GetCurrentWatchesAsync(CancellationToken.None));
