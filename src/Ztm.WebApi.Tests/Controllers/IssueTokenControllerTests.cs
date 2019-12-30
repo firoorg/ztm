@@ -100,10 +100,9 @@ namespace Ztm.WebApi.Controllers
         }
 
         [Fact]
-        public async Task Issue_WithValidArgumentAndUrlWasNotSet_ShouldSuccessButNotAddCallback()
+        public async Task PostAsync_WithValidArgumentAndUrlWasNotSet_ShouldSuccessButNotAddCallback()
         {
             // Arrange.
-            var destination = TestAddress.Mainnet2;
             var amount = PropertyAmount.One;
             var note = "Test Issuing";
             var tx = NBitcoin.Transaction.Parse(TestTransaction.Raw1, ZcoinNetworks.Instance.Mainnet);
@@ -114,8 +113,8 @@ namespace Ztm.WebApi.Controllers
                 c => c.GrantPropertyAsync
                 (
                     It.Is<Property>(p => p.Id == this.zcoinConfiguration.Property.Id && p.Type == this.zcoinConfiguration.Property.Type),
+                    this.zcoinConfiguration.Property.Issuer.Address,
                     this.zcoinConfiguration.Property.Distributor.Address,
-                    destination,
                     It.Is<PropertyAmount>(a => a.Equals(amount)),
                     note,
                     It.IsAny<CancellationToken>()
@@ -136,10 +135,9 @@ namespace Ztm.WebApi.Controllers
                 c => c.GetExodusTransactionAsync(tx.GetHash(), It.IsAny<CancellationToken>())
             ).ReturnsAsync(new ExodusTransactionInformation{Fee = fee}).Verifiable();
 
-            var payload = new Issuing
+            var req = new IssueRequest
             {
                 Amount = amount,
-                Destination = destination,
                 Note = note,
             };
 
@@ -150,7 +148,7 @@ namespace Ztm.WebApi.Controllers
             };
 
             // Act.
-            var result = await this.subject.Issue(payload);
+            var result = await this.subject.PostAsync(req, CancellationToken.None);
 
             // Assert.
             var okObjectResult = Assert.IsType<OkObjectResult>(result);
@@ -187,10 +185,9 @@ namespace Ztm.WebApi.Controllers
         }
 
         [Fact]
-        public async Task Issue_WithValidArgumentAndCallbackUrlIsSet_ShouldSuccess()
+        public async Task PostAsync_WithValidArgumentAndCallbackUrlIsSet_ShouldSuccess()
         {
             // Arrange.
-            var destination = TestAddress.Mainnet2;
             var amount = PropertyAmount.One;
             var note = "Test Issuing";
             var tx = NBitcoin.Transaction.Parse(TestTransaction.Raw1, ZcoinNetworks.Instance.Mainnet);
@@ -204,8 +201,8 @@ namespace Ztm.WebApi.Controllers
                 c => c.GrantPropertyAsync
                 (
                     It.Is<Property>(p => p.Id == this.zcoinConfiguration.Property.Id && p.Type == this.zcoinConfiguration.Property.Type),
+                    this.zcoinConfiguration.Property.Issuer.Address,
                     this.zcoinConfiguration.Property.Distributor.Address,
-                    destination,
                     It.Is<PropertyAmount>(a => a.Equals(amount)),
                     note,
                     It.IsAny<CancellationToken>()
@@ -227,10 +224,9 @@ namespace Ztm.WebApi.Controllers
             ).ReturnsAsync(new ExodusTransactionInformation{Fee = fee}).Verifiable();
 
             // Construct payload
-            var payload = new Issuing
+            var req = new IssueRequest
             {
                 Amount = amount,
-                Destination = destination,
                 Note = note,
             };
 
@@ -278,7 +274,7 @@ namespace Ztm.WebApi.Controllers
             );
 
             // Act.
-            var result = await this.subject.Issue(payload);
+            var result = await this.subject.PostAsync(req, CancellationToken.None);
 
             // Assert.
             var okObjectResult = Assert.IsType<OkObjectResult>(result);
