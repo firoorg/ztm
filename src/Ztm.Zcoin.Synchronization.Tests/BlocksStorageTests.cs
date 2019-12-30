@@ -3,11 +3,15 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Moq;
 using NBitcoin;
 using Xunit;
 using Ztm.Data.Entity.Testing;
+using Ztm.Testing;
 using Ztm.Zcoin.NBitcoin;
+using Ztm.Zcoin.NBitcoin.Exodus;
 
 namespace Ztm.Zcoin.Synchronization.Tests
 {
@@ -15,6 +19,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
     {
         readonly IConfiguration config;
         readonly TestMainDatabaseFactory dbFactory;
+        readonly Mock<ITransactionEncoder> encoder;
         readonly BlocksStorage subject;
 
         public BlocksStorageTests()
@@ -28,7 +33,9 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             this.config = builder.Build();
             this.dbFactory = new TestMainDatabaseFactory();
-            this.subject = new BlocksStorage(this.config, this.dbFactory);
+            this.encoder = new Mock<ITransactionEncoder>();
+
+            this.subject = new BlocksStorage(this.config, this.dbFactory, this.encoder.Object);
         }
 
         public void Dispose()
@@ -41,7 +48,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
         {
             Assert.Throws<ArgumentNullException>(
                 "config",
-                () => new BlocksStorage(config: null, db: this.dbFactory)
+                () => new BlocksStorage(config: null, db: this.dbFactory, encoder: this.encoder.Object)
             );
         }
 
@@ -50,7 +57,16 @@ namespace Ztm.Zcoin.Synchronization.Tests
         {
             Assert.Throws<ArgumentNullException>(
                 "db",
-                () => new BlocksStorage(config: this.config, db: null)
+                () => new BlocksStorage(config: this.config, db: null, encoder: this.encoder.Object)
+            );
+        }
+
+        [Fact]
+        public void Constructor_PassNullForEncoder_ShouldThrow()
+        {
+            Assert.Throws<ArgumentNullException>(
+                "encoder",
+                () => new BlocksStorage(config: this.config, db: this.dbFactory, encoder: null)
             );
         }
 
@@ -238,7 +254,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
             });
 
             var config = builder.Build();
-            var subject = new BlocksStorage(config, this.dbFactory);
+            var subject = new BlocksStorage(config, this.dbFactory, this.encoder.Object);
             var block = Block.CreateBlock(ZcoinNetworks.Instance.Mainnet);
 
             block.Header.BlockTime = new DateTimeOffset(
@@ -264,6 +280,46 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             Assert.NotNull(saved);
             Assert.Equal(block.GetHash(), saved.GetHash());
+        }
+
+        [Fact]
+        public async Task AddAsync_WithExodusTransaction_ShouldSuccessAndCallEncode()
+        {
+            // Arrange.
+            var network = ZcoinNetworks.Instance.Regtest;
+            var block = Block.CreateBlock(network);
+            var tx = Transaction.Create(network);
+
+            var sender = TestAddress.Regtest1;
+            var receiver = TestAddress.Regtest2;
+
+            var exodusTx = new SimpleSendV0(sender, receiver, new PropertyId(2), new PropertyAmount(10));
+
+            #pragma warning disable CS0618
+            tx.SetExodusTransaction(exodusTx);
+            #pragma warning restore CS0618
+
+            block.Transactions.Add(tx);
+
+            // Payload
+            var rawPayload = new byte[]{0x00, 0x01, 0x02, 0x03};
+            this.encoder.Setup(e => e.Encode(exodusTx)).Returns(rawPayload).Verifiable();
+
+            // Act.
+            await this.subject.AddAsync(block, 100, CancellationToken.None);
+
+            // Assert.
+            this.encoder.Verify();
+            using (var db = this.dbFactory.CreateDbContext())
+            {
+                var payload = await db.ExodusPayloads.FirstOrDefaultAsync(CancellationToken.None);
+                Assert.NotNull(payload);
+
+                Assert.Equal(tx.GetHash(), payload.TransactionHash);
+                Assert.Equal(receiver.ScriptPubKey, payload.Receiver);
+                Assert.Equal(sender.ScriptPubKey, payload.Sender);
+                Assert.Equal(rawPayload, payload.Data);
+            }
         }
 
         [Fact]
@@ -314,6 +370,28 @@ namespace Ztm.Zcoin.Synchronization.Tests
         }
 
         [Fact]
+        public async Task GetAsync_ByHashWithExodusTransaction_ShouldRetrieveExodusPayload()
+        {
+            await TestExodusTransactionRetrieving(async fields =>
+            {
+                // Act.
+                var (result, _) = await this.subject.GetAsync(fields.Block.GetHash(), CancellationToken.None);
+
+                // Assert.
+                Assert.NotNull(result);
+
+                var retrieved = result.Transactions.Find(t => t.GetHash() == fields.Transaction.GetHash());
+                Assert.NotNull(retrieved);
+
+                var retrievedExodus = retrieved.GetExodusTransaction();
+                Assert.NotNull(retrievedExodus);
+                Assert.Equal(fields.ExodusTransaction, retrievedExodus);
+
+                this.encoder.Verify(e => e.Decode(fields.Sender, fields.Receiver, fields.Data), Times.Once());
+            });
+        }
+
+        [Fact]
         public async Task GetAsync_WithValidHeight_ShouldSuccess()
         {
             // Arrange.
@@ -326,6 +404,28 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             // Assert.
             Assert.Equal(block.GetHash(), saved.GetHash());
+        }
+
+        [Fact]
+        public async Task GetAsync_ByHeightWithExodusTransaction_ShouldRetrieveExodusPayload()
+        {
+            await TestExodusTransactionRetrieving(async fields =>
+            {
+                // Act.
+                var result = await this.subject.GetAsync(fields.BlockHeight, CancellationToken.None);
+
+                // Assert.
+                Assert.NotNull(result);
+
+                var retrieved = result.Transactions.Find(t => t.GetHash() == fields.Transaction.GetHash());
+                Assert.NotNull(retrieved);
+
+                var retrievedExodus = retrieved.GetExodusTransaction();
+                Assert.NotNull(retrievedExodus);
+                Assert.Equal(fields.ExodusTransaction, retrievedExodus);
+
+                this.encoder.Verify(e => e.Decode(fields.Sender, fields.Receiver, fields.Data), Times.Once());
+            });
         }
 
         [Fact]
@@ -386,6 +486,28 @@ namespace Ztm.Zcoin.Synchronization.Tests
         }
 
         [Fact]
+        public async Task GetLastAsync_WithExodusTransaction_ShouldRetrieveExodusPayload()
+        {
+            await TestExodusTransactionRetrieving(async fields =>
+            {
+                // Act.
+                var (result, _) = await this.subject.GetLastAsync(CancellationToken.None);
+
+                // Assert.
+                Assert.NotNull(result);
+
+                var retrieved = result.Transactions.Find(t => t.GetHash() == fields.Transaction.GetHash());
+                Assert.NotNull(retrieved);
+
+                var retrievedExodus = retrieved.GetExodusTransaction();
+                Assert.NotNull(retrievedExodus);
+                Assert.Equal(fields.ExodusTransaction, retrievedExodus);
+
+                this.encoder.Verify(e => e.Decode(fields.Sender, fields.Receiver, fields.Data), Times.Once());
+            });
+        }
+
+        [Fact]
         public async Task GetTransactionAsync_PassNullForHash_ShouldThrow()
         {
             await Assert.ThrowsAsync<ArgumentNullException>(
@@ -418,6 +540,26 @@ namespace Ztm.Zcoin.Synchronization.Tests
             // Assert.
             Assert.NotNull(tx);
             Assert.Equal(block0.Transactions[0].GetHash(), tx.GetHash());
+        }
+
+        [Fact]
+        public async Task GetTransactionAsync_WithExodusTransaction_ShouldRetrieveExodusPayload()
+        {
+            await TestExodusTransactionRetrieving(async fields =>
+            {
+                // Act.
+                var result = await this.subject.GetTransactionAsync(fields.Transaction.GetHash(), CancellationToken.None);
+
+                // Assert.
+                Assert.NotNull(result);
+                Assert.Equal(fields.Transaction.GetHash(), result.GetHash());
+
+                var retrievedExodus = result.GetExodusTransaction();
+                Assert.NotNull(retrievedExodus);
+                Assert.Equal(fields.ExodusTransaction, retrievedExodus);
+
+                this.encoder.Verify(e => e.Decode(fields.Sender, fields.Receiver, fields.Data), Times.Once());
+            });
         }
 
         [Fact]
@@ -515,6 +657,72 @@ namespace Ztm.Zcoin.Synchronization.Tests
             Assert.Equal(genesis.GetHash(), first.GetHash());
             Assert.Equal(block2.GetHash(), last.GetHash());
             Assert.Equal(2, height);
+        }
+
+        [Fact]
+        public async Task RemoveLastAsync_WithExodusTransaction_ShouldAlsoRemoveExodusPayload()
+        {
+            await TestExodusTransactionRetrieving(async fields =>
+            {
+                // Act.
+                await this.subject.RemoveLastAsync(CancellationToken.None);
+
+                // Assert.
+                using (var db = this.dbFactory.CreateDbContext())
+                {
+                    var payload = await db.ExodusPayloads.FirstOrDefaultAsync(p => p.TransactionHash == fields.Transaction.GetHash(), CancellationToken.None);
+                    Assert.Null(payload);
+                }
+            });
+        }
+
+        async Task TestExodusTransactionRetrieving(Func<RetrievingTestingFields, Task> actAndAssert)
+        {
+            var network = ZcoinNetworks.Instance.Regtest;
+            var block = Block.CreateBlock(network);
+            var tx = Transaction.Create(network);
+
+            var sender = TestAddress.Regtest1;
+            var receiver = TestAddress.Regtest2;
+
+            var exodusTx = new SimpleSendV0(sender, receiver, new PropertyId(2), new PropertyAmount(10));
+
+            #pragma warning disable CS0618
+            tx.SetExodusTransaction(exodusTx);
+            #pragma warning restore CS0618
+
+            block.Transactions.Add(tx);
+
+            // Payload
+            var rawPayload = new byte[]{0x00, 0x01, 0x02, 0x03};
+            this.encoder.Setup(e => e.Encode(exodusTx)).Returns(rawPayload);
+            this.encoder.Setup(e => e.Decode(sender, receiver, rawPayload)).Returns(exodusTx);
+
+            var genesis = ZcoinNetworks.Instance.Regtest.GetGenesis();
+            await this.subject.AddAsync(genesis, 0, CancellationToken.None);
+            await this.subject.AddAsync(block, 1, CancellationToken.None);
+
+            await actAndAssert(new RetrievingTestingFields
+            {
+                Block = block,
+                BlockHeight = 1,
+                ExodusTransaction = exodusTx,
+                Transaction = tx,
+                Sender = sender,
+                Receiver = receiver,
+                Data = rawPayload,
+            });
+        }
+
+        class RetrievingTestingFields
+        {
+            public Block Block { get; set;}
+            public int BlockHeight { get; set; }
+            public ExodusTransaction ExodusTransaction { get; set; }
+            public Transaction Transaction { get; set; }
+            public BitcoinAddress Sender { get; set; }
+            public BitcoinAddress Receiver { get; set; }
+            public byte[] Data { get; set; }
         }
     }
 }

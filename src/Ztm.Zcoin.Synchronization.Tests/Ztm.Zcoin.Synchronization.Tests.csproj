@@ -21,6 +21,8 @@
     <ProjectReference Include="..\Ztm.Data.Entity.Testing\Ztm.Data.Entity.Testing.csproj" />
     <ProjectReference Include="..\Ztm.Data.Entity\Ztm.Data.Entity.csproj" />
     <ProjectReference Include="..\Ztm.ObjectModel\Ztm.ObjectModel.csproj" />
+    <ProjectReference Include="..\Ztm.Zcoin.NBitcoin\Ztm.Zcoin.NBitcoin.csproj" />
+    <ProjectReference Include="..\Ztm.Testing\Ztm.Testing.csproj" />
   </ItemGroup>
 
 </Project>

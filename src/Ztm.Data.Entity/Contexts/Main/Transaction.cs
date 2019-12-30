@@ -19,5 +19,7 @@ namespace Ztm.Data.Entity.Contexts.Main
         public SortedSet<BlockTransaction> Blocks { get; set; }
         public SortedSet<Input> Inputs { get; set; }
         public SortedSet<Output> Outputs { get; set; }
+
+        public ExodusPayload ExodusPayload { get; set; }
     }
 }

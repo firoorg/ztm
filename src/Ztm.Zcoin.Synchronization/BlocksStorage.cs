@@ -10,6 +10,7 @@ using NBitcoin;
 using Ztm.Configuration;
 using Ztm.Data.Entity.Contexts;
 using Ztm.Zcoin.NBitcoin;
+using Ztm.Zcoin.NBitcoin.Exodus;
 
 namespace Ztm.Zcoin.Synchronization
 {
@@ -17,8 +18,9 @@ namespace Ztm.Zcoin.Synchronization
     {
         readonly IMainDatabaseFactory db;
         readonly Network zcoinNetwork;
+        readonly ITransactionEncoder encoder;
 
-        public BlocksStorage(IConfiguration config, IMainDatabaseFactory db)
+        public BlocksStorage(IConfiguration config, IMainDatabaseFactory db, ITransactionEncoder encoder)
         {
             if (config == null)
             {
@@ -30,8 +32,14 @@ namespace Ztm.Zcoin.Synchronization
                 throw new ArgumentNullException(nameof(db));
             }
 
+            if (encoder == null)
+            {
+                throw new ArgumentNullException(nameof(encoder));
+            }
+
             this.db = db;
             this.zcoinNetwork = ZcoinNetworks.Instance.GetNetwork(config.GetZcoinSection().Network.Type);
+            this.encoder = encoder;
         }
 
         public async Task AddAsync(Block block, int height, CancellationToken cancellationToken)
@@ -181,6 +189,7 @@ namespace Ztm.Zcoin.Synchronization
                 row = await db.Transactions
                     .Include(t => t.Inputs)
                     .Include(t => t.Outputs)
+                    .Include(t => t.ExodusPayload)
                     .SingleOrDefaultAsync(t => t.Hash == hash, cancellationToken);
 
                 if (row == null)
@@ -301,6 +310,19 @@ namespace Ztm.Zcoin.Synchronization
                 );
             }
 
+            if (entity.ExodusPayload != null)
+            {
+                var payload = entity.ExodusPayload;
+                var sender = payload.Sender.GetDestinationAddress(this.zcoinNetwork); // BitcoinAddress.Create(payload.Sender, this.zcoinNetwork);
+                var receiver = payload.Receiver.GetDestinationAddress(this.zcoinNetwork); // BitcoinAddress.Create(payload.Receiver, this.zcoinNetwork);
+
+                var exodusTx = this.encoder.Decode(sender, receiver, payload.Data);
+
+                #pragma warning disable CS0618
+                domain.SetExodusTransaction(exodusTx);
+                #pragma warning restore CS0618
+            }
+
             return domain;
         }
 
@@ -407,6 +429,19 @@ namespace Ztm.Zcoin.Synchronization
                 };
 
                 entity.Inputs.Add(input);
+            }
+
+            // Exodus payload.
+            var exodusTx = tx.GetExodusTransaction();
+            if (exodusTx != null)
+            {
+                entity.ExodusPayload = new Ztm.Data.Entity.Contexts.Main.ExodusPayload
+                {
+                    TransactionHash = tx.GetHash(),
+                    Receiver = exodusTx.Receiver.ScriptPubKey,
+                    Sender = exodusTx.Sender.ScriptPubKey,
+                    Data = this.encoder.Encode(exodusTx)
+                };
             }
 
             return entity;

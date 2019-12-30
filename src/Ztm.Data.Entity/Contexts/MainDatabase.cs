@@ -20,6 +20,8 @@ namespace Ztm.Data.Entity.Contexts
 
         public DbSet<BlockTransaction> BlockTransactions { get; set; }
 
+        public DbSet<ExodusPayload> ExodusPayloads { get; set; }
+
         public DbSet<Input> Inputs { get; set; }
 
         public DbSet<Output> Outputs { get; set; }
@@ -74,6 +76,16 @@ namespace Ztm.Data.Entity.Contexts
                    .HasForeignKey(e => e.TransactionHash)
                    .HasPrincipalKey(e => e.Hash)
                    .OnDelete(DeleteBehavior.Restrict);
+        }
+
+        protected virtual void ConfigureExodusPayload(EntityTypeBuilder<ExodusPayload> builder)
+        {
+            builder.Property(e => e.TransactionHash).IsRequired();
+            builder.Property(e => e.Sender).IsRequired().HasConversion(Converters.ScriptToBytesConverter);
+            builder.Property(e => e.Receiver).IsRequired().HasConversion(Converters.ScriptToBytesConverter);
+            builder.Property(e => e.Data).IsRequired();
+
+            builder.HasKey(e => e.TransactionHash);
         }
 
         protected virtual void ConfigureInput(EntityTypeBuilder<Input> builder)
@@ -142,6 +154,11 @@ namespace Ztm.Data.Entity.Contexts
             builder.Property(e => e.LockTime).IsRequired();
 
             builder.HasKey(e => e.Hash);
+            builder.HasOne(e => e.ExodusPayload)
+                   .WithOne()
+                   .HasForeignKey<ExodusPayload>(e => e.TransactionHash)
+                   .OnDelete(DeleteBehavior.Cascade);
+
         }
 
         protected virtual void ConfigureTransactionConfirmationWatcherRule(
@@ -232,6 +249,7 @@ namespace Ztm.Data.Entity.Contexts
         {
             modelBuilder.Entity<Block>(ConfigureBlock);
             modelBuilder.Entity<BlockTransaction>(ConfigureBlockTransaction);
+            modelBuilder.Entity<ExodusPayload>(ConfigureExodusPayload);
             modelBuilder.Entity<Input>(ConfigureInput);
             modelBuilder.Entity<Output>(ConfigureOutput);
             modelBuilder.Entity<ReceivingAddress>(ConfigureReceivingAddress);
