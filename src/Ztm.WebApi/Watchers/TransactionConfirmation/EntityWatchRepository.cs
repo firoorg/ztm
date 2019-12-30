@@ -1,14 +1,15 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using NBitcoin;
 using Newtonsoft.Json;
 using Ztm.Data.Entity.Contexts;
-using Ztm.Data.Entity.Contexts.Main;
-using Ztm.Zcoin.Watching;
+using DomainModel = Ztm.Zcoin.Watching.TransactionWatch<Ztm.WebApi.Watchers.TransactionConfirmation.Rule>;
+using EntityModel = Ztm.Data.Entity.Contexts.Main.TransactionConfirmationWatcherWatch;
+using WatchStatus = Ztm.Data.Entity.Contexts.Main.TransactionConfirmationWatcherWatchStatus;
 
 namespace Ztm.WebApi.Watchers.TransactionConfirmation
 {
@@ -33,7 +34,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             this.serializer = serializer;
         }
 
-        public async Task AddAsync(TransactionWatch<Rule> watch, CancellationToken cancellationToken)
+        public async Task AddAsync(DomainModel watch, CancellationToken cancellationToken)
         {
             if (watch == null)
             {
@@ -49,14 +50,14 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             {
                 await db.TransactionConfirmationWatcherWatches.AddAsync
                 (
-                    new TransactionConfirmationWatcherWatch
+                    new EntityModel
                     {
                         Id = watch.Id,
                         RuleId = watch.Context.Id,
                         StartBlockHash = watch.StartBlock,
                         StartTime = watch.StartTime,
                         TransactionHash = watch.TransactionId,
-                        Status = (int)WatchStatus.Pending,
+                        Status = WatchStatus.Pending,
                     }
                 );
 
@@ -64,64 +65,79 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             }
         }
 
-        public async Task<IEnumerable<TransactionWatch<Rule>>> ListAsync(WatchStatus status, CancellationToken cancellationToken)
+        public Task<IEnumerable<DomainModel>> ListPendingAsync(uint256 startBlock, CancellationToken cancellationToken)
         {
-            var statusVal = (int)status;
-
-            using (var db = this.db.CreateDbContext())
-            {
-                return await db.TransactionConfirmationWatcherWatches
-                    .Include(w => w.Rule)
-                    .ThenInclude(r => r.Callback)
-                    .Where(w => statusVal == w.Status)
-                    .Select(w => ToDomain(w))
-                    .ToListAsync(cancellationToken);
-            }
+            return ListAsync(WatchStatus.Pending, startBlock, cancellationToken);
         }
 
-        public async Task UpdateStatusAsync(Guid id, WatchStatus status, CancellationToken cancellationToken)
+        public Task<IEnumerable<DomainModel>> ListRejectedAsync(uint256 startBlock, CancellationToken cancellationToken)
+        {
+            return ListAsync(WatchStatus.Rejected, startBlock, cancellationToken);
+        }
+
+        public Task<IEnumerable<DomainModel>> ListSucceededAsync(
+            uint256 startBlock,
+            CancellationToken cancellationToken)
+        {
+            return ListAsync(WatchStatus.Succeeded, startBlock, cancellationToken);
+        }
+
+        public Task SetRejectedAsync(Guid id, CancellationToken cancellationToken)
+        {
+            return UpdateStatusAsync(id, WatchStatus.Rejected, cancellationToken);
+        }
+
+        public Task SetSucceededAsync(Guid id, CancellationToken cancellationToken)
+        {
+            return UpdateStatusAsync(id, WatchStatus.Succeeded, cancellationToken);
+        }
+
+        async Task UpdateStatusAsync(Guid id, WatchStatus status, CancellationToken cancellationToken)
         {
             using (var db = this.db.CreateDbContext())
-            using (var tx = await db.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken))
             {
                 var watch = await db.TransactionConfirmationWatcherWatches
-                    .Where(w => w.Id == id).FirstOrDefaultAsync(cancellationToken);
+                    .Where(w => w.Id == id)
+                    .SingleAsync(cancellationToken);
 
-                if (watch == null)
-                {
-                    throw new KeyNotFoundException("Watch id is not found.");
-                }
+                watch.Status = status;
 
-                if (watch.Status != (int)WatchStatus.Pending)
-                {
-                    throw new InvalidOperationException("The watch is not be able to update.");
-                }
-
-                switch (status)
-                {
-                    case WatchStatus.Rejected:
-                    case WatchStatus.Success:
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException(nameof(status), "New status is not allowed to set.");
-                }
-
-                watch.Status = (int)status;
                 await db.SaveChangesAsync(cancellationToken);
-
-                tx.Commit();
             }
         }
 
-        TransactionWatch<Rule> ToDomain(TransactionConfirmationWatcherWatch watch)
+        async Task<IEnumerable<DomainModel>> ListAsync(
+            WatchStatus status,
+            uint256 startBlock,
+            CancellationToken cancellationToken)
         {
-            return new TransactionWatch<Rule>
+            IEnumerable<EntityModel> entities;
+
+            using (var db = this.db.CreateDbContext())
+            {
+                IQueryable<EntityModel> query = db.TransactionConfirmationWatcherWatches
+                    .Include(w => w.Rule)
+                    .ThenInclude(r => r.Callback);
+
+                query = (startBlock != null)
+                    ? query.Where(w => w.Status == status && w.StartBlockHash == startBlock)
+                    : query.Where(w => w.Status == status);
+
+                entities = await query.ToListAsync(cancellationToken);
+            }
+
+            return entities.Select(e => ToDomain(e)).ToList();
+        }
+
+        DomainModel ToDomain(EntityModel entity)
+        {
+            return new DomainModel
             (
-                EntityRuleRepository.ToDomain(this.serializer, watch.Rule),
-                watch.StartBlockHash,
-                watch.TransactionHash,
-                watch.StartTime,
-                watch.Id
+                EntityRuleRepository.ToDomain(this.serializer, entity.Rule),
+                entity.StartBlockHash,
+                entity.TransactionHash,
+                entity.StartTime,
+                entity.Id
             );
         }
     }
