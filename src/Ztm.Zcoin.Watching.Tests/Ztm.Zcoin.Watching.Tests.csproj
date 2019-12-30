@@ -7,9 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="FluentAssertions" Version="5.9.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
+    <PackageReference Include="Moq" Version="4.13.1" />
     <PackageReference Include="NBitcoin" Version="4.2.16" />
-    <PackageReference Include="NSubstitute" Version="4.2.1" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
@@ -20,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Ztm.Zcoin.Watching\Ztm.Zcoin.Watching.csproj" />
+    <ProjectReference Include="..\Ztm.Testing\Ztm.Testing.csproj" />
   </ItemGroup>
 
 </Project>

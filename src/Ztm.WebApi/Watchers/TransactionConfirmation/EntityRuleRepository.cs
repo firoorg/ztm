@@ -148,7 +148,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
                 var rules = await db.TransactionConfirmationWatcherRules
                     .Include(e => e.Callback)
                     .Include(e => e.CurrentWatch)
-                    .Where(e => e.Status == (int)WatchStatus.Pending && e.CurrentWatchId == null)
+                    .Where(e => e.Status == (int)RuleStatus.Pending && e.CurrentWatchId == null)
                     .ToListAsync(cancellationToken);
 
                 return rules.Select(e => ToDomain(e)).ToList();
