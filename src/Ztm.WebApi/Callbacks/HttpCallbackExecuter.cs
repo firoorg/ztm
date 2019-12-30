@@ -51,8 +51,10 @@ namespace Ztm.WebApi.Callbacks
                 if (result.Data != null)
                 {
                     var builder = new StringBuilder();
-                    var wrtiter = new StringWriter(builder);
-                    this.serializer.Serialize(wrtiter, result.Data);
+                    using (var wrtiter = new StringWriter(builder))
+                    {
+                        this.serializer.Serialize(wrtiter, result.Data);
+                    }
 
                     var content = builder.ToString();
                     request.Content = new StringContent(content, Encoding.UTF8, "application/json");

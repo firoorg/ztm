@@ -111,8 +111,10 @@ namespace Ztm.WebApi.Callbacks
             }
 
             var stringBuilder = new StringBuilder();
-            var writer = new StringWriter(stringBuilder);
-            this.serializer.Serialize(writer, result.Data);
+            using (var writer = new StringWriter(stringBuilder))
+            {
+                this.serializer.Serialize(writer, result.Data);
+            }
 
             using (var db = this.db.CreateDbContext())
             {

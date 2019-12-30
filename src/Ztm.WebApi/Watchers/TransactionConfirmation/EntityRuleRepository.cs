@@ -38,22 +38,23 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
 
         public static Rule ToDomain(JsonSerializer serializer, EntityModel rule, Callback callback = null)
         {
-            var successReader = new JsonTextReader(new StringReader(rule.SuccessData));
-            var timeoutReader = new JsonTextReader(new StringReader(rule.TimeoutData));
-
-            return new Rule
-            (
-                rule.Id,
-                rule.TransactionHash,
-                rule.Confirmation,
-                rule.OriginalWaitingTime,
-                serializer.Deserialize<CallbackResult>(successReader),
-                serializer.Deserialize<CallbackResult>(timeoutReader),
-                callback != null
-                    ? callback
-                    : (rule.Callback == null ? null : EntityCallbackRepository.ToDomain(rule.Callback)),
-                DateTime.SpecifyKind(rule.CreatedAt, DateTimeKind.Utc)
-            );
+            using (var successReader = new JsonTextReader(new StringReader(rule.SuccessData)))
+            using (var timeoutReader = new JsonTextReader(new StringReader(rule.TimeoutData)))
+            {
+                return new Rule
+                (
+                    rule.Id,
+                    rule.TransactionHash,
+                    rule.Confirmation,
+                    rule.OriginalWaitingTime,
+                    serializer.Deserialize<CallbackResult>(successReader),
+                    serializer.Deserialize<CallbackResult>(timeoutReader),
+                    callback != null
+                        ? callback
+                        : (rule.Callback == null ? null : EntityCallbackRepository.ToDomain(rule.Callback)),
+                    DateTime.SpecifyKind(rule.CreatedAt, DateTimeKind.Utc)
+                );
+            }
         }
 
         public async Task<Rule> AddAsync(
@@ -81,14 +82,14 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             }
 
             var successStringBuilder = new StringBuilder();
-            var successWriter = new StringWriter(successStringBuilder);
-
-            this.serializer.Serialize(successWriter, successResponse);
-
             var timeoutStringBuilder = new StringBuilder();
-            var timeoutWriter = new StringWriter(timeoutStringBuilder);
 
-            this.serializer.Serialize(timeoutWriter, timeoutResponse);
+            using (var successWriter = new StringWriter(successStringBuilder))
+            using (var timeoutWriter = new StringWriter(timeoutStringBuilder))
+            {
+                this.serializer.Serialize(successWriter, successResponse);
+                this.serializer.Serialize(timeoutWriter, timeoutResponse);
+            }
 
             using (var db = this.db.CreateDbContext())
             {
