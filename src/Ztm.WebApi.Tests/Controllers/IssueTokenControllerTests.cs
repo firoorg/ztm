@@ -20,7 +20,7 @@ using Transaction = Ztm.WebApi.Models.Transaction;
 
 namespace Ztm.WebApi.Controllers
 {
-    public sealed class TokenControllerTests
+    public sealed class IssueTokenControllerTests
     {
         readonly Mock<IZcoinRpcClientFactory> factory;
         readonly Mock<IZcoinRpcClient> client;
@@ -31,9 +31,9 @@ namespace Ztm.WebApi.Controllers
         readonly IConfiguration configuration;
         readonly ZcoinConfiguration zcoinConfiguration;
 
-        readonly TokenController subject;
+        readonly IssueTokenController subject;
 
-        public TokenControllerTests()
+        public IssueTokenControllerTests()
         {
             this.factory = new Mock<IZcoinRpcClientFactory>();
             this.client = new Mock<IZcoinRpcClient>();
@@ -60,7 +60,7 @@ namespace Ztm.WebApi.Controllers
 
             this.zcoinConfiguration = this.configuration.GetZcoinSection();
 
-            this.subject = new TokenController
+            this.subject = new IssueTokenController
             (
                 this.factory.Object,
                 this.configuration,
@@ -75,27 +75,27 @@ namespace Ztm.WebApi.Controllers
         {
             Assert.Throws<ArgumentNullException>(
                 "factory",
-                () => new TokenController(null, this.configuration, this.watcher.Object, this.callbackRepository.Object, this.ruleRepository.Object)
+                () => new IssueTokenController(null, this.configuration, this.watcher.Object, this.callbackRepository.Object, this.ruleRepository.Object)
             );
 
             Assert.Throws<ArgumentNullException>(
                 "configuration",
-                () => new TokenController(this.factory.Object, null, this.watcher.Object, this.callbackRepository.Object, this.ruleRepository.Object)
+                () => new IssueTokenController(this.factory.Object, null, this.watcher.Object, this.callbackRepository.Object, this.ruleRepository.Object)
             );
 
             Assert.Throws<ArgumentNullException>(
                 "watcher",
-                () => new TokenController(this.factory.Object, this.configuration, null, this.callbackRepository.Object, this.ruleRepository.Object)
+                () => new IssueTokenController(this.factory.Object, this.configuration, null, this.callbackRepository.Object, this.ruleRepository.Object)
             );
 
             Assert.Throws<ArgumentNullException>(
                 "callbackRepository",
-                () => new TokenController(this.factory.Object, this.configuration, this.watcher.Object, null, this.ruleRepository.Object)
+                () => new IssueTokenController(this.factory.Object, this.configuration, this.watcher.Object, null, this.ruleRepository.Object)
             );
 
             Assert.Throws<ArgumentNullException>(
                 "ruleRepository",
-                () => new TokenController(this.factory.Object, this.configuration, this.watcher.Object, this.callbackRepository.Object, null)
+                () => new IssueTokenController(this.factory.Object, this.configuration, this.watcher.Object, this.callbackRepository.Object, null)
             );
         }
 

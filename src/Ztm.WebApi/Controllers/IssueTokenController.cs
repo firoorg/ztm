@@ -14,9 +14,8 @@ using Transaction = Ztm.WebApi.Models.Transaction;
 
 namespace Ztm.WebApi.Controllers
 {
-    [Route("api")]
     [ApiController]
-    public class TokenController : ControllerBase
+    public class IssueTokenController : ControllerBase
     {
         readonly IZcoinRpcClientFactory factory;
         readonly IConfiguration configuration;
@@ -24,7 +23,7 @@ namespace Ztm.WebApi.Controllers
         readonly ICallbackRepository callbackRepository;
         readonly IRuleRepository ruleRepository;
 
-        public TokenController(
+        public IssueTokenController(
             IZcoinRpcClientFactory factory,
             IConfiguration configuration,
             ITransactionConfirmationWatcher watcher,
