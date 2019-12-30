@@ -14,10 +14,6 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
             FakeDecode = Substitute.For<Func<BitcoinAddress, BitcoinAddress, BinaryReader, int, ExodusTransaction>>();
             FakeType = Substitute.For<Func<int>>();
 
-            // FakeEncode(
-            //     Arg.Any<ExodusTransaction>()
-            // ).Returns(call => new BinaryWriter)
-
             FakeDecode(
                 Arg.Any<BitcoinAddress>(),
                 Arg.Any<BitcoinAddress>(),

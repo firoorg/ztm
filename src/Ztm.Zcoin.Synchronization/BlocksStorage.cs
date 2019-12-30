@@ -313,8 +313,8 @@ namespace Ztm.Zcoin.Synchronization
             if (entity.ExodusPayload != null)
             {
                 var payload = entity.ExodusPayload;
-                var sender = payload.Sender.GetDestinationAddress(this.zcoinNetwork); // BitcoinAddress.Create(payload.Sender, this.zcoinNetwork);
-                var receiver = payload.Receiver.GetDestinationAddress(this.zcoinNetwork); // BitcoinAddress.Create(payload.Receiver, this.zcoinNetwork);
+                var sender = payload.Sender.GetDestinationAddress(this.zcoinNetwork);
+                var receiver = payload.Receiver.GetDestinationAddress(this.zcoinNetwork);
 
                 var exodusTx = this.encoder.Decode(sender, receiver, payload.Data);
 
