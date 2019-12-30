@@ -401,13 +401,22 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             uint256 startedBlock,
             CancellationToken cancellationToken)
         {
-            var watches = await this.watchRepository.ListPendingAsync(startedBlock, cancellationToken);
+            await this.timersSemaphore.WaitAsync();
 
-            foreach (var watch in watches)
+            try
             {
-                await this.ruleRepository.UpdateCurrentWatchAsync(watch.Context.Id, null, CancellationToken.None);
-                await this.watchRepository.SetRejectedAsync(watch.Id, CancellationToken.None);
-                await SetupTimerAsync(watch.Context);
+                var watches = await this.watchRepository.ListPendingAsync(startedBlock, cancellationToken);
+
+                foreach (var watch in watches)
+                {
+                    await this.ruleRepository.UpdateCurrentWatchAsync(watch.Context.Id, null, CancellationToken.None);
+                    await this.watchRepository.SetRejectedAsync(watch.Id, CancellationToken.None);
+                    await SetupTimerAsync(watch.Context);
+                }
+            }
+            finally
+            {
+                this.timersSemaphore.Release();
             }
         }
 
