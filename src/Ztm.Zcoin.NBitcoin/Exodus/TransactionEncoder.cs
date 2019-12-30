@@ -24,6 +24,34 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
             this.encoders = encoders.ToDictionary(e => e.Type);
         }
 
+        public byte[] Encode(ExodusTransaction transaction)
+        {
+            if (transaction == null)
+            {
+                throw new ArgumentNullException(nameof(transaction));
+            }
+
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream, Encoding.UTF8))
+            {
+                var type = transaction.Type;
+
+                writer.Write(IPAddress.HostToNetworkOrder((short)transaction.Version));
+                writer.Write(IPAddress.HostToNetworkOrder((short)transaction.Type));
+
+                if (!this.encoders.TryGetValue(type, out var encoder))
+                {
+                    throw new TransactionFieldException(
+                        TransactionFieldException.TypeField,
+                        "The value is unknown transaction type."
+                    );
+                }
+
+                encoder.Encode(writer, transaction);
+                return stream.ToArray();
+            }
+        }
+
         public ExodusTransaction Decode(BitcoinAddress sender, BitcoinAddress receiver, byte[] data)
         {
             if (data == null)

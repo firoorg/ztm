@@ -35,6 +35,8 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
 
         public PropertyId Property { get; }
 
+        public override int Type => 0;
+
         public override int Version => 0;
     }
 }

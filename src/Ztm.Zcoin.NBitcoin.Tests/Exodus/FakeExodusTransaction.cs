@@ -18,8 +18,18 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
             Version = version;
         }
 
+        public FakeExodusTransaction(BitcoinAddress sender, BitcoinAddress receiver, int id, int version, int type)
+            : base(sender, receiver)
+        {
+            Id = id;
+            Version = version;
+            Type = type;
+        }
+
         public override int Id { get; }
 
         public override int Version { get; }
+
+        public override int Type { get; }
     }
 }

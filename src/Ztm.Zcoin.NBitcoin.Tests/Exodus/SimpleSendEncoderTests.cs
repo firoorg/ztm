@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using Xunit;
 using Ztm.Testing;
@@ -18,6 +19,51 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
         public void Type_WhenGetValue_ShouldReturnSimpleSendId()
         {
             Assert.Equal(SimpleSendV0.StaticId, this.subject.Type);
+        }
+
+        [Fact]
+        public void Encode_WithInvalidType_ShouldThrow()
+        {
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream))
+            {
+                Assert.Throws<InvalidOperationException>(
+                    () => this.subject.Encode(writer, new FakeExodusTransaction(null, null))
+                );
+            }
+        }
+
+        [Theory]
+        [InlineData(PropertyId.MinValue, 1L)]
+        [InlineData(PropertyId.MinValue, long.MaxValue)]
+        [InlineData(PropertyId.MaxValue, 1L)]
+        [InlineData(PropertyId.MaxValue, long.MaxValue)]
+        public void Encode_WithValidExodusTransaction_ShouldSuccess(long property, long amount)
+        {
+            // Arrange.
+            using (var payloadStream = new MemoryStream())
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream))
+            {
+                RawTransaction.WritePropertyId(payloadStream, property);
+                RawTransaction.WritePropertyAmount(payloadStream, new PropertyAmount(amount));
+
+                var payload = payloadStream.ToArray();
+
+                var transaction = new SimpleSendV0(
+                    TestAddress.Regtest1,
+                    TestAddress.Regtest2,
+                    new PropertyId(property),
+                    new PropertyAmount(amount)
+                );
+
+                // Act.
+                this.subject.Encode(writer, transaction);
+
+                // Assert.
+                var result = stream.ToArray();
+                Assert.Equal(payload, result);
+            }
         }
 
         [Fact]

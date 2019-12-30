@@ -57,6 +57,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
             var tx = new SimpleSendV0(this.sender, this.receiver, this.property, this.amount);
 
             Assert.Equal(SimpleSendV0.StaticId, tx.Id);
+            Assert.Equal(0, tx.Type);
             Assert.Equal(0, tx.Version);
             Assert.Equal(this.sender, tx.Sender);
             Assert.Equal(this.receiver, tx.Receiver);

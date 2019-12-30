@@ -21,6 +21,8 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
 
         public BitcoinAddress Sender { get; }
 
+        public abstract int Type { get; }
+
         public abstract int Version { get; }
 
         public static bool IsValidId(int id)

@@ -960,6 +960,8 @@ namespace Ztm.Zcoin.Rpc.Tests
             public override int Id { get; }
 
             public override int Version { get; }
+
+            public override int Type => 0;
         }
     }
 }
