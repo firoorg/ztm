@@ -319,7 +319,7 @@ namespace Ztm.Zcoin.Synchronization
                 var exodusTx = this.encoder.Decode(sender, receiver, payload.Data);
 
                 #pragma warning disable CS0618
-                domain.SetExodusTransaction(exodusTx);
+                domain.SetExodusTransaction(exodusTx); // lgtm [cs/call-to-obsolete-method]
                 #pragma warning restore CS0618
             }
 
