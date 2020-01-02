@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Ztm.Threading\Ztm.Threading.csproj" />
+    <ProjectReference Include="..\Ztm.Testing\Ztm.Testing.csproj" />
   </ItemGroup>
 
 </Project>
