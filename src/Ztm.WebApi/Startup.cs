@@ -77,7 +77,7 @@ namespace Ztm.WebApi
             );
 
             // Zcoin Interface Services.
-            services.AddSingleton<IZcoinRpcClientFactory>(CreateZcoinRpcClientFactory);
+            services.AddSingleton<IRpcFactory>(CreateRpcFactory);
             services.AddTransient<IBlocksRetriever, BlocksRetriever>();
             services.AddSingleton<IBlocksStorage, BlocksStorage>();
 
@@ -117,13 +117,13 @@ namespace Ztm.WebApi
             return ZcoinNetworks.Instance.GetNetwork(config.Network.Type);
         }
 
-        IZcoinRpcClientFactory CreateZcoinRpcClientFactory(IServiceProvider provider)
+        IRpcFactory CreateRpcFactory(IServiceProvider provider)
         {
             var config = this.config.GetZcoinSection();
 
-            return new ZcoinRpcClientFactory(
+            return new RpcFactory(
+                provider.GetRequiredService<Network>(),
                 config.Rpc.Address,
-                config.Network.Type,
                 RPCCredentialString.Parse($"{config.Rpc.UserName}:{config.Rpc.Password}"),
                 provider.GetRequiredService<ITransactionEncoder>()
             );
