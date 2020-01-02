@@ -27,7 +27,8 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
             using (var stream = new MemoryStream())
             using (var writer = new BinaryWriter(stream))
             {
-                Assert.Throws<InvalidOperationException>(
+                Assert.Throws<ArgumentException>(
+                    "transaction",
                     () => this.subject.Encode(writer, new FakeExodusTransaction(null, null))
                 );
             }

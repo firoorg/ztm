@@ -13,33 +13,13 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
 
         public abstract int Type { get; }
 
-        protected abstract void Encode(BinaryWriter writer, ExodusTransaction transaction);
-
         protected abstract ExodusTransaction Decode(
             BitcoinAddress sender,
             BitcoinAddress receiver,
             BinaryReader payload,
             int version);
 
-        /// <summary>
-        /// Write a <see cref="PropertyAmount"/> to <paramref name="writer"/>.
-        /// </summary>
-        protected static void EncodePropertyAmount(BinaryWriter writer, PropertyAmount amount)
-        {
-            var value = IPAddress.HostToNetworkOrder(amount.Indivisible);
-
-            writer.Write(value);
-        }
-
-        /// <summary>
-        /// Write a <see cref="PropertyId"/> to <paramref name="writer"/>.
-        /// </summary>
-        protected static void EncodePropertyId(BinaryWriter writer, PropertyId id)
-        {
-            var value = IPAddress.HostToNetworkOrder((int)id.Value);
-
-            writer.Write(value);
-        }
+        protected abstract void Encode(BinaryWriter writer, ExodusTransaction transaction);
 
         /// <summary>
         /// Read a <see cref="PropertyAmount"/> from <paramref name="reader"/>.
@@ -70,19 +50,24 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
             return new PropertyId(value);
         }
 
-        void ITransactionPayloadEncoder.Encode(BinaryWriter writer, ExodusTransaction transaction)
+        /// <summary>
+        /// Write a <see cref="PropertyAmount"/> to <paramref name="writer"/>.
+        /// </summary>
+        protected static void EncodePropertyAmount(BinaryWriter writer, PropertyAmount amount)
         {
-            if (writer == null)
-            {
-                throw new ArgumentNullException(nameof(writer));
-            }
+            var value = IPAddress.HostToNetworkOrder(amount.Indivisible);
 
-            if (transaction == null)
-            {
-                throw new ArgumentNullException(nameof(transaction));
-            }
+            writer.Write(value);
+        }
 
-            Encode(writer, transaction);
+        /// <summary>
+        /// Write a <see cref="PropertyId"/> to <paramref name="writer"/>.
+        /// </summary>
+        protected static void EncodePropertyId(BinaryWriter writer, PropertyId id)
+        {
+            var value = IPAddress.HostToNetworkOrder((int)id.Value);
+
+            writer.Write(value);
         }
 
         ExodusTransaction ITransactionPayloadEncoder.Decode(
@@ -98,6 +83,21 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
 
             // Don't check if version is valid or not due to it is better to let implementation handle it.
             return Decode(sender, receiver, payload, version);
+        }
+
+        void ITransactionPayloadEncoder.Encode(BinaryWriter writer, ExodusTransaction transaction)
+        {
+            if (writer == null)
+            {
+                throw new ArgumentNullException(nameof(writer));
+            }
+
+            if (transaction == null)
+            {
+                throw new ArgumentNullException(nameof(transaction));
+            }
+
+            Encode(writer, transaction);
         }
     }
 }

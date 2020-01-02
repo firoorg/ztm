@@ -8,26 +8,6 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
     {
         public override int Type => SimpleSendV0.StaticId;
 
-        protected override void Encode(BinaryWriter writer, ExodusTransaction transaction)
-        {
-            if (!(transaction is SimpleSendV0))
-            {
-                throw new InvalidOperationException("The transaction type is not simple send v0.");
-            }
-
-            var simpleSend = (SimpleSendV0)transaction;
-
-            switch (simpleSend.Version)
-            {
-                case 0:
-                    EncodePropertyId(writer, simpleSend.Property);
-                    EncodePropertyAmount(writer, simpleSend.Amount);
-                    break;
-                default:
-                    throw new NotSupportedException("The version is not supported.");
-            }
-        }
-
         protected override ExodusTransaction Decode(
             BitcoinAddress sender,
             BitcoinAddress receiver,
@@ -73,6 +53,26 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
                         TransactionFieldException.VersionField,
                         "The value is not valid for simple send."
                     );
+            }
+        }
+
+        protected override void Encode(BinaryWriter writer, ExodusTransaction transaction)
+        {
+            var simpleSend = transaction as SimpleSendV0;
+
+            if (simpleSend == null)
+            {
+                throw new ArgumentException("The transaction could not be used as a simple send.", nameof(transaction));
+            }
+
+            switch (simpleSend.Version)
+            {
+                case 0:
+                    EncodePropertyId(writer, simpleSend.Property);
+                    EncodePropertyAmount(writer, simpleSend.Amount);
+                    break;
+                default:
+                    throw new NotSupportedException("The version is not supported.");
             }
         }
     }
