@@ -10,7 +10,6 @@ using Ztm.WebApi.Models;
 using Ztm.WebApi.Watchers.TransactionConfirmation;
 using Ztm.Zcoin.NBitcoin.Exodus;
 using Ztm.Zcoin.Rpc;
-using Transaction = Ztm.WebApi.Models.Transaction;
 
 namespace Ztm.WebApi.Controllers
 {
@@ -18,9 +17,6 @@ namespace Ztm.WebApi.Controllers
     [ApiController]
     public class IssueTokenController : ControllerBase
     {
-        static readonly string StatusSuccess = "success";
-        static readonly string StatusTimeout = "tokens-issuing-timeout";
-
         readonly IRpcFactory factory;
         readonly IConfiguration configuration;
         readonly ITransactionConfirmationWatcher watcher;
@@ -73,7 +69,7 @@ namespace Ztm.WebApi.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> PostAsync([FromBody] IssueRequest issueing, CancellationToken cancellationToken)
+        public async Task<IActionResult> PostAsync([FromBody] IssueTokenRequest req, CancellationToken cancellationToken)
         {
             using (var propertyManagementRpc = await this.factory.CreatePropertyManagementRpcAsync(cancellationToken))
             using (var rawTransactionRpc = await this.factory.CreateRawTransactionRpcAsync(cancellationToken))
@@ -86,13 +82,12 @@ namespace Ztm.WebApi.Controllers
                     property,
                     this.zcoinConfig.Property.Issuer.Address,
                     this.zcoinConfig.Property.Distributor.Address,
-                    issueing.Amount,
-                    issueing.Note,
+                    req.Amount,
+                    req.Note,
                     cancellationToken
                 );
 
                 var id = await rawTransactionRpc.SendAsync(tx, cancellationToken);
-                var info = await exodusInformationRpc.GetTransactionAsync(id, CancellationToken.None);
 
                 var callback = await this.AddCallbackAsync(CancellationToken.None);
                 if (callback != null)
@@ -102,18 +97,14 @@ namespace Ztm.WebApi.Controllers
                     await this.WatchTransactionAsync
                     (
                         id,
-                        new CallbackResult(StatusSuccess, callbackResult),
-                        new CallbackResult(StatusTimeout, callbackResult),
+                        new CallbackResult(CallbackResult.StatusSuccess, callbackResult),
+                        new CallbackResult("tokens-issuing-timeout", callbackResult),
                         callback,
                         CancellationToken.None
                     );
                 }
 
-                return Ok(new Transaction
-                {
-                    Tx = id,
-                    Fee = info.Fee
-                });
+                return Ok(new{Tx = id});
             };
         }
 

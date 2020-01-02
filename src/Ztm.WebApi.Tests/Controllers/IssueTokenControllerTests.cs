@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,7 +17,6 @@ using Ztm.WebApi.Watchers.TransactionConfirmation;
 using Ztm.Zcoin.NBitcoin;
 using Ztm.Zcoin.NBitcoin.Exodus;
 using Ztm.Zcoin.Rpc;
-using Transaction = Ztm.WebApi.Models.Transaction;
 
 namespace Ztm.WebApi.Controllers
 {
@@ -139,12 +139,7 @@ namespace Ztm.WebApi.Controllers
                 )
             ).ReturnsAsync(tx.GetHash()).Verifiable();
 
-            this.exodusInfomationRpc.Setup
-            (
-                c => c.GetTransactionAsync(tx.GetHash(), It.IsAny<CancellationToken>())
-            ).ReturnsAsync(new ExodusTransactionInformation{Fee = fee}).Verifiable();
-
-            var req = new IssueRequest
+            var req = new IssueTokenRequest
             {
                 Amount = amount,
                 Note = note,
@@ -162,13 +157,13 @@ namespace Ztm.WebApi.Controllers
             // Assert.
             this.propertyManagementRpc.Verify();
             this.rawTransactionRpc.Verify();
-            this.exodusInfomationRpc.Verify();
 
             var okObjectResult = Assert.IsType<OkObjectResult>(result);
-            var returnedTx = Assert.IsType<Transaction>(okObjectResult.Value);
+            var returnedTx = okObjectResult.Value;
+            var properties = returnedTx.GetType().GetProperties();
+            var txVal = (uint256)properties.First(p => p.Name == "Tx").GetValue(returnedTx);
 
-            Assert.Equal(tx.GetHash(), returnedTx.Tx);
-            Assert.Equal(fee, returnedTx.Fee);
+            Assert.Equal(tx.GetHash(), txVal);
 
             this.watcher.Verify(
                 w => w.AddTransactionAsync
@@ -229,13 +224,8 @@ namespace Ztm.WebApi.Controllers
                 )
             ).ReturnsAsync(tx.GetHash()).Verifiable();
 
-            this.exodusInfomationRpc.Setup
-            (
-                c => c.GetTransactionAsync(tx.GetHash(), It.IsAny<CancellationToken>())
-            ).ReturnsAsync(new ExodusTransactionInformation{Fee = fee}).Verifiable();
-
             // Construct payload
-            var req = new IssueRequest
+            var req = new IssueTokenRequest
             {
                 Amount = amount,
                 Note = note,
@@ -290,13 +280,13 @@ namespace Ztm.WebApi.Controllers
             // Assert.
             this.propertyManagementRpc.Verify();
             this.rawTransactionRpc.Verify();
-            this.exodusInfomationRpc.Verify();
 
             var okObjectResult = Assert.IsType<OkObjectResult>(result);
-            var returnedTx = Assert.IsType<Transaction>(okObjectResult.Value);
+            var returnedTx = okObjectResult.Value;
+            var properties = returnedTx.GetType().GetProperties();
+            var txVal = (uint256)properties.First(p => p.Name == "Tx").GetValue(returnedTx);
 
-            Assert.Equal(tx.GetHash(), returnedTx.Tx);
-            Assert.Equal(fee, returnedTx.Fee);
+            Assert.Equal(tx.GetHash(), txVal);
 
             this.callbackRepository.Verify();
             this.watcher.Verify();
