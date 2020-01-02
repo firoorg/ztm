@@ -67,6 +67,33 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
         }
 
         [Fact]
+        public void Negate_WithMinValue_ShouldThrow()
+        {
+            var v = new PropertyAmount(long.MinValue);
+            Assert.Throws<OverflowException>(
+                () => PropertyAmount.Negate(v)
+            );
+        }
+
+        [Theory]
+        [InlineData(long.MaxValue, -long.MaxValue)]
+        [InlineData(1, -1)]
+        [InlineData(0, 0)]
+        [InlineData(-1, 1)]
+        [InlineData(long.MinValue + 1, long.MaxValue)]
+        public void Negate_WithNagatableAmount_ShouldReturnNagatedValue(long value, long expected)
+        {
+            // Arrange.
+            var amount = new PropertyAmount(value);
+
+            // Act.
+            var negated = PropertyAmount.Negate(amount);
+
+            // Assert.
+            Assert.Equal(new PropertyAmount(expected), negated);
+        }
+
+        [Fact]
         public void Parse_WithNull_ShouldThrow()
         {
             Assert.Throws<ArgumentNullException>("s", () => PropertyAmount.Parse(null));
@@ -239,6 +266,40 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
         }
 
         [Theory]
+        [InlineData(0, 0, 0)]
+        [InlineData(4611686018427387904, 4611686018427387903, 9223372036854775807)]
+        [InlineData(4611686018427387903, 4611686018427387904, 9223372036854775807)]
+        [InlineData(-4611686018427387904, -4611686018427387903, -9223372036854775807)]
+        [InlineData(-4611686018427387903, -4611686018427387904, -9223372036854775807)]
+        [InlineData(-4611686018427387904, -4611686018427387904, -9223372036854775808)]
+        [InlineData(9223372036854775807, -9223372036854775808, -1)]
+        [InlineData(-9223372036854775808, 9223372036854775807, -1)]
+        public void Addition_SumIsNotOverflow_ShouldReturnThatValue(long left, long right, long expect)
+        {
+            var first = new PropertyAmount(left);
+            var second = new PropertyAmount(right);
+
+            var result = first + second;
+
+            Assert.Equal(new PropertyAmount(expect), result);
+        }
+
+        [Theory]
+        [InlineData(9223372036854775807, 9223372036854775807)]
+        [InlineData(9223372036854775807, 1)]
+        [InlineData(1, 9223372036854775807)]
+        [InlineData(-9223372036854775808, -9223372036854775808)]
+        [InlineData(-9223372036854775808, -1)]
+        [InlineData(-1, -9223372036854775808)]
+        public void Addition_SumIsOverflow_ShouldThrow(long left, long right)
+        {
+            var first = new PropertyAmount(left);
+            var second = new PropertyAmount(right);
+
+            Assert.Throws<OverflowException>(() => first + second);
+        }
+
+        [Theory]
         [InlineData(-2L, -1L)]
         [InlineData(-1L, 0L)]
         [InlineData(0L, 1L)]
@@ -380,33 +441,6 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
             var second = new PropertyAmount(right);
 
             Assert.True(first >= second);
-        }
-
-        [Fact]
-        public void Negate_WithMinValue_ShouldThrow()
-        {
-            var v = new PropertyAmount(long.MinValue);
-            Assert.Throws<OverflowException>(
-                () => PropertyAmount.Negate(v)
-            );
-        }
-
-        [Theory]
-        [InlineData(long.MaxValue, -long.MaxValue)]
-        [InlineData(1, -1)]
-        [InlineData(0, 0)]
-        [InlineData(-1, 1)]
-        [InlineData(long.MinValue + 1, long.MaxValue)]
-        public void Negate_WithNagatableAmount_ShouldReturnNagatedValue(long value, long expected)
-        {
-            // Arrange.
-            var amount = new PropertyAmount(value);
-
-            // Act.
-            var negated = PropertyAmount.Negate(amount);
-
-            // Assert.
-            Assert.Equal(new PropertyAmount(expected), negated);
         }
 
         [Fact]

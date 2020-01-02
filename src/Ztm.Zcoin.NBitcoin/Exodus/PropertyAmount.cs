@@ -38,6 +38,11 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
             return new PropertyAmount((long)value);
         }
 
+        public static PropertyAmount Negate(PropertyAmount amount)
+        {
+            return -amount;
+        }
+
         /// <summary>
         /// Convert a string that represents property amount.
         /// </summary>
@@ -113,6 +118,11 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
             }
         }
 
+        public static PropertyAmount operator+(PropertyAmount first, PropertyAmount second)
+        {
+            return new PropertyAmount(checked(first.value + second.value));
+        }
+
         public static PropertyAmount operator-(PropertyAmount amount)
         {
             return new PropertyAmount(checked(-amount.value));
@@ -136,11 +146,6 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
         public static bool operator>=(PropertyAmount first, PropertyAmount second)
         {
             return first.value >= second.value;
-        }
-
-        public static PropertyAmount Negate(PropertyAmount amount)
-        {
-            return -amount;
         }
     }
 }
