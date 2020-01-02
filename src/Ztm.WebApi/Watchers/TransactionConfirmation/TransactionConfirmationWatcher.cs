@@ -193,7 +193,9 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             }
         }
 
-        // Thread Unsafe
+        /// <remarks>
+        /// The method is not thread-safe, caller have to hold timersSemaphore.
+        /// </remarks>
         async Task SetupTimerAsync(Rule rule)
         {
             var timer = new Timer();
@@ -210,7 +212,6 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
 
             try
             {
-                await Task.Delay(100);
                 var remainingWaitingTime = await this.ruleRepository.GetRemainingWaitingTimeAsync(rule.Id, CancellationToken.None);
 
                 timer.Elapsed += OnTimeout;
@@ -247,7 +248,9 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             });
         }
 
-        // Thread Unsafe
+        /// <remarks>
+        /// The method is not thread-safe, caller have to hold timersSemaphore.
+        /// </remarks>
         void RemoveTimer(Rule rule)
         {
             if (!this.timers.TryGetValue(rule.TransactionHash, out var timers))
@@ -263,7 +266,9 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             }
         }
 
-        // Thread Unsafe
+        /// <remarks>
+        /// The method is not thread-safe, caller have to hold timersSemaphore.
+        /// </remarks>
         async Task<bool> StopTimer(Rule rule)
         {
             if (this.timers.TryGetValue(rule.TransactionHash, out var txTimers) && txTimers.TryGetValue(rule.Id, out var timer))

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
@@ -10,8 +12,6 @@ using Newtonsoft.Json;
 using Ztm.Data.Entity.Contexts;
 using Ztm.WebApi.Callbacks;
 using EntityModel = Ztm.Data.Entity.Contexts.Main.TransactionConfirmationWatcherRule;
-using System.Text;
-using System.IO;
 
 namespace Ztm.WebApi.Watchers.TransactionConfirmation
 {
