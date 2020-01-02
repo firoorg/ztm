@@ -18,9 +18,9 @@ namespace Ztm.Zcoin.Synchronization
     {
         readonly IMainDatabaseFactory db;
         readonly Network zcoinNetwork;
-        readonly ITransactionEncoder encoder;
+        readonly ITransactionEncoder exodusEncoder;
 
-        public BlocksStorage(IConfiguration config, IMainDatabaseFactory db, ITransactionEncoder encoder)
+        public BlocksStorage(IConfiguration config, IMainDatabaseFactory db, ITransactionEncoder exodusEncoder)
         {
             if (config == null)
             {
@@ -32,14 +32,14 @@ namespace Ztm.Zcoin.Synchronization
                 throw new ArgumentNullException(nameof(db));
             }
 
-            if (encoder == null)
+            if (exodusEncoder == null)
             {
-                throw new ArgumentNullException(nameof(encoder));
+                throw new ArgumentNullException(nameof(exodusEncoder));
             }
 
             this.db = db;
             this.zcoinNetwork = ZcoinNetworks.Instance.GetNetwork(config.GetZcoinSection().Network.Type);
-            this.encoder = encoder;
+            this.exodusEncoder = exodusEncoder;
         }
 
         public async Task AddAsync(Block block, int height, CancellationToken cancellationToken)
@@ -316,7 +316,7 @@ namespace Ztm.Zcoin.Synchronization
                 var sender = payload.Sender.GetDestinationAddress(this.zcoinNetwork);
                 var receiver = payload.Receiver.GetDestinationAddress(this.zcoinNetwork);
 
-                var exodusTx = this.encoder.Decode(sender, receiver, payload.Data);
+                var exodusTx = this.exodusEncoder.Decode(sender, receiver, payload.Data);
 
                 #pragma warning disable CS0618
                 domain.SetExodusTransaction(exodusTx); // lgtm [cs/call-to-obsolete-method]
@@ -440,7 +440,7 @@ namespace Ztm.Zcoin.Synchronization
                     TransactionHash = tx.GetHash(),
                     Receiver = exodusTx.Receiver.ScriptPubKey,
                     Sender = exodusTx.Sender.ScriptPubKey,
-                    Data = this.encoder.Encode(exodusTx)
+                    Data = this.exodusEncoder.Encode(exodusTx)
                 };
             }
 

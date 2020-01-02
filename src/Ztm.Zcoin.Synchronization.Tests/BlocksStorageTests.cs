@@ -48,7 +48,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
         {
             Assert.Throws<ArgumentNullException>(
                 "config",
-                () => new BlocksStorage(config: null, db: this.dbFactory, encoder: this.encoder.Object)
+                () => new BlocksStorage(config: null, db: this.dbFactory, exodusEncoder: this.encoder.Object)
             );
         }
 
@@ -57,7 +57,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
         {
             Assert.Throws<ArgumentNullException>(
                 "db",
-                () => new BlocksStorage(config: this.config, db: null, encoder: this.encoder.Object)
+                () => new BlocksStorage(config: this.config, db: null, exodusEncoder: this.encoder.Object)
             );
         }
 
@@ -65,8 +65,8 @@ namespace Ztm.Zcoin.Synchronization.Tests
         public void Constructor_PassNullForEncoder_ShouldThrow()
         {
             Assert.Throws<ArgumentNullException>(
-                "encoder",
-                () => new BlocksStorage(config: this.config, db: this.dbFactory, encoder: null)
+                "exodusEncoder",
+                () => new BlocksStorage(config: this.config, db: this.dbFactory, exodusEncoder: null)
             );
         }
 

@@ -38,11 +38,12 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
         [Theory]
         [InlineData(2)]
         [InlineData(Int32.MaxValue)]
-        public void Encode_WithUnsupportedTransaction_ShouldThrow(int type)
+        public void Encode_WithUnsupportedTransaction_ShouldThrow(int id)
         {
-            var tx = new FakeExodusTransaction(null, null, 0, 0, type);
+            var tx = new FakeExodusTransaction(null, null, id, 0);
 
-            Assert.Throws<TransactionFieldException>(
+            Assert.Throws<ArgumentException>(
+                "transaction",
                 () => this.subject.Encode(tx)
             );
         }
@@ -54,24 +55,24 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
         [InlineData(short.MinValue, 1, (byte)0x00)]
         [InlineData(0, 1, (byte)0x00)]
         [InlineData(short.MaxValue, 1, (byte)0x00)]
-        public void Encode_WithValidData_ShouldSuccess(int version, int type, params byte[] payload)
+        public void Encode_WithValidData_ShouldSuccess(int version, int id, params byte[] payload)
         {
             // Arrange.
-            ExodusTransaction tx = new FakeExodusTransaction(null, null, 0, version, type);
+            ExodusTransaction tx = new FakeExodusTransaction(null, null, id, version);
 
             byte[] expected;
             using (var stream = new MemoryStream())
             using (var writer = new BinaryWriter(stream, Encoding.UTF8))
             {
                 writer.Write(IPAddress.HostToNetworkOrder((short)version));
-                writer.Write(IPAddress.HostToNetworkOrder((short)type));
+                writer.Write(IPAddress.HostToNetworkOrder((short)id));
                 writer.Write(payload);
 
                 expected = stream.ToArray();
             }
 
             ITransactionPayloadEncoder encoder;
-            switch (type)
+            switch (id)
             {
                 case 0:
                     encoder = encoder0;
