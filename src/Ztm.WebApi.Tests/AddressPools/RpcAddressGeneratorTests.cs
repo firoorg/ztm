@@ -1,7 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using NSubstitute;
+using Moq;
 using Xunit;
 using Ztm.WebApi.AddressPools;
 using Ztm.Zcoin.Rpc;
@@ -10,17 +10,18 @@ namespace Ztm.WebApi.Tests.AddressPools
 {
     public sealed class RpcAddressGeneratorTests
     {
-        readonly IZcoinRpcClientFactory factory;
-        readonly IZcoinRpcClient client;
+        readonly Mock<IRpcFactory> factory;
+        readonly Mock<IWalletRpc> client;
         readonly RpcAddressGenerator subject;
 
         public RpcAddressGeneratorTests()
         {
-            this.client = Substitute.For<IZcoinRpcClient>();
-            this.factory = Substitute.For<IZcoinRpcClientFactory>();
-            this.factory.CreateRpcClientAsync(Arg.Any<CancellationToken>()).Returns(this.client);
+            this.client = new Mock<IWalletRpc>();
+            this.factory = new Mock<IRpcFactory>();
+            this.factory.Setup(f => f.CreateWalletRpcAsync(It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(this.client.Object);
 
-            this.subject = new RpcAddressGenerator(this.factory);
+            this.subject = new RpcAddressGenerator(this.factory.Object);
         }
 
         [Fact]
@@ -42,8 +43,15 @@ namespace Ztm.WebApi.Tests.AddressPools
             await this.subject.GenerateAsync(cancellationToken);
 
             // Assert.
-            _ = this.factory.Received(1).CreateRpcClientAsync(Arg.Is<CancellationToken>(c => c == cancellationToken));
-            _ = this.client.Received(1).GetNewAddressAsync(Arg.Is<CancellationToken>(c => c == cancellationToken));
+            this.factory.Verify(
+                f => f.CreateWalletRpcAsync(cancellationToken),
+                Times.Once()
+            );
+
+            this.client.Verify(
+                c => c.GetNewAddressAsync(cancellationToken),
+                Times.Once()
+            );
         }
     }
 }

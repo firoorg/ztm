@@ -8,9 +8,9 @@ namespace Ztm.WebApi.AddressPools
 {
     public sealed class RpcAddressGenerator : IAddressGenerator
     {
-        readonly IZcoinRpcClientFactory factory;
+        readonly IRpcFactory factory;
 
-        public RpcAddressGenerator(IZcoinRpcClientFactory factory)
+        public RpcAddressGenerator(IRpcFactory factory)
         {
             if (factory == null)
             {
@@ -22,7 +22,7 @@ namespace Ztm.WebApi.AddressPools
 
         public async Task<BitcoinAddress> GenerateAsync(CancellationToken cancellationToken)
         {
-            using (var client = await this.factory.CreateRpcClientAsync(cancellationToken))
+            using (var client = await this.factory.CreateWalletRpcAsync(cancellationToken))
             {
                 return await client.GetNewAddressAsync(cancellationToken);
             }
