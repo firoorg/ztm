@@ -21,6 +21,7 @@ using Ztm.Zcoin.Rpc;
 using Ztm.Zcoin.Synchronization;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Newtonsoft.Json;
+using Ztm.Zcoin.NBitcoin.Json;
 
 namespace Ztm.WebApi
 {
@@ -52,8 +53,8 @@ namespace Ztm.WebApi
 
                         var config = this.config.GetZcoinSection();
                         var network = ZcoinNetworks.Instance.GetNetwork(config.Network.Type);
-                        o.SerializerSettings.Converters.Add(new BitcoinAddressJsonConverter(network));
-                        o.SerializerSettings.Converters.Add(new UInt256JsonConverter());
+                        o.SerializerSettings.Converters.Add(new BitcoinAddressConverter(network));
+                        o.SerializerSettings.Converters.Add(new UInt256Converter());
                     });
 
             // Http Client Factory.
@@ -76,8 +77,8 @@ namespace Ztm.WebApi
                     var serializer = new JsonSerializer();
 
                     var network = p.GetRequiredService<Network>();
-                    serializer.Converters.Add(new BitcoinAddressJsonConverter(network));
-                    serializer.Converters.Add(new UInt256JsonConverter());
+                    serializer.Converters.Add(new BitcoinAddressConverter(network));
+                    serializer.Converters.Add(new UInt256Converter());
 
                     return serializer;
                 }

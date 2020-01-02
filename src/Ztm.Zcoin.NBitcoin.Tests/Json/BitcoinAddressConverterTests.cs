@@ -2,17 +2,18 @@ using System;
 using NBitcoin;
 using Newtonsoft.Json;
 using Xunit;
+using Ztm.Zcoin.NBitcoin.Json;
 
-namespace Ztm.Zcoin.NBitcoin.Tests
+namespace Ztm.Zcoin.NBitcoin.Tests.Json
 {
-    public sealed class BitcoinAddressJsonConverterTests
+    public sealed class BitcoinAddressConverterTests
     {
         [Fact]
         public void Construct_WithNullNetwork_ShouldThrow()
         {
             Assert.Throws<ArgumentNullException>(
                 "network",
-                () => new BitcoinAddressJsonConverter(null)
+                () => new BitcoinAddressConverter(null)
             );
         }
 
@@ -28,7 +29,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests
             // Arrange.
             var json = JsonConvert.SerializeObject(rawAddress);
             var network = ZcoinNetworks.Instance.GetNetwork(networkType);
-            var converter = new BitcoinAddressJsonConverter(network);
+            var converter = new BitcoinAddressConverter(network);
 
             // Act.
             var result = JsonConvert.DeserializeObject<BitcoinAddress>(json, converter);
@@ -49,7 +50,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         {
             var json = JsonConvert.SerializeObject(rawAddress);
             var network = ZcoinNetworks.Instance.GetNetwork(networkType);
-            var converter = new BitcoinAddressJsonConverter(network);
+            var converter = new BitcoinAddressConverter(network);
 
             Assert.Throws<FormatException>(
                 () => JsonConvert.DeserializeObject<BitcoinAddress>(json, converter)
@@ -67,7 +68,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests
         {
             var json = JsonConvert.SerializeObject(rawAddress);
             var network = ZcoinNetworks.Instance.GetNetwork(networkType);
-            var converter = new BitcoinAddressJsonConverter(network);
+            var converter = new BitcoinAddressConverter(network);
 
             Assert.Throws<FormatException>(
                 () => JsonConvert.DeserializeObject<BitcoinAddress>(json, converter)
@@ -87,7 +88,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests
             var network = ZcoinNetworks.Instance.GetNetwork(networkType);
             var address = BitcoinAddress.Create(rawAddress, network);
 
-            var converter = new BitcoinAddressJsonConverter(network);
+            var converter = new BitcoinAddressConverter(network);
 
             // Act.
             var json = JsonConvert.SerializeObject(address, Formatting.None, converter);

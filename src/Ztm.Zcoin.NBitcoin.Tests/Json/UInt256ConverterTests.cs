@@ -2,16 +2,17 @@ using System;
 using NBitcoin;
 using Newtonsoft.Json;
 using Xunit;
+using Ztm.Zcoin.NBitcoin.Json;
 
-namespace Ztm.Zcoin.NBitcoin.Tests
+namespace Ztm.Zcoin.NBitcoin.Tests.Json
 {
-    public sealed class UInt256JsonConverterTests
+    public sealed class UInt256ConverterTests
     {
-        readonly UInt256JsonConverter subject;
+        readonly UInt256Converter subject;
 
-        public UInt256JsonConverterTests()
+        public UInt256ConverterTests()
         {
-            this.subject = new UInt256JsonConverter();
+            this.subject = new UInt256Converter();
         }
 
         [Theory]

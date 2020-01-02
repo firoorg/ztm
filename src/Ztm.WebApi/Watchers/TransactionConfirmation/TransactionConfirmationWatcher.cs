@@ -378,15 +378,15 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
 
         async Task IWatcherHandler<Rule, Watch>.AddWatchesAsync(IEnumerable<Watch> watches, CancellationToken cancellationToken)
         {
+            if (watches == null)
+            {
+                throw new ArgumentNullException(nameof(watches));
+            }
+
             await this.timersSemaphore.WaitAsync();
 
             try
             {
-                if (watches == null)
-                {
-                    throw new ArgumentNullException(nameof(watches));
-                }
-
                 foreach (var watch in watches) // lgtm [cs/linq/missed-where]
                 {
                     if (await StopTimer(watch.Context))

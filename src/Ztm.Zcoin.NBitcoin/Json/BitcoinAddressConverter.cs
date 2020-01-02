@@ -2,13 +2,13 @@ using System;
 using NBitcoin;
 using Newtonsoft.Json;
 
-namespace Ztm.Zcoin.NBitcoin
+namespace Ztm.Zcoin.NBitcoin.Json
 {
-    public sealed class BitcoinAddressJsonConverter : JsonConverter<BitcoinAddress>
+    public sealed class BitcoinAddressConverter : JsonConverter<BitcoinAddress>
     {
         readonly Network network;
 
-        public BitcoinAddressJsonConverter(Network network)
+        public BitcoinAddressConverter(Network network)
         {
             if (network == null)
             {
