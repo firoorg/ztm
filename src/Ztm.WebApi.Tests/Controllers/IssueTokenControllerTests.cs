@@ -22,11 +22,15 @@ namespace Ztm.WebApi.Controllers
 {
     public sealed class IssueTokenControllerTests
     {
-        readonly Mock<IZcoinRpcClientFactory> factory;
-        readonly Mock<IZcoinRpcClient> client;
+        readonly Mock<IRpcFactory> factory;
         readonly Mock<ITransactionConfirmationWatcher> watcher;
         readonly Mock<ICallbackRepository> callbackRepository;
         readonly Mock<IRuleRepository> ruleRepository;
+
+        // RPCClients
+        readonly Mock<IRawTransactionRpc> rawTransactionRpc;
+        readonly Mock<IExodusInformationRpc> exodusInfomationRpc;
+        readonly Mock<IPropertyManagementRpc> propertyManagementRpc;
 
         readonly IConfiguration configuration;
         readonly ZcoinConfiguration zcoinConfiguration;
@@ -35,14 +39,19 @@ namespace Ztm.WebApi.Controllers
 
         public IssueTokenControllerTests()
         {
-            this.factory = new Mock<IZcoinRpcClientFactory>();
-            this.client = new Mock<IZcoinRpcClient>();
+            this.factory = new Mock<IRpcFactory>();
             this.watcher = new Mock<ITransactionConfirmationWatcher>();
             this.callbackRepository = new Mock<ICallbackRepository>();
             this.ruleRepository = new Mock<IRuleRepository>();
 
-            this.factory.Setup(f => f.CreateRpcClientAsync(It.IsAny<CancellationToken>()))
-                        .ReturnsAsync(this.client.Object);
+            this.rawTransactionRpc = new Mock<IRawTransactionRpc>();
+            this.exodusInfomationRpc = new Mock<IExodusInformationRpc>();
+            this.propertyManagementRpc = new Mock<IPropertyManagementRpc>();
+
+            var anyCancellationToken = It.IsAny<CancellationToken>();
+            this.factory.Setup(f => f.CreateRawTransactionRpcAsync(anyCancellationToken)).ReturnsAsync(this.rawTransactionRpc.Object);
+            this.factory.Setup(f => f.CreateExodusInformationRpcAsync(anyCancellationToken)).ReturnsAsync(this.exodusInfomationRpc.Object);
+            this.factory.Setup(f => f.CreatePropertyManagementRpcAsync(anyCancellationToken)).ReturnsAsync(this.propertyManagementRpc.Object);
 
             var builder = new ConfigurationBuilder();
 
@@ -108,9 +117,9 @@ namespace Ztm.WebApi.Controllers
             var tx = NBitcoin.Transaction.Parse(TestTransaction.Raw1, ZcoinNetworks.Instance.Mainnet);
             var fee = Money.Satoshis(500);
 
-            this.client.Setup
+            this.propertyManagementRpc.Setup
             (
-                c => c.GrantPropertyAsync
+                c => c.GrantAsync
                 (
                     It.Is<Property>(p => p.Id == this.zcoinConfiguration.Property.Id && p.Type == this.zcoinConfiguration.Property.Type),
                     this.zcoinConfiguration.Property.Issuer.Address,
@@ -121,18 +130,18 @@ namespace Ztm.WebApi.Controllers
                 )
             ).ReturnsAsync(tx).Verifiable();
 
-            this.client.Setup
+            this.rawTransactionRpc.Setup
             (
-                c => c.SendRawTransactionAsync
+                c => c.SendAsync
                 (
                     tx,
                     It.IsAny<CancellationToken>()
                 )
             ).ReturnsAsync(tx.GetHash()).Verifiable();
 
-            this.client.Setup
+            this.exodusInfomationRpc.Setup
             (
-                c => c.GetExodusTransactionAsync(tx.GetHash(), It.IsAny<CancellationToken>())
+                c => c.GetTransactionAsync(tx.GetHash(), It.IsAny<CancellationToken>())
             ).ReturnsAsync(new ExodusTransactionInformation{Fee = fee}).Verifiable();
 
             var req = new IssueRequest
@@ -151,13 +160,15 @@ namespace Ztm.WebApi.Controllers
             var result = await this.subject.PostAsync(req, CancellationToken.None);
 
             // Assert.
+            this.propertyManagementRpc.Verify();
+            this.rawTransactionRpc.Verify();
+            this.exodusInfomationRpc.Verify();
+
             var okObjectResult = Assert.IsType<OkObjectResult>(result);
             var returnedTx = Assert.IsType<Transaction>(okObjectResult.Value);
 
             Assert.Equal(tx.GetHash(), returnedTx.Tx);
             Assert.Equal(fee, returnedTx.Fee);
-
-            this.client.Verify();
 
             this.watcher.Verify(
                 w => w.AddTransactionAsync
@@ -196,9 +207,9 @@ namespace Ztm.WebApi.Controllers
             var callbackUrl = new Uri(rawCallbackUrl);
 
             // Setup Rpc client
-            this.client.Setup
+            this.propertyManagementRpc.Setup
             (
-                c => c.GrantPropertyAsync
+                c => c.GrantAsync
                 (
                     It.Is<Property>(p => p.Id == this.zcoinConfiguration.Property.Id && p.Type == this.zcoinConfiguration.Property.Type),
                     this.zcoinConfiguration.Property.Issuer.Address,
@@ -209,18 +220,18 @@ namespace Ztm.WebApi.Controllers
                 )
             ).ReturnsAsync(tx).Verifiable();
 
-            this.client.Setup
+            this.rawTransactionRpc.Setup
             (
-                c => c.SendRawTransactionAsync
+                c => c.SendAsync
                 (
                     tx,
                     It.IsAny<CancellationToken>()
                 )
             ).ReturnsAsync(tx.GetHash()).Verifiable();
 
-            this.client.Setup
+            this.exodusInfomationRpc.Setup
             (
-                c => c.GetExodusTransactionAsync(tx.GetHash(), It.IsAny<CancellationToken>())
+                c => c.GetTransactionAsync(tx.GetHash(), It.IsAny<CancellationToken>())
             ).ReturnsAsync(new ExodusTransactionInformation{Fee = fee}).Verifiable();
 
             // Construct payload
@@ -277,13 +288,16 @@ namespace Ztm.WebApi.Controllers
             var result = await this.subject.PostAsync(req, CancellationToken.None);
 
             // Assert.
+            this.propertyManagementRpc.Verify();
+            this.rawTransactionRpc.Verify();
+            this.exodusInfomationRpc.Verify();
+
             var okObjectResult = Assert.IsType<OkObjectResult>(result);
             var returnedTx = Assert.IsType<Transaction>(okObjectResult.Value);
 
             Assert.Equal(tx.GetHash(), returnedTx.Tx);
             Assert.Equal(fee, returnedTx.Fee);
 
-            this.client.Verify();
             this.callbackRepository.Verify();
             this.watcher.Verify();
 

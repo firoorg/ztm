@@ -21,7 +21,7 @@ namespace Ztm.WebApi.Controllers
         static readonly string StatusSuccess = "success";
         static readonly string StatusTimeout = "tokens-issuing-timeout";
 
-        readonly IZcoinRpcClientFactory factory;
+        readonly IRpcFactory factory;
         readonly IConfiguration configuration;
         readonly ITransactionConfirmationWatcher watcher;
         readonly ICallbackRepository callbackRepository;
@@ -31,7 +31,7 @@ namespace Ztm.WebApi.Controllers
         readonly CallbackConfiguration callbackConfig;
 
         public IssueTokenController(
-            IZcoinRpcClientFactory factory,
+            IRpcFactory factory,
             IConfiguration configuration,
             ITransactionConfirmationWatcher watcher,
             ICallbackRepository callbackRepository,
@@ -75,11 +75,13 @@ namespace Ztm.WebApi.Controllers
         [HttpPost]
         public async Task<IActionResult> PostAsync([FromBody] IssueRequest issueing, CancellationToken cancellationToken)
         {
-            using (var client = await this.factory.CreateRpcClientAsync(cancellationToken))
+            using (var propertyManagementRpc = await this.factory.CreatePropertyManagementRpcAsync(cancellationToken))
+            using (var rawTransactionRpc = await this.factory.CreateRawTransactionRpcAsync(cancellationToken))
+            using (var exodusInformationRpc = await this.factory.CreateExodusInformationRpcAsync(cancellationToken))
             {
                 var property = new Property(this.zcoinConfig.Property.Id, this.zcoinConfig.Property.Type);
 
-                var tx = await client.GrantPropertyAsync
+                var tx = await propertyManagementRpc.GrantAsync
                 (
                     property,
                     this.zcoinConfig.Property.Issuer.Address,
@@ -89,8 +91,8 @@ namespace Ztm.WebApi.Controllers
                     cancellationToken
                 );
 
-                var id = await client.SendRawTransactionAsync(tx, cancellationToken);
-                var info = await client.GetExodusTransactionAsync(id, CancellationToken.None);
+                var id = await rawTransactionRpc.SendAsync(tx, cancellationToken);
+                var info = await exodusInformationRpc.GetTransactionAsync(id, CancellationToken.None);
 
                 var callback = await this.AddCallbackAsync(CancellationToken.None);
                 if (callback != null)
