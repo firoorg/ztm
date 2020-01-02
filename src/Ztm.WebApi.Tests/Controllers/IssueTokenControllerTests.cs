@@ -61,8 +61,8 @@ namespace Ztm.WebApi.Controllers
                 {"Zcoin:Property:Type", "Divisible"},
                 {"Zcoin:Property:Issuer", "Mainnet:a8ULhhDgfdSiXJhSZVdhb8EuDc6R3ogsaM"},
                 {"Zcoin:Property:Distributor", "Mainnet:a8ULhhDgfdSiXJhSZVdhb8EuDc6R3ogsaM"},
-                {"Callback:TransactionConfirmation:Timeout", "00:10"},
-                {"Callback:TransactionConfirmation:RequiredConfirmation", "6"}
+                {"API:Global:TransactionTimeout", "00:10"},
+                {"API:Global:RequiredConfirmation", "6"}
             });
 
             this.configuration = builder.Build();
