@@ -81,11 +81,16 @@ namespace Ztm.Data.Entity.Contexts
         protected virtual void ConfigureExodusPayload(EntityTypeBuilder<ExodusPayload> builder)
         {
             builder.Property(e => e.TransactionHash).IsRequired();
-            builder.Property(e => e.Sender).IsRequired().HasConversion(Converters.ScriptToBytesConverter);
-            builder.Property(e => e.Receiver).IsRequired().HasConversion(Converters.ScriptToBytesConverter);
+            builder.Property(e => e.Sender).IsRequired();
+            builder.Property(e => e.Receiver).IsRequired();
             builder.Property(e => e.Data).IsRequired();
 
             builder.HasKey(e => e.TransactionHash);
+            builder.HasOne<Transaction>()
+                   .WithOne(e => e.ExodusPayload)
+                   .HasForeignKey<ExodusPayload>(e => e.TransactionHash)
+                   .OnDelete(DeleteBehavior.Cascade);
+
         }
 
         protected virtual void ConfigureInput(EntityTypeBuilder<Input> builder)
@@ -154,11 +159,6 @@ namespace Ztm.Data.Entity.Contexts
             builder.Property(e => e.LockTime).IsRequired();
 
             builder.HasKey(e => e.Hash);
-            builder.HasOne(e => e.ExodusPayload)
-                   .WithOne()
-                   .HasForeignKey<ExodusPayload>(e => e.TransactionHash)
-                   .OnDelete(DeleteBehavior.Cascade);
-
         }
 
         protected virtual void ConfigureTransactionConfirmationWatcherRule(

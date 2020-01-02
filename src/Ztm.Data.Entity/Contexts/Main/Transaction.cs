@@ -17,9 +17,8 @@ namespace Ztm.Data.Entity.Contexts.Main
         public long LockTime { get; set; }
 
         public SortedSet<BlockTransaction> Blocks { get; set; }
+        public ExodusPayload ExodusPayload { get; set; }
         public SortedSet<Input> Inputs { get; set; }
         public SortedSet<Output> Outputs { get; set; }
-
-        public ExodusPayload ExodusPayload { get; set; }
     }
 }

@@ -316,8 +316,8 @@ namespace Ztm.Zcoin.Synchronization.Tests
                 Assert.NotNull(payload);
 
                 Assert.Equal(tx.GetHash(), payload.TransactionHash);
-                Assert.Equal(receiver.ScriptPubKey, payload.Receiver);
-                Assert.Equal(sender.ScriptPubKey, payload.Sender);
+                Assert.Equal(receiver.ToString(), payload.Receiver);
+                Assert.Equal(sender.ToString(), payload.Sender);
                 Assert.Equal(rawPayload, payload.Data);
             }
         }
