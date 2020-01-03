@@ -35,18 +35,26 @@ jobs:
       with:
         name: migration
         path: migration
+    - name: Archive Dockerfile Artifact
+      uses: actions/upload-artifact@v1
+      with:
+        name: dockerfile
+        path: src\Ztm.WebApi\Dockerfile
   docker:
     name: Build Docker Image
     needs: build
     runs-on: ubuntu-18.04
     steps:
-    - name: Checkout
-      uses: actions/checkout@v1
     - name: Get Release Artifact
       uses: actions/download-artifact@v1
       with:
         name: release
         path: release
+    - name: Get Dockerfile Artifact
+      uses: actions/download-artifact@v1
+      with:
+        name: dockerfile
+        path: dockerfile
     - name: Fix File Permission
       run: chmod +x release/Ztm.WebApi
     - name: Login Docker
@@ -56,6 +64,6 @@ jobs:
         username: ${{ github.repository }}
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Build Image
-      run: docker build -t docker.pkg.github.com/zcoinofficial/ztm/ztm:${GITHUB_REF##*/} -f $GITHUB_WORKSPACE/src/Ztm.WebApi/Dockerfile release
+      run: docker build -t docker.pkg.github.com/zcoinofficial/ztm/ztm:${GITHUB_REF##*/} -f dockerfile/Dockerfile release
     - name: Push Image
       run: docker push docker.pkg.github.com/zcoinofficial/ztm/ztm:${GITHUB_REF##*/}
