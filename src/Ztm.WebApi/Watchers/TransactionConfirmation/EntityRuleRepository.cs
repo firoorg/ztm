@@ -51,7 +51,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
                     serializer.Deserialize<CallbackResult>(timeoutReader),
                     callback != null
                         ? callback
-                        : (rule.Callback == null ? null : EntityCallbackRepository.ToDomain(rule.Callback)),
+                        : EntityCallbackRepository.ToDomain(rule.Callback),
                     DateTime.SpecifyKind(rule.CreatedAt, DateTimeKind.Utc)
                 );
             }
