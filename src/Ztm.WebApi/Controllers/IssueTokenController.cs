@@ -73,7 +73,6 @@ namespace Ztm.WebApi.Controllers
         {
             using (var propertyManagementRpc = await this.factory.CreatePropertyManagementRpcAsync(cancellationToken))
             using (var rawTransactionRpc = await this.factory.CreateRawTransactionRpcAsync(cancellationToken))
-            using (var exodusInformationRpc = await this.factory.CreateExodusInformationRpcAsync(cancellationToken))
             {
                 var property = new Property(this.zcoinConfig.Property.Id, this.zcoinConfig.Property.Type);
 
