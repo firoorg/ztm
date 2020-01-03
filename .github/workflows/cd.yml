@@ -53,7 +53,7 @@ jobs:
       uses: azure/docker-login@v1
       with:
         login-server: docker.pkg.github.com
-        username: $GITHUB_ACTOR
+        username: ${{ github.repository }}
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Build Image
       run: docker build -t docker.pkg.github.com/zcoinofficial/ztm/ztm:${GITHUB_REF##*/} -f $GITHUB_WORKSPACE/src/Ztm.WebApi/Dockerfile release
