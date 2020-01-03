@@ -2,12 +2,12 @@ using System;
 
 namespace Ztm.Configuration
 {
-    public class APIConfiguration
+    public class ApiConfiguration
     {
-        public GlobalConfiguration Global { get; set; }
+        public DefaultConfiguration Default { get; set; }
     }
 
-    public class GlobalConfiguration
+    public class DefaultConfiguration
     {
         public int RequiredConfirmation { get; set; }
         public TimeSpan TransactionTimeout { get; set; }

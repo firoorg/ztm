@@ -34,7 +34,7 @@ Indivisible property:
 
 ```json
 {
-  "amount": 100000000000000,
+  "amount": "1000000",
   "note": "Initial tokens."
 }
 ```
@@ -43,7 +43,7 @@ Divisible property:
 
 ```json
 {
-  "amount": 1000000.00000000,
+  "amount": "1000000.00000000",
   "note": "Initial tokens."
 }
 ```

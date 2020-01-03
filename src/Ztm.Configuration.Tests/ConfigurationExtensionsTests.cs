@@ -28,8 +28,8 @@ namespace Ztm.Configuration.Tests
                 {"Zcoin:Property:Issuer", "Mainnet:a8ULhhDgfdSiXJhSZVdhb8EuDc6R3ogsaM"},
                 {"Zcoin:Property:Distributor", "Testnet:TEDC38GBncNgtd2pVXeDhLeUGwJmXsiJBA"},
                 {"Zcoin:ZeroMq:Address", "tcp://127.0.0.1:5555"},
-                {"API:Global:RequiredConfirmation", "6"},
-                {"API:Global:TransactionTimeout", "1:00:00"},
+                {"API:Default:RequiredConfirmation", "6"},
+                {"API:Default:TransactionTimeout", "1:00:00"},
             });
 
             this.config = builder.Build();
@@ -64,12 +64,12 @@ namespace Ztm.Configuration.Tests
         }
 
         [Fact]
-        public void GetAPISection_WithCorrectConfiguration_ShouldSuccess()
+        public void GetApiSection_WithCorrectConfiguration_ShouldSuccess()
         {
-            var parsed = this.config.GetAPISection();
+            var parsed = this.config.GetApiSection();
 
-            Assert.Equal(TimeSpan.FromHours(1), parsed.Global.TransactionTimeout);
-            Assert.Equal(6, parsed.Global.RequiredConfirmation);
+            Assert.Equal(TimeSpan.FromHours(1), parsed.Default.TransactionTimeout);
+            Assert.Equal(6, parsed.Default.RequiredConfirmation);
         }
     }
 }

@@ -24,7 +24,7 @@ namespace Ztm.WebApi.Controllers
         readonly IRuleRepository ruleRepository;
 
         readonly ZcoinConfiguration zcoinConfig;
-        readonly APIConfiguration apiConfig;
+        readonly ApiConfiguration apiConfig;
 
         public IssueTokenController(
             IRpcFactory factory,
@@ -65,7 +65,7 @@ namespace Ztm.WebApi.Controllers
             this.ruleRepository = ruleRepository;
 
             this.zcoinConfig = this.configuration.GetZcoinSection();
-            this.apiConfig = this.configuration.GetAPISection();
+            this.apiConfig = this.configuration.GetApiSection();
         }
 
         [HttpPost]
@@ -124,8 +124,8 @@ namespace Ztm.WebApi.Controllers
         {
             return this.watcher.AddTransactionAsync(
                 id,
-                this.apiConfig.Global.RequiredConfirmation,
-                this.apiConfig.Global.TransactionTimeout,
+                this.apiConfig.Default.RequiredConfirmation,
+                this.apiConfig.Default.TransactionTimeout,
                 callback,
                 success,
                 timeout,

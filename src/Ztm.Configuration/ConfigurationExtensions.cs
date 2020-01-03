@@ -14,9 +14,9 @@ namespace Ztm.Configuration
             return config.GetSection("Zcoin").Get<ZcoinConfiguration>();
         }
 
-        public static APIConfiguration GetAPISection(this IConfiguration config)
+        public static ApiConfiguration GetApiSection(this IConfiguration config)
         {
-            return config.GetSection("API").Get<APIConfiguration>();
+            return config.GetSection("API").Get<ApiConfiguration>();
         }
     }
 }
