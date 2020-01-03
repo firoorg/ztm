@@ -2,9 +2,8 @@ using System;
 using NBitcoin;
 using Newtonsoft.Json;
 using Xunit;
-using Ztm.Zcoin.NBitcoin.Json;
 
-namespace Ztm.Zcoin.NBitcoin.Tests.Json
+namespace Ztm.Zcoin.NBitcoin.Json.Tests
 {
     public sealed class UInt256ConverterTests
     {

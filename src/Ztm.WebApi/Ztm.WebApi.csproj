@@ -28,6 +28,7 @@
     <ProjectReference Include="..\Ztm.Hosting.AspNetCore\Ztm.Hosting.AspNetCore.csproj" />
     <ProjectReference Include="..\Ztm.Zcoin.NBitcoin\Ztm.Zcoin.NBitcoin.csproj" />
     <ProjectReference Include="..\Ztm.Zcoin.Watching\Ztm.Zcoin.Watching.csproj" />
+    <ProjectReference Include="..\Ztm.Zcoin.NBitcoin.Json\Ztm.Zcoin.NBitcoin.Json.csproj" />
   </ItemGroup>
 
 </Project>
