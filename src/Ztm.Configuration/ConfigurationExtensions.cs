@@ -16,7 +16,7 @@ namespace Ztm.Configuration
 
         public static ApiConfiguration GetApiSection(this IConfiguration config)
         {
-            return config.GetSection("API").Get<ApiConfiguration>();
+            return config.GetSection("Api").Get<ApiConfiguration>();
         }
     }
 }

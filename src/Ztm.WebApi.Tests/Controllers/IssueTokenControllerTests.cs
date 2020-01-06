@@ -115,7 +115,6 @@ namespace Ztm.WebApi.Controllers
             var amount = PropertyAmount.One;
             var note = "Test Issuing";
             var tx = NBitcoin.Transaction.Parse(TestTransaction.Raw1, ZcoinNetworks.Instance.Mainnet);
-            var fee = Money.Satoshis(500);
 
             this.propertyManagementRpc.Setup
             (
@@ -197,7 +196,6 @@ namespace Ztm.WebApi.Controllers
             var amount = PropertyAmount.One;
             var note = "Test Issuing";
             var tx = NBitcoin.Transaction.Parse(TestTransaction.Raw1, ZcoinNetworks.Instance.Mainnet);
-            var fee = Money.Satoshis(500);
             var rawCallbackUrl = "https://zcoin.io/callback";
             var callbackUrl = new Uri(rawCallbackUrl);
 

@@ -137,6 +137,8 @@ namespace Ztm.WebApi
             // Custom Model Binders.
             options.ModelBinderProviders.Insert(0, new BitcoinAddressModelBinderProvider());
             options.ModelBinderProviders.Insert(0, new PropertyAmountModelBinderProvider());
+
+            // FIXME: remove this when upgrade to .NET Core version >= 2.2
             options.ModelMetadataDetailsProviders.Add(new SuppressChildValidationMetadataProvider(typeof(BitcoinAddress)));
         }
 
