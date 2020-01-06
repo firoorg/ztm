@@ -153,9 +153,9 @@ namespace Ztm.Zcoin.Watching.Tests
                     h => h.ConfirmationUpdateAsync(
                         It.Is<BalanceConfirmation<object, int>>(
                             c => c.Address == TestAddress.Regtest1 &&
-                                 c.Changes.Count() == 2 &&
-                                 c.Changes.Count(bc => bc.Amount == 10 && bc.Confirmation == 2 && bc.Context == ctx1) == 1 &&
-                                 c.Changes.Count(bc => bc.Amount == -10 && bc.Confirmation == 1 && bc.Context == ctx2) == 1
+                                 c.Watches.Count == 2 &&
+                                 c.Watches.ContainsKey(watch1) &&
+                                 c.Watches.ContainsKey(watch2)
                         ),
                         1,
                         confirmationType,
@@ -168,8 +168,8 @@ namespace Ztm.Zcoin.Watching.Tests
                     h => h.ConfirmationUpdateAsync(
                         It.Is<BalanceConfirmation<object, int>>(
                             c => c.Address == TestAddress.Regtest2 &&
-                                 c.Changes.Count() == 1 &&
-                                 c.Changes.Count(bc => bc.Amount == 5 && bc.Confirmation == 1 && bc.Context == ctx3) == 1
+                                 c.Watches.Count == 1 &&
+                                 c.Watches.ContainsKey(watch3)
                         ),
                         1,
                         confirmationType,

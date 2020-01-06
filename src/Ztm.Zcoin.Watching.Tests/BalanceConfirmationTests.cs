@@ -1,6 +1,6 @@
 using System;
-using System.Collections.ObjectModel;
-using System.Linq;
+using System.Collections.Generic;
+using NBitcoin;
 using Xunit;
 using Ztm.Testing;
 
@@ -8,16 +8,16 @@ namespace Ztm.Zcoin.Watching.Tests
 {
     public sealed class BalanceConfirmationTests
     {
-        readonly Collection<ConfirmedBalanceChange<object, int>> changes;
+        readonly Dictionary<BalanceWatch<object, int>, int> watches;
         readonly BalanceConfirmation<object, int> subject;
 
         public BalanceConfirmationTests()
         {
-            this.changes = new Collection<ConfirmedBalanceChange<object, int>>()
+            this.watches = new Dictionary<BalanceWatch<object, int>, int>()
             {
-                new ConfirmedBalanceChange<object, int>(new object(), 1, 1)
+                { new BalanceWatch<object, int>(new object(), uint256.One, uint256.One, TestAddress.Regtest1, 1), 1 }
             };
-            this.subject = new BalanceConfirmation<object, int>(TestAddress.Regtest1, this.changes);
+            this.subject = new BalanceConfirmation<object, int>(TestAddress.Regtest1, this.watches);
         }
 
         [Fact]
@@ -25,27 +25,27 @@ namespace Ztm.Zcoin.Watching.Tests
         {
             Assert.Throws<ArgumentNullException>(
                 "address",
-                () => new BalanceConfirmation<object, int>(null, this.changes)
+                () => new BalanceConfirmation<object, int>(null, this.watches)
             );
         }
 
         [Fact]
-        public void Constructor_WithNullChanges_ShouldThrow()
+        public void Constructor_WithNullWatches_ShouldThrow()
         {
             Assert.Throws<ArgumentNullException>(
-                "changes",
+                "watches",
                 () => new BalanceConfirmation<object, int>(TestAddress.Regtest1, null)
             );
         }
 
         [Fact]
-        public void Constructor_WithEmptyChanges_ShouldThrow()
+        public void Constructor_WithEmptyWatches_ShouldThrow()
         {
             Assert.Throws<ArgumentException>(
-                "changes",
+                "watches",
                 () => new BalanceConfirmation<object, int>(
                     TestAddress.Regtest1,
-                    Enumerable.Empty<ConfirmedBalanceChange<object, int>>()
+                    new Dictionary<BalanceWatch<object, int>, int>()
                 )
             );
         }
@@ -54,7 +54,7 @@ namespace Ztm.Zcoin.Watching.Tests
         public void Constructor_WhenSuccess_ShouldInitializeProperties()
         {
             Assert.Equal(TestAddress.Regtest1, this.subject.Address);
-            Assert.Equal(this.changes, this.subject.Changes);
+            Assert.Equal(this.watches, this.subject.Watches);
         }
     }
 }
