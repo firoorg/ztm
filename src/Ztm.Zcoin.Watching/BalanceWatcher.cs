@@ -78,7 +78,7 @@ namespace Ztm.Zcoin.Watching
                 }
 
                 // Invoke handler.
-                var confirm = new BalanceConfirmation<TContext, TAmount>(group.Key, confirmed);
+                var confirm = new BalanceConfirmation<TContext, TAmount>(block.GetHash(), group.Key, confirmed);
                 var confirmationCount = confirmed.Min(p => p.Value);
 
                 var success = await this.handler.ConfirmationUpdateAsync(
