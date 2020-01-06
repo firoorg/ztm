@@ -1,4 +1,3 @@
-using System;
 using System.Threading.Tasks;
 using NBitcoin;
 using Npgsql;
@@ -13,12 +12,12 @@ namespace Ztm.Data.Entity.Postgres
             FieldDescription fieldDescription)
         {
             var bytes = await base.Read(buf, len, async, fieldDescription);
-            return new uint256(bytes);
+            return new uint256(bytes, false);
         }
 
         async Task INpgsqlTypeHandler<uint256>.Write(uint256 value, NpgsqlWriteBuffer buf,
             NpgsqlLengthCache lengthCache, NpgsqlParameter parameter, bool async)
-            => await Write(value.ToBytes(), buf, lengthCache, parameter, async);
+            => await Write(value.ToBytes(false), buf, lengthCache, parameter, async);
 
         int INpgsqlTypeHandler<uint256>.ValidateAndGetLength(uint256 value, ref NpgsqlLengthCache lengthCache,
             NpgsqlParameter parameter)
