@@ -61,12 +61,11 @@ namespace Ztm.WebApi.Controllers
                 {"Zcoin:Property:Type", "Divisible"},
                 {"Zcoin:Property:Issuer", "Mainnet:a8ULhhDgfdSiXJhSZVdhb8EuDc6R3ogsaM"},
                 {"Zcoin:Property:Distributor", "Mainnet:a8ULhhDgfdSiXJhSZVdhb8EuDc6R3ogsaM"},
-                {"API:Default:TransactionTimeout", "00:10"},
-                {"API:Default:RequiredConfirmation", "6"}
+                {"Api:Default:TransactionTimeout", "00:10"},
+                {"Api:Default:RequiredConfirmation", "6"}
             });
 
             this.configuration = builder.Build();
-
             this.zcoinConfiguration = this.configuration.GetZcoinSection();
 
             this.subject = new IssueTokenController
@@ -120,7 +119,7 @@ namespace Ztm.WebApi.Controllers
                     It.Is<Property>(p => p.Id == this.zcoinConfiguration.Property.Id && p.Type == this.zcoinConfiguration.Property.Type),
                     this.zcoinConfiguration.Property.Issuer.Address,
                     this.zcoinConfiguration.Property.Distributor.Address,
-                    It.Is<PropertyAmount>(a => a.Equals(amount)),
+                    amount,
                     note,
                     It.IsAny<CancellationToken>()
                 )
@@ -200,7 +199,7 @@ namespace Ztm.WebApi.Controllers
                     It.Is<Property>(p => p.Id == this.zcoinConfiguration.Property.Id && p.Type == this.zcoinConfiguration.Property.Type),
                     this.zcoinConfiguration.Property.Issuer.Address,
                     this.zcoinConfiguration.Property.Distributor.Address,
-                    It.Is<PropertyAmount>(a => a.Equals(amount)),
+                    amount,
                     note,
                     It.IsAny<CancellationToken>()
                 )

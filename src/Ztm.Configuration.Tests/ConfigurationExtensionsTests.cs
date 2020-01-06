@@ -28,8 +28,8 @@ namespace Ztm.Configuration.Tests
                 {"Zcoin:Property:Issuer", "Mainnet:a8ULhhDgfdSiXJhSZVdhb8EuDc6R3ogsaM"},
                 {"Zcoin:Property:Distributor", "Testnet:TEDC38GBncNgtd2pVXeDhLeUGwJmXsiJBA"},
                 {"Zcoin:ZeroMq:Address", "tcp://127.0.0.1:5555"},
-                {"API:Default:RequiredConfirmation", "6"},
-                {"API:Default:TransactionTimeout", "1:00:00"},
+                {"Api:Default:RequiredConfirmation", "6"},
+                {"Api:Default:TransactionTimeout", "1:00:00"},
             });
 
             this.config = builder.Build();

@@ -33,7 +33,7 @@ namespace Ztm.WebApi.Tests.Callbacks
         }
 
         [Fact]
-        public void ConstructSqlCallbackRepository_WithNullArguments_ShouldThrow()
+        public void Construct_WithNullArguments_ShouldThrow()
         {
             Assert.Throws<ArgumentNullException>(
                 "db",
