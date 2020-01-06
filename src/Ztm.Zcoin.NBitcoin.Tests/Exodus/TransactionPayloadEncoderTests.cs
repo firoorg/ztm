@@ -90,6 +90,42 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
             this.subject.FakeDecode.Received(1)(TestAddress.Regtest1, TestAddress.Regtest2, this.payload, version);
         }
 
+        [Fact]
+        public void Encode_WithNullArguments_ShouldThrow()
+        {
+            var tx = new FakeExodusTransaction(TestAddress.Regtest1, TestAddress.Regtest2);
+
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream, Encoding.UTF8, true))
+            {
+                Assert.Throws<ArgumentNullException>(
+                    "writer",
+                    () => this.subject.InvokeEncode(null, tx)
+                );
+
+                Assert.Throws<ArgumentNullException>(
+                    "transaction",
+                    () => this.subject.InvokeEncode(writer, null)
+                );
+            }
+        }
+
+        [Fact]
+        public void Encode_WithValidArguments_ShouldSuccess()
+        {
+            var tx = new FakeExodusTransaction(TestAddress.Regtest1, TestAddress.Regtest2);
+
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream, Encoding.UTF8, true))
+            {
+                // Act.
+                this.subject.InvokeEncode(writer, tx);
+
+                // Assert.
+                this.subject.FakeEncode.Received(1)(writer, tx);
+            }
+        }
+
         [Theory]
         [InlineData(0)]
         [InlineData(1)]

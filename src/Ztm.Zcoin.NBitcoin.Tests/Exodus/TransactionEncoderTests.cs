@@ -75,10 +75,10 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
             switch (id)
             {
                 case 0:
-                    encoder = encoder0;
+                    encoder = this.encoder0;
                     break;
                 case 1:
-                    encoder = encoder1;
+                    encoder = this.encoder1;
                     break;
                 default:
                     throw new InvalidOperationException("Type is not supported.");

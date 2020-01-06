@@ -122,13 +122,23 @@ namespace Ztm.Zcoin.Synchronization
                     .Where(b => b.Height == height || b.Height == height - 1)
                     .ToArrayAsync(cancellationToken);
 
-                if (rows.Length == 0 || rows[0].Height != height)
+                data = rows.FirstOrDefault(r => r.Height == height);
+                previous = rows.FirstOrDefault(r => r.Height == height - 1);
+
+                if (data == null)
                 {
                     return null;
                 }
 
-                data = rows[0];
-                previous = (rows.Length > 1) ? rows[1] : null;
+                if (data.Height == 0 && previous != null)
+                {
+                    return null;
+                }
+
+                if (data.Height != 0 && previous == null)
+                {
+                    return null;
+                }
             }
 
             return ToDomain(data, previous);
