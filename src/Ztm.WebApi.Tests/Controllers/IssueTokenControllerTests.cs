@@ -1,8 +1,8 @@
 using System;
-using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -82,30 +82,27 @@ namespace Ztm.WebApi.Controllers
         [Fact]
         public void Construct_WithNullArguments_ShouldThrow()
         {
-            Assert.Throws<ArgumentNullException>(
-                "factory",
-                () => new IssueTokenController(null, this.configuration, this.watcher.Object, this.callbackRepository.Object, this.ruleRepository.Object)
-            );
+            Action act;
 
-            Assert.Throws<ArgumentNullException>(
-                "configuration",
-                () => new IssueTokenController(this.factory.Object, null, this.watcher.Object, this.callbackRepository.Object, this.ruleRepository.Object)
-            );
+            act = () => new IssueTokenController(null, this.configuration, this.watcher.Object, this.callbackRepository.Object, this.ruleRepository.Object);
+            act.Should().Throw<ArgumentNullException>()
+               .And.ParamName.Should().Be("factory");
 
-            Assert.Throws<ArgumentNullException>(
-                "watcher",
-                () => new IssueTokenController(this.factory.Object, this.configuration, null, this.callbackRepository.Object, this.ruleRepository.Object)
-            );
+            act = () => new IssueTokenController(this.factory.Object, null, this.watcher.Object, this.callbackRepository.Object, this.ruleRepository.Object);
+            act.Should().Throw<ArgumentNullException>()
+               .And.ParamName.Should().Be("configuration");
 
-            Assert.Throws<ArgumentNullException>(
-                "callbackRepository",
-                () => new IssueTokenController(this.factory.Object, this.configuration, this.watcher.Object, null, this.ruleRepository.Object)
-            );
+            act = () => new IssueTokenController(this.factory.Object, this.configuration, null, this.callbackRepository.Object, this.ruleRepository.Object);
+            act.Should().Throw<ArgumentNullException>()
+               .And.ParamName.Should().Be("watcher");
 
-            Assert.Throws<ArgumentNullException>(
-                "ruleRepository",
-                () => new IssueTokenController(this.factory.Object, this.configuration, this.watcher.Object, this.callbackRepository.Object, null)
-            );
+            act = () => new IssueTokenController(this.factory.Object, this.configuration, this.watcher.Object, null, this.ruleRepository.Object);
+            act.Should().Throw<ArgumentNullException>()
+               .And.ParamName.Should().Be("callbackRepository");
+
+            act = () => new IssueTokenController(this.factory.Object, this.configuration, this.watcher.Object, this.callbackRepository.Object, null);
+            act.Should().Throw<ArgumentNullException>()
+               .And.ParamName.Should().Be("ruleRepository");
         }
 
         [Fact]
@@ -157,12 +154,8 @@ namespace Ztm.WebApi.Controllers
             this.propertyManagementRpc.Verify();
             this.rawTransactionRpc.Verify();
 
-            var okObjectResult = Assert.IsType<OkObjectResult>(result);
-            var returnedTx = okObjectResult.Value;
-            var properties = returnedTx.GetType().GetProperties();
-            var txVal = (uint256)properties.First(p => p.Name == "Tx").GetValue(returnedTx);
-
-            Assert.Equal(tx.GetHash(), txVal);
+            result.Should().BeOfType<OkObjectResult>()
+                  .Which.Value.Should().BeEquivalentTo(new {Tx = tx.GetHash()});
 
             this.watcher.Verify(
                 w => w.AddTransactionAsync
@@ -279,17 +272,13 @@ namespace Ztm.WebApi.Controllers
             this.propertyManagementRpc.Verify();
             this.rawTransactionRpc.Verify();
 
-            var okObjectResult = Assert.IsType<OkObjectResult>(result);
-            var returnedTx = okObjectResult.Value;
-            var properties = returnedTx.GetType().GetProperties();
-            var txVal = (uint256)properties.First(p => p.Name == "Tx").GetValue(returnedTx);
-
-            Assert.Equal(tx.GetHash(), txVal);
+            result.Should().BeOfType<OkObjectResult>()
+                  .Which.Value.Should().BeEquivalentTo(new {Tx = tx.GetHash()});
 
             this.callbackRepository.Verify();
             this.watcher.Verify();
 
-            Assert.Equal(callback.Id.ToString(), httpContext.Response.Headers.TryGet("X-Callback-ID"));
+            httpContext.Response.Headers.Should().Contain("X-Callback-ID", callback.Id.ToString());
         }
     }
 }
