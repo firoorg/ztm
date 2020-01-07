@@ -93,13 +93,32 @@ namespace Ztm.Hosting
 
         protected abstract Task ExecuteAsync(CancellationToken cancellationToken);
 
+        protected virtual Task PostExecuteAsync(CancellationToken cancellationToken)
+        {
+            return Task.CompletedTask;
+        }
+
+        protected virtual Task PreExecuteAsync(CancellationToken cancellationToken)
+        {
+            return Task.CompletedTask;
+        }
+
         async Task RunBackgroundTaskAsync(CancellationToken cancellationToken)
         {
             await Task.Yield(); // We don't want the code after this to run synchronously.
 
             try
             {
-                await ExecuteAsync(cancellationToken);
+                await PreExecuteAsync(cancellationToken);
+
+                try
+                {
+                    await ExecuteAsync(cancellationToken);
+                }
+                finally
+                {
+                    await PostExecuteAsync(CancellationToken.None);
+                }
             }
             catch (Exception ex) when (!(ex is OperationCanceledException))
             {
