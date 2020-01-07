@@ -2,6 +2,7 @@ using System.Net;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Ztm.WebApi.ApiExceptions;
 
 namespace Ztm.WebApi.Controllers
 {

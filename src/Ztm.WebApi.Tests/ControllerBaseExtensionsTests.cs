@@ -3,6 +3,7 @@ using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Xunit;
+using Ztm.WebApi.ApiExceptions;
 using Ztm.WebApi.Callbacks;
 
 namespace Ztm.WebApi.Tests

@@ -1,6 +1,6 @@
 using System;
 
-namespace Ztm.WebApi
+namespace Ztm.WebApi.ApiExceptions
 {
     public class ApiException : Exception
     {

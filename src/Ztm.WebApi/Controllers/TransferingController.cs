@@ -1,10 +1,13 @@
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using NBitcoin;
+using NBitcoin.RPC;
 using Ztm.Configuration;
+using Ztm.WebApi.ApiExceptions;
 using Ztm.WebApi.Callbacks;
 using Ztm.WebApi.Models;
 using Ztm.WebApi.Watchers.TransactionConfirmation;
@@ -75,15 +78,24 @@ namespace Ztm.WebApi.Controllers
             using (var propertyManagementRpc = await this.factory.CreatePropertyManagementRpcAsync(cancellationToken))
             using (var rawTransactionRpc = await this.factory.CreateRawTransactionRpcAsync(cancellationToken))
             {
-                var tx = await propertyManagementRpc.SendAsync
-                (
-                    this.zcoinConfiguration.Property.Distributor.Address,
-                    req.Destination,
-                    new Property(this.zcoinConfiguration.Property.Id, this.zcoinConfiguration.Property.Type),
-                    req.Amount,
-                    req.ReferenceAmount,
-                    cancellationToken
-                );
+                Transaction tx;
+                try
+                {
+                    tx = await propertyManagementRpc.SendAsync
+                    (
+                        this.zcoinConfiguration.Property.Distributor.Address,
+                        req.Destination,
+                        new Property(this.zcoinConfiguration.Property.Id, this.zcoinConfiguration.Property.Type),
+                        req.Amount,
+                        req.ReferenceAmount,
+                        cancellationToken
+                    );
+                }
+                catch (RPCException ex) when (ex.RPCResult.Error.Code == RPCErrorCode.RPC_TYPE_ERROR
+                    && ex.RPCResult.Error.Message == "Sender has insufficient balance")
+                {
+                    throw new InsufficientTokenException();
+                }
 
                 var id = await rawTransactionRpc.SendAsync(tx, cancellationToken);
 

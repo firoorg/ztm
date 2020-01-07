@@ -1,5 +1,6 @@
 using System;
 using Microsoft.AspNetCore.Mvc;
+using Ztm.WebApi.ApiExceptions;
 using Ztm.WebApi.Callbacks;
 
 namespace Ztm.WebApi

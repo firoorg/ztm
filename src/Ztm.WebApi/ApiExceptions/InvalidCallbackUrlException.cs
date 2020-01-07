@@ -1,7 +1,7 @@
 using System;
 using System.Net;
 
-namespace Ztm.WebApi
+namespace Ztm.WebApi.ApiExceptions
 {
     public sealed class InvalidCallbackUrlException : ApiException
     {
