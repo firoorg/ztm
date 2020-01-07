@@ -9,6 +9,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="System.Threading.Channels" Version="4.5.0" />
   </ItemGroup>
 
   <PropertyGroup>
