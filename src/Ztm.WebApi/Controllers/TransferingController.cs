@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -95,6 +94,10 @@ namespace Ztm.WebApi.Controllers
                     && ex.RPCResult.Error.Message == "Sender has insufficient balance")
                 {
                     throw new InsufficientTokenException();
+                }
+                catch (RPCException ex) when ((int)ex.RPCResult.Error.Code == -212)
+                {
+                    throw new InputsChoosingException();
                 }
 
                 var id = await rawTransactionRpc.SendAsync(tx, cancellationToken);
