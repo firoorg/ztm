@@ -1,5 +1,4 @@
 using System;
-using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Ztm.WebApi.Callbacks;
 

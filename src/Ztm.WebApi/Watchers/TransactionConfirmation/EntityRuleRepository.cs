@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
@@ -16,32 +18,43 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
     public class EntityRuleRepository : IRuleRepository
     {
         readonly IMainDatabaseFactory db;
+        readonly JsonSerializer serializer;
 
-        public EntityRuleRepository(IMainDatabaseFactory db)
+        public EntityRuleRepository(IMainDatabaseFactory db, JsonSerializer serializer)
         {
             if (db == null)
             {
                 throw new ArgumentNullException(nameof(db));
             }
 
+            if (serializer == null)
+            {
+                throw new ArgumentNullException(nameof(serializer));
+            }
+
             this.db = db;
+            this.serializer = serializer;
         }
 
-        public static Rule ToDomain(EntityModel rule, Callback callback = null)
+        public static Rule ToDomain(JsonSerializer serializer, EntityModel rule, Callback callback = null)
         {
-            return new Rule
-            (
-                rule.Id,
-                rule.TransactionHash,
-                rule.Confirmation,
-                rule.OriginalWaitingTime,
-                JsonConvert.DeserializeObject<CallbackResult>(rule.SuccessData),
-                JsonConvert.DeserializeObject<CallbackResult>(rule.TimeoutData),
-                callback != null
-                    ? callback
-                    : (rule.Callback == null ? null : EntityCallbackRepository.ToDomain(rule.Callback)),
-                DateTime.SpecifyKind(rule.CreatedAt, DateTimeKind.Utc)
-            );
+            using (var successReader = new JsonTextReader(new StringReader(rule.SuccessData)))
+            using (var timeoutReader = new JsonTextReader(new StringReader(rule.TimeoutData)))
+            {
+                return new Rule
+                (
+                    rule.Id,
+                    rule.TransactionHash,
+                    rule.Confirmation,
+                    rule.OriginalWaitingTime,
+                    serializer.Deserialize<CallbackResult>(successReader),
+                    serializer.Deserialize<CallbackResult>(timeoutReader),
+                    callback != null
+                        ? callback
+                        : EntityCallbackRepository.ToDomain(rule.Callback),
+                    DateTime.SpecifyKind(rule.CreatedAt, DateTimeKind.Utc)
+                );
+            }
         }
 
         public async Task<Rule> AddAsync(
@@ -68,6 +81,16 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
                 throw new ArgumentNullException(nameof(callback));
             }
 
+            var successStringBuilder = new StringBuilder();
+            var timeoutStringBuilder = new StringBuilder();
+
+            using (var successWriter = new StringWriter(successStringBuilder))
+            using (var timeoutWriter = new StringWriter(timeoutStringBuilder))
+            {
+                this.serializer.Serialize(successWriter, successResponse);
+                this.serializer.Serialize(timeoutWriter, timeoutResponse);
+            }
+
             using (var db = this.db.CreateDbContext())
             {
                 var watch = await db.TransactionConfirmationWatcherRules.AddAsync
@@ -81,8 +104,8 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
                         Confirmation = confirmations,
                         OriginalWaitingTime = waitingTime,
                         RemainingWaitingTime = waitingTime,
-                        SuccessData = JsonConvert.SerializeObject(successResponse),
-                        TimeoutData = JsonConvert.SerializeObject(timeoutResponse),
+                        SuccessData = successStringBuilder.ToString(),
+                        TimeoutData = timeoutStringBuilder.ToString(),
                         CurrentWatchId = null,
                         CreatedAt = DateTime.UtcNow,
                     },
@@ -91,7 +114,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
 
                 await db.SaveChangesAsync(cancellationToken);
 
-                return ToDomain(watch.Entity, callback);
+                return ToDomain(this.serializer, watch.Entity, callback);
             }
         }
 
@@ -104,7 +127,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
                     .Include(e => e.CurrentWatch)
                     .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
-                return rule == null ? null : ToDomain(rule);
+                return rule == null ? null : ToDomain(this.serializer, rule);
             }
         }
 
@@ -151,7 +174,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
                     .Where(e => e.Status == (int)RuleStatus.Pending && e.CurrentWatchId == null)
                     .ToListAsync(cancellationToken);
 
-                return rules.Select(e => ToDomain(e)).ToList();
+                return rules.Select(e => ToDomain(this.serializer, e)).ToList();
             }
         }
 

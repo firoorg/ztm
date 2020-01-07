@@ -24,15 +24,20 @@ namespace Ztm.WebApi.Tests.Callbacks
 
             this.factory.CreateClient().Returns(this.client);
 
-            this.subject = new HttpCallbackExecuter(this.factory);
+            this.subject = new HttpCallbackExecuter(this.factory, JsonSerializer.Create());
         }
 
         [Fact]
-        public void Construct_WithNullFactory_ShouldThrow()
+        public void Construct_WithNullArguments_ShouldThrow()
         {
             Assert.Throws<ArgumentNullException>(
                 "factory",
-                () => new HttpCallbackExecuter(null)
+                () => new HttpCallbackExecuter(null, JsonSerializer.Create())
+            );
+
+            Assert.Throws<ArgumentNullException>(
+                "serializer",
+                () => new HttpCallbackExecuter(this.factory, null)
             );
         }
 

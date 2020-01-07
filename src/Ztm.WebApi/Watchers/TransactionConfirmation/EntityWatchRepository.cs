@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using NBitcoin;
+using Newtonsoft.Json;
 using Ztm.Data.Entity.Contexts;
 using DomainModel = Ztm.Zcoin.Watching.TransactionWatch<Ztm.WebApi.Watchers.TransactionConfirmation.Rule>;
 using EntityModel = Ztm.Data.Entity.Contexts.Main.TransactionConfirmationWatcherWatch;
@@ -15,15 +16,22 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
     public sealed class EntityWatchRepository : IWatchRepository
     {
         readonly IMainDatabaseFactory db;
+        readonly JsonSerializer serializer;
 
-        public EntityWatchRepository(IMainDatabaseFactory db)
+        public EntityWatchRepository(IMainDatabaseFactory db, JsonSerializer serializer)
         {
             if (db == null)
             {
                 throw new ArgumentNullException(nameof(db));
             }
 
+            if (serializer == null)
+            {
+                throw new ArgumentNullException(nameof(serializer));
+            }
+
             this.db = db;
+            this.serializer = serializer;
         }
 
         public async Task AddAsync(DomainModel watch, CancellationToken cancellationToken)
@@ -125,7 +133,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
         {
             return new DomainModel
             (
-                EntityRuleRepository.ToDomain(entity.Rule),
+                EntityRuleRepository.ToDomain(this.serializer, entity.Rule),
                 entity.StartBlockHash,
                 entity.TransactionHash,
                 entity.StartTime,

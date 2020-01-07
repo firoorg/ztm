@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using NBitcoin;
+using Newtonsoft.Json;
 using Xunit;
 using Ztm.Data.Entity.Testing;
 using Ztm.WebApi.Callbacks;
@@ -24,10 +25,12 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 
         public EntityWatchRepositoryTests()
         {
+            var serializer = JsonSerializer.Create();
+
             this.databaseFactory = new TestMainDatabaseFactory();
-            this.callbackRepository = new EntityCallbackRepository(this.databaseFactory);
-            this.ruleRepository = new EntityRuleRepository(this.databaseFactory);
-            this.subject = new EntityWatchRepository(this.databaseFactory);
+            this.callbackRepository = new EntityCallbackRepository(this.databaseFactory, JsonSerializer.Create());
+            this.ruleRepository = new EntityRuleRepository(this.databaseFactory, serializer);
+            this.subject = new EntityWatchRepository(this.databaseFactory, serializer);
         }
 
         public void Dispose()
@@ -36,11 +39,17 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
         }
 
         [Fact]
-        public void Construct_WithNullArgs_ShouldThrow()
+        public void Construct_WithNullArguments_ShouldThrow()
         {
             Assert.Throws<ArgumentNullException>(
                 "db",
-                () => new EntityWatchRepository(null));
+                () => new EntityWatchRepository(null, JsonSerializer.Create())
+            );
+
+            Assert.Throws<ArgumentNullException>(
+                "serializer",
+                () => new EntityWatchRepository(this.databaseFactory, null)
+            );
         }
 
         [Fact]

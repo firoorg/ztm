@@ -1,6 +1,8 @@
 using System;
 using System.Data;
+using System.IO;
 using System.Net;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -13,15 +15,22 @@ namespace Ztm.WebApi.Callbacks
     public class EntityCallbackRepository : ICallbackRepository
     {
         readonly IMainDatabaseFactory db;
+        readonly JsonSerializer serializer;
 
-        public EntityCallbackRepository(IMainDatabaseFactory db)
+        public EntityCallbackRepository(IMainDatabaseFactory db, JsonSerializer serializer)
         {
             if (db == null)
             {
                 throw new ArgumentNullException(nameof(db));
             }
 
+            if (serializer == null)
+            {
+                throw new ArgumentNullException(nameof(serializer));
+            }
+
             this.db = db;
+            this.serializer = serializer;
         }
 
         public static Callback ToDomain(WebApiCallback callback)
@@ -101,6 +110,12 @@ namespace Ztm.WebApi.Callbacks
                 throw new ArgumentNullException(nameof(result));
             }
 
+            var stringBuilder = new StringBuilder();
+            using (var writer = new StringWriter(stringBuilder))
+            {
+                this.serializer.Serialize(writer, result.Data);
+            }
+
             using (var db = this.db.CreateDbContext())
             {
                 await db.WebApiCallbackHistories.AddAsync
@@ -109,7 +124,7 @@ namespace Ztm.WebApi.Callbacks
                     {
                         CallbackId = id,
                         Status = result.Status,
-                        Data = JsonConvert.SerializeObject(result.Data),
+                        Data = stringBuilder.ToString(),
                         InvokedTime = DateTime.UtcNow,
                     }
                 );

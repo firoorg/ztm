@@ -27,7 +27,9 @@ namespace Ztm.Configuration.Tests
                 {"Zcoin:Property:Type", "Divisible"},
                 {"Zcoin:Property:Issuer", "Mainnet:a8ULhhDgfdSiXJhSZVdhb8EuDc6R3ogsaM"},
                 {"Zcoin:Property:Distributor", "Testnet:TEDC38GBncNgtd2pVXeDhLeUGwJmXsiJBA"},
-                {"Zcoin:ZeroMq:Address", "tcp://127.0.0.1:5555"}
+                {"Zcoin:ZeroMq:Address", "tcp://127.0.0.1:5555"},
+                {"Api:Default:RequiredConfirmation", "6"},
+                {"Api:Default:TransactionTimeout", "1:00:00"},
             });
 
             this.config = builder.Build();
@@ -59,6 +61,15 @@ namespace Ztm.Configuration.Tests
             Assert.Equal(NetworkType.Testnet, parsed.Property.Distributor.Type);
             Assert.Equal(BitcoinAddress.Create("TEDC38GBncNgtd2pVXeDhLeUGwJmXsiJBA", ZcoinNetworks.Instance.Testnet), parsed.Property.Distributor.Address);
             Assert.Equal("tcp://127.0.0.1:5555", parsed.ZeroMq.Address);
+        }
+
+        [Fact]
+        public void GetApiSection_WithCorrectConfiguration_ShouldSuccess()
+        {
+            var parsed = this.config.GetApiSection();
+
+            Assert.Equal(TimeSpan.FromHours(1), parsed.Default.TransactionTimeout);
+            Assert.Equal(6, parsed.Default.RequiredConfirmation);
         }
     }
 }
