@@ -4,6 +4,6 @@ namespace Ztm.Threading
     {
         Created,
         Started,
-        Stopped
+        Stopped,
     }
 }

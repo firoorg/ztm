@@ -55,8 +55,7 @@ namespace Ztm.Threading.TimerSchedulers
                 c => handler(c),
                 context,
                 due,
-                (period != null) ? period.Value : Timeout.InfiniteTimeSpan
-            );
+                (period != null) ? period.Value : Timeout.InfiniteTimeSpan);
         }
 
         public void Stop(object schedule)
