@@ -341,6 +341,21 @@ namespace Ztm.Zcoin.Synchronization.Tests
         }
 
         [Fact]
+        public async Task GetAsync_AndHaveNoPreviousBlock_ShouldThrow()
+        {
+            var network = ZcoinNetworks.Instance.Regtest;
+            var genesis = network.GetGenesis();
+            var block = genesis.CreateNextBlockWithCoinbase(BitcoinAddress.Create("TQmbucVmyc8YWrxA8YcirCdJwcFLYK9PPH", network), 1);
+            var height = 1;
+
+            await this.subject.AddAsync(block, height, CancellationToken.None);
+
+            await Assert.ThrowsAsync<InvalidBlockException>(
+                () => this.subject.GetAsync(height, CancellationToken.None)
+            );
+        }
+
+        [Fact]
         public async Task GetAsync_WithEmptyTable_ShouldReturnNull()
         {
             // Act.

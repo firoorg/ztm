@@ -130,14 +130,9 @@ namespace Ztm.Zcoin.Synchronization
                     return null;
                 }
 
-                if (data.Height == 0 && previous != null)
-                {
-                    return null;
-                }
-
                 if (data.Height != 0 && previous == null)
                 {
-                    return null;
+                    throw new InvalidBlockException("The previous block is not found.");
                 }
             }
 

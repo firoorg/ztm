@@ -6,9 +6,9 @@ using Ztm.Zcoin.NBitcoin.Exodus;
 
 namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
 {
-    sealed class TestTransactionPayloadEncoder : TransactionPayloadEncoder
+    sealed class FakeTransactionPayloadEncoder : TransactionPayloadEncoder
     {
-        public TestTransactionPayloadEncoder()
+        public FakeTransactionPayloadEncoder()
         {
             FakeEncode = Substitute.For<Action<BinaryWriter, ExodusTransaction>>();
             FakeDecode = Substitute.For<Func<BitcoinAddress, BitcoinAddress, BinaryReader, int, ExodusTransaction>>();

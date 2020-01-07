@@ -12,7 +12,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
     public sealed class TransactionPayloadEncoderTests : IDisposable
     {
         readonly BinaryReader payload;
-        readonly TestTransactionPayloadEncoder subject;
+        readonly FakeTransactionPayloadEncoder subject;
 
         public TransactionPayloadEncoderTests()
         {
@@ -24,7 +24,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
 
                 try
                 {
-                    this.subject = new TestTransactionPayloadEncoder();
+                    this.subject = new FakeTransactionPayloadEncoder();
                 }
                 catch
                 {
@@ -142,7 +142,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
             using (var stream = new MemoryStream(data, false))
             using (var reader = new BinaryReader(stream))
             {
-                Assert.Throws<EndOfStreamException>(() => TestTransactionPayloadEncoder.DecodePropertyAmount(reader));
+                Assert.Throws<EndOfStreamException>(() => FakeTransactionPayloadEncoder.DecodePropertyAmount(reader));
             }
         }
 
@@ -163,7 +163,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
                 stream.Seek(0, SeekOrigin.Begin);
 
                 // Act.
-                var result = TestTransactionPayloadEncoder.DecodePropertyAmount(reader);
+                var result = FakeTransactionPayloadEncoder.DecodePropertyAmount(reader);
 
                 // Assert.
                 Assert.Equal(amount, result.Indivisible);
@@ -183,7 +183,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
             using (var stream = new MemoryStream(data, false))
             using (var reader = new BinaryReader(stream))
             {
-                Assert.Throws<EndOfStreamException>(() => TestTransactionPayloadEncoder.DecodePropertyId(reader));
+                Assert.Throws<EndOfStreamException>(() => FakeTransactionPayloadEncoder.DecodePropertyId(reader));
             }
         }
 
@@ -205,7 +205,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
 
                 // Act.
                 Assert.Throws<ArgumentOutOfRangeException>(
-                    () => TestTransactionPayloadEncoder.DecodePropertyId(reader)
+                    () => FakeTransactionPayloadEncoder.DecodePropertyId(reader)
                 );
             }
         }
@@ -226,7 +226,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
                 stream.Seek(0, SeekOrigin.Begin);
 
                 // Act.
-                var result = TestTransactionPayloadEncoder.DecodePropertyId(reader);
+                var result = FakeTransactionPayloadEncoder.DecodePropertyId(reader);
 
                 // Assert.
                 Assert.Equal((uint)id, result.Value);
