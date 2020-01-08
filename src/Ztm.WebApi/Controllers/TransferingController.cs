@@ -91,8 +91,8 @@ namespace Ztm.WebApi.Controllers
                         cancellationToken
                     );
                 }
-                catch (RPCException ex) when (ex.RPCResult.Error.Code == RPCErrorCode.RPC_TYPE_ERROR
-                    && ex.RPCResult.Error.Message == "Sender has insufficient balance")
+                catch (RPCException ex) when (ex.RPCResult.Error?.Code == RPCErrorCode.RPC_TYPE_ERROR
+                    && ex.RPCResult.Error?.Message == "Sender has insufficient balance")
                 {
                     return this.InsufficientToken();
                 }

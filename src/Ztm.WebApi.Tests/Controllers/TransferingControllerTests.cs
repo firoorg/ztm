@@ -1,5 +1,7 @@
 using System;
+using System.IO;
 using System.Net;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -8,6 +10,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Moq;
 using NBitcoin;
+using NBitcoin.RPC;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Xunit;
 using Ztm.Configuration;
 using Ztm.Testing;
@@ -301,6 +306,129 @@ namespace Ztm.WebApi.Tests.Controllers
 
             // The transaction should be watched.
             this.ruleRepository.Verify();
+        }
+
+        [Fact]
+        public async Task PostAsync_AndTokenIsInsufficient_ShouldReturnValidStatus()
+        {
+            // Arrange.
+            var objResponse = new
+            {
+                Result = (object)null,
+                Error = new
+                {
+                    Code = -3,
+                    Message = "Sender has insufficient balance",
+                }
+            };
+
+            var from = TestAddress.Mainnet1;
+            var destination = TestAddress.Mainnet2;
+            var amount = PropertyAmount.One;
+            var property = new Property(new PropertyId(3), PropertyType.Divisible);
+
+            var ex = BuildRPCException(objResponse, RPCErrorCode.RPC_TYPE_ERROR, "");
+            this.propertyManagementRpc.Setup(
+                r => r.SendAsync(
+                    It.IsAny<BitcoinAddress>(),
+                    destination,
+                    property,
+                    amount,
+                    It.IsAny<Money>(),
+                    It.IsAny<CancellationToken>()
+                )).ThrowsAsync(ex).Verifiable();
+
+            var req = new TransferingRequest
+            {
+                Amount = amount,
+                Destination = destination,
+                ReferenceAmount = null,
+            };
+
+            var httpContext = new DefaultHttpContext();
+            this.subject.ControllerContext = new ControllerContext
+            {
+                HttpContext = httpContext
+            };
+
+            // Act.
+            var response = await this.subject.PostAsync(req, CancellationToken.None);
+
+            // Assert.
+            this.propertyManagementRpc.Verify();
+
+            response.Should().NotBeNull();
+            response.As<ObjectResult>().StatusCode.Should().Be((int)HttpStatusCode.Conflict);
+        }
+
+        [Fact]
+        public async Task PostAsync_AndFeeIsInsufficient_ShouldReturnValidStatus()
+        {
+            // Arrange.
+            var objResponse = new
+            {
+                Result = (object)null,
+                Error = new
+                {
+                    Code = -212,
+                    Message = "Error choosing inputs for the send transaction",
+                }
+            };
+
+            var from = TestAddress.Mainnet1;
+            var destination = TestAddress.Mainnet2;
+            var amount = PropertyAmount.One;
+            var property = new Property(new PropertyId(3), PropertyType.Divisible);
+
+            var ex = BuildRPCException(objResponse, (RPCErrorCode)(-212), "");
+            this.propertyManagementRpc.Setup(
+                r => r.SendAsync(
+                    It.IsAny<BitcoinAddress>(),
+                    destination,
+                    property,
+                    amount,
+                    It.IsAny<Money>(),
+                    It.IsAny<CancellationToken>()
+                )).ThrowsAsync(ex).Verifiable();
+
+            var req = new TransferingRequest
+            {
+                Amount = amount,
+                Destination = destination,
+                ReferenceAmount = null,
+            };
+
+            var httpContext = new DefaultHttpContext();
+            this.subject.ControllerContext = new ControllerContext
+            {
+                HttpContext = httpContext
+            };
+
+            // Act.
+            var response = await this.subject.PostAsync(req, CancellationToken.None);
+
+            // Assert.
+            this.propertyManagementRpc.Verify();
+
+            response.Should().NotBeNull();
+            response.As<ObjectResult>().StatusCode.Should().Be((int)HttpStatusCode.InternalServerError);
+        }
+
+        static RPCException BuildRPCException(object response, RPCErrorCode code, string message)
+        {
+            var jsonSerializerSettings = new JsonSerializerSettings
+            {
+                ContractResolver = new DefaultContractResolver
+                {
+                    NamingStrategy = new SnakeCaseNamingStrategy()
+                }
+            };
+
+            var rawMessage = JsonConvert.SerializeObject(response, jsonSerializerSettings);
+            using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(rawMessage)))
+            {
+                return new RPCException(code, message, RPCResponse.Load(stream));
+            };
         }
     }
 }
