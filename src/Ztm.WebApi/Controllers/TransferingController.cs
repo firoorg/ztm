@@ -94,11 +94,11 @@ namespace Ztm.WebApi.Controllers
                 catch (RPCException ex) when (ex.RPCResult.Error.Code == RPCErrorCode.RPC_TYPE_ERROR
                     && ex.RPCResult.Error.Message == "Sender has insufficient balance")
                 {
-                    throw new InsufficientTokenException();
+                    return this.InsufficientToken();
                 }
                 catch (RPCException ex) when ((int)ex.RPCResult.Error.Code == -212)
                 {
-                    throw new InputsChoosingException();
+                    return this.InsufficientFee();
                 }
 
                 var id = await rawTransactionRpc.SendAsync(tx, cancellationToken);

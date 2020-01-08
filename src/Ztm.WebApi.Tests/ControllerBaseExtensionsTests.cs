@@ -105,6 +105,18 @@ namespace Ztm.WebApi.Tests
             Assert.Equal(callback.Id.ToString(), retreived);
             Assert.Equal((int)HttpStatusCode.Accepted, result.StatusCode);
         }
+
+        [Fact]
+        public void InsufficientFee_ShouldReturnValidStatus()
+        {
+            Assert.Equal((int)HttpStatusCode.InternalServerError, this.subject.InsufficientFee().StatusCode);
+        }
+
+        [Fact]
+        public void InsufficientToken_ShouldReturnValidStatus()
+        {
+            Assert.Equal((int)HttpStatusCode.Conflict, this.subject.InsufficientToken().StatusCode);
+        }
     }
 
     class TestControllerBase : ControllerBase
