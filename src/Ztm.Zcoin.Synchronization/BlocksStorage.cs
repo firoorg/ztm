@@ -130,9 +130,14 @@ namespace Ztm.Zcoin.Synchronization
                     return null;
                 }
 
+                if (data.Height == 0 && previous != null)
+                {
+                    throw new InvalidBlockException("The previous block of genesis block was found.");
+                }
+
                 if (data.Height != 0 && previous == null)
                 {
-                    throw new InvalidBlockException("The previous block is not found.");
+                    throw new InvalidBlockException("The previous block was not found.");
                 }
             }
 

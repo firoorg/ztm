@@ -356,6 +356,36 @@ namespace Ztm.Zcoin.Synchronization.Tests
         }
 
         [Fact]
+        public async Task GetAsync_AndPreviousBlockOfGenesisWasFound_ShouldThrow()
+        {
+            var network = ZcoinNetworks.Instance.Regtest;
+            var genesis = network.GetGenesis();
+
+            // Add genesis block and -1.
+            await this.subject.AddAsync(genesis, 0, CancellationToken.None);
+            using (var db = this.dbFactory.CreateDbContext())
+            {
+                var entity = new Data.Entity.Contexts.Main.Block
+                {
+                    Height = -1,
+                    Hash = uint256.One,
+                    Version = 0,
+                    Bits = new Target(uint256.Zero),
+                    Nonce = 0,
+                    Time = DateTime.UtcNow,
+                    MerkleRoot = uint256.Zero,
+                };
+                await db.Blocks.AddAsync(entity, CancellationToken.None);
+
+                await db.SaveChangesAsync();
+            }
+
+            await Assert.ThrowsAsync<InvalidBlockException>(
+                () => this.subject.GetAsync(0, CancellationToken.None)
+            );
+        }
+
+        [Fact]
         public async Task GetAsync_WithEmptyTable_ShouldReturnNull()
         {
             // Act.
