@@ -30,12 +30,14 @@ namespace Ztm.WebApi.Tests.Controllers
         readonly Mock<ITransactionConfirmationWatcher> watcher;
         readonly Mock<ICallbackRepository> callbackRepository;
         readonly Mock<IRuleRepository> ruleRepository;
+
         readonly IConfiguration configuration;
-
-        readonly TransferingController subject;
-
         readonly ZcoinConfiguration zcoinConfig;
         readonly ApiConfiguration apiConfig;
+
+        readonly ControllerHelper helper;
+
+        readonly TransferingController subject;
 
         public TransferingControllerTests()
         {
@@ -71,13 +73,15 @@ namespace Ztm.WebApi.Tests.Controllers
             this.zcoinConfig = this.configuration.GetZcoinSection();
             this.apiConfig = this.configuration.GetApiSection();
 
+            this.helper = new ControllerHelper(this.callbackRepository.Object);
+
             this.subject = new TransferingController
             (
                 this.factory.Object,
                 this.watcher.Object,
-                this.callbackRepository.Object,
                 this.ruleRepository.Object,
-                this.configuration
+                this.configuration,
+                this.helper
             );
         }
 
@@ -86,25 +90,25 @@ namespace Ztm.WebApi.Tests.Controllers
         {
             Action act;
 
-            act = () => new TransferingController(null, this.watcher.Object, this.callbackRepository.Object, this.ruleRepository.Object, this.configuration);
+            act = () => new TransferingController(null, this.watcher.Object, this.ruleRepository.Object, this.configuration, this.helper);
             act.Should().Throw<ArgumentNullException>()
                .And.ParamName.Should().Be("factory");
 
-            act = () => new TransferingController(this.factory.Object, null, this.callbackRepository.Object, this.ruleRepository.Object, this.configuration);
+            act = () => new TransferingController(this.factory.Object, null, this.ruleRepository.Object, this.configuration, this.helper);
             act.Should().Throw<ArgumentNullException>()
                .And.ParamName.Should().Be("watcher");
 
-            act = () => new TransferingController(this.factory.Object, this.watcher.Object, null, this.ruleRepository.Object, this.configuration);
-            act.Should().Throw<ArgumentNullException>()
-               .And.ParamName.Should().Be("callbackRepository");
-
-            act = () => new TransferingController(this.factory.Object, this.watcher.Object, this.callbackRepository.Object, null, this.configuration);
+            act = () => new TransferingController(this.factory.Object, this.watcher.Object, null, this.configuration, this.helper);
             act.Should().Throw<ArgumentNullException>()
                .And.ParamName.Should().Be("ruleRepository");
 
-            act = () => new TransferingController(this.factory.Object, this.watcher.Object, this.callbackRepository.Object, this.ruleRepository.Object, null);
+            act = () => new TransferingController(this.factory.Object, this.watcher.Object, this.ruleRepository.Object, null, this.helper);
             act.Should().Throw<ArgumentNullException>()
                .And.ParamName.Should().Be("configuration");
+
+            act = () => new TransferingController(this.factory.Object, this.watcher.Object, this.ruleRepository.Object, this.configuration, null);
+            act.Should().Throw<ArgumentNullException>()
+               .And.ParamName.Should().Be("helper");
         }
 
         [Fact]

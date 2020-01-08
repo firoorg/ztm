@@ -22,6 +22,7 @@ using Ztm.Zcoin.Synchronization;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Newtonsoft.Json;
 using Ztm.Zcoin.NBitcoin.Json;
+using Ztm.WebApi.Controllers;
 
 namespace Ztm.WebApi
 {
@@ -115,6 +116,9 @@ namespace Ztm.WebApi
 
             // Background Services.
             services.AddHostedService<BlocksSynchronizer>();
+
+            // Helper Controller.
+            services.AddSingleton<ControllerHelper>();
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
