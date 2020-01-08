@@ -8,17 +8,19 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Moq;
 using NBitcoin;
+using NBitcoin.RPC;
 using Xunit;
 using Ztm.Configuration;
 using Ztm.Testing;
 using Ztm.WebApi.Callbacks;
+using Ztm.WebApi.Controllers;
 using Ztm.WebApi.Models;
 using Ztm.WebApi.Watchers.TransactionConfirmation;
 using Ztm.Zcoin.NBitcoin;
 using Ztm.Zcoin.NBitcoin.Exodus;
 using Ztm.Zcoin.Rpc;
 
-namespace Ztm.WebApi.Controllers
+namespace Ztm.WebApi.Tests.Controllers
 {
     public sealed class IssueTokenControllerTests
     {
@@ -282,6 +284,51 @@ namespace Ztm.WebApi.Controllers
             this.watcher.Verify();
 
             httpContext.Response.Headers.Should().Contain("X-Callback-ID", callback.Id.ToString());
+        }
+
+        [Fact]
+        public async Task PostAsync_AndFeeIsInsufficient_ShouldReturnValidStatus()
+        {
+            // Arrange.
+            var objResponse = new
+            {
+                Result = (object)null,
+                Error = new
+                {
+                    Code = -212,
+                    Message = "Error choosing inputs for the send transaction",
+                }
+            };
+
+            var amount = PropertyAmount.One;
+            var property = new Property(new PropertyId(3), PropertyType.Divisible);
+
+            var ex = RPCExceptionTesting.BuildException(objResponse, (RPCErrorCode)(-212), "");
+            this.propertyManagementRpc.Setup(
+                r => r.GrantAsync(
+                    property,
+                    It.IsAny<BitcoinAddress>(),
+                    It.IsAny<BitcoinAddress>(),
+                    amount,
+                    It.IsAny<String>(),
+                    It.IsAny<CancellationToken>()
+                )).ThrowsAsync(ex).Verifiable();
+
+            var req = new IssueTokenRequest
+            {
+                Amount = amount,
+            };
+
+            ControllerTesting.SetHttpContext(this.subject);
+
+            // Act.
+            var response = await this.subject.PostAsync(req, CancellationToken.None);
+
+            // Assert.
+            this.propertyManagementRpc.Verify();
+
+            response.Should().NotBeNull();
+            response.As<ObjectResult>().StatusCode.Should().Be((int)HttpStatusCode.InternalServerError);
         }
     }
 }

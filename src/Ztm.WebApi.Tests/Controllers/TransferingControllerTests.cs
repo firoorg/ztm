@@ -152,11 +152,7 @@ namespace Ztm.WebApi.Tests.Controllers
                 )).ReturnsAsync(tx.GetHash()).Verifiable();
 
             // Mock context.
-            var httpContext = new DefaultHttpContext();
-            this.subject.ControllerContext = new ControllerContext
-            {
-                HttpContext = httpContext
-            };
+            ControllerTesting.SetHttpContext(this.subject);
 
             // Act.
             var result = await this.subject.PostAsync(req, cancellationToken);
@@ -278,13 +274,11 @@ namespace Ztm.WebApi.Tests.Controllers
             ).Verifiable();
 
             // Mock context.
-            var httpContext = new DefaultHttpContext();
-            this.subject.ControllerContext = new ControllerContext
+            ControllerTesting.SetHttpContext(this.subject, context =>
             {
-                HttpContext = httpContext
-            };
-            httpContext.Connection.RemoteIpAddress = IPAddress.Loopback;
-            httpContext.Request.Headers.TryAdd("X-Callback-URL", rawCallbackUrl);
+                context.Connection.RemoteIpAddress = IPAddress.Loopback;
+                context.Request.Headers.TryAdd("X-Callback-URL", rawCallbackUrl);
+            });
 
             // Act.
             var result = await this.subject.PostAsync(req, cancellationToken);
@@ -394,11 +388,7 @@ namespace Ztm.WebApi.Tests.Controllers
                 ReferenceAmount = null,
             };
 
-            var httpContext = new DefaultHttpContext();
-            this.subject.ControllerContext = new ControllerContext
-            {
-                HttpContext = httpContext
-            };
+            ControllerTesting.SetHttpContext(this.subject);
 
             // Act.
             var response = await this.subject.PostAsync(req, CancellationToken.None);

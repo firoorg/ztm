@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using NBitcoin;
+using NBitcoin.RPC;
 using Ztm.Configuration;
 using Ztm.WebApi.Callbacks;
 using Ztm.WebApi.Models;
@@ -77,15 +78,23 @@ namespace Ztm.WebApi.Controllers
             {
                 var property = new Property(this.zcoinConfig.Property.Id, this.zcoinConfig.Property.Type);
 
-                var tx = await propertyManagementRpc.GrantAsync
-                (
-                    property,
-                    this.zcoinConfig.Property.Issuer.Address,
-                    this.zcoinConfig.Property.Distributor.Address,
-                    req.Amount,
-                    req.Note,
-                    cancellationToken
-                );
+                Transaction tx;
+                try
+                {
+                    tx = await propertyManagementRpc.GrantAsync
+                    (
+                        property,
+                        this.zcoinConfig.Property.Issuer.Address,
+                        this.zcoinConfig.Property.Distributor.Address,
+                        req.Amount,
+                        req.Note,
+                        cancellationToken
+                    );
+                }
+                catch (RPCException ex) when (ex.IsInsufficientFee())
+                {
+                    return this.InsufficientFee();
+                }
 
                 var id = await rawTransactionRpc.SendAsync(tx, cancellationToken);
 
