@@ -116,6 +116,8 @@ namespace Ztm.WebApi.Controllers
                         new CallbackResult("tokens-transfer-timeout", callbackResult),
                         CancellationToken.None
                     );
+
+                    return Accepted(new {Tx = id});
                 }
 
                 return Ok(new {Tx = id});

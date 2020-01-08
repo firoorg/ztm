@@ -113,6 +113,8 @@ namespace Ztm.WebApi.Controllers
                         new CallbackResult("tokens-issuing-timeout", callbackResult),
                         CancellationToken.None
                     );
+
+                    return Accepted(new {Tx = id});
                 }
 
                 return Ok(new {Tx = id});

@@ -285,8 +285,9 @@ namespace Ztm.WebApi.Tests.Controllers
 
             // Assert.
             result.Should().NotBeNull();
-            result.Should().BeOfType<OkObjectResult>()
-                  .Which.Value.Should().BeEquivalentTo(new {Tx = tx.GetHash()});
+            var objResult = result.As<ObjectResult>();
+            objResult.StatusCode.Should().Be((int)HttpStatusCode.Accepted);
+            objResult.Value.Should().BeEquivalentTo(new {Tx = tx.GetHash()});
 
             this.propertyManagementRpc.Verify();
             this.rawTransactionRpc.Verify();
