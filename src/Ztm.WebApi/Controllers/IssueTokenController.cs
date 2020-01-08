@@ -20,18 +20,19 @@ namespace Ztm.WebApi.Controllers
         readonly IRpcFactory factory;
         readonly IConfiguration configuration;
         readonly ITransactionConfirmationWatcher watcher;
-        readonly ICallbackRepository callbackRepository;
         readonly IRuleRepository ruleRepository;
 
         readonly ZcoinConfiguration zcoinConfig;
         readonly ApiConfiguration apiConfig;
 
+        readonly ControllerHelper helper;
+
         public IssueTokenController(
             IRpcFactory factory,
             IConfiguration configuration,
             ITransactionConfirmationWatcher watcher,
-            ICallbackRepository callbackRepository,
-            IRuleRepository ruleRepository)
+            IRuleRepository ruleRepository,
+            ControllerHelper helper)
         {
             if (factory == null)
             {
@@ -48,21 +49,21 @@ namespace Ztm.WebApi.Controllers
                 throw new ArgumentNullException(nameof(watcher));
             }
 
-            if (callbackRepository == null)
-            {
-                throw new ArgumentNullException(nameof(callbackRepository));
-            }
-
             if (ruleRepository == null)
             {
                 throw new ArgumentNullException(nameof(ruleRepository));
             }
 
+            if (helper == null)
+            {
+                throw new ArgumentNullException(nameof(helper));
+            }
+
             this.factory = factory;
             this.configuration = configuration;
             this.watcher = watcher;
-            this.callbackRepository = callbackRepository;
             this.ruleRepository = ruleRepository;
+            this.helper = helper;
 
             this.zcoinConfig = this.configuration.GetZcoinSection();
             this.apiConfig = this.configuration.GetApiSection();
@@ -88,48 +89,25 @@ namespace Ztm.WebApi.Controllers
 
                 var id = await rawTransactionRpc.SendAsync(tx, cancellationToken);
 
-                var callback = await this.AddCallbackAsync(CancellationToken.None);
+                var callback = await this.helper.TryAddCallbackAsync(this, CancellationToken.None);
                 if (callback != null)
                 {
                     var callbackResult = new {Tx = id};
 
-                    await this.WatchTransactionAsync
+                    await this.watcher.AddTransactionAsync
                     (
                         id,
+                        this.apiConfig.Default.RequiredConfirmation,
+                        this.apiConfig.Default.TransactionTimeout,
+                        callback,
                         new CallbackResult(CallbackResult.StatusSuccess, callbackResult),
                         new CallbackResult("tokens-issuing-timeout", callbackResult),
-                        callback,
                         CancellationToken.None
                     );
                 }
 
                 return Ok(new {Tx = id});
             };
-        }
-
-        async Task<Callback> AddCallbackAsync(CancellationToken cancellationToken)
-        {
-            if (!this.TryGetCallbackUrl(out var url))
-            {
-                return null;
-            }
-
-            var callback = await this.callbackRepository.AddAsync(this.HttpContext.Connection.RemoteIpAddress, url, cancellationToken);
-            this.SetCallbackId(callback.Id);
-
-            return callback;
-        }
-
-        Task<Rule> WatchTransactionAsync(uint256 id, CallbackResult success, CallbackResult timeout, Callback callback, CancellationToken cancellationToken)
-        {
-            return this.watcher.AddTransactionAsync(
-                id,
-                this.apiConfig.Default.RequiredConfirmation,
-                this.apiConfig.Default.TransactionTimeout,
-                callback,
-                success,
-                timeout,
-                cancellationToken);
         }
     }
 }

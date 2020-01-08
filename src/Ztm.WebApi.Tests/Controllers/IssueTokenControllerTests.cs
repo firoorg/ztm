@@ -35,6 +35,8 @@ namespace Ztm.WebApi.Controllers
         readonly IConfiguration configuration;
         readonly ZcoinConfiguration zcoinConfiguration;
 
+        readonly ControllerHelper helper;
+
         readonly IssueTokenController subject;
 
         public IssueTokenControllerTests()
@@ -68,13 +70,15 @@ namespace Ztm.WebApi.Controllers
             this.configuration = builder.Build();
             this.zcoinConfiguration = this.configuration.GetZcoinSection();
 
+            this.helper = new ControllerHelper(this.callbackRepository.Object);
+
             this.subject = new IssueTokenController
             (
                 this.factory.Object,
                 this.configuration,
                 this.watcher.Object,
-                this.callbackRepository.Object,
-                this.ruleRepository.Object
+                this.ruleRepository.Object,
+                this.helper
             );
         }
 
@@ -83,25 +87,25 @@ namespace Ztm.WebApi.Controllers
         {
             Action act;
 
-            act = () => new IssueTokenController(null, this.configuration, this.watcher.Object, this.callbackRepository.Object, this.ruleRepository.Object);
+            act = () => new IssueTokenController(null, this.configuration, this.watcher.Object, this.ruleRepository.Object, this.helper);
             act.Should().Throw<ArgumentNullException>()
                .And.ParamName.Should().Be("factory");
 
-            act = () => new IssueTokenController(this.factory.Object, null, this.watcher.Object, this.callbackRepository.Object, this.ruleRepository.Object);
+            act = () => new IssueTokenController(this.factory.Object, null, this.watcher.Object, this.ruleRepository.Object, this.helper);
             act.Should().Throw<ArgumentNullException>()
                .And.ParamName.Should().Be("configuration");
 
-            act = () => new IssueTokenController(this.factory.Object, this.configuration, null, this.callbackRepository.Object, this.ruleRepository.Object);
+            act = () => new IssueTokenController(this.factory.Object, this.configuration, null, this.ruleRepository.Object, this.helper);
             act.Should().Throw<ArgumentNullException>()
                .And.ParamName.Should().Be("watcher");
 
-            act = () => new IssueTokenController(this.factory.Object, this.configuration, this.watcher.Object, null, this.ruleRepository.Object);
-            act.Should().Throw<ArgumentNullException>()
-               .And.ParamName.Should().Be("callbackRepository");
-
-            act = () => new IssueTokenController(this.factory.Object, this.configuration, this.watcher.Object, this.callbackRepository.Object, null);
+            act = () => new IssueTokenController(this.factory.Object, this.configuration, this.watcher.Object, null, this.helper);
             act.Should().Throw<ArgumentNullException>()
                .And.ParamName.Should().Be("ruleRepository");
+
+            act = () => new IssueTokenController(this.factory.Object, this.configuration, this.watcher.Object, this.ruleRepository.Object, null);
+            act.Should().Throw<ArgumentNullException>()
+               .And.ParamName.Should().Be("helper");
         }
 
         [Fact]
