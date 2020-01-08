@@ -1,7 +1,5 @@
 using System;
-using System.IO;
 using System.Net;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -11,8 +9,6 @@ using Microsoft.Extensions.Configuration;
 using Moq;
 using NBitcoin;
 using NBitcoin.RPC;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using Xunit;
 using Ztm.Configuration;
 using Ztm.Testing;
@@ -327,7 +323,7 @@ namespace Ztm.WebApi.Tests.Controllers
             var amount = PropertyAmount.One;
             var property = new Property(new PropertyId(3), PropertyType.Divisible);
 
-            var ex = BuildRPCException(objResponse, RPCErrorCode.RPC_TYPE_ERROR, "");
+            var ex = RPCExceptionTesting.BuildException(objResponse, RPCErrorCode.RPC_TYPE_ERROR, "");
             this.propertyManagementRpc.Setup(
                 r => r.SendAsync(
                     It.IsAny<BitcoinAddress>(),
@@ -380,7 +376,7 @@ namespace Ztm.WebApi.Tests.Controllers
             var amount = PropertyAmount.One;
             var property = new Property(new PropertyId(3), PropertyType.Divisible);
 
-            var ex = BuildRPCException(objResponse, (RPCErrorCode)(-212), "");
+            var ex = RPCExceptionTesting.BuildException(objResponse, (RPCErrorCode)(-212), "");
             this.propertyManagementRpc.Setup(
                 r => r.SendAsync(
                     It.IsAny<BitcoinAddress>(),
@@ -412,23 +408,6 @@ namespace Ztm.WebApi.Tests.Controllers
 
             response.Should().NotBeNull();
             response.As<ObjectResult>().StatusCode.Should().Be((int)HttpStatusCode.InternalServerError);
-        }
-
-        static RPCException BuildRPCException(object response, RPCErrorCode code, string message)
-        {
-            var jsonSerializerSettings = new JsonSerializerSettings
-            {
-                ContractResolver = new DefaultContractResolver
-                {
-                    NamingStrategy = new SnakeCaseNamingStrategy()
-                }
-            };
-
-            var rawMessage = JsonConvert.SerializeObject(response, jsonSerializerSettings);
-            using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(rawMessage)))
-            {
-                return new RPCException(code, message, RPCResponse.Load(stream));
-            };
         }
     }
 }

@@ -6,7 +6,6 @@ using Microsoft.Extensions.Configuration;
 using NBitcoin;
 using NBitcoin.RPC;
 using Ztm.Configuration;
-using Ztm.WebApi.ApiExceptions;
 using Ztm.WebApi.Callbacks;
 using Ztm.WebApi.Models;
 using Ztm.WebApi.Watchers.TransactionConfirmation;
@@ -91,12 +90,11 @@ namespace Ztm.WebApi.Controllers
                         cancellationToken
                     );
                 }
-                catch (RPCException ex) when (ex.RPCResult.Error?.Code == RPCErrorCode.RPC_TYPE_ERROR
-                    && ex.RPCResult.Error?.Message == "Sender has insufficient balance")
+                catch (RPCException ex) when (ex.IsInsufficientToken())
                 {
                     return this.InsufficientToken();
                 }
-                catch (RPCException ex) when ((int)ex.RPCResult.Error.Code == -212)
+                catch (RPCException ex) when (ex.IsInsufficientFee())
                 {
                     return this.InsufficientFee();
                 }
