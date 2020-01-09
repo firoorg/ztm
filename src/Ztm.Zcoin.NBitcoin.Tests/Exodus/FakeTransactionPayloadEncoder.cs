@@ -6,10 +6,11 @@ using Ztm.Zcoin.NBitcoin.Exodus;
 
 namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
 {
-    sealed class TestTransactionPayloadEncoder : TransactionPayloadEncoder
+    sealed class FakeTransactionPayloadEncoder : TransactionPayloadEncoder
     {
-        public TestTransactionPayloadEncoder()
+        public FakeTransactionPayloadEncoder()
         {
+            FakeEncode = Substitute.For<Action<BinaryWriter, ExodusTransaction>>();
             FakeDecode = Substitute.For<Func<BitcoinAddress, BitcoinAddress, BinaryReader, int, ExodusTransaction>>();
             FakeType = Substitute.For<Func<int>>();
 
@@ -27,6 +28,8 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
         }
 
         public Func<BitcoinAddress, BitcoinAddress, BinaryReader, int, ExodusTransaction> FakeDecode { get; }
+
+        public Action<BinaryWriter, ExodusTransaction> FakeEncode { get; }
 
         public Func<int> FakeType { get; }
 
@@ -51,6 +54,13 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
             return ((ITransactionPayloadEncoder)this).Decode(sender, receiver, payload, version);
         }
 
+        public void InvokeEncode(
+            BinaryWriter writer,
+            ExodusTransaction transaction)
+        {
+            ((ITransactionPayloadEncoder)this).Encode(writer, transaction);
+        }
+
         protected override ExodusTransaction Decode(
             BitcoinAddress sender,
             BitcoinAddress receiver,
@@ -58,6 +68,11 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
             int version)
         {
             return FakeDecode(sender, receiver, payload, version);
+        }
+
+        protected override void Encode(BinaryWriter writer, ExodusTransaction transaction)
+        {
+            FakeEncode(writer, transaction);
         }
     }
 }

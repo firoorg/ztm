@@ -8,5 +8,6 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
         int Type { get; }
 
         ExodusTransaction Decode(BitcoinAddress sender, BitcoinAddress receiver, BinaryReader payload, int version);
+        void Encode(BinaryWriter writer, ExodusTransaction transaction);
     }
 }

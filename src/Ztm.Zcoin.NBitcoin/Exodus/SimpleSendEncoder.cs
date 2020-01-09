@@ -55,5 +55,25 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
                     );
             }
         }
+
+        protected override void Encode(BinaryWriter writer, ExodusTransaction transaction)
+        {
+            var simpleSend = transaction as SimpleSendV0;
+
+            if (simpleSend == null)
+            {
+                throw new ArgumentException("The transaction could not be used as a simple send.", nameof(transaction));
+            }
+
+            switch (simpleSend.Version)
+            {
+                case 0:
+                    EncodePropertyId(writer, simpleSend.Property);
+                    EncodePropertyAmount(writer, simpleSend.Amount);
+                    break;
+                default:
+                    throw new NotSupportedException("The version is not supported.");
+            }
+        }
     }
 }

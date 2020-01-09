@@ -11,10 +11,6 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
     <PackageReference Include="Moq" Version="4.13.1" />
     <PackageReference Include="NSubstitute" Version="4.1.0" />
-    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
     <PackageReference Include="xunit" Version="2.4.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0" />
   </ItemGroup>
@@ -25,6 +21,8 @@
     <ProjectReference Include="..\Ztm.Data.Entity.Testing\Ztm.Data.Entity.Testing.csproj" />
     <ProjectReference Include="..\Ztm.Data.Entity\Ztm.Data.Entity.csproj" />
     <ProjectReference Include="..\Ztm.ObjectModel\Ztm.ObjectModel.csproj" />
+    <ProjectReference Include="..\Ztm.Zcoin.NBitcoin\Ztm.Zcoin.NBitcoin.csproj" />
+    <ProjectReference Include="..\Ztm.Testing\Ztm.Testing.csproj" />
   </ItemGroup>
 
 </Project>

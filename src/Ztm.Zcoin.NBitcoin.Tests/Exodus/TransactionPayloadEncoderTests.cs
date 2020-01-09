@@ -12,7 +12,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
     public sealed class TransactionPayloadEncoderTests : IDisposable
     {
         readonly BinaryReader payload;
-        readonly TestTransactionPayloadEncoder subject;
+        readonly FakeTransactionPayloadEncoder subject;
 
         public TransactionPayloadEncoderTests()
         {
@@ -24,7 +24,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
 
                 try
                 {
-                    this.subject = new TestTransactionPayloadEncoder();
+                    this.subject = new FakeTransactionPayloadEncoder();
                 }
                 catch
                 {
@@ -90,6 +90,42 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
             this.subject.FakeDecode.Received(1)(TestAddress.Regtest1, TestAddress.Regtest2, this.payload, version);
         }
 
+        [Fact]
+        public void Encode_WithNullArguments_ShouldThrow()
+        {
+            var tx = new FakeExodusTransaction(TestAddress.Regtest1, TestAddress.Regtest2);
+
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream, Encoding.UTF8, true))
+            {
+                Assert.Throws<ArgumentNullException>(
+                    "writer",
+                    () => this.subject.InvokeEncode(null, tx)
+                );
+
+                Assert.Throws<ArgumentNullException>(
+                    "transaction",
+                    () => this.subject.InvokeEncode(writer, null)
+                );
+            }
+        }
+
+        [Fact]
+        public void Encode_WithValidArguments_ShouldSuccess()
+        {
+            var tx = new FakeExodusTransaction(TestAddress.Regtest1, TestAddress.Regtest2);
+
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream, Encoding.UTF8, true))
+            {
+                // Act.
+                this.subject.InvokeEncode(writer, tx);
+
+                // Assert.
+                this.subject.FakeEncode.Received(1)(writer, tx);
+            }
+        }
+
         [Theory]
         [InlineData(0)]
         [InlineData(1)]
@@ -106,7 +142,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
             using (var stream = new MemoryStream(data, false))
             using (var reader = new BinaryReader(stream))
             {
-                Assert.Throws<EndOfStreamException>(() => TestTransactionPayloadEncoder.DecodePropertyAmount(reader));
+                Assert.Throws<EndOfStreamException>(() => FakeTransactionPayloadEncoder.DecodePropertyAmount(reader));
             }
         }
 
@@ -127,7 +163,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
                 stream.Seek(0, SeekOrigin.Begin);
 
                 // Act.
-                var result = TestTransactionPayloadEncoder.DecodePropertyAmount(reader);
+                var result = FakeTransactionPayloadEncoder.DecodePropertyAmount(reader);
 
                 // Assert.
                 Assert.Equal(amount, result.Indivisible);
@@ -147,7 +183,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
             using (var stream = new MemoryStream(data, false))
             using (var reader = new BinaryReader(stream))
             {
-                Assert.Throws<EndOfStreamException>(() => TestTransactionPayloadEncoder.DecodePropertyId(reader));
+                Assert.Throws<EndOfStreamException>(() => FakeTransactionPayloadEncoder.DecodePropertyId(reader));
             }
         }
 
@@ -169,7 +205,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
 
                 // Act.
                 Assert.Throws<ArgumentOutOfRangeException>(
-                    () => TestTransactionPayloadEncoder.DecodePropertyId(reader)
+                    () => FakeTransactionPayloadEncoder.DecodePropertyId(reader)
                 );
             }
         }
@@ -190,7 +226,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
                 stream.Seek(0, SeekOrigin.Begin);
 
                 // Act.
-                var result = TestTransactionPayloadEncoder.DecodePropertyId(reader);
+                var result = FakeTransactionPayloadEncoder.DecodePropertyId(reader);
 
                 // Assert.
                 Assert.Equal((uint)id, result.Value);
