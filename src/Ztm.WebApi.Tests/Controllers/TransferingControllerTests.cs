@@ -313,7 +313,6 @@ namespace Ztm.WebApi.Tests.Controllers
                 }
             };
 
-            var from = TestAddress.Mainnet1;
             var destination = TestAddress.Mainnet2;
             var amount = PropertyAmount.One;
             var property = new Property(new PropertyId(3), PropertyType.Divisible);
@@ -366,7 +365,6 @@ namespace Ztm.WebApi.Tests.Controllers
                 }
             };
 
-            var from = TestAddress.Mainnet1;
             var destination = TestAddress.Mainnet2;
             var amount = PropertyAmount.One;
             var property = new Property(new PropertyId(3), PropertyType.Divisible);

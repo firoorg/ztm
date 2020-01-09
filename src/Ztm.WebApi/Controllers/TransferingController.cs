@@ -72,8 +72,6 @@ namespace Ztm.WebApi.Controllers
         [HttpPost]
         public async Task<IActionResult> PostAsync([FromBody] TransferingRequest req, CancellationToken cancellationToken)
         {
-            var network = ZcoinNetworks.Instance.GetNetwork(this.zcoinConfiguration.Network.Type);
-
             using (var propertyManagementRpc = await this.factory.CreatePropertyManagementRpcAsync(cancellationToken))
             using (var rawTransactionRpc = await this.factory.CreateRawTransactionRpcAsync(cancellationToken))
             {
