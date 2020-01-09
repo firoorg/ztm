@@ -159,8 +159,9 @@ namespace Ztm.WebApi.Tests.Controllers
             this.propertyManagementRpc.Verify();
             this.rawTransactionRpc.Verify();
 
-            result.Should().BeOfType<OkObjectResult>()
-                  .Which.Value.Should().BeEquivalentTo(new {Tx = tx.GetHash()});
+            var objResult = result.As<ObjectResult>();
+            objResult.StatusCode.Should().Be((int)HttpStatusCode.Accepted);
+            objResult.Value.Should().BeEquivalentTo(new {Tx = tx.GetHash()});
 
             this.watcher.Verify(
                 w => w.AddTransactionAsync

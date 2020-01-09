@@ -21,7 +21,7 @@ namespace Ztm.WebApi.Controllers
             this.callbackRepository = callbackRepository;
         }
 
-        public async Task<Callback> TryAddCallbackAsync(ControllerBase controller, CancellationToken cancellationToken)
+        public async Task<Callback> RegisterCallbackAsync(ControllerBase controller, CancellationToken cancellationToken)
         {
             if (controller == null)
             {

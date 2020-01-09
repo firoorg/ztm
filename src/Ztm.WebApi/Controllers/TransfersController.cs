@@ -9,7 +9,6 @@ using Ztm.Configuration;
 using Ztm.WebApi.Callbacks;
 using Ztm.WebApi.Models;
 using Ztm.WebApi.Watchers.TransactionConfirmation;
-using Ztm.Zcoin.NBitcoin;
 using Ztm.Zcoin.NBitcoin.Exodus;
 using Ztm.Zcoin.Rpc;
 
@@ -17,9 +16,9 @@ namespace Ztm.WebApi.Controllers
 {
     [Route("transfers")]
     [ApiController]
-    public class TransferingController : ControllerBase
+    public class TransfersController : ControllerBase
     {
-        readonly IRpcFactory factory;
+        readonly IRpcFactory rpc;
         readonly ITransactionConfirmationWatcher watcher;
         readonly IRuleRepository ruleRepository;
 
@@ -28,16 +27,16 @@ namespace Ztm.WebApi.Controllers
 
         readonly ControllerHelper helper;
 
-        public TransferingController(
-            IRpcFactory factory,
+        public TransfersController(
+            IRpcFactory rpc,
             ITransactionConfirmationWatcher watcher,
             IRuleRepository ruleRepository,
             IConfiguration configuration,
             ControllerHelper helper)
         {
-            if (factory == null)
+            if (rpc == null)
             {
-                throw new ArgumentNullException(nameof(factory));
+                throw new ArgumentNullException(nameof(rpc));
             }
 
             if (watcher == null)
@@ -60,7 +59,7 @@ namespace Ztm.WebApi.Controllers
                 throw new ArgumentNullException(nameof(helper));
             }
 
-            this.factory = factory;
+            this.rpc = rpc;
             this.watcher = watcher;
             this.ruleRepository = ruleRepository;
             this.helper = helper;
@@ -70,10 +69,10 @@ namespace Ztm.WebApi.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> PostAsync([FromBody] TransferingRequest req, CancellationToken cancellationToken)
+        public async Task<IActionResult> PostAsync([FromBody] TransfersRequest req, CancellationToken cancellationToken)
         {
-            using (var propertyManagementRpc = await this.factory.CreatePropertyManagementRpcAsync(cancellationToken))
-            using (var rawTransactionRpc = await this.factory.CreateRawTransactionRpcAsync(cancellationToken))
+            using (var propertyManagementRpc = await this.rpc.CreatePropertyManagementRpcAsync(cancellationToken))
+            using (var rawTransactionRpc = await this.rpc.CreateRawTransactionRpcAsync(cancellationToken))
             {
                 Transaction tx;
                 try
@@ -98,7 +97,7 @@ namespace Ztm.WebApi.Controllers
                 }
 
                 var id = await rawTransactionRpc.SendAsync(tx, cancellationToken);
-                var callback = await this.helper.TryAddCallbackAsync(this, CancellationToken.None);
+                var callback = await this.helper.RegisterCallbackAsync(this, CancellationToken.None);
 
                 if (callback != null)
                 {
@@ -114,11 +113,9 @@ namespace Ztm.WebApi.Controllers
                         new CallbackResult("tokens-transfer-timeout", callbackResult),
                         CancellationToken.None
                     );
-
-                    return Accepted(new {Tx = id});
                 }
 
-                return Ok(new {Tx = id});
+                return Accepted(new {Tx = id});
             }
         }
     }

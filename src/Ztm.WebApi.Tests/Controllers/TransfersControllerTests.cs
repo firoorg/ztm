@@ -22,9 +22,9 @@ using Ztm.Zcoin.Rpc;
 
 namespace Ztm.WebApi.Tests.Controllers
 {
-    public sealed class TransferingControllerTests
+    public sealed class TransfersControllerTests
     {
-        readonly Mock<IRpcFactory> factory;
+        readonly Mock<IRpcFactory> rpc;
         readonly Mock<IPropertyManagementRpc> propertyManagementRpc;
         readonly Mock<IRawTransactionRpc> rawTransactionRpc;
 
@@ -38,19 +38,19 @@ namespace Ztm.WebApi.Tests.Controllers
 
         readonly ControllerHelper helper;
 
-        readonly TransferingController subject;
+        readonly TransfersController subject;
 
-        public TransferingControllerTests()
+        public TransfersControllerTests()
         {
-            this.factory = new Mock<IRpcFactory>();
+            this.rpc = new Mock<IRpcFactory>();
             this.propertyManagementRpc = new Mock<IPropertyManagementRpc>();
             this.rawTransactionRpc = new Mock<IRawTransactionRpc>();
 
             var anyCancellationToken = It.IsAny<CancellationToken>();
-            this.factory.Setup(f => f.CreatePropertyManagementRpcAsync(anyCancellationToken))
+            this.rpc.Setup(f => f.CreatePropertyManagementRpcAsync(anyCancellationToken))
                 .ReturnsAsync(this.propertyManagementRpc.Object);
 
-            this.factory.Setup(f => f.CreateRawTransactionRpcAsync(anyCancellationToken))
+            this.rpc.Setup(f => f.CreateRawTransactionRpcAsync(anyCancellationToken))
                 .ReturnsAsync(this.rawTransactionRpc.Object);
 
             this.watcher = new Mock<ITransactionConfirmationWatcher>();
@@ -76,9 +76,9 @@ namespace Ztm.WebApi.Tests.Controllers
 
             this.helper = new ControllerHelper(this.callbackRepository.Object);
 
-            this.subject = new TransferingController
+            this.subject = new TransfersController
             (
-                this.factory.Object,
+                this.rpc.Object,
                 this.watcher.Object,
                 this.ruleRepository.Object,
                 this.configuration,
@@ -91,23 +91,23 @@ namespace Ztm.WebApi.Tests.Controllers
         {
             Action act;
 
-            act = () => new TransferingController(null, this.watcher.Object, this.ruleRepository.Object, this.configuration, this.helper);
+            act = () => new TransfersController(null, this.watcher.Object, this.ruleRepository.Object, this.configuration, this.helper);
             act.Should().Throw<ArgumentNullException>()
-               .And.ParamName.Should().Be("factory");
+               .And.ParamName.Should().Be("rpc");
 
-            act = () => new TransferingController(this.factory.Object, null, this.ruleRepository.Object, this.configuration, this.helper);
+            act = () => new TransfersController(this.rpc.Object, null, this.ruleRepository.Object, this.configuration, this.helper);
             act.Should().Throw<ArgumentNullException>()
                .And.ParamName.Should().Be("watcher");
 
-            act = () => new TransferingController(this.factory.Object, this.watcher.Object, null, this.configuration, this.helper);
+            act = () => new TransfersController(this.rpc.Object, this.watcher.Object, null, this.configuration, this.helper);
             act.Should().Throw<ArgumentNullException>()
                .And.ParamName.Should().Be("ruleRepository");
 
-            act = () => new TransferingController(this.factory.Object, this.watcher.Object, this.ruleRepository.Object, null, this.helper);
+            act = () => new TransfersController(this.rpc.Object, this.watcher.Object, this.ruleRepository.Object, null, this.helper);
             act.Should().Throw<ArgumentNullException>()
                .And.ParamName.Should().Be("configuration");
 
-            act = () => new TransferingController(this.factory.Object, this.watcher.Object, this.ruleRepository.Object, this.configuration, null);
+            act = () => new TransfersController(this.rpc.Object, this.watcher.Object, this.ruleRepository.Object, this.configuration, null);
             act.Should().Throw<ArgumentNullException>()
                .And.ParamName.Should().Be("helper");
         }
@@ -118,7 +118,7 @@ namespace Ztm.WebApi.Tests.Controllers
             // Arrange.
             var amount = new PropertyAmount(10);
             var destination = TestAddress.Mainnet1;
-            var req = new TransferingRequest
+            var req = new TransfersRequest
             {
                 Amount = amount,
                 Destination = destination,
@@ -158,9 +158,9 @@ namespace Ztm.WebApi.Tests.Controllers
             var result = await this.subject.PostAsync(req, cancellationToken);
 
             // Assert.
-            result.Should().NotBeNull();
-            result.Should().BeOfType<OkObjectResult>()
-                  .Which.Value.Should().BeEquivalentTo(new {Tx = tx.GetHash()});
+            var objResult = result.As<ObjectResult>();
+            objResult.StatusCode.Should().Be((int)HttpStatusCode.Accepted);
+            objResult.Value.Should().BeEquivalentTo(new {Tx = tx.GetHash()});
 
             this.propertyManagementRpc.Verify();
             this.rawTransactionRpc.Verify();
@@ -203,7 +203,7 @@ namespace Ztm.WebApi.Tests.Controllers
             var callerIP = IPAddress.Loopback;
             var rawCallbackUrl = "https://zcoin.io/callback";
             var callbackUrl = new Uri(rawCallbackUrl);
-            var req = new TransferingRequest
+            var req = new TransfersRequest
             {
                 Amount = amount,
                 Destination = destination,
@@ -328,7 +328,7 @@ namespace Ztm.WebApi.Tests.Controllers
                     It.IsAny<CancellationToken>()
                 )).ThrowsAsync(ex).Verifiable();
 
-            var req = new TransferingRequest
+            var req = new TransfersRequest
             {
                 Amount = amount,
                 Destination = destination,
@@ -380,7 +380,7 @@ namespace Ztm.WebApi.Tests.Controllers
                     It.IsAny<CancellationToken>()
                 )).ThrowsAsync(ex).Verifiable();
 
-            var req = new TransferingRequest
+            var req = new TransfersRequest
             {
                 Amount = amount,
                 Destination = destination,

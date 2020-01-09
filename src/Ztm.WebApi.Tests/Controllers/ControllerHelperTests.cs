@@ -35,16 +35,16 @@ namespace Ztm.WebApi.Tests.Controllers
         }
 
         [Fact]
-        public async Task TryAddCallbackAsync_WithNullArgument_ShouldThrow()
+        public async Task RegisterCallbackAsync_WithNullArgument_ShouldThrow()
         {
             await Assert.ThrowsAsync<ArgumentNullException>(
                 "controller",
-                () => this.subject.TryAddCallbackAsync(null, CancellationToken.None)
+                () => this.subject.RegisterCallbackAsync(null, CancellationToken.None)
             );
         }
 
         [Fact]
-        public async Task TryAddCallbackAsync_WithoutCallbackUrl_ShouldReturnNull()
+        public async Task RegisterCallbackAsync_WithoutCallbackUrl_ShouldReturnNull()
         {
             // Arrange.
             var controller = new Mock<ControllerBase>();
@@ -54,7 +54,7 @@ namespace Ztm.WebApi.Tests.Controllers
             };
 
             // Act.
-            var callback = await this.subject.TryAddCallbackAsync(controller.Object, CancellationToken.None);
+            var callback = await this.subject.RegisterCallbackAsync(controller.Object, CancellationToken.None);
 
             // Assert.
             this.callbackRepository.Verify
@@ -72,7 +72,7 @@ namespace Ztm.WebApi.Tests.Controllers
         }
 
         [Fact]
-        public async Task TryAddCallbackAsync_WithCallbackUrl_ShouldSuccess()
+        public async Task RegisterCallbackAsync_WithCallbackUrl_ShouldSuccess()
         {
             // Arrange.
             var callerIP = IPAddress.Loopback;
@@ -109,7 +109,7 @@ namespace Ztm.WebApi.Tests.Controllers
                 )).ReturnsAsync(callback).Verifiable();
 
             // Act.
-            var returnedCallback = await this.subject.TryAddCallbackAsync(controller.Object, CancellationToken.None);
+            var returnedCallback = await this.subject.RegisterCallbackAsync(controller.Object, CancellationToken.None);
 
             // Assert.
             this.callbackRepository.Verify();

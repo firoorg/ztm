@@ -98,7 +98,7 @@ namespace Ztm.WebApi.Controllers
 
                 var id = await rawTransactionRpc.SendAsync(tx, cancellationToken);
 
-                var callback = await this.helper.TryAddCallbackAsync(this, CancellationToken.None);
+                var callback = await this.helper.RegisterCallbackAsync(this, CancellationToken.None);
                 if (callback != null)
                 {
                     var callbackResult = new {Tx = id};
@@ -113,11 +113,9 @@ namespace Ztm.WebApi.Controllers
                         new CallbackResult("tokens-issuing-timeout", callbackResult),
                         CancellationToken.None
                     );
-
-                    return Accepted(new {Tx = id});
                 }
 
-                return Ok(new {Tx = id});
+                return Accepted(new {Tx = id});
             };
         }
     }
