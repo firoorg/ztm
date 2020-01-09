@@ -19,6 +19,7 @@ using Ztm.WebApi.Watchers.TransactionConfirmation;
 using Ztm.Zcoin.NBitcoin;
 using Ztm.Zcoin.NBitcoin.Exodus;
 using Ztm.Zcoin.Rpc;
+using Ztm.Zcoin.Rpc.Tests;
 
 namespace Ztm.WebApi.Tests.Controllers
 {

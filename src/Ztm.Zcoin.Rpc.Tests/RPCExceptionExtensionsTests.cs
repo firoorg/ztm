@@ -1,8 +1,7 @@
 using NBitcoin.RPC;
 using Xunit;
-using Ztm.WebApi.Controllers;
 
-namespace Ztm.WebApi.Tests.Controllers
+namespace Ztm.Zcoin.Rpc.Tests
 {
     public sealed class RPCExceptionExtensionsTests
     {

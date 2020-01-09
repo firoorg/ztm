@@ -4,7 +4,7 @@ using NBitcoin.RPC;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
-namespace Ztm.WebApi.Tests.Controllers
+namespace Ztm.Zcoin.Rpc.Tests
 {
     public static class RPCExceptionTesting
     {

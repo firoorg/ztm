@@ -1,6 +1,6 @@
 using NBitcoin.RPC;
 
-namespace Ztm.WebApi.Controllers
+namespace Ztm.Zcoin.Rpc
 {
     public static class RPCExceptionExtensions
     {
