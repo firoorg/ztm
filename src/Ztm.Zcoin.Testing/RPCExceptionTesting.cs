@@ -4,11 +4,11 @@ using NBitcoin.RPC;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
-namespace Ztm.Zcoin.Rpc.Tests
+namespace Ztm.Zcoin.Testing
 {
     public static class RPCExceptionTesting
     {
-        public static RPCException BuildException(object response, RPCErrorCode code, string message)
+        public static RPCException BuildException(RPCErrorCode code, string message, object response)
         {
             var jsonSerializerSettings = new JsonSerializerSettings
             {

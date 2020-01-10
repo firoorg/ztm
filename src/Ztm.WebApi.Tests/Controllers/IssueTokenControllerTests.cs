@@ -19,7 +19,7 @@ using Ztm.WebApi.Watchers.TransactionConfirmation;
 using Ztm.Zcoin.NBitcoin;
 using Ztm.Zcoin.NBitcoin.Exodus;
 using Ztm.Zcoin.Rpc;
-using Ztm.Zcoin.Rpc.Tests;
+using Ztm.Zcoin.Testing;
 
 namespace Ztm.WebApi.Tests.Controllers
 {
@@ -293,7 +293,10 @@ namespace Ztm.WebApi.Tests.Controllers
         public async Task PostAsync_AndFeeIsInsufficient_ShouldReturnValidStatus()
         {
             // Arrange.
-            var objResponse = new
+            var amount = PropertyAmount.One;
+            var property = new Property(new PropertyId(3), PropertyType.Divisible);
+
+            var ex = RPCExceptionTesting.BuildException((RPCErrorCode)(-212), "", new
             {
                 Result = (object)null,
                 Error = new
@@ -301,12 +304,7 @@ namespace Ztm.WebApi.Tests.Controllers
                     Code = -212,
                     Message = "Error choosing inputs for the send transaction",
                 }
-            };
-
-            var amount = PropertyAmount.One;
-            var property = new Property(new PropertyId(3), PropertyType.Divisible);
-
-            var ex = RPCExceptionTesting.BuildException(objResponse, (RPCErrorCode)(-212), "");
+            });
             this.propertyManagementRpc.Setup(
                 r => r.GrantAsync(
                     property,
