@@ -4,6 +4,8 @@ jobs:
   build:
     name: Build
     runs-on: windows-latest
+    env:
+      ZTM_MAIN_DATABASE: Host=127.0.0.1;Database=postgres;Username=postgres;Password=postgres
     steps:
     - name: Checkout
       uses: actions/checkout@v1
@@ -23,6 +25,13 @@ jobs:
     - name: Build E2E Runner
       shell: cmd
       run: dotnet.exe build src\Ztm.EndToEndTests
+    - name: Install main database
+      shell: cmd
+      run: choco.exe install postgresql --version=10.6.0.20190131 --params '/Password:postgres' --params-global
+    - name: Migrate main database
+      shell: cmd
+      working-directory: ./src/Ztm.Data.Entity.Postgres
+      run: dotnet.exe ef database update
     - name: Unit Test
       shell: cmd
       run: dotnet.exe test --no-build -r test-results --collect "Code Coverage" src\Ztm.sln
