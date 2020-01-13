@@ -119,7 +119,7 @@ namespace Ztm.WebApi.Tests.Controllers
             // Arrange.
             var amount = new PropertyAmount(10);
             var destination = TestAddress.Mainnet1;
-            var req = new TransfersRequest
+            var req = new TransferRequest
             {
                 Amount = amount,
                 Destination = destination,
@@ -204,7 +204,7 @@ namespace Ztm.WebApi.Tests.Controllers
             var callerIP = IPAddress.Loopback;
             var rawCallbackUrl = "https://zcoin.io/callback";
             var callbackUrl = new Uri(rawCallbackUrl);
-            var req = new TransfersRequest
+            var req = new TransferRequest
             {
                 Amount = amount,
                 Destination = destination,
@@ -327,7 +327,7 @@ namespace Ztm.WebApi.Tests.Controllers
                     It.IsAny<CancellationToken>()
                 )).ThrowsAsync(ex).Verifiable();
 
-            var req = new TransfersRequest
+            var req = new TransferRequest
             {
                 Amount = amount,
                 Destination = destination,
@@ -377,7 +377,7 @@ namespace Ztm.WebApi.Tests.Controllers
                     It.IsAny<CancellationToken>()
                 )).ThrowsAsync(ex).Verifiable();
 
-            var req = new TransfersRequest
+            var req = new TransferRequest
             {
                 Amount = amount,
                 Destination = destination,

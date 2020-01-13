@@ -69,7 +69,7 @@ namespace Ztm.WebApi.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> PostAsync([FromBody] TransfersRequest req, CancellationToken cancellationToken)
+        public async Task<IActionResult> PostAsync([FromBody] TransferRequest req, CancellationToken cancellationToken)
         {
             using (var propertyManagementRpc = await this.rpc.CreatePropertyManagementRpcAsync(cancellationToken))
             using (var rawTransactionRpc = await this.rpc.CreateRawTransactionRpcAsync(cancellationToken))
