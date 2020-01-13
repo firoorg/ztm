@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -24,11 +25,11 @@ namespace Ztm.Data.Entity.Postgres.Tests
         }
 
         [ConditionalTheory(RequiredEnv = "ZTM_MAIN_DATABASE")]
-        [InlineData("0000000000000000000000000000000000000000000000000000000000000000", 0)]
-        [InlineData("0000000000000000000000000000000000000000000000000000000000000001", 0)]
-        [InlineData("47EAB73075941E140A7F60AC9029220E27464335F94EF717927D10BB79019ED4", 0)]
-        [InlineData("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF", 0)]
-        public async Task SaveAndLoadUint256_ToDatabase_ShouldBeStoreAsBigEndian(string data, int height)
+        [InlineData("0000000000000000000000000000000000000000000000000000000000000000")]
+        [InlineData("0000000000000000000000000000000000000000000000000000000000000001")]
+        [InlineData("47EAB73075941E140A7F60AC9029220E27464335F94EF717927D10BB79019ED4")]
+        [InlineData("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")]
+        public async Task SaveAndLoadUint256_ToDatabase_ShouldBeStoreAsBigEndian(string data)
         {
             using (var db = this.fixture.CreateMainDatabase())
             {
@@ -37,7 +38,7 @@ namespace Ztm.Data.Entity.Postgres.Tests
 
                 var entity = new Ztm.Data.Entity.Contexts.Main.Block
                 {
-                    Height = height,
+                    Height = 0,
                     Hash = parsed,
                     Version = 0,
                     Bits = new Target(0),
@@ -51,21 +52,11 @@ namespace Ztm.Data.Entity.Postgres.Tests
                 await db.SaveChangesAsync();
 
                 // Assert Endianness.
-                using (var command = db.Database.GetDbConnection().CreateCommand())
-                {
-                    command.CommandText = "SELECT \"Hash\" FROM \"Blocks\" LIMIT 1;";
-                    db.Database.OpenConnection();
-                    using (var result = command.ExecuteReader())
-                    {
-                        Assert.True(result.Read(), "No available data");
-                        var record = (IDataRecord)result;
-                        var hash = record[0] as byte[]; // Get raw data.
+                var blockHashes = this.fixture.ExecuteSql("SELECT \"Hash\" FROM \"Blocks\" LIMIT 1;")
+                                              .Select(r => r[0] as byte[]);
 
-                        Assert.Equal(binary, hash);
-                    }
-
-                    db.Database.CloseConnection();
-                }
+                var hash = Assert.Single(blockHashes);
+                Assert.Equal(binary, hash);
 
                 // Get uint256 back.
                 var block = await db.Blocks.FirstOrDefaultAsync();
