@@ -58,7 +58,7 @@ namespace Ztm.Data.Entity.Postgres.Tests
             }
 
             var query = "TRUNCATE TABLE " + string.Join(", ", tables.Select(t => '"' + t + '"'));
-            this.subject.Database.ExecuteSqlCommand(query);
+            this.subject.Database.ExecuteSqlCommand(query); // lgtm [cs/second-order-sql-injection]
 
             this.subject.Dispose();
         }
