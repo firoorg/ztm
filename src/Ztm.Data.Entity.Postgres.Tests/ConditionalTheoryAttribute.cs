@@ -5,24 +5,22 @@ namespace Ztm.Data.Entity.Postgres.Tests
 {
     public class ConditionalTheoryAttribute : TheoryAttribute
     {
-        public virtual string RequiredEnv
+        public string RequiredEnv { get; set; }
+
+        public override string Skip
         {
             get
             {
-                return _RequiredEnv;
-            }
-
-            set
-            {
-                _RequiredEnv = value;
-
-                if (Environment.GetEnvironmentVariable(value) == null)
+                if (RequiredEnv != null)
                 {
-                    Skip = $"No {value} environment variable is set.";
+                    if (Environment.GetEnvironmentVariable(RequiredEnv) == null)
+                    {
+                        return $"No {RequiredEnv} environment variable is set.";
+                    }
                 }
+
+                return null;
             }
         }
-
-        string _RequiredEnv;
     }
 }
