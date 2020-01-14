@@ -30,7 +30,7 @@ jobs:
       run: choco.exe install postgresql --version=10.6.0.20190131 --params '/Password:postgres' --params-global --no-progress
     - name: Create Main Database
       shell: cmd
-      working-directory: ./src/Ztm.Data.Entity.Postgres
+      working-directory: src\Ztm.Data.Entity.Postgres
       run: dotnet.exe ef database update
     - name: Unit Test
       shell: cmd
