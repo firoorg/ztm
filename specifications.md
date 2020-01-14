@@ -78,12 +78,33 @@ Response:
 POST /transfers
 ```
 
-Sample request to transfer 1,000 tokens from distributor to address `aBydwLXzmGc7j4mr4CVf461NvBjBFk71U1`:
+Sample request to transfer 1,000 tokens from distributor to address `aBydwLXzmGc7j4mr4CVf461NvBjBFk71U1`
+
+Indivisible property:
 
 ```json
 {
-  "amount": 100000000000,
+  "amount": "1000",
   "destination": "aBydwLXzmGc7j4mr4CVf461NvBjBFk71U1"
+}
+```
+
+Divisible property:
+
+```json
+{
+  "amount": "1000.00000000",
+  "destination": "aBydwLXzmGc7j4mr4CVf461NvBjBFk71U1"
+}
+```
+
+With reference amount:
+
+```json
+{
+  "amount": "1000",
+  "destination": "aBydwLXzmGc7j4mr4CVf461NvBjBFk71U1",
+  "reference_amount": "0.00000100"
 }
 ```
 
@@ -91,18 +112,25 @@ Response:
 
 ```json
 {
-  "tx": "7f32a54475a5da05a70fea560275b644be15fa84cdaa2a5cec70c56d20b0fad3",
-  "fee": 1000
+  "tx": "7f32a54475a5da05a70fea560275b644be15fa84cdaa2a5cec70c56d20b0fad3"
 }
 ```
 
 `success` callback:
 
-- No callback-specific data.
+```json
+{
+  "tx": "7f32a54475a5da05a70fea560275b644be15fa84cdaa2a5cec70c56d20b0fad3"
+}
+```
 
 `tokens-transfer-timeout` callback:
 
-- No callback-specific data.
+```json
+{
+  "tx": "7f32a54475a5da05a70fea560275b644be15fa84cdaa2a5cec70c56d20b0fad3"
+}
+```
 
 ### Receive Tokens
 

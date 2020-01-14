@@ -14,35 +14,29 @@ using Ztm.Zcoin.Rpc;
 
 namespace Ztm.WebApi.Controllers
 {
-    [Route("issue-tokens")]
+    [Route("transfers")]
     [ApiController]
-    public class IssueTokenController : ControllerBase
+    public class TransfersController : ControllerBase
     {
-        readonly IRpcFactory factory;
-        readonly IConfiguration configuration;
+        readonly IRpcFactory rpc;
         readonly ITransactionConfirmationWatcher watcher;
         readonly IRuleRepository ruleRepository;
 
-        readonly ZcoinConfiguration zcoinConfig;
-        readonly ApiConfiguration apiConfig;
+        readonly ApiConfiguration apiConfiguration;
+        readonly ZcoinConfiguration zcoinConfiguration;
 
         readonly ControllerHelper helper;
 
-        public IssueTokenController(
-            IRpcFactory factory,
-            IConfiguration configuration,
+        public TransfersController(
+            IRpcFactory rpc,
             ITransactionConfirmationWatcher watcher,
             IRuleRepository ruleRepository,
+            IConfiguration configuration,
             ControllerHelper helper)
         {
-            if (factory == null)
+            if (rpc == null)
             {
-                throw new ArgumentNullException(nameof(factory));
-            }
-
-            if (configuration == null)
-            {
-                throw new ArgumentNullException(nameof(configuration));
+                throw new ArgumentNullException(nameof(rpc));
             }
 
             if (watcher == null)
@@ -55,41 +49,47 @@ namespace Ztm.WebApi.Controllers
                 throw new ArgumentNullException(nameof(ruleRepository));
             }
 
+            if (configuration == null)
+            {
+                throw new ArgumentNullException(nameof(configuration));
+            }
+
             if (helper == null)
             {
                 throw new ArgumentNullException(nameof(helper));
             }
 
-            this.factory = factory;
-            this.configuration = configuration;
+            this.rpc = rpc;
             this.watcher = watcher;
             this.ruleRepository = ruleRepository;
             this.helper = helper;
 
-            this.zcoinConfig = this.configuration.GetZcoinSection();
-            this.apiConfig = this.configuration.GetApiSection();
+            this.apiConfiguration = configuration.GetApiSection();
+            this.zcoinConfiguration = configuration.GetZcoinSection();
         }
 
         [HttpPost]
-        public async Task<IActionResult> PostAsync([FromBody] IssueTokenRequest req, CancellationToken cancellationToken)
+        public async Task<IActionResult> PostAsync([FromBody] TransferRequest req, CancellationToken cancellationToken)
         {
-            using (var propertyManagementRpc = await this.factory.CreatePropertyManagementRpcAsync(cancellationToken))
-            using (var rawTransactionRpc = await this.factory.CreateRawTransactionRpcAsync(cancellationToken))
+            using (var propertyManagementRpc = await this.rpc.CreatePropertyManagementRpcAsync(cancellationToken))
+            using (var rawTransactionRpc = await this.rpc.CreateRawTransactionRpcAsync(cancellationToken))
             {
-                var property = new Property(this.zcoinConfig.Property.Id, this.zcoinConfig.Property.Type);
-
                 Transaction tx;
                 try
                 {
-                    tx = await propertyManagementRpc.GrantAsync
+                    tx = await propertyManagementRpc.SendAsync
                     (
-                        property,
-                        this.zcoinConfig.Property.Issuer.Address,
-                        this.zcoinConfig.Property.Distributor.Address,
+                        this.zcoinConfiguration.Property.Distributor.Address,
+                        req.Destination,
+                        new Property(this.zcoinConfiguration.Property.Id, this.zcoinConfiguration.Property.Type),
                         req.Amount,
-                        req.Note,
+                        req.ReferenceAmount,
                         cancellationToken
                     );
+                }
+                catch (RPCException ex) when (ex.IsInsufficientToken())
+                {
+                    return this.InsufficientToken();
                 }
                 catch (RPCException ex) when (ex.IsInsufficientFee())
                 {
@@ -97,8 +97,8 @@ namespace Ztm.WebApi.Controllers
                 }
 
                 var id = await rawTransactionRpc.SendAsync(tx, cancellationToken);
-
                 var callback = await this.helper.RegisterCallbackAsync(this, CancellationToken.None);
+
                 if (callback != null)
                 {
                     var callbackResult = new {Tx = id};
@@ -106,17 +106,17 @@ namespace Ztm.WebApi.Controllers
                     await this.watcher.AddTransactionAsync
                     (
                         id,
-                        this.apiConfig.Default.RequiredConfirmation,
-                        this.apiConfig.Default.TransactionTimeout,
+                        this.apiConfiguration.Default.RequiredConfirmation,
+                        this.apiConfiguration.Default.TransactionTimeout,
                         callback,
                         new CallbackResult(CallbackResult.StatusSuccess, callbackResult),
-                        new CallbackResult("tokens-issuing-timeout", callbackResult),
+                        new CallbackResult("tokens-transfer-timeout", callbackResult),
                         CancellationToken.None
                     );
                 }
 
                 return Accepted(new {Tx = id});
-            };
+            }
         }
     }
 }

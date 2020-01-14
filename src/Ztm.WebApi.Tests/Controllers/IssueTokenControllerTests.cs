@@ -8,17 +8,20 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Moq;
 using NBitcoin;
+using NBitcoin.RPC;
 using Xunit;
 using Ztm.Configuration;
 using Ztm.Testing;
 using Ztm.WebApi.Callbacks;
+using Ztm.WebApi.Controllers;
 using Ztm.WebApi.Models;
 using Ztm.WebApi.Watchers.TransactionConfirmation;
 using Ztm.Zcoin.NBitcoin;
 using Ztm.Zcoin.NBitcoin.Exodus;
 using Ztm.Zcoin.Rpc;
+using Ztm.Zcoin.Testing;
 
-namespace Ztm.WebApi.Controllers
+namespace Ztm.WebApi.Tests.Controllers
 {
     public sealed class IssueTokenControllerTests
     {
@@ -34,6 +37,8 @@ namespace Ztm.WebApi.Controllers
 
         readonly IConfiguration configuration;
         readonly ZcoinConfiguration zcoinConfiguration;
+
+        readonly ControllerHelper helper;
 
         readonly IssueTokenController subject;
 
@@ -68,13 +73,15 @@ namespace Ztm.WebApi.Controllers
             this.configuration = builder.Build();
             this.zcoinConfiguration = this.configuration.GetZcoinSection();
 
+            this.helper = new ControllerHelper(this.callbackRepository.Object);
+
             this.subject = new IssueTokenController
             (
                 this.factory.Object,
                 this.configuration,
                 this.watcher.Object,
-                this.callbackRepository.Object,
-                this.ruleRepository.Object
+                this.ruleRepository.Object,
+                this.helper
             );
         }
 
@@ -83,25 +90,25 @@ namespace Ztm.WebApi.Controllers
         {
             Action act;
 
-            act = () => new IssueTokenController(null, this.configuration, this.watcher.Object, this.callbackRepository.Object, this.ruleRepository.Object);
+            act = () => new IssueTokenController(null, this.configuration, this.watcher.Object, this.ruleRepository.Object, this.helper);
             act.Should().Throw<ArgumentNullException>()
                .And.ParamName.Should().Be("factory");
 
-            act = () => new IssueTokenController(this.factory.Object, null, this.watcher.Object, this.callbackRepository.Object, this.ruleRepository.Object);
+            act = () => new IssueTokenController(this.factory.Object, null, this.watcher.Object, this.ruleRepository.Object, this.helper);
             act.Should().Throw<ArgumentNullException>()
                .And.ParamName.Should().Be("configuration");
 
-            act = () => new IssueTokenController(this.factory.Object, this.configuration, null, this.callbackRepository.Object, this.ruleRepository.Object);
+            act = () => new IssueTokenController(this.factory.Object, this.configuration, null, this.ruleRepository.Object, this.helper);
             act.Should().Throw<ArgumentNullException>()
                .And.ParamName.Should().Be("watcher");
 
-            act = () => new IssueTokenController(this.factory.Object, this.configuration, this.watcher.Object, null, this.ruleRepository.Object);
-            act.Should().Throw<ArgumentNullException>()
-               .And.ParamName.Should().Be("callbackRepository");
-
-            act = () => new IssueTokenController(this.factory.Object, this.configuration, this.watcher.Object, this.callbackRepository.Object, null);
+            act = () => new IssueTokenController(this.factory.Object, this.configuration, this.watcher.Object, null, this.helper);
             act.Should().Throw<ArgumentNullException>()
                .And.ParamName.Should().Be("ruleRepository");
+
+            act = () => new IssueTokenController(this.factory.Object, this.configuration, this.watcher.Object, this.ruleRepository.Object, null);
+            act.Should().Throw<ArgumentNullException>()
+               .And.ParamName.Should().Be("helper");
         }
 
         [Fact]
@@ -153,8 +160,9 @@ namespace Ztm.WebApi.Controllers
             this.propertyManagementRpc.Verify();
             this.rawTransactionRpc.Verify();
 
-            result.Should().BeOfType<OkObjectResult>()
-                  .Which.Value.Should().BeEquivalentTo(new {Tx = tx.GetHash()});
+            var objResult = result.As<ObjectResult>();
+            objResult.StatusCode.Should().Be((int)HttpStatusCode.Accepted);
+            objResult.Value.Should().BeEquivalentTo(new {Tx = tx.GetHash()});
 
             this.watcher.Verify(
                 w => w.AddTransactionAsync
@@ -271,13 +279,57 @@ namespace Ztm.WebApi.Controllers
             this.propertyManagementRpc.Verify();
             this.rawTransactionRpc.Verify();
 
-            result.Should().BeOfType<OkObjectResult>()
-                  .Which.Value.Should().BeEquivalentTo(new {Tx = tx.GetHash()});
+            var objResult = result.As<ObjectResult>();
+            objResult.StatusCode.Should().Be((int)HttpStatusCode.Accepted);
+            objResult.Value.Should().BeEquivalentTo(new {Tx = tx.GetHash()});
 
             this.callbackRepository.Verify();
             this.watcher.Verify();
 
             httpContext.Response.Headers.Should().Contain("X-Callback-ID", callback.Id.ToString());
+        }
+
+        [Fact]
+        public async Task PostAsync_AndFeeIsInsufficient_ShouldReturnValidStatus()
+        {
+            // Arrange.
+            var amount = PropertyAmount.One;
+            var property = new Property(new PropertyId(3), PropertyType.Divisible);
+
+            var ex = RPCExceptionTesting.BuildException((RPCErrorCode)(-212), "", new
+            {
+                Result = (object)null,
+                Error = new
+                {
+                    Code = -212,
+                    Message = "Error choosing inputs for the send transaction",
+                }
+            });
+            this.propertyManagementRpc.Setup(
+                r => r.GrantAsync(
+                    property,
+                    It.IsAny<BitcoinAddress>(),
+                    It.IsAny<BitcoinAddress>(),
+                    amount,
+                    It.IsAny<String>(),
+                    It.IsAny<CancellationToken>()
+                )).ThrowsAsync(ex).Verifiable();
+
+            var req = new IssueTokenRequest
+            {
+                Amount = amount,
+            };
+
+            ControllerTesting.SetHttpContext(this.subject);
+
+            // Act.
+            var response = await this.subject.PostAsync(req, CancellationToken.None);
+
+            // Assert.
+            this.propertyManagementRpc.Verify();
+
+            response.Should().NotBeNull();
+            response.As<ObjectResult>().StatusCode.Should().Be((int)HttpStatusCode.InternalServerError);
         }
     }
 }
