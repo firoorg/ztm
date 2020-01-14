@@ -11,12 +11,9 @@ namespace Ztm.Data.Entity.Postgres.Tests
         {
             get
             {
-                if (RequiredEnv != null)
+                if (RequiredEnv != null && Environment.GetEnvironmentVariable(RequiredEnv) == null)
                 {
-                    if (Environment.GetEnvironmentVariable(RequiredEnv) == null)
-                    {
-                        return $"No {RequiredEnv} environment variable is set.";
-                    }
+                    return $"No {RequiredEnv} environment variable is set.";
                 }
 
                 return null;

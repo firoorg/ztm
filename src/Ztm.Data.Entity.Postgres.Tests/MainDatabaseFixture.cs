@@ -16,8 +16,6 @@ namespace Ztm.Data.Entity.Postgres.Tests
 
         public MainDatabaseFixture()
         {
-            var builder = new ConfigurationBuilder();
-
             var connectionString = Environment.GetEnvironmentVariable("ZTM_MAIN_DATABASE");
             if (connectionString == null)
             {
