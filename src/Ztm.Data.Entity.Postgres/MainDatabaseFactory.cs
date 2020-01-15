@@ -25,7 +25,7 @@ namespace Ztm.Data.Entity.Postgres
             var optionsBuilder = new DbContextOptionsBuilder<Ztm.Data.Entity.Contexts.MainDatabase>();
 
             optionsBuilder.UseNpgsql(this.config.ConnectionString);
-            optionsBuilder.UseUInt256TypeMappingSource();
+            optionsBuilder.UseCustomTypeMappingSource();
 
             return new MainDatabase(optionsBuilder.Options);
         }

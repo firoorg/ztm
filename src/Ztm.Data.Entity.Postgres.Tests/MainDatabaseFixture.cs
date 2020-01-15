@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Npgsql;
 
 namespace Ztm.Data.Entity.Postgres.Tests
@@ -24,27 +25,38 @@ namespace Ztm.Data.Entity.Postgres.Tests
 
             this.connection  = new NpgsqlConnection(connectionString);
 
-            this.optionsBuilder = new DbContextOptionsBuilder<Ztm.Data.Entity.Contexts.MainDatabase>();
-            this.optionsBuilder.UseNpgsql(this.connection);
-            this.optionsBuilder.UseUInt256TypeMappingSource();
+            try
+            {
+                this.connection.Open();
+
+                this.optionsBuilder = new DbContextOptionsBuilder<Ztm.Data.Entity.Contexts.MainDatabase>();
+                this.optionsBuilder.UseNpgsql(this.connection);
+                this.optionsBuilder.UseCustomTypeMappingSource();
+            }
+            catch
+            {
+                this.connection.Dispose();
+            }
         }
 
-        public MainDatabase CreateMainDatabase()
-        {
-            return new MainDatabase(optionsBuilder.Options);
-        }
-
-        public void CleanUp()
+        public async Task CleanUpAsync(CancellationToken cancellationToken)
         {
             // Truncate all tables in schema public except __EFMigrationsHistory
             var tables = this.ExecuteSql("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name <> '__EFMigrationsHistory';")
                              .Select(r => r[0] as string);
 
-            using (var db = this.CreateMainDatabase())
+            var concatedTableNames = string.Join(", ", tables.Select(t => $"\"{t}\""));
+            var query = $"TRUNCATE TABLE {concatedTableNames}";
+            using (var command = this.connection.CreateCommand())
             {
-                var query = "TRUNCATE TABLE " + string.Join(", ", tables.Select(t => '"' + t + '"'));
-                db.Database.ExecuteSqlCommand(query); // lgtm [cs/second-order-sql-injection]
+                command.CommandText = query;
+                await command.ExecuteNonQueryAsync(cancellationToken);
             }
+        }
+
+        public MainDatabase CreateDbContext()
+        {
+            return new MainDatabase(optionsBuilder.Options);
         }
 
         public void Dispose()
@@ -54,11 +66,9 @@ namespace Ztm.Data.Entity.Postgres.Tests
 
         public IEnumerable<IDataRecord> ExecuteSql(string rawSql)
         {
-            using (var db = this.CreateMainDatabase())
-            using (var command = db.Database.GetDbConnection().CreateCommand())
+            using (var command = this.connection.CreateCommand())
             {
                 command.CommandText = rawSql;
-                db.Database.OpenConnection();
                 using (var result = command.ExecuteReader())
                 {
                     while (result.Read())
@@ -66,8 +76,6 @@ namespace Ztm.Data.Entity.Postgres.Tests
                         yield return result;
                     }
                 }
-
-                db.Database.CloseConnection();
             }
         }
     }

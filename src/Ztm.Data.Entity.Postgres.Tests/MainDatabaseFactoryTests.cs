@@ -35,11 +35,12 @@ namespace Ztm.Data.Entity.Postgres.Tests
         public void CreateDbContext_ShouldSuccess()
         {
             // Act.
-            var context = this.subject.CreateDbContext();
-
-            // Assert.
-            context.Should().NotBeNull();
-            context.Database.ProviderName.Should().Be("Npgsql.EntityFrameworkCore.PostgreSQL");
+            using (var context = this.subject.CreateDbContext())
+            {
+                // Assert.
+                context.Should().NotBeNull();
+                context.Database.ProviderName.Should().Be("Npgsql.EntityFrameworkCore.PostgreSQL");
+            }
         }
     }
 }

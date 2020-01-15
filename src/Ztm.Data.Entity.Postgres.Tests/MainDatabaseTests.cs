@@ -21,7 +21,7 @@ namespace Ztm.Data.Entity.Postgres.Tests
 
         public void Dispose()
         {
-            this.fixture.CleanUp();
+            this.fixture.CleanUpAsync(CancellationToken.None).Wait();
         }
 
         [ConditionalTheory(RequiredEnv = "ZTM_MAIN_DATABASE")]
@@ -31,7 +31,7 @@ namespace Ztm.Data.Entity.Postgres.Tests
         [InlineData("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")]
         public async Task SaveAndLoadUint256_ToDatabase_ShouldBeStoreAsBigEndian(string data)
         {
-            using (var db = this.fixture.CreateMainDatabase())
+            using (var db = this.fixture.CreateDbContext())
             {
                 var binary = Encoders.Hex.DecodeData(data); // Big endian
                 var parsed = uint256.Parse(data);
