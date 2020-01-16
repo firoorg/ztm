@@ -33,7 +33,7 @@ namespace Ztm.Data.Entity.Postgres.Tests
                 this.optionsBuilder.UseNpgsql(this.connection);
                 this.optionsBuilder.UseCustomTypeMappingSource();
             }
-            catch
+            catch // lgtm [cs/catch-of-all-exceptions]
             {
                 this.connection.Dispose();
             }
@@ -49,7 +49,7 @@ namespace Ztm.Data.Entity.Postgres.Tests
             var query = $"TRUNCATE TABLE {concatedTableNames}";
             using (var command = this.connection.CreateCommand())
             {
-                command.CommandText = query;
+                command.CommandText = query; // lgtm [cs/second-order-sql-injection]
                 await command.ExecuteNonQueryAsync(cancellationToken);
             }
         }
