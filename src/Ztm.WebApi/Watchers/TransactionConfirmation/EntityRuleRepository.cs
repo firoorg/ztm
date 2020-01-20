@@ -58,8 +58,13 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
         }
 
         public async Task<Rule> AddAsync(
-            uint256 transaction, int confirmations, TimeSpan waitingTime, CallbackResult successResponse,
-            CallbackResult timeoutResponse, Callback callback, CancellationToken cancellationToken)
+            uint256 transaction,
+            int confirmations,
+            TimeSpan waitingTime,
+            CallbackResult successResponse,
+            CallbackResult timeoutResponse,
+            Callback callback,
+            CancellationToken cancellationToken)
         {
             if (transaction == null)
             {

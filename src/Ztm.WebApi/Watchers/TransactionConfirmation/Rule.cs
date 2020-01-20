@@ -4,7 +4,7 @@ using Ztm.WebApi.Callbacks;
 
 namespace Ztm.WebApi.Watchers.TransactionConfirmation
 {
-    public class Rule
+    public sealed class Rule
     {
         public Rule(
             Guid id,
@@ -56,13 +56,20 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             this.CreatedAt = createdAt;
         }
 
-        public Guid Id { get; }
-        public uint256 TransactionHash { get; }
-        public int Confirmations { get; }
-        public TimeSpan OriginalWaitingTime { get; }
-        public CallbackResult SuccessResponse { get; }
-        public CallbackResult TimeoutResponse { get; }
         public Callback Callback { get; }
+
+        public int Confirmations { get; }
+
         public DateTime CreatedAt { get; }
+
+        public Guid Id { get; }
+
+        public TimeSpan OriginalWaitingTime { get; }
+
+        public CallbackResult SuccessResponse { get; }
+
+        public CallbackResult TimeoutResponse { get; }
+
+        public uint256 TransactionHash { get; }
     }
 }

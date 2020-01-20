@@ -48,8 +48,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
 
             using (var db = this.db.CreateDbContext())
             {
-                await db.TransactionConfirmationWatcherWatches.AddAsync
-                (
+                await db.TransactionConfirmationWatcherWatches.AddAsync(
                     new EntityModel
                     {
                         Id = watch.Id,
@@ -58,8 +57,8 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
                         StartTime = watch.StartTime,
                         TransactionHash = watch.TransactionId,
                         Status = WatchStatus.Pending,
-                    }
-                );
+                    },
+                    cancellationToken);
 
                 await db.SaveChangesAsync(cancellationToken);
             }
@@ -131,14 +130,12 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
 
         DomainModel ToDomain(EntityModel entity)
         {
-            return new DomainModel
-            (
+            return new DomainModel(
                 EntityRuleRepository.ToDomain(this.serializer, entity.Rule),
                 entity.StartBlockHash,
                 entity.TransactionHash,
                 entity.StartTime,
-                entity.Id
-            );
+                entity.Id);
         }
     }
 }

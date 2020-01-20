@@ -30,7 +30,7 @@ namespace Ztm.WebApi.Controllers
             var details = new BackgroundServiceErrorProblemDetails()
             {
                 Status = (int)HttpStatusCode.InternalServerError,
-                Title = "The required background services was stopped unexpectedly."
+                Title = "The required background services was stopped unexpectedly.",
             };
 
             if (feature != null && this.hostingEnvironment.IsDevelopment())
@@ -39,7 +39,7 @@ namespace Ztm.WebApi.Controllers
                 {
                     Service = e.Service.FullName,
                     Error = e.Exception.Message,
-                    Detail = e.Exception.StackTrace
+                    Detail = e.Exception.StackTrace,
                 }).ToList();
 
                 details.Errors = errors;

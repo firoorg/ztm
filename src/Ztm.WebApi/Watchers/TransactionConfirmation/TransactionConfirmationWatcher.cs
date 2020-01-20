@@ -75,11 +75,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             this.callbackExecuter = callbackExecuter;
             this.logger = logger;
 
-            this.watcher = new Zcoin.Watching.TransactionConfirmationWatcher<Rule>
-            (
-                this,
-                blocks
-            );
+            this.watcher = new Zcoin.Watching.TransactionConfirmationWatcher<Rule>(this, blocks);
 
             this.timers = new Dictionary<uint256, Dictionary<Guid, Timer>>();
             this.timersSemaphore = new SemaphoreSlim(1, 1);

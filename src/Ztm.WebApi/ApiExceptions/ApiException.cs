@@ -15,7 +15,8 @@ namespace Ztm.WebApi.ApiExceptions
             Title = title;
         }
 
-        public ApiException(int status, string title, string message) : base(message)
+        public ApiException(int status, string title, string message)
+            : base(message)
         {
             if (title == null)
             {
@@ -26,7 +27,8 @@ namespace Ztm.WebApi.ApiExceptions
             Title = title;
         }
 
-        public ApiException(int status, string title, string message, Exception inner) : base(message, inner)
+        public ApiException(int status, string title, string message, Exception inner)
+            : base(message, inner)
         {
             if (title == null)
             {
@@ -38,6 +40,7 @@ namespace Ztm.WebApi.ApiExceptions
         }
 
         public int Status { get; }
+
         public string Title { get; }
     }
 }
