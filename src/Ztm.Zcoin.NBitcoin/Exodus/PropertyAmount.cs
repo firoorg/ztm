@@ -123,14 +123,14 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
             return new PropertyAmount(checked(first.value + second.value));
         }
 
-        public static PropertyAmount operator-(PropertyAmount amount)
+        public static PropertyAmount operator/(PropertyAmount dividend, int divisor)
         {
-            return new PropertyAmount(checked(-amount.value));
+            return new PropertyAmount(checked(dividend.value / divisor));
         }
 
-        public static bool operator<(PropertyAmount first, PropertyAmount second)
+        public static bool operator==(PropertyAmount first, PropertyAmount second)
         {
-            return first.value < second.value;
+            return first.Equals(second);
         }
 
         public static bool operator>(PropertyAmount first, PropertyAmount second)
@@ -138,14 +138,29 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
             return first.value > second.value;
         }
 
+        public static bool operator>=(PropertyAmount first, PropertyAmount second)
+        {
+            return first.value >= second.value;
+        }
+
+        public static bool operator!=(PropertyAmount first, PropertyAmount second)
+        {
+            return !first.Equals(second);
+        }
+
+        public static bool operator<(PropertyAmount first, PropertyAmount second)
+        {
+            return first.value < second.value;
+        }
+
         public static bool operator<=(PropertyAmount first, PropertyAmount second)
         {
             return first.value <= second.value;
         }
 
-        public static bool operator>=(PropertyAmount first, PropertyAmount second)
+        public static PropertyAmount operator-(PropertyAmount amount)
         {
-            return first.value >= second.value;
+            return new PropertyAmount(checked(-amount.value));
         }
     }
 }

@@ -177,6 +177,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
 
             Assert.False(first.Equals(second));
             Assert.False(first.Equals((object)second));
+            Assert.False(first == second);
         }
 
         [Theory]
@@ -190,6 +191,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
 
             Assert.True(first.Equals(second));
             Assert.True(first.Equals((object)second));
+            Assert.True(first == second);
         }
 
         [Theory]
@@ -203,6 +205,7 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
 
             Assert.False(first.Equals(second));
             Assert.False(first.Equals((object)second));
+            Assert.False(first == second);
         }
 
         [Fact]
@@ -300,39 +303,37 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
         }
 
         [Theory]
-        [InlineData(-2L, -1L)]
-        [InlineData(-1L, 0L)]
-        [InlineData(0L, 1L)]
-        public void LessThan_WithLess_ShouldReturnTrue(long left, long right)
+        [InlineData(long.MinValue)]
+        [InlineData(0)]
+        [InlineData(long.MaxValue)]
+        public void Division_DivisorIsZero_ShouldThrow(long value)
         {
-            var first = new PropertyAmount(left);
-            var second = new PropertyAmount(right);
+            var amount = new PropertyAmount(value);
 
-            Assert.True(first < second);
+            Assert.Throws<DivideByZeroException>(() => amount / 0);
+        }
+
+        [Fact]
+        public void Division_ResultIsOverflow_ShouldThrow()
+        {
+            var amount = new PropertyAmount(long.MinValue);
+
+            Assert.Throws<OverflowException>(() => amount / -1);
         }
 
         [Theory]
-        [InlineData(-1L)]
-        [InlineData(0L)]
-        [InlineData(1L)]
-        public void LessThan_WithSame_ShouldReturnFalse(long value)
+        [InlineData(9223372036854775807L, 2, 4611686018427387903L)]
+        [InlineData(9223372036854775807L, -2, -4611686018427387903L)]
+        [InlineData(0L, 2, 0L)]
+        [InlineData(0L, -2, 0L)]
+        [InlineData(-9223372036854775808L, 2, -4611686018427387904L)]
+        [InlineData(-9223372036854775808L, -2, 4611686018427387904L)]
+        public void Division_WithValidDivisor_ResultShouldBeDividedByThatAmount(long value, int divisor, long expect)
         {
-            var first = new PropertyAmount(value);
-            var second = new PropertyAmount(value);
+            var amount = new PropertyAmount(value);
+            var result = amount / divisor;
 
-            Assert.False(first < second);
-        }
-
-        [Theory]
-        [InlineData(-1L, -2L)]
-        [InlineData(0L, -1L)]
-        [InlineData(1L, 0L)]
-        public void LessThan_WithGreater_ShouldReturnFalse(long left, long right)
-        {
-            var first = new PropertyAmount(left);
-            var second = new PropertyAmount(right);
-
-            Assert.False(first < second);
+            Assert.Equal(expect, result.Indivisible);
         }
 
         [Theory]
@@ -375,42 +376,6 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
         [InlineData(-2L, -1L)]
         [InlineData(-1L, 0L)]
         [InlineData(0L, 1L)]
-        public void LessThanOrEqual_WithLess_ShouldReturnTrue(long left, long right)
-        {
-            var first = new PropertyAmount(left);
-            var second = new PropertyAmount(right);
-
-            Assert.True(first <= second);
-        }
-
-        [Theory]
-        [InlineData(-1L)]
-        [InlineData(0L)]
-        [InlineData(1L)]
-        public void LessThanOrEqual_WithSame_ShouldReturnTrue(long value)
-        {
-            var first = new PropertyAmount(value);
-            var second = new PropertyAmount(value);
-
-            Assert.True(first <= second);
-        }
-
-        [Theory]
-        [InlineData(-1L, -2L)]
-        [InlineData(0L, -1L)]
-        [InlineData(1L, 0L)]
-        public void LessThanOrEqual_WithGreater_ShouldReturnFalse(long left, long right)
-        {
-            var first = new PropertyAmount(left);
-            var second = new PropertyAmount(right);
-
-            Assert.False(first <= second);
-        }
-
-        [Theory]
-        [InlineData(-2L, -1L)]
-        [InlineData(-1L, 0L)]
-        [InlineData(0L, 1L)]
         public void GreaterThanOrEqual_WithLess_ShouldReturnFalse(long left, long right)
         {
             var first = new PropertyAmount(left);
@@ -441,6 +406,114 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
             var second = new PropertyAmount(right);
 
             Assert.True(first >= second);
+        }
+
+        [Theory]
+        [InlineData(-2L, -1L)]
+        [InlineData(-1L, 0L)]
+        [InlineData(0L, 1L)]
+        public void Inequality_WithLess_ShouldReturnTrue(long left, long right)
+        {
+            var first = new PropertyAmount(left);
+            var second = new PropertyAmount(right);
+
+            Assert.True(first != second);
+        }
+
+        [Theory]
+        [InlineData(-1L)]
+        [InlineData(0L)]
+        [InlineData(1L)]
+        public void Inequality_WithSame_ShouldReturnFalse(long value)
+        {
+            var first = new PropertyAmount(value);
+            var second = new PropertyAmount(value);
+
+            Assert.False(first != second);
+        }
+
+        [Theory]
+        [InlineData(-1L, -2L)]
+        [InlineData(0L, -1L)]
+        [InlineData(1L, 0L)]
+        public void Inequality_WithGreater_ShouldReturnTrue(long left, long right)
+        {
+            var first = new PropertyAmount(left);
+            var second = new PropertyAmount(right);
+
+            Assert.True(first != second);
+        }
+
+        [Theory]
+        [InlineData(-2L, -1L)]
+        [InlineData(-1L, 0L)]
+        [InlineData(0L, 1L)]
+        public void LessThan_WithLess_ShouldReturnTrue(long left, long right)
+        {
+            var first = new PropertyAmount(left);
+            var second = new PropertyAmount(right);
+
+            Assert.True(first < second);
+        }
+
+        [Theory]
+        [InlineData(-1L)]
+        [InlineData(0L)]
+        [InlineData(1L)]
+        public void LessThan_WithSame_ShouldReturnFalse(long value)
+        {
+            var first = new PropertyAmount(value);
+            var second = new PropertyAmount(value);
+
+            Assert.False(first < second);
+        }
+
+        [Theory]
+        [InlineData(-1L, -2L)]
+        [InlineData(0L, -1L)]
+        [InlineData(1L, 0L)]
+        public void LessThan_WithGreater_ShouldReturnFalse(long left, long right)
+        {
+            var first = new PropertyAmount(left);
+            var second = new PropertyAmount(right);
+
+            Assert.False(first < second);
+        }
+
+        [Theory]
+        [InlineData(-2L, -1L)]
+        [InlineData(-1L, 0L)]
+        [InlineData(0L, 1L)]
+        public void LessThanOrEqual_WithLess_ShouldReturnTrue(long left, long right)
+        {
+            var first = new PropertyAmount(left);
+            var second = new PropertyAmount(right);
+
+            Assert.True(first <= second);
+        }
+
+        [Theory]
+        [InlineData(-1L)]
+        [InlineData(0L)]
+        [InlineData(1L)]
+        public void LessThanOrEqual_WithSame_ShouldReturnTrue(long value)
+        {
+            var first = new PropertyAmount(value);
+            var second = new PropertyAmount(value);
+
+            Assert.True(first <= second);
+        }
+
+        [Theory]
+        [InlineData(-1L, -2L)]
+        [InlineData(0L, -1L)]
+        [InlineData(1L, 0L)]
+        public void LessThanOrEqual_WithGreater_ShouldReturnFalse(long left, long right)
+        {
+            var first = new PropertyAmount(left);
+            var second = new PropertyAmount(right);
+
+            Assert.False(first <= second);
         }
 
         [Fact]
