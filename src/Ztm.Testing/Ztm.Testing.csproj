@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Ztm.Zcoin.NBitcoin\Ztm.Zcoin.NBitcoin.csproj" />
+    <ProjectReference Include="..\Ztm.Threading\Ztm.Threading.csproj" />
   </ItemGroup>
 
 </Project>
