@@ -1,18 +1,18 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
-using FluentAssertions;
 
 namespace Ztm.Testing
 {
     public static class EqualityTesting
     {
-        public static void TestEquals<T>(T subject, params Func<T, T>[] equals)
+        public static IEnumerable<bool> TestEquals<T>(T subject, params Func<T, T>[] equals)
         {
-            TestEquals(subject, equals.AsEnumerable());
+            return TestEquals(subject, equals.AsEnumerable());
         }
 
-        public static void TestEquals<T>(T subject, IEnumerable<Func<T, T>> equals)
+        public static IEnumerable<bool> TestEquals<T>(T subject, IEnumerable<Func<T, T>> equals)
         {
             if (subject == null)
             {
@@ -24,21 +24,32 @@ namespace Ztm.Testing
                 throw new ArgumentNullException(nameof(equals));
             }
 
+            var results = new Collection<bool>();
             var equatable = subject as IEquatable<T>;
 
             foreach (var v in equals.Select(f => f(subject)))
             {
-                subject.Equals(v).Should().BeTrue();
-                equatable?.Equals(v).Should().BeTrue();
+                var inequal = false;
+
+                inequal |= !subject.Equals(v);
+
+                if (equatable != null)
+                {
+                    inequal |= !equatable.Equals(v);
+                }
+
+                results.Add(!inequal);
             }
+
+            return results;
         }
 
-        public static void TestInequal<T>(T subject, params Func<T, T>[] inequals)
+        public static IEnumerable<bool> TestInequal<T>(T subject, params Func<T, T>[] inequals)
         {
-            TestInequal(subject, inequals.AsEnumerable());
+            return TestInequal(subject, inequals.AsEnumerable());
         }
 
-        public static void TestInequal<T>(T subject, IEnumerable<Func<T, T>> inequals)
+        public static IEnumerable<bool> TestInequal<T>(T subject, IEnumerable<Func<T, T>> inequals)
         {
             if (subject == null)
             {
@@ -50,16 +61,27 @@ namespace Ztm.Testing
                 throw new ArgumentNullException(nameof(inequals));
             }
 
-            subject.Equals(null).Should().BeFalse(); // lgtm[cs/null-argument-to-equals]
-            subject.Equals(new {}).Should().BeFalse();
-
+            var results = new Collection<bool>();
             var equatable = subject as IEquatable<T>;
+
+            results.Add(subject.Equals(null)); // lgtm[cs/null-argument-to-equals]
+            results.Add(subject.Equals(new {}));
 
             foreach (var v in inequals.Select(f => f(subject)))
             {
-                subject.Equals(v).Should().BeFalse();
-                equatable?.Equals(v).Should().BeFalse();
+                var equal = false;
+
+                equal |= subject.Equals(v);
+
+                if (equatable != null)
+                {
+                    equal |= equatable.Equals(v);
+                }
+
+                results.Add(equal);
             }
+
+            return results;
         }
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using FluentAssertions;
 using Xunit;
 using Ztm.Testing;
 
@@ -32,22 +33,24 @@ namespace Ztm.Zcoin.Watching.Tests
         }
 
         [Fact]
-        public void Equals_WithEqual_ShouldBeEqual()
+        public void Equals_WithEqual_ShouldReturnTrue()
         {
-            EqualityTesting.TestEquals(
+            var results = EqualityTesting.TestEquals(
                 this.subject,
                 s => new BalanceChange<object, int>(null, s.Amount),
-                s => new BalanceChange<object, int>(new object(), s.Amount)
-            );
+                s => new BalanceChange<object, int>(new object(), s.Amount));
+
+            results.Should().NotContain(false);
         }
 
         [Fact]
-        public void Equals_WithInequal_ShouldBeUnequal()
+        public void Equals_WithInequal_ShouldReturnFalse()
         {
-            EqualityTesting.TestInequal(
+            var results = EqualityTesting.TestInequal(
                 this.subject,
-                s => new BalanceChange<object, int>(s.Context, 11)
-            );
+                s => new BalanceChange<object, int>(s.Context, 11));
+
+            results.Should().NotContain(true);
         }
     }
 }
