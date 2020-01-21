@@ -112,7 +112,7 @@ namespace Ztm.WebApi.Controllers
                 }
 
                 return Accepted(new {Tx = id});
-            };
+            }
         }
     }
 }

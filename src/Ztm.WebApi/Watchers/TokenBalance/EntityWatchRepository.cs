@@ -93,8 +93,12 @@ namespace Ztm.WebApi.Watchers.TokenBalance
                 e => index.Keys.Contains(e.Id),
                 l =>
                 {
+                    var ids = l
+                        .Select(e => e.Id)
+                        .ToHashSet();
+
                     var invalid = watches
-                        .Where(p => !l.Any(e => e.Id == p.Key.Id))
+                        .Where(p => !ids.Contains(p.Key.Id))
                         .Select(p => p.Key.Id)
                         .ToList();
 
