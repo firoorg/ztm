@@ -33,12 +33,10 @@ namespace Ztm.WebApi.Controllers
                 return null;
             }
 
-            var callback = await this.callbackRepository.AddAsync
-            (
+            var callback = await this.callbackRepository.AddAsync(
                 controller.HttpContext.Connection.RemoteIpAddress,
                 url,
-                cancellationToken
-            );
+                cancellationToken);
 
             controller.SetCallbackId(callback.Id);
 

@@ -65,6 +65,51 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
         }
 
         [Fact]
+        public void ToDomain_WithNullEntity_ShouldThrow()
+        {
+            Assert.Throws<ArgumentNullException>("entity", () => EntityRuleRepository.ToDomain(null, this.network));
+        }
+
+        [Fact]
+        public void ToDomain_WithNullNetwork_ShouldThrow()
+        {
+            Assert.Throws<ArgumentNullException>(
+                "network",
+                () => EntityRuleRepository.ToDomain(new TokenBalanceWatcherRule(), null));
+        }
+
+        [Fact]
+        public void ToDomain_WithValidArgs_ShouldReturnCorrectlyMappedRule()
+        {
+            // Arrange.
+            var address = TestAddress.Regtest1;
+            var entity = new TokenBalanceWatcherRule()
+            {
+                PropertyId = 3,
+                Address = address.ToString(),
+                TargetAmount = 100,
+                TargetConfirmation = 6,
+                OriginalTimeout = TimeSpan.FromHours(1),
+                TimeoutStatus = "timeout",
+                CallbackId = Guid.NewGuid(),
+                Id = Guid.NewGuid(),
+            };
+
+            // Act.
+            var result = EntityRuleRepository.ToDomain(entity, this.network);
+
+            // Assert.
+            Assert.Equal(entity.PropertyId, result.Property.Value);
+            Assert.Equal(address, result.Address);
+            Assert.Equal(entity.TargetAmount, result.TargetAmount.Indivisible);
+            Assert.Equal(entity.TargetConfirmation, result.TargetConfirmation);
+            Assert.Equal(entity.OriginalTimeout, result.OriginalTimeout);
+            Assert.Equal(entity.TimeoutStatus, result.TimeoutStatus);
+            Assert.Equal(entity.CallbackId, result.Callback);
+            Assert.Equal(entity.Id, result.Id);
+        }
+
+        [Fact]
         public Task AddAsync_WithNullRule_ShouldThrow()
         {
             return Assert.ThrowsAsync<ArgumentNullException>(

@@ -67,10 +67,7 @@ namespace Ztm.WebApi
             // Fundamentals Services.
             services.AddBackgroundServiceExceptionHandler();
             services.AddSingleton<Network>(CreateZcoinNetwork);
-
-            services.AddSingleton<ZcoinConfiguration>(
-                p => this.config.GetZcoinSection()
-            );
+            services.AddSingleton<ZcoinConfiguration>(p => this.config.GetZcoinSection());
 
             services.AddSingleton<JsonSerializer>(
                 p =>
@@ -82,8 +79,7 @@ namespace Ztm.WebApi
                     serializer.Converters.Add(new UInt256Converter());
 
                     return serializer;
-                }
-            );
+                });
 
             // Database Services.
             services.AddSingleton<IMainDatabaseFactory, MainDatabaseFactory>();
@@ -96,10 +92,8 @@ namespace Ztm.WebApi
             services.AddSingleton<TransactionConfirmationWatcher>();
             services.AddSingleton<IBlockListener>(p => p.GetRequiredService<TransactionConfirmationWatcher>());
             services.AddSingleton<IHostedService>(p => p.GetRequiredService<TransactionConfirmationWatcher>());
-
-            services.AddSingleton<ITransactionConfirmationWatcher, TransactionConfirmationWatcher>(
-                p => p.GetRequiredService<TransactionConfirmationWatcher>()
-            );
+            services.AddSingleton<ITransactionConfirmationWatcher>(
+                p => p.GetRequiredService<TransactionConfirmationWatcher>());
 
             // Zcoin Interface Services.
             services.AddSingleton<IRpcFactory>(CreateRpcFactory);

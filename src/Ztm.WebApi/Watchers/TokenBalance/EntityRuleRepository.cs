@@ -34,6 +34,29 @@ namespace Ztm.WebApi.Watchers.TokenBalance
             this.network = network;
         }
 
+        public static Rule ToDomain(EntityModel entity, Network network)
+        {
+            if (entity == null)
+            {
+                throw new ArgumentNullException(nameof(entity));
+            }
+
+            if (network == null)
+            {
+                throw new ArgumentNullException(nameof(network));
+            }
+
+            return new Rule(
+                new PropertyId(entity.PropertyId),
+                BitcoinAddress.Create(entity.Address, network),
+                new PropertyAmount(entity.TargetAmount),
+                entity.TargetConfirmation,
+                entity.OriginalTimeout,
+                entity.TimeoutStatus,
+                entity.CallbackId,
+                entity.Id);
+        }
+
         public async Task AddAsync(Rule rule, CancellationToken cancellationToken)
         {
             if (rule == null)
@@ -120,7 +143,9 @@ namespace Ztm.WebApi.Watchers.TokenBalance
                     .ToListAsync(cancellationToken);
             }
 
-            return entities.Select(e => ToDomain(e)).ToList();
+            return entities
+                .Select(e => ToDomain(e, this.network))
+                .ToList();
         }
 
         public async Task SetSucceededAsync(Guid id, CancellationToken cancellationToken)
@@ -161,19 +186,6 @@ namespace Ztm.WebApi.Watchers.TokenBalance
                 await db.SaveChangesAsync(cancellationToken);
                 db.Database.CommitTransaction();
             }
-        }
-
-        public Rule ToDomain(EntityModel entity)
-        {
-            return new Rule(
-                new PropertyId(entity.PropertyId),
-                BitcoinAddress.Create(entity.Address, this.network),
-                new PropertyAmount(entity.TargetAmount),
-                entity.TargetConfirmation,
-                entity.OriginalTimeout,
-                entity.TimeoutStatus,
-                entity.CallbackId,
-                entity.Id);
         }
     }
 }

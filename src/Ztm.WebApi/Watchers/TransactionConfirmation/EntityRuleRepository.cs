@@ -41,19 +41,15 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             using (var successReader = new JsonTextReader(new StringReader(rule.SuccessData)))
             using (var timeoutReader = new JsonTextReader(new StringReader(rule.TimeoutData)))
             {
-                return new Rule
-                (
+                return new Rule(
                     rule.Id,
                     rule.TransactionHash,
                     rule.Confirmation,
                     rule.OriginalWaitingTime,
                     serializer.Deserialize<CallbackResult>(successReader),
                     serializer.Deserialize<CallbackResult>(timeoutReader),
-                    callback != null
-                        ? callback
-                        : EntityCallbackRepository.ToDomain(rule.Callback),
-                    DateTime.SpecifyKind(rule.CreatedAt, DateTimeKind.Utc)
-                );
+                    callback ?? EntityCallbackRepository.ToDomain(rule.Callback),
+                    DateTime.SpecifyKind(rule.CreatedAt, DateTimeKind.Utc));
             }
         }
 

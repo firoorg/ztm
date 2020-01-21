@@ -18,22 +18,22 @@ namespace Ztm.WebApi.Watchers.TokenBalance
     public sealed class EntityWatchRepository : IWatchRepository
     {
         readonly IMainDatabaseFactory db;
-        readonly EntityRuleRepository rules;
+        readonly Network network;
 
-        public EntityWatchRepository(IMainDatabaseFactory db, EntityRuleRepository rules)
+        public EntityWatchRepository(IMainDatabaseFactory db, Network network)
         {
             if (db == null)
             {
                 throw new ArgumentNullException(nameof(db));
             }
 
-            if (rules == null)
+            if (network == null)
             {
-                throw new ArgumentNullException(nameof(rules));
+                throw new ArgumentNullException(nameof(network));
             }
 
             this.db = db;
-            this.rules = rules;
+            this.network = network;
         }
 
         public async Task AddAsync(IEnumerable<DomainModel> watches, CancellationToken cancellationToken)
@@ -236,7 +236,7 @@ namespace Ztm.WebApi.Watchers.TokenBalance
 
         DomainModel ToDomain(EntityModel entity)
         {
-            var rule = this.rules.ToDomain(entity.Rule);
+            var rule = EntityRuleRepository.ToDomain(entity.Rule, this.network);
 
             return new DomainModel(
                 rule,

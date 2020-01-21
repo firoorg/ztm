@@ -103,16 +103,14 @@ namespace Ztm.WebApi.Controllers
                 {
                     var callbackResult = new {Tx = id};
 
-                    await this.watcher.AddTransactionAsync
-                    (
+                    await this.watcher.AddTransactionAsync(
                         id,
                         this.apiConfig.Default.RequiredConfirmation,
                         this.apiConfig.Default.TransactionTimeout,
                         callback,
                         new CallbackResult(CallbackResult.StatusSuccess, callbackResult),
                         new CallbackResult("tokens-issuing-timeout", callbackResult),
-                        CancellationToken.None
-                    );
+                        CancellationToken.None);
                 }
 
                 return Accepted(new {Tx = id});

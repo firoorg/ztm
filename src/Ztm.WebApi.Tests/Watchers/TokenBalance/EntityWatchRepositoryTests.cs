@@ -34,7 +34,6 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
         readonly DomainModel watch4;
         readonly DomainModel watch5;
         readonly TestMainDatabaseFactory db;
-        readonly EntityRuleRepository rules;
         readonly EntityWatchRepository subject;
 
         public EntityWatchRepositoryTests()
@@ -96,8 +95,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
 
             try
             {
-                this.rules = new EntityRuleRepository(this.db, this.network);
-                this.subject = new EntityWatchRepository(this.db, this.rules);
+                this.subject = new EntityWatchRepository(this.db, this.network);
             }
             catch
             {
@@ -114,13 +112,13 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
         [Fact]
         public void Constructor_WithNullDb_ShouldThrow()
         {
-            Assert.Throws<ArgumentNullException>("db", () => new EntityWatchRepository(null, this.rules));
+            Assert.Throws<ArgumentNullException>("db", () => new EntityWatchRepository(null, this.network));
         }
 
         [Fact]
-        public void Constructor_WithNullRules_ShouldThrow()
+        public void Constructor_WithNullNetwork_ShouldThrow()
         {
-            Assert.Throws<ArgumentNullException>("rules", () => new EntityWatchRepository(this.db, null));
+            Assert.Throws<ArgumentNullException>("network", () => new EntityWatchRepository(this.db, null));
         }
 
         [Fact]
