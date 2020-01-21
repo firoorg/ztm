@@ -270,20 +270,17 @@ namespace Ztm.WebApi.Watchers.TokenBalance
 
                 // Mark all watches that was created by this rule as timed out and calculate total received amount.
                 var watches = await this.watches.TransitionToTimedOutAsync(rule, CancellationToken.None);
-                var received = default(PropertyAmount?);
-                var confirmation = default(int?);
+                var confirmed = watches
+                    .Where(w => w.Confirmation > 0)
+                    .ToList();
 
-                foreach (var completed in watches.Where(w => w.Confirmation > 0))
-                {
-                    received = (received == null)
-                        ? completed.Watch.BalanceChange
-                        : received + completed.Watch.BalanceChange;
+                var received = (confirmed.Count != 0)
+                    ? confirmed.Aggregate(PropertyAmount.Zero, (sum, next) => sum + next.Watch.BalanceChange)
+                    : default(PropertyAmount?);
 
-                    if (confirmation == null || completed.Confirmation < confirmation)
-                    {
-                        confirmation = completed.Confirmation;
-                    }
-                }
+                var confirmation = (confirmed.Count != 0)
+                    ? confirmed.Min(c => c.Confirmation)
+                    : default(int?);
 
                 // Invoke callback.
                 var result = new TimeoutData()

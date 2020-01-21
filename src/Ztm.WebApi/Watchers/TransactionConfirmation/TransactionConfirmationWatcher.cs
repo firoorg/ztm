@@ -123,16 +123,14 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             await this.timersSemaphore.WaitAsync();
             try
             {
-                var rule = await this.ruleRepository.AddAsync
-                (
+                var rule = await this.ruleRepository.AddAsync(
                     transaction,
                     confirmation,
                     unconfirmedWaitingTime,
                     successResponse,
                     timeoutResponse,
                     callback,
-                    cancellationToken
-                );
+                    cancellationToken);
 
                 await SetupTimerAsync(rule);
 
