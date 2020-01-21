@@ -60,5 +60,28 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
                 return encoder.Decode(sender, receiver, reader, version);
             }
         }
+
+        public byte[] Encode(ExodusTransaction transaction)
+        {
+            if (transaction == null)
+            {
+                throw new ArgumentNullException(nameof(transaction));
+            }
+
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream, Encoding.UTF8))
+            {
+                writer.Write(IPAddress.HostToNetworkOrder((short)transaction.Version));
+                writer.Write(IPAddress.HostToNetworkOrder((short)transaction.Id));
+
+                if (!this.encoders.TryGetValue(transaction.Id, out var encoder))
+                {
+                    throw new ArgumentException("The transaction type is not supported.", nameof(transaction));
+                }
+
+                encoder.Encode(writer, transaction);
+                return stream.ToArray();
+            }
+        }
     }
 }

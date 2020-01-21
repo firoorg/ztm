@@ -28,12 +28,31 @@
 POST /issue-tokens
 ```
 
-Sample request to issue 1,000,000 tokens:
+Sample request to issue 1,000,000 tokens
+
+Indivisible property:
 
 ```json
 {
-  "amount": 100000000000000,
+  "amount": "1000000",
   "note": "Initial tokens."
+}
+```
+
+Divisible property:
+
+```json
+{
+  "amount": "1000000.00000000",
+  "note": "Initial tokens."
+}
+```
+
+Response:
+
+```json
+{
+  "tx": "7f32a54475a5da05a70fea560275b644be15fa84cdaa2a5cec70c56d20b0fad3"
 }
 ```
 
@@ -41,8 +60,7 @@ Sample request to issue 1,000,000 tokens:
 
 ```json
 {
-  "issuing_tx": "468b649441ca7fca165aed72bc4b69e1546dc0e1670d15137c684d49534e1b2c",
-  "transfer_tx": "7f32a54475a5da05a70fea560275b644be15fa84cdaa2a5cec70c56d20b0fad3"
+  "tx": "7f32a54475a5da05a70fea560275b644be15fa84cdaa2a5cec70c56d20b0fad3"
 }
 ```
 
@@ -50,15 +68,7 @@ Sample request to issue 1,000,000 tokens:
 
 ```json
 {
-  "tx": "468b649441ca7fca165aed72bc4b69e1546dc0e1670d15137c684d49534e1b2c"
-}
-```
-
-`tokens-transfer-timeout` callback:
-
-```json
-{
-  "tx": "468b649441ca7fca165aed72bc4b69e1546dc0e1670d15137c684d49534e1b2c"
+  "tx": "7f32a54475a5da05a70fea560275b644be15fa84cdaa2a5cec70c56d20b0fad3"
 }
 ```
 
@@ -68,12 +78,33 @@ Sample request to issue 1,000,000 tokens:
 POST /transfers
 ```
 
-Sample request to transfer 1,000 tokens from distributor to address `aBydwLXzmGc7j4mr4CVf461NvBjBFk71U1`:
+Sample request to transfer 1,000 tokens from distributor to address `aBydwLXzmGc7j4mr4CVf461NvBjBFk71U1`
+
+Indivisible property:
 
 ```json
 {
-  "amount": 100000000000,
+  "amount": "1000",
   "destination": "aBydwLXzmGc7j4mr4CVf461NvBjBFk71U1"
+}
+```
+
+Divisible property:
+
+```json
+{
+  "amount": "1000.00000000",
+  "destination": "aBydwLXzmGc7j4mr4CVf461NvBjBFk71U1"
+}
+```
+
+With reference amount:
+
+```json
+{
+  "amount": "1000",
+  "destination": "aBydwLXzmGc7j4mr4CVf461NvBjBFk71U1",
+  "reference_amount": "0.00000100"
 }
 ```
 
@@ -81,18 +112,25 @@ Response:
 
 ```json
 {
-  "tx": "7f32a54475a5da05a70fea560275b644be15fa84cdaa2a5cec70c56d20b0fad3",
-  "fee": 1000
+  "tx": "7f32a54475a5da05a70fea560275b644be15fa84cdaa2a5cec70c56d20b0fad3"
 }
 ```
 
 `success` callback:
 
-- No callback-specific data.
+```json
+{
+  "tx": "7f32a54475a5da05a70fea560275b644be15fa84cdaa2a5cec70c56d20b0fad3"
+}
+```
 
 `tokens-transfer-timeout` callback:
 
-- No callback-specific data.
+```json
+{
+  "tx": "7f32a54475a5da05a70fea560275b644be15fa84cdaa2a5cec70c56d20b0fad3"
+}
+```
 
 ### Receive Tokens
 

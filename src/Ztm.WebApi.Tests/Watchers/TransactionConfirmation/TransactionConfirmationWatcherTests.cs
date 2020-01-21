@@ -34,8 +34,6 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 
         readonly Uri defaultUrl;
 
-        volatile bool initialized = false;
-
         public TransactionConfirmationWatcherTests()
         {
             this.callbackRepository = Substitute.For<ICallbackRepository>();
@@ -67,16 +65,13 @@ namespace Ztm.WebApi.Tests.Watchers.TransactionConfirmation
 
         public void Dispose()
         {
-            if (initialized)
-            {
-                this.subject.StopAsync(CancellationToken.None).Wait();
-            }
+            this.subject.StopAsync(CancellationToken.None).Wait();
+            this.subject.Dispose();
         }
 
         async Task Initialize(CancellationToken cancellationToken)
         {
             await this.subject.StartAsync(cancellationToken);
-            initialized = true;
         }
 
         [Fact]

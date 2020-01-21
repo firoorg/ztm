@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -11,15 +12,22 @@ namespace Ztm.WebApi.Callbacks
     public class HttpCallbackExecuter : ICallbackExecuter
     {
         readonly IHttpClientFactory factory;
+        readonly JsonSerializer serializer;
 
-        public HttpCallbackExecuter(IHttpClientFactory factory)
+        public HttpCallbackExecuter(IHttpClientFactory factory, JsonSerializer serializer)
         {
             if (factory == null)
             {
                 throw new ArgumentNullException(nameof(factory));
             }
 
+            if (serializer == null)
+            {
+                throw new ArgumentNullException(nameof(serializer));
+            }
+
             this.factory = factory;
+            this.serializer = serializer;
         }
 
         public async Task ExecuteAsync(Guid id, Uri url, CallbackResult result, CancellationToken cancellationToken)
@@ -42,7 +50,13 @@ namespace Ztm.WebApi.Callbacks
 
                 if (result.Data != null)
                 {
-                    var content = JsonConvert.SerializeObject(result.Data);
+                    var builder = new StringBuilder();
+                    using (var wrtiter = new StringWriter(builder))
+                    {
+                        this.serializer.Serialize(wrtiter, result.Data);
+                    }
+
+                    var content = builder.ToString();
                     request.Content = new StringContent(content, Encoding.UTF8, "application/json");
                 }
 

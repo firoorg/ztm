@@ -13,7 +13,10 @@ namespace Ztm.Data.Entity.Contexts
                 .ThenInclude(e => e.Outputs)
                 .Include(e => e.Transactions)
                 .ThenInclude(e => e.Transaction)
-                .ThenInclude(e => e.Inputs);
+                .ThenInclude(e => e.Inputs)
+                .Include(e => e.Transactions)
+                .ThenInclude(e => e.Transaction)
+                .ThenInclude(e => e.ExodusPayload);
         }
     }
 }

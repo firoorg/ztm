@@ -1,4 +1,6 @@
+using System;
 using System.IO;
+using NBitcoin;
 using Xunit;
 using Ztm.Testing;
 using Ztm.Zcoin.NBitcoin.Exodus;
@@ -18,6 +20,71 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
         public void Type_WhenGetValue_ShouldReturnSimpleSendId()
         {
             Assert.Equal(SimpleSendV0.StaticId, this.subject.Type);
+        }
+
+        [Fact]
+        public void Encode_WithInvalidType_ShouldThrow()
+        {
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream))
+            {
+                Assert.Throws<ArgumentException>(
+                    "transaction",
+                    () => this.subject.Encode(writer, new FakeExodusTransaction(null, null))
+                );
+            }
+        }
+
+        [Fact]
+        public void Encode_WithUnsupportedVersion_ShouldThrow()
+        {
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream))
+            {
+                var transaction = new SimpleSendV99(
+                    TestAddress.Regtest1,
+                    TestAddress.Regtest2,
+                    new PropertyId(2),
+                    PropertyAmount.One
+                );
+
+                Assert.Throws<NotSupportedException>(
+                    () => this.subject.Encode(writer, transaction)
+                );
+            }
+        }
+
+        [Theory]
+        [InlineData(PropertyId.MinValue, 1L)]
+        [InlineData(PropertyId.MinValue, long.MaxValue)]
+        [InlineData(PropertyId.MaxValue, 1L)]
+        [InlineData(PropertyId.MaxValue, long.MaxValue)]
+        public void Encode_WithValidExodusTransaction_ShouldSuccess(long property, long amount)
+        {
+            using (var payloadStream = new MemoryStream())
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream))
+            {
+                // Arrange.
+                RawTransaction.WritePropertyId(payloadStream, property);
+                RawTransaction.WritePropertyAmount(payloadStream, new PropertyAmount(amount));
+
+                var payload = payloadStream.ToArray();
+
+                var transaction = new SimpleSendV0(
+                    TestAddress.Regtest1,
+                    TestAddress.Regtest2,
+                    new PropertyId(property),
+                    new PropertyAmount(amount)
+                );
+
+                // Act.
+                this.subject.Encode(writer, transaction);
+
+                // Assert.
+                var result = stream.ToArray();
+                Assert.Equal(payload, result);
+            }
         }
 
         [Fact]
@@ -146,6 +213,16 @@ namespace Ztm.Zcoin.NBitcoin.Tests.Exodus
                 Assert.Equal(property, tx.Property.Value);
                 Assert.Equal(amount, tx.Amount.Indivisible);
             }
+        }
+
+        class SimpleSendV99 : SimpleSendV0
+        {
+            public SimpleSendV99(BitcoinAddress sender, BitcoinAddress receiver, PropertyId property, PropertyAmount amount)
+                : base(sender, receiver, property, amount)
+            {
+            }
+
+            public override int Version => 99;
         }
     }
 }

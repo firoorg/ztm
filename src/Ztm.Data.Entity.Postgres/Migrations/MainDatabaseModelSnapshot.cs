@@ -67,6 +67,24 @@ namespace Ztm.Data.Entity.Postgres.Migrations
                     b.ToTable("BlockTransactions");
                 });
 
+            modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.ExodusPayload", b =>
+                {
+                    b.Property<uint256>("TransactionHash");
+
+                    b.Property<byte[]>("Data")
+                        .IsRequired();
+
+                    b.Property<string>("Receiver")
+                        .IsRequired();
+
+                    b.Property<string>("Sender")
+                        .IsRequired();
+
+                    b.HasKey("TransactionHash");
+
+                    b.ToTable("ExodusPayloads");
+                });
+
             modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.Input", b =>
                 {
                     b.Property<uint256>("TransactionHash");
@@ -279,6 +297,14 @@ namespace Ztm.Data.Entity.Postgres.Migrations
                         .WithMany("Blocks")
                         .HasForeignKey("TransactionHash")
                         .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.ExodusPayload", b =>
+                {
+                    b.HasOne("Ztm.Data.Entity.Contexts.Main.Transaction")
+                        .WithOne("ExodusPayload")
+                        .HasForeignKey("Ztm.Data.Entity.Contexts.Main.ExodusPayload", "TransactionHash")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.Input", b =>

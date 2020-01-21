@@ -10,6 +10,11 @@ namespace Ztm.Testing
             ZcoinNetworks.Instance.Mainnet
         );
 
+        public static readonly BitcoinAddress Mainnet2 = BitcoinAddress.Create(
+            "aGyHXMXvAgxts3o9YHvuyk9dZAZawiG9VD",
+            ZcoinNetworks.Instance.Mainnet
+        );
+
         public static readonly BitcoinAddress Testnet1 = BitcoinAddress.Create(
             "TEDC38GBncNgtd2pVXeDhLeUGwJmXsiJBA",
             ZcoinNetworks.Instance.Testnet

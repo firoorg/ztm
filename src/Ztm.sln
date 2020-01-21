@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26124.0
@@ -60,6 +60,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ztm.Data.Entity.Postgres.Tests", "Ztm.Data.Entity.Postgres.Tests\Ztm.Data.Entity.Postgres.Tests.csproj", "{79AA409F-5084-462E-A47B-F81F04176632}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ztm.Testing.Tests", "Ztm.Testing.Tests\Ztm.Testing.Tests.csproj", "{9214645F-0F69-42E4-BF84-5076C479AC8B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ztm.Zcoin.NBitcoin.Json", "Ztm.Zcoin.NBitcoin.Json\Ztm.Zcoin.NBitcoin.Json.csproj", "{08CA08FE-B61F-491A-A069-34075573E2F8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ztm.Zcoin.NBitcoin.Json.Tests", "Ztm.Zcoin.NBitcoin.Json.Tests\Ztm.Zcoin.NBitcoin.Json.Tests.csproj", "{AEA08B2B-4910-4187-857B-75618AFCA738}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -416,5 +420,29 @@ Global
 		{9214645F-0F69-42E4-BF84-5076C479AC8B}.Release|x64.Build.0 = Release|Any CPU
 		{9214645F-0F69-42E4-BF84-5076C479AC8B}.Release|x86.ActiveCfg = Release|Any CPU
 		{9214645F-0F69-42E4-BF84-5076C479AC8B}.Release|x86.Build.0 = Release|Any CPU
+		{08CA08FE-B61F-491A-A069-34075573E2F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{08CA08FE-B61F-491A-A069-34075573E2F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{08CA08FE-B61F-491A-A069-34075573E2F8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{08CA08FE-B61F-491A-A069-34075573E2F8}.Debug|x64.Build.0 = Debug|Any CPU
+		{08CA08FE-B61F-491A-A069-34075573E2F8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{08CA08FE-B61F-491A-A069-34075573E2F8}.Debug|x86.Build.0 = Debug|Any CPU
+		{08CA08FE-B61F-491A-A069-34075573E2F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{08CA08FE-B61F-491A-A069-34075573E2F8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{08CA08FE-B61F-491A-A069-34075573E2F8}.Release|x64.ActiveCfg = Release|Any CPU
+		{08CA08FE-B61F-491A-A069-34075573E2F8}.Release|x64.Build.0 = Release|Any CPU
+		{08CA08FE-B61F-491A-A069-34075573E2F8}.Release|x86.ActiveCfg = Release|Any CPU
+		{08CA08FE-B61F-491A-A069-34075573E2F8}.Release|x86.Build.0 = Release|Any CPU
+		{AEA08B2B-4910-4187-857B-75618AFCA738}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AEA08B2B-4910-4187-857B-75618AFCA738}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AEA08B2B-4910-4187-857B-75618AFCA738}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{AEA08B2B-4910-4187-857B-75618AFCA738}.Debug|x64.Build.0 = Debug|Any CPU
+		{AEA08B2B-4910-4187-857B-75618AFCA738}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{AEA08B2B-4910-4187-857B-75618AFCA738}.Debug|x86.Build.0 = Debug|Any CPU
+		{AEA08B2B-4910-4187-857B-75618AFCA738}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AEA08B2B-4910-4187-857B-75618AFCA738}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AEA08B2B-4910-4187-857B-75618AFCA738}.Release|x64.ActiveCfg = Release|Any CPU
+		{AEA08B2B-4910-4187-857B-75618AFCA738}.Release|x64.Build.0 = Release|Any CPU
+		{AEA08B2B-4910-4187-857B-75618AFCA738}.Release|x86.ActiveCfg = Release|Any CPU
+		{AEA08B2B-4910-4187-857B-75618AFCA738}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

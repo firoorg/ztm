@@ -29,6 +29,7 @@
     <ProjectReference Include="..\Ztm.Data.Entity.Testing\Ztm.Data.Entity.Testing.csproj" />
     <ProjectReference Include="..\Ztm.Testing\Ztm.Testing.csproj" />
     <ProjectReference Include="..\Ztm.Zcoin.Watching\Ztm.Zcoin.Watching.csproj" />
+    <ProjectReference Include="..\Ztm.Zcoin.Testing\Ztm.Zcoin.Testing.csproj" />
   </ItemGroup>
 
 </Project>

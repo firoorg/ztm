@@ -3,6 +3,7 @@ using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Xunit;
+using Ztm.WebApi.ApiExceptions;
 using Ztm.WebApi.Callbacks;
 
 namespace Ztm.WebApi.Tests
@@ -103,6 +104,18 @@ namespace Ztm.WebApi.Tests
             );
             Assert.Equal(callback.Id.ToString(), retreived);
             Assert.Equal((int)HttpStatusCode.Accepted, result.StatusCode);
+        }
+
+        [Fact]
+        public void InsufficientFee_ShouldReturnValidStatus()
+        {
+            Assert.Equal((int)HttpStatusCode.InternalServerError, this.subject.InsufficientFee().StatusCode);
+        }
+
+        [Fact]
+        public void InsufficientToken_ShouldReturnValidStatus()
+        {
+            Assert.Equal((int)HttpStatusCode.Conflict, this.subject.InsufficientToken().StatusCode);
         }
     }
 

@@ -19,6 +19,10 @@ using Ztm.Zcoin.NBitcoin;
 using Ztm.Zcoin.NBitcoin.Exodus;
 using Ztm.Zcoin.Rpc;
 using Ztm.Zcoin.Synchronization;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Newtonsoft.Json;
+using Ztm.Zcoin.NBitcoin.Json;
+using Ztm.WebApi.Controllers;
 
 namespace Ztm.WebApi
 {
@@ -45,8 +49,13 @@ namespace Ztm.WebApi
                     {
                         o.SerializerSettings.ContractResolver = new DefaultContractResolver()
                         {
-                            NamingStrategy = new SnakeCaseNamingStrategy()
+                            NamingStrategy = new SnakeCaseNamingStrategy(),
                         };
+
+                        var config = this.config.GetZcoinSection();
+                        var network = ZcoinNetworks.Instance.GetNetwork(config.Network.Type);
+                        o.SerializerSettings.Converters.Add(new BitcoinAddressConverter(network));
+                        o.SerializerSettings.Converters.Add(new UInt256Converter());
                     });
 
             // Http Client Factory.
@@ -58,6 +67,23 @@ namespace Ztm.WebApi
             // Fundamentals Services.
             services.AddBackgroundServiceExceptionHandler();
             services.AddSingleton<Network>(CreateZcoinNetwork);
+
+            services.AddSingleton<ZcoinConfiguration>(
+                p => this.config.GetZcoinSection()
+            );
+
+            services.AddSingleton<JsonSerializer>(
+                p =>
+                {
+                    var serializer = new JsonSerializer();
+
+                    var network = p.GetRequiredService<Network>();
+                    serializer.Converters.Add(new BitcoinAddressConverter(network));
+                    serializer.Converters.Add(new UInt256Converter());
+
+                    return serializer;
+                }
+            );
 
             // Database Services.
             services.AddSingleton<IMainDatabaseFactory, MainDatabaseFactory>();
@@ -76,8 +102,12 @@ namespace Ztm.WebApi
                 p => p.GetRequiredService<TransactionConfirmationWatcher>()
             );
 
+            services.AddSingleton<ITransactionConfirmationWatcher, TransactionConfirmationWatcher>(
+                p => p.GetRequiredService<TransactionConfirmationWatcher>()
+            );
+
             // Zcoin Interface Services.
-            services.AddSingleton<IZcoinRpcClientFactory>(CreateZcoinRpcClientFactory);
+            services.AddSingleton<IRpcFactory>(CreateRpcFactory);
             services.AddTransient<IBlocksRetriever, BlocksRetriever>();
             services.AddSingleton<IBlocksStorage, BlocksStorage>();
 
@@ -86,6 +116,9 @@ namespace Ztm.WebApi
 
             // Background Services.
             services.AddHostedService<BlocksSynchronizer>();
+
+            // Helper Controller.
+            services.AddSingleton<ControllerHelper>();
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
@@ -108,6 +141,9 @@ namespace Ztm.WebApi
             // Custom Model Binders.
             options.ModelBinderProviders.Insert(0, new BitcoinAddressModelBinderProvider());
             options.ModelBinderProviders.Insert(0, new PropertyAmountModelBinderProvider());
+
+            // FIXME: remove this when upgrade to .NET Core version >= 2.2
+            options.ModelMetadataDetailsProviders.Add(new SuppressChildValidationMetadataProvider(typeof(BitcoinAddress)));
         }
 
         Network CreateZcoinNetwork(IServiceProvider provider)
@@ -117,13 +153,13 @@ namespace Ztm.WebApi
             return ZcoinNetworks.Instance.GetNetwork(config.Network.Type);
         }
 
-        IZcoinRpcClientFactory CreateZcoinRpcClientFactory(IServiceProvider provider)
+        IRpcFactory CreateRpcFactory(IServiceProvider provider)
         {
             var config = this.config.GetZcoinSection();
 
-            return new ZcoinRpcClientFactory(
+            return new RpcFactory(
+                provider.GetRequiredService<Network>(),
                 config.Rpc.Address,
-                config.Network.Type,
                 RPCCredentialString.Parse($"{config.Rpc.UserName}:{config.Rpc.Password}"),
                 provider.GetRequiredService<ITransactionEncoder>()
             );
