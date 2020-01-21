@@ -122,7 +122,7 @@ namespace Ztm.WebApi.Watchers.TokenBalance
 
             try
             {
-                var uncompleted = await this.rules.ListUncompletedAsync(this.property, CancellationToken.None);
+                var uncompleted = await this.rules.ListUncompletedAsync(this.property, cancellationToken);
 
                 foreach (var rule in uncompleted)
                 {

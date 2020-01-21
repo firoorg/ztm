@@ -314,7 +314,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                     .ReturnsAsync(this.rule1.OriginalTimeout);
 
                 // Act.
-                await this.subject.StartAsync(CancellationToken.None);
+                await this.subject.StartAsync(cancellationToken);
 
                 // Assert.
                 var schedule = Assert.Single(this.timerScheduler.ActiveSchedules);
@@ -325,7 +325,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                 Assert.Equal(this.rule1.Address, schedule.Context);
 
                 this.rules.Verify(
-                    r => r.ListUncompletedAsync(this.property, CancellationToken.None),
+                    r => r.ListUncompletedAsync(this.property, cancellationToken),
                     Times.Once());
 
                 this.rules.Verify(

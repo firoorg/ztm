@@ -81,15 +81,13 @@ namespace Ztm.WebApi.Controllers
                 Transaction tx;
                 try
                 {
-                    tx = await propertyManagementRpc.GrantAsync
-                    (
+                    tx = await propertyManagementRpc.GrantAsync(
                         property,
                         this.zcoinConfig.Property.Issuer.Address,
                         this.zcoinConfig.Property.Distributor.Address,
                         req.Amount,
                         req.Note,
-                        cancellationToken
-                    );
+                        cancellationToken);
                 }
                 catch (RPCException ex) when (ex.IsInsufficientFee())
                 {
