@@ -83,10 +83,10 @@ namespace Ztm.Zcoin.NBitcoin
                     foreach (var mtpData in nProofMTP[i])
                     {
                         Debug.Assert(mtpData.Length == 16);
-                        stream.Inner.Write(mtpData, 0, mtpData.Length);
-                    }
 
-                    stream.Counter.AddWritten(16 * nProofMTP[i].Count);
+                        stream.Inner.Write(mtpData, 0, mtpData.Length);
+                        stream.Counter.AddWritten(mtpData.Length);
+                    }
                 }
             }
             else
@@ -109,10 +109,10 @@ namespace Ztm.Zcoin.NBitcoin
                     for (byte j = 0; j < numberOfProofBlocks; j++)
                     {
                         var mtpData = stream.Inner.ReadBytes(16);
+                        stream.Counter.AddReaden(16);
+
                         nProofMTP[i].Add(mtpData);
                     }
-
-                    stream.Counter.AddReaden(16 * numberOfProofBlocks);
                 }
             }
         }
