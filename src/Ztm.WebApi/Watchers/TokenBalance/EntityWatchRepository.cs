@@ -15,12 +15,12 @@ using Status = Ztm.Data.Entity.Contexts.Main.TokenBalanceWatcherWatchStatus;
 
 namespace Ztm.WebApi.Watchers.TokenBalance
 {
-    public sealed class WatchRepository : IWatchRepository
+    public sealed class EntityWatchRepository : IWatchRepository
     {
         readonly IMainDatabaseFactory db;
-        readonly RuleRepository rules;
+        readonly EntityRuleRepository rules;
 
-        public WatchRepository(IMainDatabaseFactory db, RuleRepository rules)
+        public EntityWatchRepository(IMainDatabaseFactory db, EntityRuleRepository rules)
         {
             if (db == null)
             {

@@ -17,7 +17,7 @@ using Status=Ztm.Data.Entity.Contexts.Main.TokenBalanceWatcherWatchStatus;
 
 namespace Ztm.WebApi.Tests.Watchers.TokenBalance
 {
-    public sealed class WatchRepositoryTests : IDisposable
+    public sealed class EntityWatchRepositoryTests : IDisposable
     {
         readonly Network network;
         readonly uint256 block1;
@@ -34,10 +34,10 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
         readonly DomainModel watch4;
         readonly DomainModel watch5;
         readonly TestMainDatabaseFactory db;
-        readonly RuleRepository rules;
-        readonly WatchRepository subject;
+        readonly EntityRuleRepository rules;
+        readonly EntityWatchRepository subject;
 
-        public WatchRepositoryTests()
+        public EntityWatchRepositoryTests()
         {
             this.network = ZcoinNetworks.Instance.Regtest;
             this.block1 = uint256.Parse("70788f475f68e72de2ae9246dabce6c4d5949c8801f6f034aaa151cfce26591d");
@@ -96,8 +96,8 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
 
             try
             {
-                this.rules = new RuleRepository(this.db, this.network);
-                this.subject = new WatchRepository(this.db, this.rules);
+                this.rules = new EntityRuleRepository(this.db, this.network);
+                this.subject = new EntityWatchRepository(this.db, this.rules);
             }
             catch
             {
@@ -114,13 +114,13 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
         [Fact]
         public void Constructor_WithNullDb_ShouldThrow()
         {
-            Assert.Throws<ArgumentNullException>("db", () => new WatchRepository(null, this.rules));
+            Assert.Throws<ArgumentNullException>("db", () => new EntityWatchRepository(null, this.rules));
         }
 
         [Fact]
         public void Constructor_WithNullRules_ShouldThrow()
         {
-            Assert.Throws<ArgumentNullException>("rules", () => new WatchRepository(this.db, null));
+            Assert.Throws<ArgumentNullException>("rules", () => new EntityWatchRepository(this.db, null));
         }
 
         [Fact]

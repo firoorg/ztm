@@ -16,14 +16,14 @@ using WebApiCallback=Ztm.Data.Entity.Contexts.Main.WebApiCallback;
 
 namespace Ztm.WebApi.Tests.Watchers.TokenBalance
 {
-    public sealed class RuleRepositoryTests : IDisposable
+    public sealed class EntityRuleRepositoryTests : IDisposable
     {
         readonly Rule rule;
         readonly Network network;
         readonly TestMainDatabaseFactory db;
-        readonly RuleRepository subject;
+        readonly EntityRuleRepository subject;
 
-        public RuleRepositoryTests()
+        public EntityRuleRepositoryTests()
         {
             this.rule = new Rule(
                 new PropertyId(3),
@@ -38,7 +38,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
 
             try
             {
-                this.subject = new RuleRepository(this.db, this.network);
+                this.subject = new EntityRuleRepository(this.db, this.network);
             }
             catch
             {
@@ -55,13 +55,13 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
         [Fact]
         public void Constructor_WithNullDb_ShouldThrow()
         {
-            Assert.Throws<ArgumentNullException>("db", () => new RuleRepository(null, this.network));
+            Assert.Throws<ArgumentNullException>("db", () => new EntityRuleRepository(null, this.network));
         }
 
         [Fact]
         public void Constructor_WithNullNetwork_ShouldThrow()
         {
-            Assert.Throws<ArgumentNullException>("network", () => new RuleRepository(this.db, null));
+            Assert.Throws<ArgumentNullException>("network", () => new EntityRuleRepository(this.db, null));
         }
 
         [Fact]

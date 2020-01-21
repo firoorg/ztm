@@ -13,12 +13,12 @@ using Status = Ztm.Data.Entity.Contexts.Main.TokenBalanceWatcherRuleStatus;
 
 namespace Ztm.WebApi.Watchers.TokenBalance
 {
-    public sealed class RuleRepository : IRuleRepository
+    public sealed class EntityRuleRepository : IRuleRepository
     {
         readonly IMainDatabaseFactory db;
         readonly Network network;
 
-        public RuleRepository(IMainDatabaseFactory db, Network network)
+        public EntityRuleRepository(IMainDatabaseFactory db, Network network)
         {
             if (db == null)
             {

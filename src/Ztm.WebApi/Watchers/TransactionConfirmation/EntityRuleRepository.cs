@@ -98,8 +98,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
 
             using (var db = this.db.CreateDbContext())
             {
-                var watch = await db.TransactionConfirmationWatcherRules.AddAsync
-                (
+                var watch = await db.TransactionConfirmationWatcherRules.AddAsync(
                     new EntityModel
                     {
                         Id = Guid.NewGuid(),
@@ -114,8 +113,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
                         CurrentWatchId = null,
                         CreatedAt = DateTime.UtcNow,
                     },
-                    cancellationToken
-                );
+                    cancellationToken);
 
                 await db.SaveChangesAsync(cancellationToken);
 
