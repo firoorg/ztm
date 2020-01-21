@@ -8,7 +8,7 @@ namespace Ztm.WebApi.Watchers.TokenBalance
 {
     public interface ITokenBalanceWatcher
     {
-        Task<Rule> WatchAddressAsync(
+        Task<Rule> StartWatchAsync(
             BitcoinAddress address,
             PropertyAmount targetAmount,
             int targetConfirmation,

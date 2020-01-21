@@ -335,43 +335,13 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
         }
 
         [Fact]
-        public Task StopAsync_WithActiveTimers_ShouldStopItAndDecreaseTimeout()
-        {
-            return AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
-            {
-                // Arrange.
-                await StartSubjectAsync(this.rule1, this.rule2);
-
-                this.timerScheduler.Trigger(s => s.Context.Equals(this.rule1.Address));
-
-                // Act.
-                await this.subject.StopAsync(cancellationToken);
-
-                // Assert.
-                this.rules.Verify(
-                    r => r.DecreaseTimeoutAsync(
-                        this.rule2.Id,
-                        It.Is<TimeSpan>(v => v > TimeSpan.Zero),
-                        CancellationToken.None),
-                    Times.Once());
-
-                var schedule = Assert.Single(
-                    this.timerScheduler.StoppedSchedules,
-                    s => s.Context.Equals(this.rule2.Address));
-
-                Assert.Equal(this.rule2.OriginalTimeout, schedule.Due);
-                Assert.Null(schedule.Period);
-            });
-        }
-
-        [Fact]
-        public Task WatchAddressAsync_WithUnsupportedTimeout_ShouldThrow()
+        public Task StartWatchAsync_WithUnsupportedTimeout_ShouldThrow()
         {
             this.timerScheduler.DurationValidator = duration => duration == this.rule1.OriginalTimeout;
 
             return Assert.ThrowsAsync<ArgumentOutOfRangeException>(
                 "timeout",
-                () => this.subject.WatchAddressAsync(
+                () => this.subject.StartWatchAsync(
                     this.rule1.Address,
                     this.rule1.TargetAmount,
                     this.rule1.TargetConfirmation,
@@ -382,7 +352,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
         }
 
         [Fact]
-        public Task WatchAddressAsync_WithInvalidCallback_ShouldThrow()
+        public Task StartWatchAsync_WithInvalidCallback_ShouldThrow()
         {
             return AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
             {
@@ -392,7 +362,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                 // Act.
                 await Assert.ThrowsAsync<ArgumentException>(
                     "callback",
-                    () => this.subject.WatchAddressAsync(
+                    () => this.subject.StartWatchAsync(
                         this.rule1.Address,
                         this.rule1.TargetAmount,
                         this.rule1.TargetConfirmation,
@@ -409,10 +379,10 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
         }
 
         [Fact]
-        public Task WatchAddressAsync_NotStarted_ShouldThrow()
+        public Task StartWatchAsync_NotStarted_ShouldThrow()
         {
             return Assert.ThrowsAsync<InvalidOperationException>(
-                () => this.subject.WatchAddressAsync(
+                () => this.subject.StartWatchAsync(
                     this.rule1.Address,
                     this.rule1.TargetAmount,
                     this.rule1.TargetConfirmation,
@@ -423,7 +393,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
         }
 
         [Fact]
-        public async Task WatchAddressAsync_AlreadyStopped_ShouldThrow()
+        public async Task StartWatchAsync_AlreadyStopped_ShouldThrow()
         {
             // Arrange.
             await StartSubjectAsync();
@@ -431,7 +401,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
 
             // Act.
             await Assert.ThrowsAsync<InvalidOperationException>(
-                () => this.subject.WatchAddressAsync(
+                () => this.subject.StartWatchAsync(
                     this.rule1.Address,
                     this.rule1.TargetAmount,
                     this.rule1.TargetConfirmation,
@@ -442,7 +412,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
         }
 
         [Fact]
-        public Task WatchAddressAsync_WithValidArgs_ShouldStartWatchingThatAddress()
+        public Task StartWatchAsync_WithValidArgs_ShouldStartWatchingThatAddress()
         {
             return AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
             {
@@ -450,7 +420,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                 await StartSubjectAsync();
 
                 // Act.
-                var result = await InvokeWatchAddressAsync(this.rule1, cancellationToken);
+                var result = await InvokeStartWatchAsync(this.rule1, cancellationToken);
 
                 // Assert.
                 var schedule = Assert.Single(this.timerScheduler.ActiveSchedules);
@@ -474,12 +444,12 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
         }
 
         [Fact]
-        public async Task WatchAddressAsync_WatchingHaveBeenTimeoutAndItNotCompletedYet_ShouldRaiseTimeoutCallback()
+        public async Task StartWatchAsync_WatchingHaveBeenTimeoutAndItNotCompletedYet_ShouldRaiseTimeoutCallback()
         {
             // Arrange.
             await StartSubjectAsync();
 
-            var rule = await InvokeWatchAddressAsync(this.rule1, CancellationToken.None);
+            var rule = await InvokeStartWatchAsync(this.rule1, CancellationToken.None);
 
             this.watches
                 .Setup(r => r.TransitionToTimedOutAsync(rule, It.IsAny<CancellationToken>()))
@@ -543,14 +513,14 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
         }
 
         [Fact]
-        public Task WatchAddressAsync_WatchingHaveBeenTimeoutButItAlreadyCompleted_ShouldDoNothing()
+        public Task StartWatchAsync_WatchingHaveBeenTimeoutButItAlreadyCompleted_ShouldDoNothing()
         {
             return AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
             {
                 // Arrange.
                 await StartSubjectAsync();
 
-                var rule = await InvokeWatchAddressAsync(this.rule1, CancellationToken.None);
+                var rule = await InvokeStartWatchAsync(this.rule1, CancellationToken.None);
 
                 var confirm = new Confirmation(this.block4.GetHash(), rule.Address, new Dictionary<Watch, int>()
                 {
@@ -618,12 +588,12 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
         }
 
         [Fact]
-        public async Task WatchAddressAsync_WatchingHaveBeenTimeoutButThereIsException_ShouldLogThatException()
+        public async Task StartWatchAsync_WatchingHaveBeenTimeoutButThereIsException_ShouldLogThatException()
         {
             // Arrange.
             await StartSubjectAsync();
 
-            var rule = await InvokeWatchAddressAsync(this.rule1, CancellationToken.None);
+            var rule = await InvokeStartWatchAsync(this.rule1, CancellationToken.None);
 
             this.rules
                 .Setup(r => r.SetTimedOutAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
@@ -650,6 +620,36 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
             this.rules.Verify(
                 r => r.DecreaseTimeoutAsync(rule.Id, It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()),
                 Times.Never());
+        }
+
+        [Fact]
+        public Task StopAsync_WithActiveTimers_ShouldStopItAndDecreaseTimeout()
+        {
+            return AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
+            {
+                // Arrange.
+                await StartSubjectAsync(this.rule1, this.rule2);
+
+                this.timerScheduler.Trigger(s => s.Context.Equals(this.rule1.Address));
+
+                // Act.
+                await this.subject.StopAsync(cancellationToken);
+
+                // Assert.
+                this.rules.Verify(
+                    r => r.DecreaseTimeoutAsync(
+                        this.rule2.Id,
+                        It.Is<TimeSpan>(v => v > TimeSpan.Zero),
+                        CancellationToken.None),
+                    Times.Once());
+
+                var schedule = Assert.Single(
+                    this.timerScheduler.StoppedSchedules,
+                    s => s.Context.Equals(this.rule2.Address));
+
+                Assert.Equal(this.rule2.OriginalTimeout, schedule.Due);
+                Assert.Null(schedule.Period);
+            });
         }
 
         [Fact]
@@ -1180,9 +1180,9 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
             return this.subject.StartAsync(CancellationToken.None);
         }
 
-        Task<Rule> InvokeWatchAddressAsync(Rule rule, CancellationToken cancellationToken)
+        Task<Rule> InvokeStartWatchAsync(Rule rule, CancellationToken cancellationToken)
         {
-            return this.subject.WatchAddressAsync(
+            return this.subject.StartWatchAsync(
                 rule.Address,
                 rule.TargetAmount,
                 rule.TargetConfirmation,

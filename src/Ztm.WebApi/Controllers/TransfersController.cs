@@ -77,15 +77,13 @@ namespace Ztm.WebApi.Controllers
                 Transaction tx;
                 try
                 {
-                    tx = await propertyManagementRpc.SendAsync
-                    (
+                    tx = await propertyManagementRpc.SendAsync(
                         this.zcoinConfiguration.Property.Distributor.Address,
                         req.Destination,
                         new Property(this.zcoinConfiguration.Property.Id, this.zcoinConfiguration.Property.Type),
                         req.Amount,
                         req.ReferenceAmount,
-                        cancellationToken
-                    );
+                        cancellationToken);
                 }
                 catch (RPCException ex) when (ex.IsInsufficientToken())
                 {

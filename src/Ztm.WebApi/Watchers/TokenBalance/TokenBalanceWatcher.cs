@@ -139,41 +139,7 @@ namespace Ztm.WebApi.Watchers.TokenBalance
             }
         }
 
-        public async Task StopAsync(CancellationToken cancellationToken)
-        {
-            IEnumerable<WatchingInfo> watchings;
-
-            // Cache watching list due to we can't wait timer to stop while we hold the semaphore.
-            await this.semaphore.WaitAsync(cancellationToken);
-
-            try
-            {
-                watchings = this.watching
-                    .Select(p => p.Value)
-                    .ToList();
-
-                this.stopped = true;
-            }
-            finally
-            {
-                this.semaphore.Release();
-            }
-
-            // Stop all timers.
-            foreach (var (rule, timer) in watchings)
-            {
-                await timer.StopAsync(CancellationToken.None);
-
-                if (timer.ElapsedCount != 0)
-                {
-                    continue;
-                }
-
-                await this.rules.DecreaseTimeoutAsync(rule.Id, timer.ElapsedTime, CancellationToken.None);
-            }
-        }
-
-        public async Task<Rule> WatchAddressAsync(
+        public async Task<Rule> StartWatchAsync(
             BitcoinAddress address,
             PropertyAmount targetAmount,
             int targetConfirmation,
@@ -222,6 +188,40 @@ namespace Ztm.WebApi.Watchers.TokenBalance
             }
 
             return rule;
+        }
+
+        public async Task StopAsync(CancellationToken cancellationToken)
+        {
+            IEnumerable<WatchingInfo> watchings;
+
+            // Cache watching list due to we can't wait timer to stop while we hold the semaphore.
+            await this.semaphore.WaitAsync(cancellationToken);
+
+            try
+            {
+                watchings = this.watching
+                    .Select(p => p.Value)
+                    .ToList();
+
+                this.stopped = true;
+            }
+            finally
+            {
+                this.semaphore.Release();
+            }
+
+            // Stop all timers.
+            foreach (var (rule, timer) in watchings)
+            {
+                await timer.StopAsync(CancellationToken.None);
+
+                if (timer.ElapsedCount != 0)
+                {
+                    continue;
+                }
+
+                await this.rules.DecreaseTimeoutAsync(rule.Id, timer.ElapsedTime, CancellationToken.None);
+            }
         }
 
         void StartTimer(Rule rule, TimeSpan timeout)
