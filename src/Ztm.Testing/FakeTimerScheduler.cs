@@ -25,7 +25,7 @@ namespace Ztm.Testing
 
         public bool IsValidDuration(TimeSpan duration)
         {
-            return DurationValidator != null ? DurationValidator(duration) : true;
+            return DurationValidator == null || DurationValidator(duration);
         }
 
         public object Schedule(TimeSpan due, TimeSpan? period, Action<object> handler, object context)

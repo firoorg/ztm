@@ -295,7 +295,7 @@ namespace Ztm.WebApi.Watchers.TokenBalance
 
                 await InvokeCallbackAsync(rule, rule.TimeoutStatus, result, CancellationToken.None);
             }
-            catch (Exception ex)
+            catch (Exception ex) // lgtm[cs/catch-of-all-exceptions]
             {
                 this.logger.LogError(ex, "Failed to trigger timeout for address {Address}", address);
             }
