@@ -58,8 +58,6 @@ namespace Ztm.WebApi.Watchers.TokenBalance
             PropertyId property,
             CancellationToken cancellationToken)
         {
-            IEnumerable<EntityModel> entities;
-
             if (property == null)
             {
                 throw new ArgumentNullException(nameof(property));
@@ -67,15 +65,12 @@ namespace Ztm.WebApi.Watchers.TokenBalance
 
             using (var db = this.db.CreateDbContext())
             {
-                entities = await db.TokenBalanceWatcherWatches
+                return await db.TokenBalanceWatcherWatches
                     .Include(e => e.Rule)
                     .Where(e => e.Status == Status.Uncompleted && e.Rule.PropertyId == property.Value)
+                    .Select(e => ToDomain(e))
                     .ToListAsync(cancellationToken);
             }
-
-            return entities
-                .Select(e => ToDomain(e))
-                .ToList();
         }
 
         public Task SetConfirmationCountAsync(
