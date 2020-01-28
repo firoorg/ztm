@@ -29,7 +29,7 @@ namespace Ztm.Threading.Tests
         }
 
         [Fact]
-        public async Task WaitAsync_WithoutCancellationToken_ShouldCompletedWhenCanceled()
+        public async Task WaitAsync_WithUncancelableCancellationToken_ShouldCompletedWhenCanceled()
         {
             // Act.
             var task = this.source.Token.WaitAsync(CancellationToken.None);
