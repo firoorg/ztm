@@ -3,7 +3,7 @@ using NBitcoin;
 
 namespace Ztm.Data.Entity.Contexts.Main
 {
-    public sealed class TokenBalanceWatcherWatch
+    public sealed class TokenReceivingWatcherWatch
     {
         public Guid Id { get; set; }
         public Guid RuleId { get; set; }
@@ -12,12 +12,14 @@ namespace Ztm.Data.Entity.Contexts.Main
         public long BalanceChange { get; set; }
         public DateTime CreatedTime { get; set; }
         public int Confirmation { get; set; }
-        public TokenBalanceWatcherWatchStatus Status { get; set; }
+        public TokenReceivingWatcherWatchStatus Status { get; set; }
 
-        public TokenBalanceWatcherRule Rule { get; set; }
+        public TokenReceivingWatcherRule Rule { get; set; }
+        public Block Block { get; set; }
+        public Transaction Transaction { get; set; }
     }
 
-    public enum TokenBalanceWatcherWatchStatus
+    public enum TokenReceivingWatcherWatchStatus
     {
         Uncompleted,
         Succeeded,

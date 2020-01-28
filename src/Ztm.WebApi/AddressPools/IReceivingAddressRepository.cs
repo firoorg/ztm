@@ -6,11 +6,13 @@ using NBitcoin;
 
 namespace Ztm.WebApi.AddressPools
 {
-    public interface IReceivingAddressStorage
+    public interface IReceivingAddressRepository
     {
         Task<ReceivingAddress> AddAsync(BitcoinAddress address, CancellationToken cancellationToken);
 
         Task<ReceivingAddress> GetAsync(Guid id, CancellationToken cancellationToken);
+
+        Task<ReceivingAddressReservation> GetReservationAsync(Guid id, CancellationToken cancellationToken);
 
         Task<IEnumerable<ReceivingAddress>> ListAsync(
             AddressFilter filter,

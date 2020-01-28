@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,39 +11,45 @@ using Moq;
 using NBitcoin;
 using Xunit;
 using Ztm.Testing;
+using Ztm.WebApi.AddressPools;
 using Ztm.WebApi.Callbacks;
-using Ztm.WebApi.Watchers.TokenBalance;
+using Ztm.WebApi.Watchers.TokenReceiving;
 using Ztm.Zcoin.NBitcoin.Exodus;
 using Ztm.Zcoin.NBitcoin.Exodus.TransactionRetrievers;
 using Ztm.Zcoin.Synchronization;
 using Ztm.Zcoin.Watching;
-using Confirmation = Ztm.Zcoin.Watching.BalanceConfirmation<Ztm.WebApi.Watchers.TokenBalance.Rule, Ztm.Zcoin.NBitcoin.Exodus.PropertyAmount>;
-using Watch = Ztm.Zcoin.Watching.BalanceWatch<Ztm.WebApi.Watchers.TokenBalance.Rule, Ztm.Zcoin.NBitcoin.Exodus.PropertyAmount>;
+using Confirmation = Ztm.Zcoin.Watching.BalanceConfirmation<Ztm.WebApi.Watchers.TokenReceiving.Rule, Ztm.Zcoin.NBitcoin.Exodus.PropertyAmount>;
+using Watch = Ztm.Zcoin.Watching.BalanceWatch<Ztm.WebApi.Watchers.TokenReceiving.Rule, Ztm.Zcoin.NBitcoin.Exodus.PropertyAmount>;
 
-namespace Ztm.WebApi.Tests.Watchers.TokenBalance
+namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
 {
-    public sealed class TokenBalanceWatcherTests : IDisposable
+    public sealed class TokenReceivingWatcherTests : IDisposable
     {
         readonly PropertyId property;
         readonly Block block1;
         readonly Block block2;
         readonly Block block3;
         readonly Block block4;
+        readonly ReceivingAddress address1;
+        readonly ReceivingAddress address2;
+        readonly ReceivingAddressReservation reservation1;
+        readonly ReceivingAddressReservation reservation2;
         readonly Callback callback1;
         readonly Callback callback2;
         readonly Rule rule1;
         readonly Rule rule2;
-        readonly Mock<ILogger<TokenBalanceWatcher>> logger;
+        readonly Mock<ILogger<TokenReceivingWatcher>> logger;
         readonly Mock<IBlocksStorage> blocks;
+        readonly Mock<IReceivingAddressPool> addressPool;
         readonly Mock<ITransactionRetriever> exodusRetriever;
         readonly Mock<IRuleRepository> rules;
         readonly Mock<IWatchRepository> watches;
         readonly Mock<ICallbackRepository> callbacks;
         readonly Mock<ICallbackExecuter> callbackExecutor;
         readonly FakeTimerScheduler timerScheduler;
-        readonly TokenBalanceWatcher subject;
+        readonly TokenReceivingWatcher subject;
 
-        public TokenBalanceWatcherTests()
+        public TokenReceivingWatcherTests()
         {
             this.property = new PropertyId(3);
 
@@ -50,12 +58,31 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
             this.block3 = TestBlock.Regtest2;
             this.block4 = TestBlock.Regtest3;
 
+            this.address1 = new ReceivingAddress(
+                Guid.NewGuid(),
+                TestAddress.Regtest1,
+                true,
+                new Collection<ReceivingAddressReservation>());
+
+            this.address2 = new ReceivingAddress(
+                Guid.NewGuid(),
+                TestAddress.Regtest2,
+                true,
+                new Collection<ReceivingAddressReservation>());
+
+            this.reservation1 = new ReceivingAddressReservation(Guid.NewGuid(), this.address1, DateTime.Now, null);
+            this.reservation2 = new ReceivingAddressReservation(Guid.NewGuid(), this.address2, DateTime.Now, null);
+
+            this.address1.Reservations.Add(this.reservation1);
+            this.address2.Reservations.Add(this.reservation2);
+
             this.callback1 = new Callback(
                 Guid.NewGuid(),
                 IPAddress.Parse("192.168.1.2"),
                 DateTime.Now,
                 false,
                 new Uri("http://localhost/a"));
+
             this.callback2 = new Callback(
                 Guid.NewGuid(),
                 IPAddress.Parse("192.168.1.3"),
@@ -65,86 +92,100 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
 
             this.rule1 = new Rule(
                 this.property,
-                TestAddress.Regtest1,
+                this.reservation1,
                 new PropertyAmount(100),
                 3,
                 TimeSpan.FromHours(1),
                 "timeout",
-                this.callback1.Id);
+                this.callback1);
+
             this.rule2 = new Rule(
                 this.property,
-                TestAddress.Regtest2,
+                this.reservation2,
                 new PropertyAmount(50),
                 1,
                 TimeSpan.FromMinutes(30),
                 "watch-timeout",
-                this.callback2.Id);
+                this.callback2);
 
-            this.logger = new Mock<ILogger<TokenBalanceWatcher>>();
-
+            this.logger = new Mock<ILogger<TokenReceivingWatcher>>();
             this.blocks = new Mock<IBlocksStorage>();
+            this.addressPool = new Mock<IReceivingAddressPool>();
+            this.exodusRetriever = new Mock<ITransactionRetriever>();
+            this.rules = new Mock<IRuleRepository>();
+            this.watches = new Mock<IWatchRepository>();
+            this.callbacks = new Mock<ICallbackRepository>();
+            this.callbackExecutor = new Mock<ICallbackExecuter>();
+            this.timerScheduler = new FakeTimerScheduler();
+
             this.blocks
                 .Setup(r => r.GetAsync(this.block1.GetHash(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((this.block1, 0));
+
             this.blocks
                 .Setup(r => r.GetAsync(this.block2.GetHash(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((this.block2, 1));
+
             this.blocks
                 .Setup(r => r.GetAsync(this.block3.GetHash(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((this.block3, 2));
+
             this.blocks
                 .Setup(r => r.GetAsync(this.block4.GetHash(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((this.block4, 3));
 
-            this.exodusRetriever = new Mock<ITransactionRetriever>();
             this.exodusRetriever
                 .Setup(r => r.GetBalanceChangesAsync(this.block1.Transactions[0], It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new[]
+                .ReturnsAsync(() =>
                 {
-                    new BalanceChange(
-                        TestAddress.Regtest3,
-                        -(this.rule1.TargetAmount + this.rule2.TargetAmount),
-                        this.property),
-                    new BalanceChange(
-                        this.rule1.Address,
-                        this.rule1.TargetAmount + this.rule2.TargetAmount,
-                        this.property),
+                    var amount = this.rule1.TargetAmount;
+
+                    return new[]
+                    {
+                        new BalanceChange(TestAddress.Regtest3, -amount, this.property),
+                        new BalanceChange(this.address1.Address, amount, this.property),
+                    };
                 });
+
             this.exodusRetriever
                 .Setup(r => r.GetBalanceChangesAsync(this.block2.Transactions[0], It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new[]
+                .ReturnsAsync(() =>
                 {
-                    new BalanceChange(this.rule1.Address, -(this.rule2.TargetAmount / 2), this.property),
-                    new BalanceChange(this.rule2.Address, this.rule2.TargetAmount / 2, this.property),
+                    var amount = this.rule2.TargetAmount / 2;
+
+                    return new[]
+                    {
+                        new BalanceChange(this.address1.Address, -amount, this.property),
+                        new BalanceChange(this.address2.Address, amount, this.property),
+                    };
                 });
+
             this.exodusRetriever
                 .Setup(r => r.GetBalanceChangesAsync(this.block3.Transactions[0], It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new[]
+                .ReturnsAsync(() =>
                 {
-                    new BalanceChange(TestAddress.Regtest3, -(this.rule2.TargetAmount / 2), this.property),
-                    new BalanceChange(this.rule2.Address, this.rule2.TargetAmount / 2, this.property),
+                    var amount = this.rule2.TargetAmount / 2;
+
+                    return new[]
+                    {
+                        new BalanceChange(TestAddress.Regtest3, -amount, this.property),
+                        new BalanceChange(this.address2.Address, amount, this.property),
+                    };
                 });
 
-            this.rules = new Mock<IRuleRepository>();
-
-            this.watches = new Mock<IWatchRepository>();
-
-            this.callbacks = new Mock<ICallbackRepository>();
             this.callbacks
                 .Setup(r => r.GetAsync(this.callback1.Id, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(this.callback1);
+
             this.callbacks
                 .Setup(r => r.GetAsync(this.callback2.Id, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(this.callback2);
 
-            this.callbackExecutor = new Mock<ICallbackExecuter>();
-
-            this.timerScheduler = new FakeTimerScheduler();
-
-            this.subject = new TokenBalanceWatcher(
+            this.subject = new TokenReceivingWatcher(
                 this.property,
                 this.logger.Object,
                 this.blocks.Object,
+                this.addressPool.Object,
                 this.exodusRetriever.Object,
                 this.rules.Object,
                 this.watches.Object,
@@ -163,10 +204,11 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
         {
             Assert.Throws<ArgumentNullException>(
                 "property",
-                () => new TokenBalanceWatcher(
+                () => new TokenReceivingWatcher(
                     null,
                     this.logger.Object,
                     this.blocks.Object,
+                    this.addressPool.Object,
                     this.exodusRetriever.Object,
                     this.rules.Object,
                     this.watches.Object,
@@ -180,10 +222,29 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
         {
             Assert.Throws<ArgumentNullException>(
                 "logger",
-                () => new TokenBalanceWatcher(
+                () => new TokenReceivingWatcher(
                     this.property,
                     null,
                     this.blocks.Object,
+                    this.addressPool.Object,
+                    this.exodusRetriever.Object,
+                    this.rules.Object,
+                    this.watches.Object,
+                    this.callbacks.Object,
+                    this.callbackExecutor.Object,
+                    this.timerScheduler));
+        }
+
+        [Fact]
+        public void Constructor_WithNullAddressPool_ShouldThrow()
+        {
+            Assert.Throws<ArgumentNullException>(
+                "addressPool",
+                () => new TokenReceivingWatcher(
+                    this.property,
+                    this.logger.Object,
+                    this.blocks.Object,
+                    null,
                     this.exodusRetriever.Object,
                     this.rules.Object,
                     this.watches.Object,
@@ -197,10 +258,11 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
         {
             Assert.Throws<ArgumentNullException>(
                 "exodusRetriever",
-                () => new TokenBalanceWatcher(
+                () => new TokenReceivingWatcher(
                     this.property,
                     this.logger.Object,
                     this.blocks.Object,
+                    this.addressPool.Object,
                     null,
                     this.rules.Object,
                     this.watches.Object,
@@ -214,10 +276,11 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
         {
             Assert.Throws<ArgumentNullException>(
                 "rules",
-                () => new TokenBalanceWatcher(
+                () => new TokenReceivingWatcher(
                     this.property,
                     this.logger.Object,
                     this.blocks.Object,
+                    this.addressPool.Object,
                     this.exodusRetriever.Object,
                     null,
                     this.watches.Object,
@@ -231,10 +294,11 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
         {
             Assert.Throws<ArgumentNullException>(
                 "watches",
-                () => new TokenBalanceWatcher(
+                () => new TokenReceivingWatcher(
                     this.property,
                     this.logger.Object,
                     this.blocks.Object,
+                    this.addressPool.Object,
                     this.exodusRetriever.Object,
                     this.rules.Object,
                     null,
@@ -248,10 +312,11 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
         {
             Assert.Throws<ArgumentNullException>(
                 "callbacks",
-                () => new TokenBalanceWatcher(
+                () => new TokenReceivingWatcher(
                     this.property,
                     this.logger.Object,
                     this.blocks.Object,
+                    this.addressPool.Object,
                     this.exodusRetriever.Object,
                     this.rules.Object,
                     this.watches.Object,
@@ -265,10 +330,11 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
         {
             Assert.Throws<ArgumentNullException>(
                 "callbackExecutor",
-                () => new TokenBalanceWatcher(
+                () => new TokenReceivingWatcher(
                     this.property,
                     this.logger.Object,
                     this.blocks.Object,
+                    this.addressPool.Object,
                     this.exodusRetriever.Object,
                     this.rules.Object,
                     this.watches.Object,
@@ -282,10 +348,11 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
         {
             Assert.Throws<ArgumentNullException>(
                 "timerScheduler",
-                () => new TokenBalanceWatcher(
+                () => new TokenReceivingWatcher(
                     this.property,
                     this.logger.Object,
                     this.blocks.Object,
+                    this.addressPool.Object,
                     this.exodusRetriever.Object,
                     this.rules.Object,
                     this.watches.Object,
@@ -322,7 +389,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                 Assert.Equal(this.rule1.OriginalTimeout, schedule.Due);
                 Assert.Null(schedule.Period);
                 Assert.NotNull(schedule.Handler);
-                Assert.Equal(this.rule1.Address, schedule.Context);
+                Assert.Equal(this.address1.Address, schedule.Context);
 
                 this.rules.Verify(
                     r => r.ListUncompletedAsync(this.property, cancellationToken),
@@ -335,6 +402,42 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
         }
 
         [Fact]
+        public Task StartWatchAsync_WithNullAddress_ShouldThrow()
+        {
+            return Assert.ThrowsAsync<ArgumentNullException>(
+                "address",
+                () => this.subject.StartWatchAsync(
+                    null,
+                    this.rule1.TargetAmount,
+                    this.rule1.TargetConfirmation,
+                    this.rule1.OriginalTimeout,
+                    this.rule1.TimeoutStatus,
+                    this.rule1.Callback,
+                    CancellationToken.None));
+        }
+
+        [Fact]
+        public Task StartWatchAsync_WithReleasedAddress_ShouldThrow()
+        {
+            var reservation = new ReceivingAddressReservation(
+                Guid.NewGuid(),
+                this.address1,
+                DateTime.Now,
+                DateTime.Now);
+
+            return Assert.ThrowsAsync<ArgumentException>(
+                "address",
+                () => this.subject.StartWatchAsync(
+                    reservation,
+                    this.rule1.TargetAmount,
+                    this.rule1.TargetConfirmation,
+                    this.rule1.OriginalTimeout,
+                    this.rule1.TimeoutStatus,
+                    this.rule1.Callback,
+                    CancellationToken.None));
+        }
+
+        [Fact]
         public Task StartWatchAsync_WithUnsupportedTimeout_ShouldThrow()
         {
             this.timerScheduler.DurationValidator = duration => duration == this.rule1.OriginalTimeout;
@@ -342,7 +445,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
             return Assert.ThrowsAsync<ArgumentOutOfRangeException>(
                 "timeout",
                 () => this.subject.StartWatchAsync(
-                    this.rule1.Address,
+                    this.rule1.AddressReservation,
                     this.rule1.TargetAmount,
                     this.rule1.TargetConfirmation,
                     TimeSpan.Zero,
@@ -352,30 +455,40 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
         }
 
         [Fact]
-        public Task StartWatchAsync_WithInvalidCallback_ShouldThrow()
+        public Task StartWatchAsync_WithNullCallback_ShouldThrow()
         {
-            return AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
-            {
-                // Arrange
-                var callback = Guid.NewGuid();
+            return Assert.ThrowsAsync<ArgumentNullException>(
+                "callback",
+                () => this.subject.StartWatchAsync(
+                    this.rule1.AddressReservation,
+                    this.rule1.TargetAmount,
+                    this.rule1.TargetConfirmation,
+                    this.rule1.OriginalTimeout,
+                    this.rule1.TimeoutStatus,
+                    null,
+                    CancellationToken.None));
+        }
 
-                // Act.
-                await Assert.ThrowsAsync<ArgumentException>(
-                    "callback",
-                    () => this.subject.StartWatchAsync(
-                        this.rule1.Address,
-                        this.rule1.TargetAmount,
-                        this.rule1.TargetConfirmation,
-                        this.rule1.OriginalTimeout,
-                        this.rule1.TimeoutStatus,
-                        callback,
-                        cancellationToken));
+        [Fact]
+        public Task StartWatchAsync_WithCompletedCallback_ShouldThrow()
+        {
+            var callback = new Callback(
+                Guid.NewGuid(),
+                IPAddress.Parse("192.168.1.2"),
+                DateTime.Now,
+                true,
+                new Uri("http://localhost"));
 
-                // Assert.
-                this.callbacks.Verify(
-                    r => r.GetAsync(callback, cancellationToken),
-                    Times.Once());
-            });
+            return Assert.ThrowsAsync<ArgumentException>(
+                "callback",
+                () => this.subject.StartWatchAsync(
+                    this.rule1.AddressReservation,
+                    this.rule1.TargetAmount,
+                    this.rule1.TargetConfirmation,
+                    this.rule1.OriginalTimeout,
+                    this.rule1.TimeoutStatus,
+                    callback,
+                    CancellationToken.None));
         }
 
         [Fact]
@@ -383,7 +496,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
         {
             return Assert.ThrowsAsync<InvalidOperationException>(
                 () => this.subject.StartWatchAsync(
-                    this.rule1.Address,
+                    this.rule1.AddressReservation,
                     this.rule1.TargetAmount,
                     this.rule1.TargetConfirmation,
                     this.rule1.OriginalTimeout,
@@ -402,7 +515,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
             // Act.
             await Assert.ThrowsAsync<InvalidOperationException>(
                 () => this.subject.StartWatchAsync(
-                    this.rule1.Address,
+                    this.rule1.AddressReservation,
                     this.rule1.TargetAmount,
                     this.rule1.TargetConfirmation,
                     this.rule1.OriginalTimeout,
@@ -420,25 +533,28 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                 await StartSubjectAsync();
 
                 // Act.
-                var result = await InvokeStartWatchAsync(this.rule1, cancellationToken);
+                var rule = await InvokeStartWatchAsync(this.rule1, cancellationToken);
 
                 // Assert.
+                this.rules.Verify(
+                    r => r.AddAsync(CreateRuleMatcher(rule), cancellationToken),
+                    Times.Once());
+
                 var schedule = Assert.Single(this.timerScheduler.ActiveSchedules);
 
-                Assert.Equal(this.rule1.Address, schedule.Context);
-                Assert.Equal(this.rule1.OriginalTimeout, schedule.Due);
+                Assert.Equal(rule.AddressReservation.Address.Address, schedule.Context);
+                Assert.Equal(rule.OriginalTimeout, schedule.Due);
                 Assert.Null(schedule.Period);
 
-                Assert.Equal(this.rule1.Address, result.Address);
-                Assert.Equal(this.rule1.Callback, result.Callback);
-                Assert.Equal(this.rule1.OriginalTimeout, result.OriginalTimeout);
-                Assert.Equal(this.rule1.Property, result.Property);
-                Assert.Equal(this.rule1.TargetAmount, result.TargetAmount);
-                Assert.Equal(this.rule1.TargetConfirmation, result.TargetConfirmation);
-                Assert.Equal(this.rule1.TimeoutStatus, result.TimeoutStatus);
+                await this.subject.StopAsync(CancellationToken.None);
+
+                Assert.Single(this.timerScheduler.StoppedSchedules, schedule);
 
                 this.rules.Verify(
-                    r => r.AddAsync(result, cancellationToken),
+                    r => r.DecreaseTimeoutAsync(
+                        rule.Id,
+                        It.Is<TimeSpan>(v => v > TimeSpan.Zero),
+                        It.IsAny<CancellationToken>()),
                     Times.Once());
             });
         }
@@ -449,62 +565,71 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
             // Arrange.
             await StartSubjectAsync();
 
-            var rule = await InvokeStartWatchAsync(this.rule1, CancellationToken.None);
+            var rule = await InvokeStartWatchAsync(this.rule2, CancellationToken.None);
 
             this.watches
                 .Setup(r => r.TransitionToTimedOutAsync(rule, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new[]
+                .ReturnsAsync(new Dictionary<Watch, int>()
                 {
-                    new CompletedWatch(
-                        new Watch(
-                            rule,
-                            this.block1.GetHash(),
-                            this.block1.Transactions[0].GetHash(),
-                            rule.Address,
-                            this.rule1.TargetAmount + this.rule2.TargetAmount),
-                        1),
-                    new CompletedWatch(
+                    {
                         new Watch(
                             rule,
                             this.block2.GetHash(),
                             this.block2.Transactions[0].GetHash(),
-                            rule.Address,
-                            -(this.rule2.TargetAmount / 2)),
-                        0)
+                            this.address2.Address,
+                            rule.TargetAmount / 2),
+                        1
+                    },
+                    {
+                        new Watch(
+                            rule,
+                            this.block3.GetHash(),
+                            this.block3.Transactions[0].GetHash(),
+                            this.address2.Address,
+                            rule.TargetAmount / 2),
+                        0
+                    }
                 });
 
             // Act.
-            this.timerScheduler.Trigger(i => i.Context.Equals(rule.Address));
+            this.timerScheduler.Trigger(s => s.Context.Equals(this.address2.Address));
+
             await this.subject.StopAsync(CancellationToken.None);
 
             // Assert.
             var expect = new CallbackResult(
                 rule.TimeoutStatus,
-                new TimeoutData()
+                new CallbackData()
                 {
-                    Received = this.rule1.TargetAmount + this.rule2.TargetAmount,
-                    Confirmation = 1,
-                    TargetConfirmation = rule.TargetConfirmation,
+                    Received = new CallbackAmount()
+                    {
+                        Confirmed = rule.TargetAmount / 2,
+                        Pending = null,
+                    },
                 });
 
             this.rules.Verify(
                 r => r.SetTimedOutAsync(rule.Id, CancellationToken.None),
                 Times.Once());
 
+            this.addressPool.Verify(
+                p => p.ReleaseAddressAsync(this.reservation2.Id, CancellationToken.None),
+                Times.Once());
+
             this.watches.Verify(
-                r => r.TransitionToTimedOutAsync(rule, CancellationToken.None),
+                r => r.TransitionToTimedOutAsync(CreateRuleMatcher(rule), CancellationToken.None),
                 Times.Once());
 
             this.callbacks.Verify(
-                r => r.AddHistoryAsync(this.callback1.Id, expect, CancellationToken.None),
+                r => r.AddHistoryAsync(this.callback2.Id, expect, CancellationToken.None),
                 Times.Once());
 
             this.callbackExecutor.Verify(
-                e => e.ExecuteAsync(this.callback1.Id, this.callback1.Url, expect, CancellationToken.None),
+                e => e.ExecuteAsync(this.callback2.Id, this.callback2.Url, expect, CancellationToken.None),
                 Times.Once());
 
             this.callbacks.Verify(
-                r => r.SetCompletedAsyc(this.callback1.Id, CancellationToken.None),
+                r => r.SetCompletedAsyc(this.callback2.Id, CancellationToken.None),
                 Times.Once());
 
             this.rules.Verify(
@@ -521,37 +646,32 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                 await StartSubjectAsync();
 
                 var rule = await InvokeStartWatchAsync(this.rule1, CancellationToken.None);
+                var address = rule.AddressReservation.Address.Address;
 
-                var confirm = new Confirmation(this.block4.GetHash(), rule.Address, new Dictionary<Watch, int>()
-                {
+                var confirm = new Confirmation(
+                    this.block3.GetHash(),
+                    address,
+                    new Dictionary<Watch, int>()
                     {
-                        new Watch(
-                            rule,
-                            this.block1.GetHash(),
-                            this.block1.Transactions[0].GetHash(),
-                            rule.Address,
-                            rule.TargetAmount + this.rule2.TargetAmount),
-                        4
-                    },
-                    {
-                        new Watch(
-                            rule,
-                            this.block2.GetHash(),
-                            this.block2.Transactions[0].GetHash(),
-                            rule.Address,
-                            -(this.rule2.TargetAmount / 2)),
-                        3
-                    }
-                });
+                        {
+                            new Watch(
+                                rule,
+                                this.block1.GetHash(),
+                                this.block1.Transactions[0].GetHash(),
+                                address,
+                                rule.TargetAmount),
+                            3
+                        }
+                    });
 
                 await InvokeConfirmationUpdateAsync(
                     confirm,
-                    confirm.Watches.Min(p => p.Value),
+                    3,
                     ConfirmationType.Confirmed,
                     cancellationToken);
 
                 // Act.
-                this.timerScheduler.Trigger(s => s.Context.Equals(rule.Address));
+                this.timerScheduler.Trigger(s => s.Context.Equals(this.address1.Address));
 
                 // Assert.
                 this.rules.Verify(
@@ -561,6 +681,10 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                 this.rules.Verify(
                     r => r.SetTimedOutAsync(rule.Id, It.IsAny<CancellationToken>()),
                     Times.Never());
+
+                this.addressPool.Verify(
+                    p => p.ReleaseAddressAsync(rule.AddressReservation.Id, It.IsAny<CancellationToken>()),
+                    Times.Once());
 
                 this.watches.Verify(
                     r => r.TransitionToTimedOutAsync(rule, It.IsAny<CancellationToken>()),
@@ -594,13 +718,15 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
             await StartSubjectAsync();
 
             var rule = await InvokeStartWatchAsync(this.rule1, CancellationToken.None);
+            var address = rule.AddressReservation.Address.Address;
 
             this.rules
                 .Setup(r => r.SetTimedOutAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new Exception());
 
             // Act.
-            this.timerScheduler.Trigger(i => i.Context.Equals(rule.Address));
+            this.timerScheduler.Trigger(s => s.Context.Equals(address));
+
             await this.subject.StopAsync(CancellationToken.None);
 
             // Assert.
@@ -630,12 +756,16 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                 // Arrange.
                 await StartSubjectAsync(this.rule1, this.rule2);
 
-                this.timerScheduler.Trigger(s => s.Context.Equals(this.rule1.Address));
+                this.timerScheduler.Trigger(s => s.Context.Equals(this.address1.Address));
 
                 // Act.
                 await this.subject.StopAsync(cancellationToken);
 
                 // Assert.
+                this.rules.Verify(
+                    r => r.DecreaseTimeoutAsync(this.rule1.Id, It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()),
+                    Times.Never());
+
                 this.rules.Verify(
                     r => r.DecreaseTimeoutAsync(
                         this.rule2.Id,
@@ -643,12 +773,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                         CancellationToken.None),
                     Times.Once());
 
-                var schedule = Assert.Single(
-                    this.timerScheduler.StoppedSchedules,
-                    s => s.Context.Equals(this.rule2.Address));
-
-                Assert.Equal(this.rule2.OriginalTimeout, schedule.Due);
-                Assert.Null(schedule.Period);
+                Assert.Single(this.timerScheduler.StoppedSchedules, s => s.Context.Equals(this.address2.Address));
             });
         }
 
@@ -661,16 +786,16 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                 var amount = this.rule2.TargetAmount / 2;
                 var watch1 = new Watch(
                     this.rule1,
-                    this.block2.GetHash(),
-                    this.block2.Transactions[0].GetHash(),
-                    this.rule1.Address,
-                    -amount);
+                    this.block1.GetHash(),
+                    this.block1.Transactions[0].GetHash(),
+                    this.address1.Address,
+                    this.rule1.TargetAmount);
                 var watch2 = new Watch(
                     this.rule2,
                     this.block2.GetHash(),
                     this.block2.Transactions[0].GetHash(),
-                    this.rule2.Address,
-                    amount);
+                    this.address2.Address,
+                    this.rule2.TargetAmount / 2);
 
                 await StartSubjectAsync(this.rule1);
 
@@ -690,11 +815,15 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
             // Arrange.
             await StartSubjectAsync(this.rule1);
 
-            this.timerScheduler.Trigger(i => i.Context.Equals(this.rule1.Address));
+            this.watches
+                .Setup(r => r.TransitionToTimedOutAsync(this.rule1, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Dictionary<Watch, int>());
+
+            this.timerScheduler.Trigger(i => i.Context.Equals(this.address1.Address));
 
             var confirm = new Confirmation(
-                this.block1.GetHash(),
-                this.rule1.Address,
+                this.block3.GetHash(),
+                this.address1.Address,
                 new Dictionary<Watch, int>()
                 {
                     {
@@ -702,14 +831,18 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                             this.rule1,
                             this.block1.GetHash(),
                             this.block1.Transactions[0].GetHash(),
-                            this.rule1.Address,
-                            this.rule1.TargetAmount + this.rule2.TargetAmount),
-                        1
+                            this.address1.Address,
+                            this.rule1.TargetAmount),
+                        3
                     }
                 });
 
             // Act.
-            var result = await InvokeConfirmationUpdateAsync(confirm, 1, ConfirmationType.Confirmed, CancellationToken.None);
+            var result = await InvokeConfirmationUpdateAsync(
+                confirm,
+                3,
+                ConfirmationType.Confirmed,
+                CancellationToken.None);
 
             // Assert.
             Assert.False(result);
@@ -727,6 +860,10 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
             this.rules.Verify(
                 r => r.SetSucceededAsync(this.rule1.Id, It.IsAny<CancellationToken>()),
                 Times.Never());
+
+            this.addressPool.Verify(
+                r => r.ReleaseAddressAsync(this.reservation1.Id, It.IsAny<CancellationToken>()),
+                Times.Once());
 
             this.callbacks.Verify(
                 r => r.AddHistoryAsync(
@@ -749,7 +886,82 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
         }
 
         [Fact]
-        public Task ConfirmationUpdateAsync_ConfirmationIsNotEnough_ShouldNotComplete()
+        public Task ConfirmationUpdateAsync_WithBlockUnconfirming_ShouldUpdateConfirmationCountOnly()
+        {
+            return AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
+            {
+                // Arrange.
+                await StartSubjectAsync(this.rule1);
+
+                var confirm = new Confirmation(
+                    this.block1.GetHash(),
+                    this.address1.Address,
+                    new Dictionary<Watch, int>()
+                    {
+                        {
+                            new Watch(
+                                this.rule1,
+                                this.block1.GetHash(),
+                                this.block1.Transactions[0].GetHash(),
+                                this.address1.Address,
+                                this.rule1.TargetAmount),
+                            1
+                        }
+                    });
+
+                // Act.
+                var result = await InvokeConfirmationUpdateAsync(
+                    confirm,
+                    1,
+                    ConfirmationType.Unconfirming,
+                    cancellationToken);
+
+                // Assert.
+                var expect = confirm.Watches.ToDictionary(p => p.Key, p => p.Value - 1);
+
+                Assert.False(result);
+
+                this.watches.Verify(r => r.SetConfirmationCountAsync(expect, cancellationToken), Times.Once());
+
+                this.rules.Verify(
+                    r => r.SetSucceededAsync(this.rule1.Id, It.IsAny<CancellationToken>()),
+                    Times.Never());
+
+                this.addressPool.Verify(
+                    p => p.ReleaseAddressAsync(this.rule1.AddressReservation.Id, It.IsAny<CancellationToken>()),
+                    Times.Never());
+
+                this.callbacks.Verify(
+                    r => r.AddHistoryAsync(
+                        this.callback1.Id,
+                        It.IsAny<CallbackResult>(),
+                        It.IsAny<CancellationToken>()),
+                    Times.Never());
+
+                this.callbackExecutor.Verify(
+                    e => e.ExecuteAsync(
+                        this.callback1.Id,
+                        It.IsAny<Uri>(),
+                        It.IsAny<CallbackResult>(),
+                        It.IsAny<CancellationToken>()),
+                    Times.Never());
+
+                this.callbacks.Verify(
+                    r => r.SetCompletedAsyc(this.callback1.Id, It.IsAny<CancellationToken>()),
+                    Times.Never());
+
+                Assert.Empty(this.timerScheduler.StoppedSchedules);
+
+                await this.subject.StopAsync(CancellationToken.None);
+
+                this.rules.Verify(
+                    r => r.DecreaseTimeoutAsync(this.rule1.Id, It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()),
+                    Times.Once());
+            });
+        }
+
+        [Fact]
+        public Task ConfirmationUpdateAsync_NoConfirmedAmount_ShouldNotComplete()
         {
             return AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
             {
@@ -763,16 +975,20 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                             this.rule1,
                             this.block1.GetHash(),
                             this.block1.Transactions[0].GetHash(),
-                            this.rule1.Address,
-                            this.rule1.TargetAmount + this.rule2.TargetAmount),
-                        1
+                            this.address1.Address,
+                            this.rule1.TargetAmount),
+                        2
                     }
                 };
 
-                var confirm = new Confirmation(this.block1.GetHash(), this.rule1.Address, watches);
+                var confirm = new Confirmation(this.block2.GetHash(), this.address1.Address, watches);
 
                 // Act.
-                var result = await InvokeConfirmationUpdateAsync(confirm, 1, ConfirmationType.Confirmed, cancellationToken);
+                var result = await InvokeConfirmationUpdateAsync(
+                    confirm,
+                    2,
+                    ConfirmationType.Confirmed,
+                    cancellationToken);
 
                 // Assert.
                 Assert.False(result);
@@ -782,23 +998,30 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                     Times.Once());
 
                 this.rules.Verify(
-                    r => r.SetSucceededAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+                    r => r.SetSucceededAsync(this.rule1.Id, It.IsAny<CancellationToken>()),
+                    Times.Never());
+
+                this.addressPool.Verify(
+                    p => p.ReleaseAddressAsync(this.reservation1.Id, It.IsAny<CancellationToken>()),
                     Times.Never());
 
                 this.callbacks.Verify(
-                    r => r.AddHistoryAsync(It.IsAny<Guid>(), It.IsAny<CallbackResult>(), It.IsAny<CancellationToken>()),
+                    r => r.AddHistoryAsync(
+                        this.callback1.Id,
+                        It.IsAny<CallbackResult>(),
+                        It.IsAny<CancellationToken>()),
                     Times.Never());
 
                 this.callbackExecutor.Verify(
                     e => e.ExecuteAsync(
-                        It.IsAny<Guid>(),
+                        this.callback1.Id,
                         It.IsAny<Uri>(),
                         It.IsAny<CallbackResult>(),
                         It.IsAny<CancellationToken>()),
                     Times.Never());
 
                 this.callbacks.Verify(
-                    r => r.SetCompletedAsyc(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+                    r => r.SetCompletedAsyc(this.callback1.Id, It.IsAny<CancellationToken>()),
                     Times.Never());
 
                 Assert.Empty(this.timerScheduler.StoppedSchedules);
@@ -808,14 +1031,14 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                 this.rules.Verify(
                     r => r.DecreaseTimeoutAsync(
                         this.rule1.Id,
-                        It.Is<TimeSpan>(t => t > TimeSpan.Zero),
-                        CancellationToken.None),
+                        It.IsAny<TimeSpan>(),
+                        It.IsAny<CancellationToken>()),
                     Times.Once());
             });
         }
 
         [Fact]
-        public Task ConfirmationUpdateAsync_ReceivedIsNotEnough_ShouldNotComplete()
+        public Task ConfirmationUpdateAsync_ConfirmedAmountIsNotEnough_ShouldNotComplete()
         {
             return AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
             {
@@ -829,16 +1052,20 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                             this.rule2,
                             this.block2.GetHash(),
                             this.block2.Transactions[0].GetHash(),
-                            this.rule2.Address,
+                            this.address2.Address,
                             this.rule2.TargetAmount / 2),
                         1
                     }
                 };
 
-                var confirm = new Confirmation(this.block2.GetHash(), this.rule2.Address, watches);
+                var confirm = new Confirmation(this.block2.GetHash(), this.address2.Address, watches);
 
                 // Act.
-                var result = await InvokeConfirmationUpdateAsync(confirm, 1, ConfirmationType.Confirmed, cancellationToken);
+                var result = await InvokeConfirmationUpdateAsync(
+                    confirm,
+                    1,
+                    ConfirmationType.Confirmed,
+                    cancellationToken);
 
                 // Assert.
                 Assert.False(result);
@@ -848,23 +1075,30 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                     Times.Once());
 
                 this.rules.Verify(
-                    r => r.SetSucceededAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+                    r => r.SetSucceededAsync(this.rule2.Id, It.IsAny<CancellationToken>()),
+                    Times.Never());
+
+                this.addressPool.Verify(
+                    p => p.ReleaseAddressAsync(this.reservation2.Id, It.IsAny<CancellationToken>()),
                     Times.Never());
 
                 this.callbacks.Verify(
-                    r => r.AddHistoryAsync(It.IsAny<Guid>(), It.IsAny<CallbackResult>(), It.IsAny<CancellationToken>()),
+                    r => r.AddHistoryAsync(
+                        this.callback2.Id,
+                        It.IsAny<CallbackResult>(),
+                        It.IsAny<CancellationToken>()),
                     Times.Never());
 
                 this.callbackExecutor.Verify(
                     e => e.ExecuteAsync(
-                        It.IsAny<Guid>(),
+                        this.callback2.Id,
                         It.IsAny<Uri>(),
                         It.IsAny<CallbackResult>(),
                         It.IsAny<CancellationToken>()),
                     Times.Never());
 
                 this.callbacks.Verify(
-                    r => r.SetCompletedAsyc(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+                    r => r.SetCompletedAsyc(this.callback2.Id, It.IsAny<CancellationToken>()),
                     Times.Never());
 
                 Assert.Empty(this.timerScheduler.StoppedSchedules);
@@ -874,54 +1108,61 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                 this.rules.Verify(
                     r => r.DecreaseTimeoutAsync(
                         this.rule2.Id,
-                        It.Is<TimeSpan>(t => t > TimeSpan.Zero),
-                        CancellationToken.None),
+                        It.IsAny<TimeSpan>(),
+                        It.IsAny<CancellationToken>()),
                     Times.Once());
             });
         }
 
         [Fact]
-        public Task ConfirmationUpdateAsync_ConfirmationAndReceivedAreEnough_ShouldComplete()
+        public Task ConfirmationUpdateAsync_ConfirmedAmountIsEnough_ShouldComplete()
         {
             return AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
             {
                 // Arrange.
-                await StartSubjectAsync(this.rule1);
+                await StartSubjectAsync(this.rule2);
 
                 var watches = new Dictionary<Watch, int>()
                 {
                     {
                         new Watch(
-                            this.rule1,
-                            this.block1.GetHash(),
-                            this.block1.Transactions[0].GetHash(),
-                            this.rule1.Address,
-                            this.rule1.TargetAmount + this.rule2.TargetAmount),
-                        4
+                            this.rule2,
+                            this.block2.GetHash(),
+                            this.block2.Transactions[0].GetHash(),
+                            this.address2.Address,
+                            this.rule2.TargetAmount / 2),
+                        2
                     },
                     {
                         new Watch(
-                            this.rule1,
-                            this.block2.GetHash(),
-                            this.block2.Transactions[0].GetHash(),
-                            this.rule1.Address,
-                            -(this.rule2.TargetAmount / 2)),
-                        3
+                            this.rule2,
+                            this.block3.GetHash(),
+                            this.block3.Transactions[0].GetHash(),
+                            this.address2.Address,
+                            this.rule2.TargetAmount / 2),
+                        1
                     }
                 };
 
-                var confirm = new Confirmation(this.block4.GetHash(), this.rule1.Address, watches);
+                var confirm = new Confirmation(this.block3.GetHash(), this.address2.Address, watches);
 
                 // Act.
-                var result = await InvokeConfirmationUpdateAsync(confirm, 3, ConfirmationType.Confirmed, cancellationToken);
+                var result = await InvokeConfirmationUpdateAsync(
+                    confirm,
+                    1,
+                    ConfirmationType.Confirmed,
+                    cancellationToken);
 
                 // Assert.
                 var expect = new CallbackResult(
                     CallbackResult.StatusSuccess,
                     new CallbackData()
                     {
-                        Received = this.rule1.TargetAmount + this.rule2.TargetAmount / 2,
-                        Confirmation = 3,
+                        Received = new CallbackAmount()
+                        {
+                            Confirmed = this.rule2.TargetAmount,
+                            Pending = null,
+                        },
                     });
 
                 Assert.True(result);
@@ -931,32 +1172,34 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                     Times.Once());
 
                 this.rules.Verify(
-                    r => r.SetSucceededAsync(this.rule1.Id, CancellationToken.None),
+                    r => r.SetSucceededAsync(this.rule2.Id, CancellationToken.None),
+                    Times.Once());
+
+                this.addressPool.Verify(
+                    p => p.ReleaseAddressAsync(this.reservation2.Id, It.IsAny<CancellationToken>()),
                     Times.Once());
 
                 this.callbacks.Verify(
-                    r => r.AddHistoryAsync(this.callback1.Id, expect, CancellationToken.None),
+                    r => r.AddHistoryAsync(this.callback2.Id, expect, CancellationToken.None),
                     Times.Once());
 
                 this.callbackExecutor.Verify(
-                    e => e.ExecuteAsync(this.callback1.Id, this.callback1.Url, expect, CancellationToken.None),
+                    e => e.ExecuteAsync(this.callback2.Id, this.callback2.Url, expect, CancellationToken.None),
                     Times.Once());
 
                 this.callbacks.Verify(
-                    r => r.SetCompletedAsyc(this.callback1.Id, CancellationToken.None),
+                    r => r.SetCompletedAsyc(this.callback2.Id, CancellationToken.None),
                     Times.Once());
 
                 var stopped = Assert.Single(this.timerScheduler.StoppedSchedules);
 
-                Assert.Equal(this.rule1.Address, stopped.Context);
-                Assert.Equal(this.rule1.OriginalTimeout, stopped.Due);
-                Assert.NotNull(stopped.Handler);
-                Assert.Null(stopped.Period);
+                Assert.Equal(this.address2.Address, stopped.Context);
+                Assert.Equal(this.rule2.OriginalTimeout, stopped.Due);
 
                 await this.subject.StopAsync(CancellationToken.None);
 
                 this.rules.Verify(
-                    r => r.DecreaseTimeoutAsync(It.IsAny<Guid>(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()),
+                    r => r.DecreaseTimeoutAsync(this.rule2.Id, It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()),
                     Times.Never());
             });
         }
@@ -998,14 +1241,8 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                     .Setup(r => r.GetBalanceChangesAsync(tx, It.IsAny<CancellationToken>()))
                     .ReturnsAsync(new[]
                     {
-                        new BalanceChange(
-                            TestAddress.Regtest3,
-                            -(this.rule1.TargetAmount + this.rule2.TargetAmount),
-                            property),
-                        new BalanceChange(
-                            this.rule1.Address,
-                            this.rule1.TargetAmount + this.rule2.TargetAmount,
-                            property),
+                        new BalanceChange(TestAddress.Regtest3, -this.rule1.TargetAmount, property),
+                        new BalanceChange(this.address1.Address, this.rule1.TargetAmount, property),
                     });
 
                 await StartSubjectAsync(this.rule1);
@@ -1030,7 +1267,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                 // Arrange.
                 var tx = this.block2.Transactions[0];
 
-                await StartSubjectAsync(this.rule1);
+                await StartSubjectAsync(this.rule1, this.rule2);
 
                 // Act.
                 var result = await InvokeGetBalanceChangesAsync(tx, cancellationToken);
@@ -1038,9 +1275,9 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                 // Assert.
                 var change = Assert.Single(result);
 
-                Assert.Equal(this.rule1.Address, change.Key);
-                Assert.Equal(-(this.rule2.TargetAmount / 2), change.Value.Amount);
-                Assert.Equal(this.rule1, change.Value.Context);
+                Assert.Equal(this.address2.Address, change.Key);
+                Assert.Equal(this.rule2.TargetAmount / 2, change.Value.Amount);
+                Assert.Equal(this.rule2, change.Value.Context);
 
                 this.exodusRetriever.Verify(
                     r => r.GetBalanceChangesAsync(tx, cancellationToken),
@@ -1060,8 +1297,8 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                         this.rule1,
                         this.block1.GetHash(),
                         this.block1.Transactions[0].GetHash(),
-                        this.rule1.Address,
-                        this.rule1.TargetAmount + this.rule2.TargetAmount)
+                        this.address1.Address,
+                        this.rule1.TargetAmount)
                 };
 
                 this.watches
@@ -1092,8 +1329,8 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                         this.rule1,
                         this.block1.GetHash(),
                         this.block1.Transactions[0].GetHash(),
-                        this.rule1.Address,
-                        this.rule1.TargetAmount + this.rule2.TargetAmount)
+                        this.address1.Address,
+                        this.rule1.TargetAmount)
                 };
 
                 // Act.
@@ -1180,16 +1417,56 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
             return this.subject.StartAsync(CancellationToken.None);
         }
 
-        Task<Rule> InvokeStartWatchAsync(Rule rule, CancellationToken cancellationToken)
+        Rule CreateRuleMatcher(Guid id)
         {
-            return this.subject.StartWatchAsync(
-                rule.Address,
+            return It.Is<Rule>(r => r.Id == id);
+        }
+
+        Rule CreateRuleMatcher(Guid id, Rule match)
+        {
+            Expression<Func<Rule, bool>> compare = r =>
+                r.AddressReservation.Id == match.AddressReservation.Id &&
+                r.Callback.Equals(match.Callback) &&
+                r.Id == id &&
+                r.OriginalTimeout == match.OriginalTimeout &&
+                r.Property == match.Property &&
+                r.TargetAmount == match.TargetAmount &&
+                r.TargetConfirmation == match.TargetConfirmation &&
+                r.TimeoutStatus == match.TimeoutStatus;
+
+            return It.Is<Rule>(compare);
+        }
+
+        Rule CreateRuleMatcher(Rule match)
+        {
+            return CreateRuleMatcher(match.Id, match);
+        }
+
+        Rule Clone(Guid id, Rule source)
+        {
+            return new Rule(
+                source.Property,
+                source.AddressReservation,
+                source.TargetAmount,
+                source.TargetConfirmation,
+                source.OriginalTimeout,
+                source.TimeoutStatus,
+                source.Callback,
+                id);
+        }
+
+        async Task<Rule> InvokeStartWatchAsync(Rule rule, CancellationToken cancellationToken)
+        {
+            var id = await this.subject.StartWatchAsync(
+                rule.AddressReservation,
                 rule.TargetAmount,
                 rule.TargetConfirmation,
                 rule.OriginalTimeout,
                 rule.TimeoutStatus,
                 rule.Callback,
                 cancellationToken);
+
+            return Clone(id, rule);
         }
 
         Task InvokeAddWatchesAsync(IEnumerable<Watch> watches, CancellationToken cancellationToken)
@@ -1214,7 +1491,9 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
             Transaction tx,
             CancellationToken cancellationToken)
         {
-            return ((IBalanceWatcherHandler<Rule, PropertyAmount>)this.subject).GetBalanceChangesAsync(tx, cancellationToken);
+            return ((IBalanceWatcherHandler<Rule, PropertyAmount>)this.subject).GetBalanceChangesAsync(
+                tx,
+                cancellationToken);
         }
 
         Task<IEnumerable<Watch>> InvokeGetCurrentWatchesAsync(CancellationToken cancellationToken)

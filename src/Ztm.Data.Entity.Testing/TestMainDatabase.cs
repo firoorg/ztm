@@ -61,17 +61,19 @@ namespace Ztm.Data.Entity.Testing
             builder.Property(e => e.AddressId).HasConversion<string>();
         }
 
-        protected override void ConfigureTokenBalanceWatcherRule(EntityTypeBuilder<TokenBalanceWatcherRule> builder)
+        protected override void ConfigureTokenReceivingWatcherRule(EntityTypeBuilder<TokenReceivingWatcherRule> builder)
         {
-            base.ConfigureTokenBalanceWatcherRule(builder);
+            base.ConfigureTokenReceivingWatcherRule(builder);
 
             builder.Property(e => e.Id).HasConversion<string>();
             builder.Property(e => e.CallbackId).HasConversion<string>();
+            builder.Property(e => e.AddressReservationId).HasConversion<string>();
         }
 
-        protected override void ConfigureTokenBalanceWatcherWatch(EntityTypeBuilder<TokenBalanceWatcherWatch> builder)
+        protected override void ConfigureTokenReceivingWatcherWatch(
+            EntityTypeBuilder<TokenReceivingWatcherWatch> builder)
         {
-            base.ConfigureTokenBalanceWatcherWatch(builder);
+            base.ConfigureTokenReceivingWatcherWatch(builder);
 
             builder.Property(e => e.Id).HasConversion<string>();
             builder.Property(e => e.RuleId).HasConversion<string>();

@@ -9,31 +9,31 @@ using Microsoft.EntityFrameworkCore;
 using NBitcoin;
 using Ztm.Data.Entity.Contexts;
 using Ztm.Zcoin.NBitcoin.Exodus;
-using DomainModel = Ztm.Zcoin.Watching.BalanceWatch<Ztm.WebApi.Watchers.TokenBalance.Rule, Ztm.Zcoin.NBitcoin.Exodus.PropertyAmount>;
-using EntityModel = Ztm.Data.Entity.Contexts.Main.TokenBalanceWatcherWatch;
-using Status = Ztm.Data.Entity.Contexts.Main.TokenBalanceWatcherWatchStatus;
+using DomainModel = Ztm.Zcoin.Watching.BalanceWatch<Ztm.WebApi.Watchers.TokenReceiving.Rule, Ztm.Zcoin.NBitcoin.Exodus.PropertyAmount>;
+using EntityModel = Ztm.Data.Entity.Contexts.Main.TokenReceivingWatcherWatch;
+using Status = Ztm.Data.Entity.Contexts.Main.TokenReceivingWatcherWatchStatus;
 
-namespace Ztm.WebApi.Watchers.TokenBalance
+namespace Ztm.WebApi.Watchers.TokenReceiving
 {
     public sealed class EntityWatchRepository : IWatchRepository
     {
         readonly IMainDatabaseFactory db;
-        readonly Network network;
+        readonly IRuleRepository rules;
 
-        public EntityWatchRepository(IMainDatabaseFactory db, Network network)
+        public EntityWatchRepository(IMainDatabaseFactory db, IRuleRepository rules)
         {
             if (db == null)
             {
                 throw new ArgumentNullException(nameof(db));
             }
 
-            if (network == null)
+            if (rules == null)
             {
-                throw new ArgumentNullException(nameof(network));
+                throw new ArgumentNullException(nameof(rules));
             }
 
             this.db = db;
-            this.network = network;
+            this.rules = rules;
         }
 
         public async Task AddAsync(IEnumerable<DomainModel> watches, CancellationToken cancellationToken)
@@ -43,13 +43,13 @@ namespace Ztm.WebApi.Watchers.TokenBalance
                 throw new ArgumentNullException(nameof(watches));
             }
 
+            var entities = watches
+                .Select(w => ToEntity(w))
+                .ToList();
+
             using (var db = this.db.CreateDbContext())
             {
-                var entities = watches
-                    .Select(w => ToEntity(w))
-                    .ToList();
-
-                await db.TokenBalanceWatcherWatches.AddRangeAsync(entities, cancellationToken);
+                await db.TokenReceivingWatcherWatches.AddRangeAsync(entities, cancellationToken);
                 await db.SaveChangesAsync(cancellationToken);
             }
         }
@@ -58,6 +58,8 @@ namespace Ztm.WebApi.Watchers.TokenBalance
             PropertyId property,
             CancellationToken cancellationToken)
         {
+            IEnumerable<EntityModel> entities;
+
             if (property == null)
             {
                 throw new ArgumentNullException(nameof(property));
@@ -65,12 +67,12 @@ namespace Ztm.WebApi.Watchers.TokenBalance
 
             using (var db = this.db.CreateDbContext())
             {
-                return await db.TokenBalanceWatcherWatches
-                    .Include(e => e.Rule)
+                entities = await db.TokenReceivingWatcherWatches
                     .Where(e => e.Status == Status.Uncompleted && e.Rule.PropertyId == property.Value)
-                    .Select(e => ToDomain(e))
                     .ToListAsync(cancellationToken);
             }
+
+            return await Task.WhenAll(entities.Select(e => ToDomainAsync(e, cancellationToken)));
         }
 
         public Task SetConfirmationCountAsync(
@@ -108,7 +110,7 @@ namespace Ztm.WebApi.Watchers.TokenBalance
                 cancellationToken);
         }
 
-        public Task<IEnumerable<CompletedWatch>> TransitionToRejectedAsync(
+        public Task<IReadOnlyDictionary<DomainModel, int>> TransitionToRejectedAsync(
             PropertyId property,
             uint256 startBlock,
             CancellationToken cancellationToken)
@@ -129,7 +131,7 @@ namespace Ztm.WebApi.Watchers.TokenBalance
                 cancellationToken);
         }
 
-        public Task<IEnumerable<CompletedWatch>> TransitionToSucceededAsync(
+        public Task<IReadOnlyDictionary<DomainModel, int>> TransitionToSucceededAsync(
             IEnumerable<DomainModel> watches,
             CancellationToken cancellationToken)
         {
@@ -138,7 +140,9 @@ namespace Ztm.WebApi.Watchers.TokenBalance
                 throw new ArgumentNullException(nameof(watches));
             }
 
-            var target = watches.Select(w => w.Id).ToList();
+            var target = watches
+                .Select(w => w.Id)
+                .ToList();
 
             return CompleteAsync(
                 e => e.Status == Status.Uncompleted && target.Contains(e.Id),
@@ -146,7 +150,7 @@ namespace Ztm.WebApi.Watchers.TokenBalance
                 cancellationToken);
         }
 
-        public Task<IEnumerable<CompletedWatch>> TransitionToTimedOutAsync(
+        public Task<IReadOnlyDictionary<DomainModel, int>> TransitionToTimedOutAsync(
             Rule rule,
             CancellationToken cancellationToken)
         {
@@ -176,16 +180,21 @@ namespace Ztm.WebApi.Watchers.TokenBalance
             };
         }
 
-        async Task<IEnumerable<CompletedWatch>> CompleteAsync(
+        async Task<IReadOnlyDictionary<DomainModel, int>> CompleteAsync(
             Expression<Func<EntityModel, bool>> criteria,
             Status status,
             CancellationToken cancellationToken)
         {
             var entities = await UpdateAsync(criteria, e => e.Status = status, cancellationToken);
+            var completed = new Dictionary<DomainModel, int>();
 
-            return entities
-                .Select(e => new CompletedWatch(ToDomain(e), e.Confirmation))
-                .ToList();
+            foreach (var entity in entities)
+            {
+                var domain = await ToDomainAsync(entity, CancellationToken.None);
+                completed.Add(domain, entity.Confirmation);
+            }
+
+            return completed;
         }
 
         Task<IEnumerable<EntityModel>> UpdateAsync(
@@ -209,8 +218,7 @@ namespace Ztm.WebApi.Watchers.TokenBalance
                 await db.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
 
                 // Load entities to update.
-                entities = await db.TokenBalanceWatcherWatches
-                    .Include(e => e.Rule)
+                entities = await db.TokenReceivingWatcherWatches
                     .Where(criteria)
                     .ToListAsync(cancellationToken);
 
@@ -233,15 +241,15 @@ namespace Ztm.WebApi.Watchers.TokenBalance
             return entities;
         }
 
-        DomainModel ToDomain(EntityModel entity)
+        async Task<DomainModel> ToDomainAsync(EntityModel entity, CancellationToken cancellationToken)
         {
-            var rule = EntityRuleRepository.ToDomain(entity.Rule, this.network);
+            var rule = await this.rules.GetAsync(entity.RuleId, cancellationToken);
 
             return new DomainModel(
                 rule,
                 entity.BlockId,
                 entity.TransactionId,
-                rule.Address,
+                rule.AddressReservation.Address.Address,
                 new PropertyAmount(entity.BalanceChange),
                 DateTime.SpecifyKind(entity.CreatedTime, DateTimeKind.Utc).ToLocalTime(),
                 entity.Id);

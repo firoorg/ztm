@@ -4,13 +4,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using Ztm.Zcoin.NBitcoin.Exodus;
 
-namespace Ztm.WebApi.Watchers.TokenBalance
+namespace Ztm.WebApi.Watchers.TokenReceiving
 {
     public interface IRuleRepository
     {
         Task AddAsync(Rule rule, CancellationToken cancellationToken);
 
         Task DecreaseTimeoutAsync(Guid id, TimeSpan value, CancellationToken cancellationToken);
+
+        Task<Rule> GetAsync(Guid id, CancellationToken cancellationToken);
 
         Task<TimeSpan> GetCurrentTimeoutAsync(Guid id, CancellationToken cancellationToken);
 

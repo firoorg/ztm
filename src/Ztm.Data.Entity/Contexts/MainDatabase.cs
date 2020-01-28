@@ -30,9 +30,9 @@ namespace Ztm.Data.Entity.Contexts
 
         public DbSet<ReceivingAddressReservation> ReceivingAddressReservations { get; set; }
 
-        public DbSet<TokenBalanceWatcherRule> TokenBalanceWatcherRules { get; set; }
+        public DbSet<TokenReceivingWatcherRule> TokenReceivingWatcherRules { get; set; }
 
-        public DbSet<TokenBalanceWatcherWatch> TokenBalanceWatcherWatches { get; set; }
+        public DbSet<TokenReceivingWatcherWatch> TokenReceivingWatcherWatches { get; set; }
 
         public DbSet<TransactionConfirmationWatcherRule> TransactionConfirmationWatcherRules { get; set; }
 
@@ -156,12 +156,12 @@ namespace Ztm.Data.Entity.Contexts
                    .OnDelete(DeleteBehavior.Cascade);
         }
 
-        protected virtual void ConfigureTokenBalanceWatcherRule(EntityTypeBuilder<TokenBalanceWatcherRule> builder)
+        protected virtual void ConfigureTokenReceivingWatcherRule(EntityTypeBuilder<TokenReceivingWatcherRule> builder)
         {
             builder.Property(e => e.Id).IsRequired().ValueGeneratedOnAdd();
             builder.Property(e => e.CallbackId).IsRequired();
             builder.Property(e => e.PropertyId).IsRequired();
-            builder.Property(e => e.Address).IsRequired();
+            builder.Property(e => e.AddressReservationId).IsRequired();
             builder.Property(e => e.TargetAmount).IsRequired();
             builder.Property(e => e.TargetConfirmation).IsRequired();
             builder.Property(e => e.OriginalTimeout).IsRequired();
@@ -172,15 +172,22 @@ namespace Ztm.Data.Entity.Contexts
             builder.HasKey(e => e.Id);
             builder.HasIndex(e => e.CallbackId).IsUnique();
             builder.HasIndex(e => e.PropertyId);
+            builder.HasIndex(e => e.AddressReservationId).IsUnique();
             builder.HasIndex(e => e.Status);
             builder.HasOne(e => e.Callback)
                    .WithOne()
-                   .HasForeignKey<TokenBalanceWatcherRule>(e => e.CallbackId)
+                   .HasForeignKey<TokenReceivingWatcherRule>(e => e.CallbackId)
                    .HasPrincipalKey<WebApiCallback>(e => e.Id)
+                   .OnDelete(DeleteBehavior.Restrict);
+            builder.HasOne(e => e.AddressReservation)
+                   .WithOne()
+                   .HasForeignKey<TokenReceivingWatcherRule>(e => e.AddressReservationId)
+                   .HasPrincipalKey<ReceivingAddressReservation>(e => e.Id)
                    .OnDelete(DeleteBehavior.Restrict);
         }
 
-        protected virtual void ConfigureTokenBalanceWatcherWatch(EntityTypeBuilder<TokenBalanceWatcherWatch> builder)
+        protected virtual void ConfigureTokenReceivingWatcherWatch(
+            EntityTypeBuilder<TokenReceivingWatcherWatch> builder)
         {
             builder.Property(e => e.Id).IsRequired().ValueGeneratedOnAdd();
             builder.Property(e => e.RuleId).IsRequired();
@@ -194,11 +201,22 @@ namespace Ztm.Data.Entity.Contexts
             builder.HasKey(e => e.Id);
             builder.HasIndex(e => e.RuleId);
             builder.HasIndex(e => e.BlockId);
+            builder.HasIndex(e => e.TransactionId);
             builder.HasIndex(e => e.Status);
             builder.HasOne(e => e.Rule)
                    .WithMany(e => e.Watches)
                    .HasForeignKey(e => e.RuleId)
                    .HasPrincipalKey(e => e.Id)
+                   .OnDelete(DeleteBehavior.Restrict);
+            builder.HasOne(e => e.Block)
+                   .WithMany()
+                   .HasForeignKey(e => e.BlockId)
+                   .HasPrincipalKey(e => e.Hash)
+                   .OnDelete(DeleteBehavior.Restrict);
+            builder.HasOne(e => e.Transaction)
+                   .WithMany()
+                   .HasForeignKey(e => e.TransactionId)
+                   .HasPrincipalKey(e => e.Hash)
                    .OnDelete(DeleteBehavior.Restrict);
         }
 
@@ -304,8 +322,8 @@ namespace Ztm.Data.Entity.Contexts
             modelBuilder.Entity<Output>(ConfigureOutput);
             modelBuilder.Entity<ReceivingAddress>(ConfigureReceivingAddress);
             modelBuilder.Entity<ReceivingAddressReservation>(ConfigureReceivingAddressReservation);
-            modelBuilder.Entity<TokenBalanceWatcherRule>(ConfigureTokenBalanceWatcherRule);
-            modelBuilder.Entity<TokenBalanceWatcherWatch>(ConfigureTokenBalanceWatcherWatch);
+            modelBuilder.Entity<TokenReceivingWatcherRule>(ConfigureTokenReceivingWatcherRule);
+            modelBuilder.Entity<TokenReceivingWatcherWatch>(ConfigureTokenReceivingWatcherWatch);
             modelBuilder.Entity<Transaction>(ConfigureTransaction);
             modelBuilder.Entity<TransactionConfirmationWatcherRule>(ConfigureTransactionConfirmationWatcherRule);
             modelBuilder.Entity<TransactionConfirmationWatcherWatch>(ConfirgureTransactionConfirmationWatcherWatch);

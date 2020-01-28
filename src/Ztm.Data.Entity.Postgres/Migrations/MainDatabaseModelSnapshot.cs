@@ -162,75 +162,6 @@ namespace Ztm.Data.Entity.Postgres.Migrations
                     b.ToTable("ReceivingAddressReservations");
                 });
 
-            modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.TokenBalanceWatcherRule", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<string>("Address")
-                        .IsRequired();
-
-                    b.Property<Guid>("CallbackId");
-
-                    b.Property<TimeSpan>("CurrentTimeout");
-
-                    b.Property<TimeSpan>("OriginalTimeout");
-
-                    b.Property<long>("PropertyId");
-
-                    b.Property<int>("Status");
-
-                    b.Property<long>("TargetAmount");
-
-                    b.Property<int>("TargetConfirmation");
-
-                    b.Property<string>("TimeoutStatus")
-                        .IsRequired();
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CallbackId")
-                        .IsUnique();
-
-                    b.HasIndex("PropertyId");
-
-                    b.HasIndex("Status");
-
-                    b.ToTable("TokenBalanceWatcherRules");
-                });
-
-            modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.TokenBalanceWatcherWatch", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<long>("BalanceChange");
-
-                    b.Property<uint256>("BlockId")
-                        .IsRequired();
-
-                    b.Property<int>("Confirmation");
-
-                    b.Property<DateTime>("CreatedTime");
-
-                    b.Property<Guid>("RuleId");
-
-                    b.Property<int>("Status");
-
-                    b.Property<uint256>("TransactionId")
-                        .IsRequired();
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BlockId");
-
-                    b.HasIndex("RuleId");
-
-                    b.HasIndex("Status");
-
-                    b.ToTable("TokenBalanceWatcherWatches");
-                });
-
             modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.Transaction", b =>
                 {
                     b.Property<uint256>("Hash");
@@ -398,22 +329,6 @@ namespace Ztm.Data.Entity.Postgres.Migrations
                         .WithMany("Reservations")
                         .HasForeignKey("AddressId")
                         .OnDelete(DeleteBehavior.Cascade);
-                });
-
-            modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.TokenBalanceWatcherRule", b =>
-                {
-                    b.HasOne("Ztm.Data.Entity.Contexts.Main.WebApiCallback", "Callback")
-                        .WithOne()
-                        .HasForeignKey("Ztm.Data.Entity.Contexts.Main.TokenBalanceWatcherRule", "CallbackId")
-                        .OnDelete(DeleteBehavior.Restrict);
-                });
-
-            modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.TokenBalanceWatcherWatch", b =>
-                {
-                    b.HasOne("Ztm.Data.Entity.Contexts.Main.TokenBalanceWatcherRule", "Rule")
-                        .WithMany("Watches")
-                        .HasForeignKey("RuleId")
-                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("Ztm.Data.Entity.Contexts.Main.TransactionConfirmationWatcherRule", b =>

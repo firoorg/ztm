@@ -1,20 +1,21 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using NBitcoin;
+using Ztm.WebApi.AddressPools;
+using Ztm.WebApi.Callbacks;
 using Ztm.Zcoin.NBitcoin.Exodus;
 
-namespace Ztm.WebApi.Watchers.TokenBalance
+namespace Ztm.WebApi.Watchers.TokenReceiving
 {
-    public interface ITokenBalanceWatcher
+    public interface ITokenReceivingWatcher
     {
-        Task<Rule> StartWatchAsync(
-            BitcoinAddress address,
+        Task<Guid> StartWatchAsync(
+            ReceivingAddressReservation address,
             PropertyAmount targetAmount,
             int targetConfirmation,
             TimeSpan timeout,
             string timeoutStatus,
-            Guid callback,
+            Callback callback,
             CancellationToken cancellationToken);
     }
 }

@@ -8,7 +8,7 @@ namespace Ztm.WebApi.AddressPools
         {
             services.AddSingleton<IAddressChoser, LessUsageFirstChoser>();
             services.AddSingleton<IAddressGenerator, RpcAddressGenerator>();
-            services.AddSingleton<IReceivingAddressStorage, EntityReceivingAddressStorage>();
+            services.AddSingleton<IReceivingAddressRepository, EntityReceivingAddressRepository>();
 
             services.AddSingleton<IReceivingAddressPool, ReceivingAddressPool>();
         }

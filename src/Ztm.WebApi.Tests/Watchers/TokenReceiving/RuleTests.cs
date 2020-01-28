@@ -1,34 +1,52 @@
 using System;
+using System.Collections.ObjectModel;
+using System.Net;
 using Xunit;
 using Ztm.Testing;
-using Ztm.WebApi.Watchers.TokenBalance;
+using Ztm.WebApi.AddressPools;
+using Ztm.WebApi.Callbacks;
+using Ztm.WebApi.Watchers.TokenReceiving;
 using Ztm.Zcoin.NBitcoin.Exodus;
 
-namespace Ztm.WebApi.Tests.Watchers.TokenBalance
+namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
 {
     public sealed class RuleTests
     {
         readonly PropertyId property;
+        readonly ReceivingAddress address;
+        readonly ReceivingAddressReservation reservation;
         readonly PropertyAmount targetAmount;
         readonly int targetConfirmation;
         readonly TimeSpan timeout;
         readonly string timeoutStatus;
-        readonly Guid callback;
+        readonly Callback callback;
         readonly Guid id;
         readonly Rule subject;
 
         public RuleTests()
         {
             this.property = new PropertyId(3);
+            this.address = new ReceivingAddress(
+                Guid.NewGuid(),
+                TestAddress.Regtest1,
+                true,
+                new Collection<ReceivingAddressReservation>());
+            this.reservation = new ReceivingAddressReservation(Guid.NewGuid(), this.address, DateTime.Now, null);
+            this.address.Reservations.Add(this.reservation);
             this.targetAmount = new PropertyAmount(100);
             this.targetConfirmation = 6;
             this.timeout = TimeSpan.FromHours(1);
             this.timeoutStatus = "timeout";
-            this.callback = Guid.NewGuid();
+            this.callback = new Callback(
+                Guid.NewGuid(),
+                IPAddress.Parse("192.168.1.2"),
+                DateTime.Now,
+                false,
+                new Uri("http://localhost"));
             this.id = Guid.NewGuid();
             this.subject = new Rule(
                 this.property,
-                TestAddress.Regtest1,
+                this.reservation,
                 this.targetAmount,
                 this.targetConfirmation,
                 this.timeout,
@@ -44,7 +62,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                 "property",
                 () => new Rule(
                     null,
-                    TestAddress.Regtest1,
+                    this.reservation,
                     this.targetAmount,
                     this.targetConfirmation,
                     this.timeout,
@@ -54,7 +72,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                 "property",
                 () => new Rule(
                     null,
-                    TestAddress.Regtest1,
+                    this.reservation,
                     this.targetAmount,
                     this.targetConfirmation,
                     this.timeout,
@@ -64,10 +82,10 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
         }
 
         [Fact]
-        public void Constructor_WithNullAddress_ShouldThrow()
+        public void Constructor_WithNullAddressReservation_ShouldThrow()
         {
             Assert.Throws<ArgumentNullException>(
-                "address",
+                "addressReservation",
                 () => new Rule(
                     this.property,
                     null,
@@ -77,7 +95,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                     this.timeoutStatus,
                     this.callback));
             Assert.Throws<ArgumentNullException>(
-                "address",
+                "addressReservation",
                 () => new Rule(
                     this.property,
                     null,
@@ -92,14 +110,12 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
         [Fact]
         public void Constructor_WithNegativeTargetAmount_ShouldThrow()
         {
-            var amount = new PropertyAmount(-1);
-
             Assert.Throws<ArgumentOutOfRangeException>(
                 "targetAmount",
                 () => new Rule(
                     this.property,
-                    TestAddress.Regtest1,
-                    amount,
+                    this.reservation,
+                    PropertyAmount.MinusOne,
                     this.targetConfirmation,
                     this.timeout,
                     this.timeoutStatus,
@@ -108,8 +124,34 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                 "targetAmount",
                 () => new Rule(
                     this.property,
-                    TestAddress.Regtest1,
-                    amount,
+                    this.reservation,
+                    PropertyAmount.MinusOne,
+                    this.targetConfirmation,
+                    this.timeout,
+                    this.timeoutStatus,
+                    this.callback,
+                    this.id));
+        }
+
+        [Fact]
+        public void Constructor_WithZeroTargetAmount_ShouldThrow()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(
+                "targetAmount",
+                () => new Rule(
+                    this.property,
+                    this.reservation,
+                    PropertyAmount.Zero,
+                    this.targetConfirmation,
+                    this.timeout,
+                    this.timeoutStatus,
+                    this.callback));
+            Assert.Throws<ArgumentOutOfRangeException>(
+                "targetAmount",
+                () => new Rule(
+                    this.property,
+                    this.reservation,
+                    PropertyAmount.Zero,
                     this.targetConfirmation,
                     this.timeout,
                     this.timeoutStatus,
@@ -126,7 +168,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                 "targetConfirmation",
                 () => new Rule(
                     this.property,
-                    TestAddress.Regtest1,
+                    this.reservation,
                     this.targetAmount,
                     confirmation,
                     this.timeout,
@@ -136,7 +178,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                 "targetConfirmation",
                 () => new Rule(
                     this.property,
-                    TestAddress.Regtest1,
+                    this.reservation,
                     this.targetAmount,
                     confirmation,
                     this.timeout,
@@ -154,7 +196,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                 "originalTimeout",
                 () => new Rule(
                     this.property,
-                    TestAddress.Regtest1,
+                    this.reservation,
                     this.targetAmount,
                     this.targetConfirmation,
                     timeout,
@@ -164,7 +206,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                 "originalTimeout",
                 () => new Rule(
                     this.property,
-                    TestAddress.Regtest1,
+                    this.reservation,
                     this.targetAmount,
                     this.targetConfirmation,
                     timeout,
@@ -180,7 +222,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                 "timeoutStatus",
                 () => new Rule(
                     this.property,
-                    TestAddress.Regtest1,
+                    this.reservation,
                     this.targetAmount,
                     this.targetConfirmation,
                     this.timeout,
@@ -190,7 +232,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                 "timeoutStatus",
                 () => new Rule(
                     this.property,
-                    TestAddress.Regtest1,
+                    this.reservation,
                     this.targetAmount,
                     this.targetConfirmation,
                     this.timeout,
@@ -200,11 +242,37 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
         }
 
         [Fact]
+        public void Constructor_WithNullCallback_ShouldThrow()
+        {
+            Assert.Throws<ArgumentNullException>(
+                "callback",
+                () => new Rule(
+                    this.property,
+                    this.reservation,
+                    this.targetAmount,
+                    this.targetConfirmation,
+                    this.timeout,
+                    this.timeoutStatus,
+                    null));
+            Assert.Throws<ArgumentNullException>(
+                "callback",
+                () => new Rule(
+                    this.property,
+                    this.reservation,
+                    this.targetAmount,
+                    this.targetConfirmation,
+                    this.timeout,
+                    this.timeoutStatus,
+                    null,
+                    this.id));
+        }
+
+        [Fact]
         public void Constructor_WithNoId_IdShouldGenerated()
         {
             var subject = new Rule(
                 this.property,
-                TestAddress.Regtest1,
+                this.reservation,
                 this.targetAmount,
                 this.targetConfirmation,
                 this.timeout,
@@ -217,7 +285,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
         [Fact]
         public void Constructor_WhenSucceeded_ShouldInitializeProperties()
         {
-            Assert.Equal(TestAddress.Regtest1, this.subject.Address);
+            Assert.Equal(this.reservation, this.subject.AddressReservation);
             Assert.Equal(this.callback, this.subject.Callback);
             Assert.Equal(this.id, this.subject.Id);
             Assert.Equal(this.timeout, this.subject.OriginalTimeout);
@@ -234,7 +302,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                 this.subject,
                 s => new Rule(
                     new PropertyId(4),
-                    s.Address,
+                    s.AddressReservation,
                     s.TargetAmount,
                     s.TargetConfirmation,
                     s.OriginalTimeout,
@@ -243,7 +311,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                     s.Id),
                 s => new Rule(
                     s.Property,
-                    TestAddress.Regtest2,
+                    new ReceivingAddressReservation(Guid.NewGuid(), this.address, DateTime.Now, null),
                     s.TargetAmount,
                     s.TargetConfirmation,
                     s.OriginalTimeout,
@@ -252,7 +320,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                     s.Id),
                 s => new Rule(
                     s.Property,
-                    s.Address,
+                    s.AddressReservation,
                     new PropertyAmount(50),
                     s.TargetConfirmation,
                     s.OriginalTimeout,
@@ -261,7 +329,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                     s.Id),
                 s => new Rule(
                     s.Property,
-                    s.Address,
+                    s.AddressReservation,
                     s.TargetAmount,
                     1,
                     s.OriginalTimeout,
@@ -270,7 +338,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                     s.Id),
                 s => new Rule(
                     s.Property,
-                    s.Address,
+                    s.AddressReservation,
                     s.TargetAmount,
                     s.TargetConfirmation,
                     TimeSpan.FromMinutes(30),
@@ -279,7 +347,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                     s.Id),
                 s => new Rule(
                     s.Property,
-                    s.Address,
+                    s.AddressReservation,
                     s.TargetAmount,
                     s.TargetConfirmation,
                     s.OriginalTimeout,
@@ -288,12 +356,12 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                     s.Id),
                 s => new Rule(
                     s.Property,
-                    s.Address,
+                    s.AddressReservation,
                     s.TargetAmount,
                     s.TargetConfirmation,
                     s.OriginalTimeout,
                     s.TimeoutStatus,
-                    Guid.NewGuid(),
+                    new Callback(Guid.NewGuid(), IPAddress.Loopback, DateTime.Now, false, new Uri("http://localhost")),
                     s.Id));
 
             Assert.DoesNotContain(false, results);
@@ -306,7 +374,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenBalance
                 this.subject,
                 s => new Rule(
                     s.Property,
-                    s.Address,
+                    s.AddressReservation,
                     s.TargetAmount,
                     s.TargetConfirmation,
                     s.OriginalTimeout,

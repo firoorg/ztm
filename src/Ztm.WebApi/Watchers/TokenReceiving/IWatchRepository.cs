@@ -3,9 +3,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using Ztm.Zcoin.NBitcoin.Exodus;
-using Watch = Ztm.Zcoin.Watching.BalanceWatch<Ztm.WebApi.Watchers.TokenBalance.Rule, Ztm.Zcoin.NBitcoin.Exodus.PropertyAmount>;
+using Watch = Ztm.Zcoin.Watching.BalanceWatch<Ztm.WebApi.Watchers.TokenReceiving.Rule, Ztm.Zcoin.NBitcoin.Exodus.PropertyAmount>;
 
-namespace Ztm.WebApi.Watchers.TokenBalance
+namespace Ztm.WebApi.Watchers.TokenReceiving
 {
     public interface IWatchRepository
     {
@@ -15,15 +15,15 @@ namespace Ztm.WebApi.Watchers.TokenBalance
 
         Task SetConfirmationCountAsync(IReadOnlyDictionary<Watch, int> watches, CancellationToken cancellationToken);
 
-        Task<IEnumerable<CompletedWatch>> TransitionToRejectedAsync(
+        Task<IReadOnlyDictionary<Watch, int>> TransitionToRejectedAsync(
             PropertyId property,
             uint256 startBlock,
             CancellationToken cancellationToken);
 
-        Task<IEnumerable<CompletedWatch>> TransitionToSucceededAsync(
+        Task<IReadOnlyDictionary<Watch, int>> TransitionToSucceededAsync(
             IEnumerable<Watch> watches,
             CancellationToken cancellationToken);
 
-        Task<IEnumerable<CompletedWatch>> TransitionToTimedOutAsync(Rule rule, CancellationToken cancellationToken);
+        Task<IReadOnlyDictionary<Watch, int>> TransitionToTimedOutAsync(Rule rule, CancellationToken cancellationToken);
     }
 }

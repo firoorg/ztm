@@ -1,42 +1,56 @@
 using System;
+using System.Collections.ObjectModel;
+using System.Net;
 using Xunit;
 using Ztm.Testing;
 using Ztm.Threading;
-using Ztm.WebApi.Watchers.TokenBalance;
+using Ztm.WebApi.AddressPools;
+using Ztm.WebApi.Callbacks;
+using Ztm.WebApi.Watchers.TokenReceiving;
 using Ztm.Zcoin.NBitcoin.Exodus;
 
-namespace Ztm.WebApi.Tests.Watchers.TokenBalance
+namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
 {
-    public sealed class WatchingInfoTests
+    public sealed class WatchingTests
     {
         readonly Rule rule;
         readonly Timer timer;
-        readonly WatchingInfo subject;
+        readonly Watching subject;
 
-        public WatchingInfoTests()
+        public WatchingTests()
         {
+            var address = new ReceivingAddress(
+                Guid.NewGuid(),
+                TestAddress.Regtest1,
+                true,
+                new Collection<ReceivingAddressReservation>());
+            var reservation = new ReceivingAddressReservation(Guid.NewGuid(), address, DateTime.Now, null);
+            address.Reservations.Add(reservation);
+
             this.rule = new Rule(
                 new PropertyId(3),
-                TestAddress.Regtest1,
+                reservation,
                 new PropertyAmount(100),
                 6,
                 TimeSpan.FromHours(1),
                 "timeout",
-                Guid.NewGuid());
+                new Callback(Guid.NewGuid(), IPAddress.Loopback, DateTime.Now, false, new Uri("http://localhost")));
+
             this.timer = new Timer();
-            this.subject = new WatchingInfo(this.rule, this.timer);
+
+            this.subject = new Watching(this.rule, this.timer);
         }
 
         [Fact]
         public void Constructor_WithNullRule_ShouldThrow()
         {
-            Assert.Throws<ArgumentNullException>("rule", () => new WatchingInfo(null, this.timer));
+            Assert.Throws<ArgumentNullException>("rule", () => new Watching(null, this.timer));
         }
 
         [Fact]
         public void Constructor_WithNullTimer_ShouldThrow()
         {
-            Assert.Throws<ArgumentNullException>("timer", () => new WatchingInfo(this.rule, null));
+            Assert.Throws<ArgumentNullException>("timer", () => new Watching(this.rule, null));
         }
 
         [Fact]

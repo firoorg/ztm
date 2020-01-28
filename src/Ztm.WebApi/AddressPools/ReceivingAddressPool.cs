@@ -8,12 +8,12 @@ namespace Ztm.WebApi.AddressPools
     public sealed class ReceivingAddressPool : IReceivingAddressPool
     {
         readonly IAddressGenerator generator;
-        readonly IReceivingAddressStorage storage;
+        readonly IReceivingAddressRepository repository;
         readonly IAddressChoser choser;
 
         public ReceivingAddressPool(
             IAddressGenerator generator,
-            IReceivingAddressStorage storage,
+            IReceivingAddressRepository repository,
             IAddressChoser choser)
         {
             if (generator == null)
@@ -21,9 +21,9 @@ namespace Ztm.WebApi.AddressPools
                 throw new ArgumentNullException(nameof(generator));
             }
 
-            if (storage == null)
+            if (repository == null)
             {
-                throw new ArgumentNullException(nameof(storage));
+                throw new ArgumentNullException(nameof(repository));
             }
 
             if (choser == null)
@@ -32,29 +32,29 @@ namespace Ztm.WebApi.AddressPools
             }
 
             this.generator = generator;
-            this.storage = storage;
+            this.repository = repository;
             this.choser = choser;
         }
 
         public async Task GenerateAddressAsync(CancellationToken cancellationToken)
         {
             var address = await this.generator.GenerateAsync(cancellationToken);
-            await this.storage.AddAsync(address, CancellationToken.None);
+            await this.repository.AddAsync(address, CancellationToken.None);
         }
 
         public Task ReleaseAddressAsync(Guid id, CancellationToken cancellationToken)
         {
-            return this.storage.ReleaseAsync(id, cancellationToken);
+            return this.repository.ReleaseAsync(id, cancellationToken);
         }
 
         public async Task<ReceivingAddressReservation> TryLockAddressAsync(CancellationToken cancellationToken)
         {
-            var addresses = await this.storage.ListAsync(AddressFilter.Available, cancellationToken);
+            var addresses = await this.repository.ListAsync(AddressFilter.Available, cancellationToken);
 
             if (addresses.Any())
             {
                 var chosen = this.choser.Choose(addresses);
-                return await this.storage.TryLockAsync(chosen.Id, cancellationToken);
+                return await this.repository.TryLockAsync(chosen.Id, cancellationToken);
             }
 
             return null;

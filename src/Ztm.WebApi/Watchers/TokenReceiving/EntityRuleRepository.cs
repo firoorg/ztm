@@ -5,56 +5,44 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using NBitcoin;
 using Ztm.Data.Entity.Contexts;
+using Ztm.WebApi.AddressPools;
+using Ztm.WebApi.Callbacks;
 using Ztm.Zcoin.NBitcoin.Exodus;
-using EntityModel = Ztm.Data.Entity.Contexts.Main.TokenBalanceWatcherRule;
-using Status = Ztm.Data.Entity.Contexts.Main.TokenBalanceWatcherRuleStatus;
+using EntityModel = Ztm.Data.Entity.Contexts.Main.TokenReceivingWatcherRule;
+using Status = Ztm.Data.Entity.Contexts.Main.TokenReceivingWatcherRuleStatus;
 
-namespace Ztm.WebApi.Watchers.TokenBalance
+namespace Ztm.WebApi.Watchers.TokenReceiving
 {
     public sealed class EntityRuleRepository : IRuleRepository
     {
         readonly IMainDatabaseFactory db;
-        readonly Network network;
+        readonly ICallbackRepository callbacks;
+        readonly IReceivingAddressRepository addresses;
 
-        public EntityRuleRepository(IMainDatabaseFactory db, Network network)
+        public EntityRuleRepository(
+            IMainDatabaseFactory db,
+            ICallbackRepository callbacks,
+            IReceivingAddressRepository addresses)
         {
             if (db == null)
             {
                 throw new ArgumentNullException(nameof(db));
             }
 
-            if (network == null)
+            if (callbacks == null)
             {
-                throw new ArgumentNullException(nameof(network));
+                throw new ArgumentNullException(nameof(callbacks));
+            }
+
+            if (addresses == null)
+            {
+                throw new ArgumentNullException(nameof(addresses));
             }
 
             this.db = db;
-            this.network = network;
-        }
-
-        public static Rule ToDomain(EntityModel entity, Network network)
-        {
-            if (entity == null)
-            {
-                throw new ArgumentNullException(nameof(entity));
-            }
-
-            if (network == null)
-            {
-                throw new ArgumentNullException(nameof(network));
-            }
-
-            return new Rule(
-                new PropertyId(entity.PropertyId),
-                BitcoinAddress.Create(entity.Address, network),
-                new PropertyAmount(entity.TargetAmount),
-                entity.TargetConfirmation,
-                entity.OriginalTimeout,
-                entity.TimeoutStatus,
-                entity.CallbackId,
-                entity.Id);
+            this.callbacks = callbacks;
+            this.addresses = addresses;
         }
 
         public async Task AddAsync(Rule rule, CancellationToken cancellationToken)
@@ -69,9 +57,9 @@ namespace Ztm.WebApi.Watchers.TokenBalance
                 var entity = new EntityModel()
                 {
                     Id = rule.Id,
-                    CallbackId = rule.Callback,
+                    CallbackId = rule.Callback.Id,
                     PropertyId = rule.Property.Value,
-                    Address = rule.Address.ToString(),
+                    AddressReservationId = rule.AddressReservation.Id,
                     TargetAmount = rule.TargetAmount.Indivisible,
                     TargetConfirmation = rule.TargetConfirmation,
                     OriginalTimeout = rule.OriginalTimeout,
@@ -80,7 +68,7 @@ namespace Ztm.WebApi.Watchers.TokenBalance
                     Status = Status.Uncompleted,
                 };
 
-                await db.TokenBalanceWatcherRules.AddAsync(entity, cancellationToken);
+                await db.TokenReceivingWatcherRules.AddAsync(entity, cancellationToken);
                 await db.SaveChangesAsync();
             }
         }
@@ -91,7 +79,8 @@ namespace Ztm.WebApi.Watchers.TokenBalance
             {
                 await db.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
 
-                var entity = await db.TokenBalanceWatcherRules.SingleOrDefaultAsync(e => e.Id == id, cancellationToken);
+                var entity = await db.TokenReceivingWatcherRules
+                    .SingleOrDefaultAsync(e => e.Id == id, cancellationToken);
 
                 if (entity == null)
                 {
@@ -110,11 +99,22 @@ namespace Ztm.WebApi.Watchers.TokenBalance
             }
         }
 
+        public async Task<Rule> GetAsync(Guid id, CancellationToken cancellationToken)
+        {
+            using (var db = this.db.CreateDbContext())
+            {
+                var entity = await db.TokenReceivingWatcherRules
+                    .SingleOrDefaultAsync(e => e.Id == id, cancellationToken);
+
+                return entity != null ? await ToDomainAsync(entity, cancellationToken) : null;
+            }
+        }
+
         public async Task<TimeSpan> GetCurrentTimeoutAsync(Guid id, CancellationToken cancellationToken)
         {
             using (var db = this.db.CreateDbContext())
             {
-                var entity = await db.TokenBalanceWatcherRules.SingleOrDefaultAsync(e => e.Id == id, cancellationToken);
+                var entity = await db.TokenReceivingWatcherRules.SingleOrDefaultAsync(e => e.Id == id, cancellationToken);
 
                 if (entity == null)
                 {
@@ -138,14 +138,12 @@ namespace Ztm.WebApi.Watchers.TokenBalance
 
             using (var db = this.db.CreateDbContext())
             {
-                entities = await db.TokenBalanceWatcherRules
+                entities = await db.TokenReceivingWatcherRules
                     .Where(e => e.Status == Status.Uncompleted && e.PropertyId == property.Value)
                     .ToListAsync(cancellationToken);
             }
 
-            return entities
-                .Select(e => ToDomain(e, this.network))
-                .ToList();
+            return await Task.WhenAll(entities.Select(e => ToDomainAsync(e, cancellationToken)));
         }
 
         public async Task SetSucceededAsync(Guid id, CancellationToken cancellationToken)
@@ -154,7 +152,8 @@ namespace Ztm.WebApi.Watchers.TokenBalance
             {
                 await db.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
 
-                var entity = await db.TokenBalanceWatcherRules.SingleOrDefaultAsync(e => e.Id == id, cancellationToken);
+                var entity = await db.TokenReceivingWatcherRules
+                    .SingleOrDefaultAsync(e => e.Id == id, cancellationToken);
 
                 if (entity == null)
                 {
@@ -174,7 +173,8 @@ namespace Ztm.WebApi.Watchers.TokenBalance
             {
                 await db.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
 
-                var entity = await db.TokenBalanceWatcherRules.SingleOrDefaultAsync(e => e.Id == id, cancellationToken);
+                var entity = await db.TokenReceivingWatcherRules
+                    .SingleOrDefaultAsync(e => e.Id == id, cancellationToken);
 
                 if (entity == null)
                 {
@@ -186,6 +186,24 @@ namespace Ztm.WebApi.Watchers.TokenBalance
                 await db.SaveChangesAsync(cancellationToken);
                 db.Database.CommitTransaction();
             }
+        }
+
+        async Task<Rule> ToDomainAsync(EntityModel entity, CancellationToken cancellationToken)
+        {
+            var reservation = this.addresses.GetReservationAsync(entity.AddressReservationId, cancellationToken);
+            var callback = this.callbacks.GetAsync(entity.CallbackId, cancellationToken);
+
+            await Task.WhenAll(reservation, callback);
+
+            return new Rule(
+                new PropertyId(entity.PropertyId),
+                reservation.Result,
+                new PropertyAmount(entity.TargetAmount),
+                entity.TargetConfirmation,
+                entity.OriginalTimeout,
+                entity.TimeoutStatus,
+                callback.Result,
+                entity.Id);
         }
     }
 }

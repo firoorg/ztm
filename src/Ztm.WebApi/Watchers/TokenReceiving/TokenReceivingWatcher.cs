@@ -7,42 +7,45 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Ztm.Threading;
+using Ztm.WebApi.AddressPools;
 using Ztm.WebApi.Callbacks;
 using Ztm.Zcoin.NBitcoin.Exodus;
 using Ztm.Zcoin.NBitcoin.Exodus.TransactionRetrievers;
 using Ztm.Zcoin.Synchronization;
 using Ztm.Zcoin.Watching;
-using Change = Ztm.Zcoin.Watching.BalanceChange<Ztm.WebApi.Watchers.TokenBalance.Rule, Ztm.Zcoin.NBitcoin.Exodus.PropertyAmount>;
-using Confirmation = Ztm.Zcoin.Watching.BalanceConfirmation<Ztm.WebApi.Watchers.TokenBalance.Rule, Ztm.Zcoin.NBitcoin.Exodus.PropertyAmount>;
+using Change = Ztm.Zcoin.Watching.BalanceChange<Ztm.WebApi.Watchers.TokenReceiving.Rule, Ztm.Zcoin.NBitcoin.Exodus.PropertyAmount>;
+using Confirmation = Ztm.Zcoin.Watching.BalanceConfirmation<Ztm.WebApi.Watchers.TokenReceiving.Rule, Ztm.Zcoin.NBitcoin.Exodus.PropertyAmount>;
 using Timer = Ztm.Threading.Timer;
-using Watch = Ztm.Zcoin.Watching.BalanceWatch<Ztm.WebApi.Watchers.TokenBalance.Rule, Ztm.Zcoin.NBitcoin.Exodus.PropertyAmount>;
+using Watch = Ztm.Zcoin.Watching.BalanceWatch<Ztm.WebApi.Watchers.TokenReceiving.Rule, Ztm.Zcoin.NBitcoin.Exodus.PropertyAmount>;
 
-namespace Ztm.WebApi.Watchers.TokenBalance
+namespace Ztm.WebApi.Watchers.TokenReceiving
 {
-    public sealed class TokenBalanceWatcher :
+    public sealed class TokenReceivingWatcher :
         IBalanceWatcherHandler<Rule, PropertyAmount>,
         IBlockListener,
         IDisposable,
         IHostedService,
-        ITokenBalanceWatcher
+        ITokenReceivingWatcher
     {
         readonly PropertyId property;
         readonly ILogger logger;
+        readonly IReceivingAddressPool addressPool;
         readonly ITransactionRetriever exodusRetriever;
         readonly IRuleRepository rules;
         readonly IWatchRepository watches;
         readonly ICallbackRepository callbacks;
         readonly ICallbackExecuter callbackExecutor;
         readonly ITimerScheduler timerScheduler;
-        readonly Dictionary<BitcoinAddress, WatchingInfo> watching;
+        readonly Dictionary<BitcoinAddress, Watching> watchings;
         readonly BalanceWatcher<Rule, PropertyAmount> engine;
         readonly SemaphoreSlim semaphore;
         bool disposed, stopped;
 
-        public TokenBalanceWatcher(
+        public TokenReceivingWatcher(
             PropertyId property,
-            ILogger<TokenBalanceWatcher> logger,
+            ILogger<TokenReceivingWatcher> logger,
             IBlocksStorage blocks,
+            IReceivingAddressPool addressPool,
             ITransactionRetriever exodusRetriever,
             IRuleRepository rules,
             IWatchRepository watches,
@@ -58,6 +61,11 @@ namespace Ztm.WebApi.Watchers.TokenBalance
             if (logger == null)
             {
                 throw new ArgumentNullException(nameof(logger));
+            }
+
+            if (addressPool == null)
+            {
+                throw new ArgumentNullException(nameof(addressPool));
             }
 
             if (exodusRetriever == null)
@@ -92,13 +100,14 @@ namespace Ztm.WebApi.Watchers.TokenBalance
 
             this.property = property;
             this.logger = logger;
+            this.addressPool = addressPool;
             this.exodusRetriever = exodusRetriever;
             this.rules = rules;
             this.watches = watches;
             this.callbacks = callbacks;
             this.callbackExecutor = callbackExecutor;
             this.timerScheduler = timerScheduler;
-            this.watching = new Dictionary<BitcoinAddress, WatchingInfo>();
+            this.watchings = new Dictionary<BitcoinAddress, Watching>();
             this.engine = new BalanceWatcher<Rule, PropertyAmount>(this, blocks);
             this.semaphore = new SemaphoreSlim(1, 1);
             this.stopped = true;
@@ -139,25 +148,40 @@ namespace Ztm.WebApi.Watchers.TokenBalance
             }
         }
 
-        public async Task<Rule> StartWatchAsync(
-            BitcoinAddress address,
+        public async Task<Guid> StartWatchAsync(
+            ReceivingAddressReservation address,
             PropertyAmount targetAmount,
             int targetConfirmation,
             TimeSpan timeout,
             string timeoutStatus,
-            Guid callback,
+            Callback callback,
             CancellationToken cancellationToken)
         {
             Rule rule;
+
+            if (address == null)
+            {
+                throw new ArgumentNullException(nameof(address));
+            }
+
+            if (address.ReleasedDate != null)
+            {
+                throw new ArgumentException("The reservation is already released.", nameof(address));
+            }
 
             if (!this.timerScheduler.IsValidDuration(timeout))
             {
                 throw new ArgumentOutOfRangeException(nameof(timeout), timeout, "The value is not valid.");
             }
 
-            if ((await this.callbacks.GetAsync(callback, cancellationToken)) == null)
+            if (callback == null)
             {
-                throw new ArgumentException("The value is not a valid callback identifier.", nameof(callback));
+                throw new ArgumentNullException(nameof(callback));
+            }
+
+            if (callback.Completed)
+            {
+                throw new ArgumentException("The callback is already completed.", nameof(callback));
             }
 
             await this.semaphore.WaitAsync(cancellationToken);
@@ -187,19 +211,19 @@ namespace Ztm.WebApi.Watchers.TokenBalance
                 this.semaphore.Release();
             }
 
-            return rule;
+            return rule.Id;
         }
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
-            IEnumerable<WatchingInfo> watchings;
+            IEnumerable<Watching> watchings;
 
             // Cache watching list due to we can't wait timer to stop while we hold the semaphore.
             await this.semaphore.WaitAsync(cancellationToken);
 
             try
             {
-                watchings = this.watching
+                watchings = this.watchings
                     .Select(p => p.Value)
                     .ToList();
 
@@ -232,8 +256,9 @@ namespace Ztm.WebApi.Watchers.TokenBalance
             }
 
             var timer = new Timer(this.timerScheduler);
+            var address = rule.AddressReservation.Address.Address;
 
-            this.watching.Add(rule.Address, new WatchingInfo(rule, timer));
+            this.watchings.Add(address, new Watching(rule, timer));
 
             try
             {
@@ -243,11 +268,11 @@ namespace Ztm.WebApi.Watchers.TokenBalance
                         cancellationToken => OnTimeoutAsync((BitcoinAddress)e.Context, cancellationToken));
                 };
 
-                timer.Start(timeout, null, rule.Address);
+                timer.Start(timeout, null, address);
             }
             catch
             {
-                this.watching.Remove(rule.Address);
+                this.watchings.Remove(address);
                 throw;
             }
         }
@@ -258,7 +283,7 @@ namespace Ztm.WebApi.Watchers.TokenBalance
 
             try
             {
-                if (!this.watching.Remove(address, out var watching))
+                if (!this.watchings.Remove(address, out var watching))
                 {
                     // Already completed.
                     return;
@@ -267,30 +292,20 @@ namespace Ztm.WebApi.Watchers.TokenBalance
                 var rule = watching.Rule;
 
                 await this.rules.SetTimedOutAsync(rule.Id, CancellationToken.None);
+                await this.addressPool.ReleaseAddressAsync(rule.AddressReservation.Id, CancellationToken.None);
 
                 // Mark all watches that was created by this rule as timed out and calculate total received amount.
                 var watches = await this.watches.TransitionToTimedOutAsync(rule, CancellationToken.None);
-                var confirmed = watches
-                    .Where(w => w.Confirmation > 0)
-                    .ToList();
-
-                var received = (confirmed.Count != 0)
-                    ? confirmed.Aggregate(PropertyAmount.Zero, (sum, next) => sum + next.Watch.BalanceChange)
-                    : default(PropertyAmount?);
-
-                var confirmation = (confirmed.Count != 0)
-                    ? confirmed.Min(c => c.Confirmation)
-                    : default(int?);
+                var confirmed = watches.Where(p => p.Value > 0).ToDictionary(p => p.Key, p => p.Value);
+                var amount = SumChanges(confirmed, rule.TargetConfirmation);
 
                 // Invoke callback.
-                var result = new TimeoutData()
+                var result = new CallbackData()
                 {
-                    Received = received,
-                    Confirmation = confirmation,
-                    TargetConfirmation = rule.TargetConfirmation,
+                    Received = amount,
                 };
 
-                await InvokeCallbackAsync(rule, rule.TimeoutStatus, result, CancellationToken.None);
+                await InvokeCallbackAsync(rule.Callback, rule.TimeoutStatus, result, CancellationToken.None);
             }
             catch (Exception ex) // lgtm[cs/catch-of-all-exceptions]
             {
@@ -302,16 +317,31 @@ namespace Ztm.WebApi.Watchers.TokenBalance
             }
         }
 
-        async Task InvokeCallbackAsync(Rule rule, string status, object data, CancellationToken cancellationToken)
+        CallbackAmount SumChanges(IReadOnlyDictionary<Watch, int> changes, int requiredConfirmation)
         {
-            var callback = await this.callbacks.GetAsync(rule.Callback, cancellationToken);
+            var amount = new CallbackAmount();
 
-            if (callback == null)
+            foreach (var p in changes)
             {
-                this.logger.LogError("No callback associated with rule {Rule}", rule.Id);
-                return;
+                if (p.Value >= requiredConfirmation)
+                {
+                    amount.Confirmed = (amount.Confirmed ?? PropertyAmount.Zero) + p.Key.BalanceChange;
+                }
+                else
+                {
+                    amount.Pending = (amount.Pending ?? PropertyAmount.Zero) + p.Key.BalanceChange;
+                }
             }
 
+            return amount;
+        }
+
+        async Task InvokeCallbackAsync(
+            Callback callback,
+            string status,
+            object data,
+            CancellationToken cancellationToken)
+        {
             var result = new CallbackResult(status, data);
 
             await this.callbacks.AddHistoryAsync(callback.Id, result, cancellationToken);
@@ -328,7 +358,7 @@ namespace Ztm.WebApi.Watchers.TokenBalance
             try
             {
                 await this.watches.AddAsync(
-                    watches.Where(w => this.watching.ContainsKey(w.Address)),
+                    watches.Where(w => this.watchings.ContainsKey(w.Address)), // Ensure it not timeout yet.
                     cancellationToken);
             }
             finally
@@ -345,48 +375,69 @@ namespace Ztm.WebApi.Watchers.TokenBalance
         {
             // All watches MUST come from the same rule; otherwise that mean there is a bug somewhere.
             var rule = confirm.Watches.Select(w => w.Key.Context).Distinct().Single();
-            WatchingInfo watching;
+            var address = rule.AddressReservation.Address.Address;
+            Watching watching;
 
             await this.semaphore.WaitAsync(cancellationToken);
 
             try
             {
-                if (!this.watching.ContainsKey(rule.Address))
+                if (!this.watchings.ContainsKey(address))
                 {
                     // Already timed out.
                     return false;
                 }
 
-                await this.watches.SetConfirmationCountAsync(confirm.Watches, cancellationToken);
-
-                // Check if completed.
-                if (type == ConfirmationType.Unconfirming || count < rule.TargetConfirmation)
+                // Update confirmation count for all watches.
+                switch (type)
                 {
-                    return false;
+                    case ConfirmationType.Confirmed:
+                        await this.watches.SetConfirmationCountAsync(confirm.Watches, cancellationToken);
+                        break;
+                    case ConfirmationType.Unconfirming:
+                        await this.watches.SetConfirmationCountAsync(
+                            confirm.Watches.ToDictionary(
+                                p => p.Key,
+                                p =>
+                                {
+                                    var confirmation = p.Value - 1;
+
+                                    if (confirmation < 0)
+                                    {
+                                        throw new ArgumentException(
+                                            "Some watches contains an invalid confirmation count.",
+                                            nameof(confirm));
+                                    }
+
+                                    return confirmation;
+                                }),
+                            cancellationToken);
+                        return false;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(type), type, "The value is unsupported.");
                 }
 
-                var received = confirm.Watches.Aggregate(
-                    PropertyAmount.Zero,
-                    (sum, next) => sum + next.Key.BalanceChange);
+                // Check if completed.
+                var amount = SumChanges(confirm.Watches, rule.TargetConfirmation);
 
-                if (received < rule.TargetAmount)
+                if (amount.Confirmed == null || amount.Confirmed < rule.TargetAmount)
                 {
                     return false;
                 }
 
                 // Trigger completion.
-                this.watching.Remove(rule.Address, out watching);
+                this.watchings.Remove(address, out watching);
 
                 await this.rules.SetSucceededAsync(rule.Id, CancellationToken.None);
+                await this.addressPool.ReleaseAddressAsync(rule.AddressReservation.Id, CancellationToken.None);
 
                 // Invoke callback.
                 var result = new CallbackData()
                 {
-                    Received = received,
-                    Confirmation = count,
+                    Received = amount,
                 };
 
-                await InvokeCallbackAsync(rule, CallbackResult.StatusSuccess, result, CancellationToken.None);
+                await InvokeCallbackAsync(rule.Callback, CallbackResult.StatusSuccess, result, CancellationToken.None);
             }
             finally
             {
@@ -414,10 +465,12 @@ namespace Ztm.WebApi.Watchers.TokenBalance
             }
 
             // Filter out change that does not belong to the target property and sum all changes for each address.
-            var groups = changes.Where(c => c.Property == this.property).GroupBy(
-                c => c.Address,
-                c => c.Amount,
-                (k, v) => new { Address = k, Sum = v.Aggregate((current, next) => current + next) });
+            var groups = changes
+                .Where(c => c.Property == this.property && c.Amount > PropertyAmount.Zero)
+                .GroupBy(
+                    c => c.Address,
+                    c => c.Amount,
+                    (k, v) => new { Address = k, Sum = v.Aggregate((sum, next) => sum + next) });
 
             // Check if address that have balance change is in our watching list.
             await this.semaphore.WaitAsync(cancellationToken);
@@ -426,12 +479,9 @@ namespace Ztm.WebApi.Watchers.TokenBalance
             {
                 foreach (var group in groups)
                 {
-                    // Don't skip zero sum here until we are really sure it does not cause any vulnerabilities. The only
-                    // behavior introduced by zero change is resetting confirmation count, which is safe than skipping
-                    // zero change without knowing it vulnerabilities.
                     var address = group.Address;
 
-                    if (!this.watching.TryGetValue(address, out var watching))
+                    if (!this.watchings.TryGetValue(address, out var watching))
                     {
                         continue;
                     }
@@ -454,7 +504,7 @@ namespace Ztm.WebApi.Watchers.TokenBalance
 
             try
             {
-                // We wrapped this with semaphore so it is easy to understand with the statements in time out handler.
+                // We wrapped this with semaphore so it is easy to understand with the statements in timeout handler.
                 return await this.watches.ListUncompletedAsync(this.property, cancellationToken);
             }
             finally
@@ -480,8 +530,8 @@ namespace Ztm.WebApi.Watchers.TokenBalance
 
             try
             {
-                // We wrapped this with semaphore so it is easy to synchronized our head with the statements in the time
-                // out handler.
+                // We wrapped this with semaphore so it is easy to synchronized our head with the statements in the
+                // timeout handler.
                 await this.watches.TransitionToRejectedAsync(this.property, startedBlock, cancellationToken);
             }
             finally

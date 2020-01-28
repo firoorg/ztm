@@ -1,22 +1,23 @@
 using System;
-using NBitcoin;
+using Ztm.WebApi.AddressPools;
+using Ztm.WebApi.Callbacks;
 using Ztm.Zcoin.NBitcoin.Exodus;
 
-namespace Ztm.WebApi.Watchers.TokenBalance
+namespace Ztm.WebApi.Watchers.TokenReceiving
 {
     public sealed class Rule
     {
         public Rule(
             PropertyId property,
-            BitcoinAddress address,
+            ReceivingAddressReservation addressReservation,
             PropertyAmount targetAmount,
             int targetConfirmation,
             TimeSpan originalTimeout,
             string timeoutStatus,
-            Guid callback)
+            Callback callback)
             : this(
                 property,
-                address,
+                addressReservation,
                 targetAmount,
                 targetConfirmation,
                 originalTimeout,
@@ -28,12 +29,12 @@ namespace Ztm.WebApi.Watchers.TokenBalance
 
         public Rule(
             PropertyId property,
-            BitcoinAddress address,
+            ReceivingAddressReservation addressReservation,
             PropertyAmount targetAmount,
             int targetConfirmation,
             TimeSpan originalTimeout,
             string timeoutStatus,
-            Guid callback,
+            Callback callback,
             Guid id)
         {
             if (property == null)
@@ -41,9 +42,9 @@ namespace Ztm.WebApi.Watchers.TokenBalance
                 throw new ArgumentNullException(nameof(property));
             }
 
-            if (address == null)
+            if (addressReservation == null)
             {
-                throw new ArgumentNullException(nameof(address));
+                throw new ArgumentNullException(nameof(addressReservation));
             }
 
             if (targetAmount <= PropertyAmount.Zero)
@@ -75,8 +76,13 @@ namespace Ztm.WebApi.Watchers.TokenBalance
                 throw new ArgumentNullException(nameof(timeoutStatus));
             }
 
+            if (callback == null)
+            {
+                throw new ArgumentNullException(nameof(callback));
+            }
+
             Property = property;
-            Address = address;
+            AddressReservation = addressReservation;
             TargetAmount = targetAmount;
             TargetConfirmation = targetConfirmation;
             OriginalTimeout = originalTimeout;
@@ -85,9 +91,9 @@ namespace Ztm.WebApi.Watchers.TokenBalance
             Id = id;
         }
 
-        public BitcoinAddress Address { get; }
+        public ReceivingAddressReservation AddressReservation { get; }
 
-        public Guid Callback { get; set; }
+        public Callback Callback { get; }
 
         public Guid Id { get; }
 

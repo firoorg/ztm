@@ -12,12 +12,12 @@ using ReceivingAddressReservationModel = Ztm.Data.Entity.Contexts.Main.Receiving
 
 namespace Ztm.WebApi.AddressPools
 {
-    public sealed class EntityReceivingAddressStorage : IReceivingAddressStorage
+    public sealed class EntityReceivingAddressRepository : IReceivingAddressRepository
     {
         readonly IMainDatabaseFactory databaseFactory;
         readonly Network network;
 
-        public EntityReceivingAddressStorage(IMainDatabaseFactory databaseFactory, Network network)
+        public EntityReceivingAddressRepository(IMainDatabaseFactory databaseFactory, Network network)
         {
             if (databaseFactory == null)
             {
@@ -73,6 +73,18 @@ namespace Ztm.WebApi.AddressPools
                     .SingleOrDefaultAsync(r => r.Id == id);
 
                 return recv == null ? null : ToDomain(recv);
+            }
+        }
+
+        public async Task<ReceivingAddressReservation> GetReservationAsync(Guid id, CancellationToken cancellationToken)
+        {
+            using (var db = this.databaseFactory.CreateDbContext())
+            {
+                var reservation = await db.ReceivingAddressReservations
+                    .Include(e => e.Address)
+                    .SingleOrDefaultAsync(e => e.Id == id, cancellationToken);
+
+                return reservation != null ? ToDomain(reservation) : null;
             }
         }
 

@@ -1,11 +1,11 @@
 using System;
 using Ztm.Threading;
 
-namespace Ztm.WebApi.Watchers.TokenBalance
+namespace Ztm.WebApi.Watchers.TokenReceiving
 {
-    public sealed class WatchingInfo
+    public sealed class Watching
     {
-        public WatchingInfo(Rule rule, Timer timer)
+        public Watching(Rule rule, Timer timer)
         {
             if (rule == null)
             {
