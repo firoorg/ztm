@@ -13,19 +13,26 @@ using Ztm.Zcoin.NBitcoin;
 
 namespace Ztm.WebApi.Tests.AddressPools
 {
-    public sealed class EntityReceivingAddressStorageTests : IDisposable
+    public sealed class EntityReceivingAddressRepositoryTests : IDisposable
     {
         readonly TestMainDatabaseFactory databaseFactory;
         readonly Network network;
+        readonly EntityReceivingAddressRepository subject;
 
-        readonly EntityReceivingAddressStorage subject;
-
-        public EntityReceivingAddressStorageTests()
+        public EntityReceivingAddressRepositoryTests()
         {
             this.databaseFactory = new TestMainDatabaseFactory();
             this.network = ZcoinNetworks.Instance.Regtest;
 
-            this.subject = new EntityReceivingAddressStorage(this.databaseFactory, this.network);
+            try
+            {
+                this.subject = new EntityReceivingAddressRepository(this.databaseFactory, this.network);
+            }
+            catch
+            {
+                this.databaseFactory.Dispose();
+                throw;
+            }
         }
 
         public void Dispose()
@@ -38,12 +45,12 @@ namespace Ztm.WebApi.Tests.AddressPools
         {
             Assert.Throws<ArgumentNullException>(
                 "databaseFactory",
-                () => new EntityReceivingAddressStorage(null, this.network)
+                () => new EntityReceivingAddressRepository(null, this.network)
             );
 
             Assert.Throws<ArgumentNullException>(
                 "network",
-                () => new EntityReceivingAddressStorage(this.databaseFactory, null)
+                () => new EntityReceivingAddressRepository(this.databaseFactory, null)
             );
         }
 
@@ -106,6 +113,38 @@ namespace Ztm.WebApi.Tests.AddressPools
 
             // Assert.
             Assert.Equal(recv, received);
+        }
+
+        [Fact]
+        public async Task GetReservationAsync_WithInvalidId_ShouldReturnNull()
+        {
+            // Arrange.
+            var address = await this.subject.AddAsync(TestAddress.Regtest1, CancellationToken.None);
+            await this.subject.TryLockAsync(address.Id, CancellationToken.None);
+
+            // Act.
+            var result = await this.subject.GetReservationAsync(Guid.NewGuid(), CancellationToken.None);
+
+            // Assert.
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task GetReservationAsync_WithValidId_ShouldReturnThatReservation()
+        {
+            // Arrange.
+            var address = await this.subject.AddAsync(TestAddress.Regtest1, CancellationToken.None);
+            var reservation = await this.subject.TryLockAsync(address.Id, CancellationToken.None);
+
+            // Act.
+            var result = await this.subject.GetReservationAsync(reservation.Id, CancellationToken.None);
+
+            // Assert.
+            Assert.NotNull(result);
+            Assert.Equal(reservation.Address, result.Address);
+            Assert.Equal(reservation.Id, result.Id);
+            Assert.Equal(reservation.ReleasedDate, result.ReleasedDate);
+            Assert.Equal(reservation.ReservedDate, result.ReservedDate);
         }
 
         [Fact]

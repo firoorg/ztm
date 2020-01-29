@@ -9,11 +9,11 @@ using Ztm.WebApi.AddressPools;
 
 namespace Ztm.WebApi.Tests.AddressPools
 {
-    public class FakeReceivingAddressStorage : IReceivingAddressStorage
+    public class FakeReceivingAddressRepository : IReceivingAddressRepository
     {
         readonly Dictionary<Guid, ReceivingAddress> receivingAddresses;
 
-        public FakeReceivingAddressStorage()
+        public FakeReceivingAddressRepository()
         {
             this.receivingAddresses = new Dictionary<Guid, ReceivingAddress>();
         }
@@ -34,6 +34,15 @@ namespace Ztm.WebApi.Tests.AddressPools
             }
 
             return Task.FromResult<ReceivingAddress>(null);
+        }
+
+        public Task<ReceivingAddressReservation> GetReservationAsync(Guid id, CancellationToken cancellationToken)
+        {
+            var reservation = this.receivingAddresses
+                .SelectMany(p => p.Value.Reservations)
+                .SingleOrDefault(r => r.Id == id);
+
+            return Task.FromResult(reservation);
         }
 
         public virtual Task<IEnumerable<ReceivingAddress>> ListAsync(AddressFilter filter, CancellationToken cancellationToken)

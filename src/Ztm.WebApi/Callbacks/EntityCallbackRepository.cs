@@ -45,8 +45,7 @@ namespace Ztm.WebApi.Callbacks
                 callback.RegisteredIp,
                 DateTime.SpecifyKind(callback.RegisteredTime, DateTimeKind.Utc),
                 callback.Completed,
-                callback.Url
-            );
+                callback.Url);
         }
 
         public async Task<Callback> AddAsync(IPAddress registeringIp, Uri url, CancellationToken cancellationToken)
@@ -63,13 +62,15 @@ namespace Ztm.WebApi.Callbacks
 
             using (var db = this.db.CreateDbContext())
             {
-                var callback = await db.WebApiCallbacks.AddAsync(new WebApiCallback()
-                {
-                    Id = Guid.NewGuid(),
-                    RegisteredIp = registeringIp,
-                    RegisteredTime = DateTime.UtcNow,
-                    Url = url,
-                }, cancellationToken);
+                var callback = await db.WebApiCallbacks.AddAsync(
+                    new WebApiCallback()
+                    {
+                        Id = Guid.NewGuid(),
+                        RegisteredIp = registeringIp,
+                        RegisteredTime = DateTime.UtcNow,
+                        Url = url,
+                    },
+                    cancellationToken);
 
                 await db.SaveChangesAsync(cancellationToken);
 
@@ -118,16 +119,15 @@ namespace Ztm.WebApi.Callbacks
 
             using (var db = this.db.CreateDbContext())
             {
-                await db.WebApiCallbackHistories.AddAsync
-                (
+                await db.WebApiCallbackHistories.AddAsync(
                     new WebApiCallbackHistory
                     {
                         CallbackId = id,
                         Status = result.Status,
                         Data = stringBuilder.ToString(),
                         InvokedTime = DateTime.UtcNow,
-                    }
-                );
+                    },
+                    cancellationToken);
                 await db.SaveChangesAsync(cancellationToken);
             }
         }

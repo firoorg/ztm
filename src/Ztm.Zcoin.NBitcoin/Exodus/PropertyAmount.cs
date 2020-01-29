@@ -38,6 +38,11 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
             return new PropertyAmount((long)value);
         }
 
+        public static PropertyAmount Negate(PropertyAmount amount)
+        {
+            return -amount;
+        }
+
         /// <summary>
         /// Convert a string that represents property amount.
         /// </summary>
@@ -113,14 +118,19 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
             }
         }
 
-        public static PropertyAmount operator-(PropertyAmount amount)
+        public static PropertyAmount operator+(PropertyAmount first, PropertyAmount second)
         {
-            return new PropertyAmount(checked(-amount.value));
+            return new PropertyAmount(checked(first.value + second.value));
         }
 
-        public static bool operator<(PropertyAmount first, PropertyAmount second)
+        public static PropertyAmount operator/(PropertyAmount dividend, int divisor)
         {
-            return first.value < second.value;
+            return new PropertyAmount(checked(dividend.value / divisor));
+        }
+
+        public static bool operator==(PropertyAmount first, PropertyAmount second)
+        {
+            return first.Equals(second);
         }
 
         public static bool operator>(PropertyAmount first, PropertyAmount second)
@@ -128,19 +138,29 @@ namespace Ztm.Zcoin.NBitcoin.Exodus
             return first.value > second.value;
         }
 
-        public static bool operator<=(PropertyAmount first, PropertyAmount second)
-        {
-            return first.value <= second.value;
-        }
-
         public static bool operator>=(PropertyAmount first, PropertyAmount second)
         {
             return first.value >= second.value;
         }
 
-        public static PropertyAmount Negate(PropertyAmount amount)
+        public static bool operator!=(PropertyAmount first, PropertyAmount second)
         {
-            return -amount;
+            return !first.Equals(second);
+        }
+
+        public static bool operator<(PropertyAmount first, PropertyAmount second)
+        {
+            return first.value < second.value;
+        }
+
+        public static bool operator<=(PropertyAmount first, PropertyAmount second)
+        {
+            return first.value <= second.value;
+        }
+
+        public static PropertyAmount operator-(PropertyAmount amount)
+        {
+            return new PropertyAmount(checked(-amount.value));
         }
     }
 }

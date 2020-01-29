@@ -1,9 +1,9 @@
 using System;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using NBitcoin;
 using NBitcoin.RPC;
 using Newtonsoft.Json.Serialization;
@@ -11,8 +11,8 @@ using Ztm.Configuration;
 using Ztm.Data.Entity.Contexts;
 using Ztm.Data.Entity.Postgres;
 using Ztm.Hosting.AspNetCore;
-using Ztm.WebApi.Binders;
 using Ztm.WebApi.AddressPools;
+using Ztm.WebApi.Binders;
 using Ztm.WebApi.Callbacks;
 using Ztm.WebApi.Watchers.TransactionConfirmation;
 using Ztm.Zcoin.NBitcoin;
@@ -67,10 +67,7 @@ namespace Ztm.WebApi
             // Fundamentals Services.
             services.AddBackgroundServiceExceptionHandler();
             services.AddSingleton<Network>(CreateZcoinNetwork);
-
-            services.AddSingleton<ZcoinConfiguration>(
-                p => this.config.GetZcoinSection()
-            );
+            services.AddSingleton<ZcoinConfiguration>(p => this.config.GetZcoinSection());
 
             services.AddSingleton<JsonSerializer>(
                 p =>
@@ -82,8 +79,7 @@ namespace Ztm.WebApi
                     serializer.Converters.Add(new UInt256Converter());
 
                     return serializer;
-                }
-            );
+                });
 
             // Database Services.
             services.AddSingleton<IMainDatabaseFactory, MainDatabaseFactory>();
@@ -94,17 +90,10 @@ namespace Ztm.WebApi
             services.AddSingleton<IRuleRepository, EntityRuleRepository>();
             services.AddSingleton<IWatchRepository, EntityWatchRepository>();
             services.AddSingleton<TransactionConfirmationWatcher>();
-            services.AddSingleton<IBlockListener>(
-                p => p.GetRequiredService<TransactionConfirmationWatcher>()
-            );
-
-            services.AddSingleton<Microsoft.Extensions.Hosting.IHostedService, TransactionConfirmationWatcher>(
-                p => p.GetRequiredService<TransactionConfirmationWatcher>()
-            );
-
-            services.AddSingleton<ITransactionConfirmationWatcher, TransactionConfirmationWatcher>(
-                p => p.GetRequiredService<TransactionConfirmationWatcher>()
-            );
+            services.AddSingleton<IBlockListener>(p => p.GetRequiredService<TransactionConfirmationWatcher>());
+            services.AddSingleton<IHostedService>(p => p.GetRequiredService<TransactionConfirmationWatcher>());
+            services.AddSingleton<ITransactionConfirmationWatcher>(
+                p => p.GetRequiredService<TransactionConfirmationWatcher>());
 
             // Zcoin Interface Services.
             services.AddSingleton<IRpcFactory>(CreateRpcFactory);
@@ -161,8 +150,7 @@ namespace Ztm.WebApi
                 provider.GetRequiredService<Network>(),
                 config.Rpc.Address,
                 RPCCredentialString.Parse($"{config.Rpc.UserName}:{config.Rpc.Password}"),
-                provider.GetRequiredService<ITransactionEncoder>()
-            );
+                provider.GetRequiredService<ITransactionEncoder>());
         }
     }
 }

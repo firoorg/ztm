@@ -77,15 +77,13 @@ namespace Ztm.WebApi.Controllers
                 Transaction tx;
                 try
                 {
-                    tx = await propertyManagementRpc.SendAsync
-                    (
+                    tx = await propertyManagementRpc.SendAsync(
                         this.zcoinConfiguration.Property.Distributor.Address,
                         req.Destination,
                         new Property(this.zcoinConfiguration.Property.Id, this.zcoinConfiguration.Property.Type),
                         req.Amount,
                         req.ReferenceAmount,
-                        cancellationToken
-                    );
+                        cancellationToken);
                 }
                 catch (RPCException ex) when (ex.IsInsufficientToken())
                 {
@@ -103,16 +101,14 @@ namespace Ztm.WebApi.Controllers
                 {
                     var callbackResult = new {Tx = id};
 
-                    await this.watcher.AddTransactionAsync
-                    (
+                    await this.watcher.AddTransactionAsync(
                         id,
                         this.apiConfiguration.Default.RequiredConfirmation,
                         this.apiConfiguration.Default.TransactionTimeout,
                         callback,
                         new CallbackResult(CallbackResult.StatusSuccess, callbackResult),
                         new CallbackResult("tokens-transfer-timeout", callbackResult),
-                        CancellationToken.None
-                    );
+                        CancellationToken.None);
                 }
 
                 return Accepted(new {Tx = id});

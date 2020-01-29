@@ -7,8 +7,7 @@ namespace Ztm.Testing
     {
         public static readonly BitcoinAddress Mainnet1 = BitcoinAddress.Create(
             "a8ULhhDgfdSiXJhSZVdhb8EuDc6R3ogsaM",
-            ZcoinNetworks.Instance.Mainnet
-        );
+            ZcoinNetworks.Instance.Mainnet);
 
         public static readonly BitcoinAddress Mainnet2 = BitcoinAddress.Create(
             "aGyHXMXvAgxts3o9YHvuyk9dZAZawiG9VD",
@@ -17,22 +16,22 @@ namespace Ztm.Testing
 
         public static readonly BitcoinAddress Testnet1 = BitcoinAddress.Create(
             "TEDC38GBncNgtd2pVXeDhLeUGwJmXsiJBA",
-            ZcoinNetworks.Instance.Testnet
-        );
+            ZcoinNetworks.Instance.Testnet);
 
         public static readonly BitcoinAddress Testnet2 = BitcoinAddress.Create(
             "TG3Pnw5xPZQS8JXMVa3F9WjUFfUqXKsqAz",
-            ZcoinNetworks.Instance.Testnet
-        );
+            ZcoinNetworks.Instance.Testnet);
 
         public static readonly BitcoinAddress Regtest1 = BitcoinAddress.Create(
             "TEDC38GBncNgtd2pVXeDhLeUGwJmXsiJBA",
-            ZcoinNetworks.Instance.Regtest
-        );
+            ZcoinNetworks.Instance.Regtest);
 
         public static readonly BitcoinAddress Regtest2 = BitcoinAddress.Create(
             "TG3Pnw5xPZQS8JXMVa3F9WjUFfUqXKsqAz",
-            ZcoinNetworks.Instance.Regtest
-        );
+            ZcoinNetworks.Instance.Regtest);
+
+        public static readonly BitcoinAddress Regtest3 = BitcoinAddress.Create(
+            "TG2AZoHbcaPAT6WZr5ywEVg8FH9DUVqSck",
+            ZcoinNetworks.Instance.Regtest);
     }
 }

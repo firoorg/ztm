@@ -24,10 +24,14 @@ namespace Ztm.WebApi.Callbacks
             this.Url = url;
         }
 
-        public Guid Id { get; }
-        public IPAddress RegisteredIp { get; }
-        public DateTime RegisteredTime { get; }
         public bool Completed { get; }
+
+        public Guid Id { get; }
+
+        public IPAddress RegisteredIp { get; }
+
+        public DateTime RegisteredTime { get; }
+
         public Uri Url { get; }
 
         public int CompareTo(Callback other)

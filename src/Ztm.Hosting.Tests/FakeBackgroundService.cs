@@ -11,11 +11,17 @@ namespace Ztm.Hosting.Tests
         {
             StubbedDispose = new Mock<Action<bool>>();
             StubbedExecuteAsync = new Mock<Func<CancellationToken, Task>>();
+            StubbedPostExecuteAsync = new Mock<Func<CancellationToken, Task>>();
+            StubbedPreExecuteAsync = new Mock<Func<CancellationToken, Task>>();
         }
 
         public Mock<Action<bool>> StubbedDispose { get; }
 
         public Mock<Func<CancellationToken, Task>> StubbedExecuteAsync { get; }
+
+        public Mock<Func<CancellationToken, Task>> StubbedPostExecuteAsync { get; }
+
+        public Mock<Func<CancellationToken, Task>> StubbedPreExecuteAsync { get; }
 
         protected override void Dispose(bool disposing)
         {
@@ -26,6 +32,16 @@ namespace Ztm.Hosting.Tests
         protected override Task ExecuteAsync(CancellationToken cancellationToken)
         {
             return StubbedExecuteAsync.Object(cancellationToken);
+        }
+
+        protected override Task PostExecuteAsync(CancellationToken cancellationToken)
+        {
+            return StubbedPostExecuteAsync.Object(cancellationToken);
+        }
+
+        protected override Task PreExecuteAsync(CancellationToken cancellationToken)
+        {
+            return StubbedPreExecuteAsync.Object(cancellationToken);
         }
     }
 }

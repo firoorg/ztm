@@ -11,14 +11,6 @@ namespace Ztm.Data.Entity.Testing
         {
         }
 
-        protected override void ConfigureWebApiCallback(EntityTypeBuilder<WebApiCallback> builder)
-        {
-            base.ConfigureWebApiCallback(builder);
-
-            builder.Property(e => e.RegisteredIp).HasConversion(Converters.IPAddressToStringConverter);
-            builder.Property(e => e.Url).HasConversion(Converters.UriToStringConverter);
-        }
-
         protected override void ConfigureBlock(EntityTypeBuilder<Block> builder)
         {
             base.ConfigureBlock(builder);
@@ -42,37 +34,87 @@ namespace Ztm.Data.Entity.Testing
         {
             base.ConfigureInput(builder);
 
-            builder.Property(e => e.TransactionHash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
-            builder.Property(e => e.OutputHash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
+            builder.Property(e => e.TransactionHash).HasConversion(Converters.UInt256ToBytesConverter);
+            builder.Property(e => e.OutputHash).HasConversion(Converters.UInt256ToBytesConverter);
         }
 
         protected override void ConfigureOutput(EntityTypeBuilder<Output> builder)
         {
             base.ConfigureOutput(builder);
 
-            builder.Property(e => e.TransactionHash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
+            builder.Property(e => e.TransactionHash).HasConversion(Converters.UInt256ToBytesConverter);
+        }
+
+        protected override void ConfigureReceivingAddress(EntityTypeBuilder<ReceivingAddress> builder)
+        {
+            base.ConfigureReceivingAddress(builder);
+
+            builder.Property(e => e.Id).HasConversion<string>();
+        }
+
+        protected override void ConfigureReceivingAddressReservation(
+            EntityTypeBuilder<ReceivingAddressReservation> builder)
+        {
+            base.ConfigureReceivingAddressReservation(builder);
+
+            builder.Property(e => e.Id).HasConversion<string>();
+            builder.Property(e => e.AddressId).HasConversion<string>();
+        }
+
+        protected override void ConfigureTokenReceivingWatcherRule(EntityTypeBuilder<TokenReceivingWatcherRule> builder)
+        {
+            base.ConfigureTokenReceivingWatcherRule(builder);
+
+            builder.Property(e => e.Id).HasConversion<string>();
+            builder.Property(e => e.CallbackId).HasConversion<string>();
+            builder.Property(e => e.AddressReservationId).HasConversion<string>();
+        }
+
+        protected override void ConfigureTokenReceivingWatcherWatch(
+            EntityTypeBuilder<TokenReceivingWatcherWatch> builder)
+        {
+            base.ConfigureTokenReceivingWatcherWatch(builder);
+
+            builder.Property(e => e.Id).HasConversion<string>();
+            builder.Property(e => e.RuleId).HasConversion<string>();
+            builder.Property(e => e.BlockId).HasConversion(Converters.UInt256ToBytesConverter);
+            builder.Property(e => e.TransactionId).HasConversion(Converters.UInt256ToBytesConverter);
         }
 
         protected override void ConfigureTransaction(EntityTypeBuilder<Transaction> builder)
         {
             base.ConfigureTransaction(builder);
 
-            builder.Property(e => e.Hash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
+            builder.Property(e => e.Hash).HasConversion(Converters.UInt256ToBytesConverter);
         }
 
         protected override void ConfigureTransactionConfirmationWatcherRule(EntityTypeBuilder<TransactionConfirmationWatcherRule> builder)
         {
             base.ConfigureTransactionConfirmationWatcherRule(builder);
 
-            builder.Property(e => e.TransactionHash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
+            builder.Property(e => e.Id).HasConversion<string>();
+            builder.Property(e => e.CallbackId).HasConversion<string>();
+            builder.Property(e => e.TransactionHash).HasConversion(Converters.UInt256ToBytesConverter);
+            builder.Property(e => e.CurrentWatchId).HasConversion<string>();
         }
 
         protected override void ConfirgureTransactionConfirmationWatcherWatch(EntityTypeBuilder<TransactionConfirmationWatcherWatch> builder)
         {
             base.ConfirgureTransactionConfirmationWatcherWatch(builder);
 
-            builder.Property(e => e.StartBlockHash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
-            builder.Property(e => e.TransactionHash).IsRequired().HasConversion(Converters.UInt256ToBytesConverter);
+            builder.Property(e => e.Id).HasConversion<string>();
+            builder.Property(e => e.RuleId).HasConversion<string>();
+            builder.Property(e => e.StartBlockHash).HasConversion(Converters.UInt256ToBytesConverter);
+            builder.Property(e => e.TransactionHash).HasConversion(Converters.UInt256ToBytesConverter);
+        }
+
+        protected override void ConfigureWebApiCallback(EntityTypeBuilder<WebApiCallback> builder)
+        {
+            base.ConfigureWebApiCallback(builder);
+
+            builder.Property(e => e.Id).HasConversion<string>();
+            builder.Property(e => e.RegisteredIp).HasConversion(Converters.IPAddressToStringConverter);
+            builder.Property(e => e.Url).HasConversion(Converters.UriToStringConverter);
         }
     }
 }

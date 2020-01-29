@@ -68,23 +68,18 @@ namespace Ztm.Zcoin.Watching
 
             foreach (var group in watches.GroupBy(w => w.Address))
             {
-                // Get confirmation number for each change.
-                var changes = new Collection<ConfirmedBalanceChange<TContext, TAmount>>();
+                // Get confirmation number for each watch.
+                var confirmed = new Dictionary<BalanceWatch<TContext, TAmount>, int>();
 
                 foreach (var watch in group) // lgtm[cs/linq/missed-select]
                 {
-                    var change = new ConfirmedBalanceChange<TContext, TAmount>(
-                        watch.Context,
-                        watch.BalanceChange,
-                        await GetConfirmationAsync(watch, height, CancellationToken.None)
-                    );
-
-                    changes.Add(change);
+                    var confirmation = await GetConfirmationAsync(watch, height, CancellationToken.None);
+                    confirmed.Add(watch, confirmation);
                 }
 
                 // Invoke handler.
-                var confirm = new BalanceConfirmation<TContext, TAmount>(group.Key, changes);
-                var confirmationCount = changes.Min(c => c.Confirmation);
+                var confirm = new BalanceConfirmation<TContext, TAmount>(block.GetHash(), group.Key, confirmed);
+                var confirmationCount = confirmed.Min(p => p.Value);
 
                 var success = await this.handler.ConfirmationUpdateAsync(
                     confirm,

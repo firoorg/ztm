@@ -98,29 +98,23 @@ namespace Ztm.Zcoin.Watching.Tests
             });
         }
 
-        [Theory]
-        [InlineData(BlockEventType.Added)]
-        [InlineData(BlockEventType.Removing)]
-        public Task ExecuteAsync_GetWatchesAsyncReturnEmptyList_ShouldDoNothing(BlockEventType eventType)
+        [Fact]
+        public Task ExecuteAsync_WithBlockAddedAndGetWatchesAsyncReturnEmptyList_ShouldDoNothing()
         {
             return AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
             {
                 // Arrange.
-                this.subject.StubbedGetWatchesAsync.Setup(f => f(TestBlock.Regtest0, 0, cancellationToken))
-                                                   .Returns(Task.FromResult(Enumerable.Empty<Watch<object>>()));
+                this.subject.StubbedGetWatchesAsync
+                    .Setup(f => f(TestBlock.Regtest0, 0, cancellationToken))
+                    .ReturnsAsync(Enumerable.Empty<Watch<object>>());
 
                 // Act.
-                await this.subject.ExecuteAsync(TestBlock.Regtest0, 0, eventType, cancellationToken);
+                await this.subject.ExecuteAsync(TestBlock.Regtest0, 0, BlockEventType.Added, cancellationToken);
 
                 // Assert.
                 this.subject.StubbedGetWatchesAsync.Verify(
-                    f => f(
-                        TestBlock.Regtest0,
-                        0,
-                        cancellationToken
-                    ),
-                    Times.Once()
-                );
+                    f => f(TestBlock.Regtest0, 0, cancellationToken),
+                    Times.Once());
 
                 this.subject.StubbedExecuteWatchesAsync.Verify(
                     f => f(
@@ -128,26 +122,57 @@ namespace Ztm.Zcoin.Watching.Tests
                         It.IsAny<Block>(),
                         It.IsAny<int>(),
                         It.IsAny<BlockEventType>(),
-                        It.IsAny<CancellationToken>()
-                    ),
-                    Times.Never()
-                );
+                        It.IsAny<CancellationToken>()),
+                    Times.Never());
 
                 this.handler.Verify(
                     h => h.RemoveCompletedWatchesAsync(
                         It.IsAny<IEnumerable<Watch<object>>>(),
-                        It.IsAny<CancellationToken>()
-                    ),
-                    Times.Never()
-                );
+                        It.IsAny<CancellationToken>()),
+                    Times.Never());
 
                 this.handler.Verify(
-                    h => h.RemoveUncompletedWatchesAsync(
-                        It.IsAny<uint256>(),
-                        It.IsAny<CancellationToken>()
-                    ),
-                    Times.Never()
-                );
+                    h => h.RemoveUncompletedWatchesAsync(It.IsAny<uint256>(), It.IsAny<CancellationToken>()),
+                    Times.Never());
+            });
+        }
+
+        [Fact]
+        public Task ExecuteAsync_WithBlockRemovingAndGetWatchesAsyncReturnEmptyList_ShouldRemoveUncompletedWatches()
+        {
+            return AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
+            {
+                // Arrange.
+                this.subject.StubbedGetWatchesAsync
+                    .Setup(f => f(TestBlock.Regtest0, 0, cancellationToken))
+                    .ReturnsAsync(Enumerable.Empty<Watch<object>>());
+
+                // Act.
+                await this.subject.ExecuteAsync(TestBlock.Regtest0, 0, BlockEventType.Removing, cancellationToken);
+
+                // Assert.
+                this.subject.StubbedGetWatchesAsync.Verify(
+                    f => f(TestBlock.Regtest0, 0, cancellationToken),
+                    Times.Once());
+
+                this.subject.StubbedExecuteWatchesAsync.Verify(
+                    f => f(
+                        It.IsAny<IEnumerable<Watch<object>>>(),
+                        It.IsAny<Block>(),
+                        It.IsAny<int>(),
+                        It.IsAny<BlockEventType>(),
+                        It.IsAny<CancellationToken>()),
+                    Times.Never());
+
+                this.handler.Verify(
+                    h => h.RemoveCompletedWatchesAsync(
+                        It.IsAny<IEnumerable<Watch<object>>>(),
+                        It.IsAny<CancellationToken>()),
+                    Times.Never());
+
+                this.handler.Verify(
+                    h => h.RemoveUncompletedWatchesAsync(TestBlock.Regtest0.GetHash(), CancellationToken.None),
+                    Times.Once());
             });
         }
 

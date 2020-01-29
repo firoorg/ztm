@@ -1,4 +1,5 @@
 using System;
+using FluentAssertions;
 using NBitcoin;
 using Xunit;
 using Ztm.Testing;
@@ -148,6 +149,80 @@ namespace Ztm.Zcoin.Watching.Tests
             Assert.Equal(TestAddress.Regtest1, this.subject.Address);
             Assert.Equal(10, this.subject.BalanceChange);
             Assert.Equal(uint256.One, this.subject.Transaction);
+        }
+
+        [Fact]
+        public void Equals_WithEqual_ShouldReturnTrue()
+        {
+            var results = EqualityTesting.TestEquals(
+                this.subject,
+                s => new BalanceWatch<object, int>(
+                    null,
+                    s.StartBlock,
+                    s.Transaction,
+                    s.Address,
+                    s.BalanceChange,
+                    s.StartTime,
+                    s.Id),
+                s => new BalanceWatch<object, int>(
+                    s.Context,
+                    s.StartBlock,
+                    s.Transaction,
+                    s.Address,
+                    9,
+                    s.StartTime,
+                    s.Id),
+                s => new BalanceWatch<object, int>(
+                    s.Context,
+                    s.StartBlock,
+                    s.Transaction,
+                    s.Address,
+                    s.BalanceChange,
+                    DateTime.MinValue,
+                    s.Id),
+                s => new BalanceWatch<object, int>(
+                    s.Context,
+                    s.StartBlock,
+                    s.Transaction,
+                    s.Address,
+                    s.BalanceChange,
+                    s.StartTime,
+                    Guid.NewGuid()));
+
+            results.Should().NotContain(false);
+        }
+
+        [Fact]
+        public void Equals_WithInequal_ShouldReturnFalse()
+        {
+            var results = EqualityTesting.TestInequal(
+                this.subject,
+                s => new BalanceWatch<object, int>(
+                    s.Context,
+                    uint256.Zero,
+                    s.Transaction,
+                    s.Address,
+                    s.BalanceChange,
+                    s.StartTime,
+                    s.Id),
+                s => new BalanceWatch<object, int>(
+                    s.Context,
+                    s.StartBlock,
+                    uint256.Zero,
+                    s.Address,
+                    s.BalanceChange,
+                    s.StartTime,
+                    s.Id),
+                s => new BalanceWatch<object, int>(
+                    s.Context,
+                    s.StartBlock,
+                    s.Transaction,
+                    TestAddress.Regtest2,
+                    s.BalanceChange,
+                    s.StartTime,
+                    s.Id));
+
+            results.Should().NotContain(true);
         }
     }
 }

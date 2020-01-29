@@ -6,7 +6,11 @@ namespace Ztm.WebApi.AddressPools
 {
     public sealed class ReceivingAddress
     {
-        public ReceivingAddress(Guid id, BitcoinAddress address, bool isLocked, ICollection<ReceivingAddressReservation> reservations)
+        public ReceivingAddress(
+            Guid id,
+            BitcoinAddress address,
+            bool isLocked,
+            ICollection<ReceivingAddressReservation> reservations)
         {
             if (address == null)
             {
@@ -25,8 +29,11 @@ namespace Ztm.WebApi.AddressPools
         }
 
         public BitcoinAddress Address { get; }
+
         public Guid Id { get; }
+
         public bool IsLocked { get; }
+
         public ICollection<ReceivingAddressReservation> Reservations { get; }
 
         public override bool Equals(object obj)

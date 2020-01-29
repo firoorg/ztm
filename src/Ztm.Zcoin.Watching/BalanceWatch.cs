@@ -94,5 +94,24 @@ namespace Ztm.Zcoin.Watching
         public TAmount BalanceChange { get; }
 
         public uint256 Transaction { get; }
+
+        public override bool Equals(object obj)
+        {
+            var other = obj as BalanceWatch<TContext, TAmount>;
+
+            if (other == null || other.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return other.StartBlock == StartBlock &&
+                   other.Transaction == Transaction &&
+                   other.Address == Address;
+        }
+
+        public override int GetHashCode()
+        {
+            return StartBlock.GetHashCode() ^ Transaction.GetHashCode() ^ Address.GetHashCode();
+        }
     }
 }

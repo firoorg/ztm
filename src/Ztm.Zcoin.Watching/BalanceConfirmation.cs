@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using NBitcoin;
 
 namespace Ztm.Zcoin.Watching
@@ -8,30 +7,39 @@ namespace Ztm.Zcoin.Watching
     public sealed class BalanceConfirmation<TContext, TAmount>
     {
         public BalanceConfirmation(
+            uint256 block,
             BitcoinAddress address,
-            IEnumerable<ConfirmedBalanceChange<TContext, TAmount>> changes)
+            IReadOnlyDictionary<BalanceWatch<TContext, TAmount>, int> watches)
         {
+            if (block == null)
+            {
+                throw new ArgumentNullException(nameof(block));
+            }
+
             if (address == null)
             {
                 throw new ArgumentNullException(nameof(address));
             }
 
-            if (changes == null)
+            if (watches == null)
             {
-                throw new ArgumentNullException(nameof(changes));
+                throw new ArgumentNullException(nameof(watches));
             }
 
-            if (!changes.Any())
+            if (watches.Count == 0)
             {
-                throw new ArgumentException("The collection is empty.", nameof(changes));
+                throw new ArgumentException("The collection is empty.", nameof(watches));
             }
 
+            Block = block;
             Address = address;
-            Changes = changes;
+            Watches = watches;
         }
 
         public BitcoinAddress Address { get; }
 
-        public IEnumerable<ConfirmedBalanceChange<TContext, TAmount>> Changes { get; }
+        public uint256 Block { get; }
+
+        public IReadOnlyDictionary<BalanceWatch<TContext, TAmount>, int> Watches { get; }
     }
 }

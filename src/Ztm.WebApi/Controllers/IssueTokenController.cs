@@ -81,15 +81,13 @@ namespace Ztm.WebApi.Controllers
                 Transaction tx;
                 try
                 {
-                    tx = await propertyManagementRpc.GrantAsync
-                    (
+                    tx = await propertyManagementRpc.GrantAsync(
                         property,
                         this.zcoinConfig.Property.Issuer.Address,
                         this.zcoinConfig.Property.Distributor.Address,
                         req.Amount,
                         req.Note,
-                        cancellationToken
-                    );
+                        cancellationToken);
                 }
                 catch (RPCException ex) when (ex.IsInsufficientFee())
                 {
@@ -103,20 +101,18 @@ namespace Ztm.WebApi.Controllers
                 {
                     var callbackResult = new {Tx = id};
 
-                    await this.watcher.AddTransactionAsync
-                    (
+                    await this.watcher.AddTransactionAsync(
                         id,
                         this.apiConfig.Default.RequiredConfirmation,
                         this.apiConfig.Default.TransactionTimeout,
                         callback,
                         new CallbackResult(CallbackResult.StatusSuccess, callbackResult),
                         new CallbackResult("tokens-issuing-timeout", callbackResult),
-                        CancellationToken.None
-                    );
+                        CancellationToken.None);
                 }
 
                 return Accepted(new {Tx = id});
-            };
+            }
         }
     }
 }

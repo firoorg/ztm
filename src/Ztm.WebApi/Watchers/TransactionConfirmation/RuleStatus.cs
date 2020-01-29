@@ -4,6 +4,6 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
     {
         Pending = 0,
         Success = 1,
-        Timeout = 2
+        Timeout = 2,
     }
 }

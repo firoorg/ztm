@@ -4,9 +4,9 @@ namespace Ztm.WebApi.Callbacks
 {
     public class CallbackResult
     {
-        public const string StatusError   = "error";
+        public const string StatusError = "error";
         public const string StatusSuccess = "success";
-        public const string StatusUpdate  = "update";
+        public const string StatusUpdate = "update";
 
         public CallbackResult(string status, object data)
         {
@@ -19,8 +19,9 @@ namespace Ztm.WebApi.Callbacks
             this.Data = data;
         }
 
-        public string Status { get; }
         public object Data { get; }
+
+        public string Status { get; }
 
         public override bool Equals(object other)
         {

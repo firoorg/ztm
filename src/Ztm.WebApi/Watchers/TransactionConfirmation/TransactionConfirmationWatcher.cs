@@ -75,11 +75,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             this.callbackExecuter = callbackExecuter;
             this.logger = logger;
 
-            this.watcher = new Zcoin.Watching.TransactionConfirmationWatcher<Rule>
-            (
-                this,
-                blocks
-            );
+            this.watcher = new Zcoin.Watching.TransactionConfirmationWatcher<Rule>(this, blocks);
 
             this.timers = new Dictionary<uint256, Dictionary<Guid, Timer>>();
             this.timersSemaphore = new SemaphoreSlim(1, 1);
@@ -127,16 +123,14 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             await this.timersSemaphore.WaitAsync();
             try
             {
-                var rule = await this.ruleRepository.AddAsync
-                (
+                var rule = await this.ruleRepository.AddAsync(
                     transaction,
                     confirmation,
                     unconfirmedWaitingTime,
                     successResponse,
                     timeoutResponse,
                     callback,
-                    cancellationToken
-                );
+                    cancellationToken);
 
                 await SetupTimerAsync(rule);
 

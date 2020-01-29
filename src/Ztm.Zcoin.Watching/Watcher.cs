@@ -53,20 +53,17 @@ namespace Ztm.Zcoin.Watching
             // Load watches that match with the block and execute it.
             watches = await GetWatchesAsync(block, height, cancellationToken);
 
-            if (!watches.Any())
+            if (watches.Any())
             {
-                return;
+                var completed = await ExecuteWatchesAsync(watches, block, height, eventType, cancellationToken);
+
+                if (completed.Any())
+                {
+                    await this.handler.RemoveCompletedWatchesAsync(completed, CancellationToken.None);
+                }
             }
 
-            var completed = await ExecuteWatchesAsync(watches, block, height, eventType, cancellationToken);
-
-            // First, remove completed watches.
-            if (completed.Any())
-            {
-                await this.handler.RemoveCompletedWatchesAsync(completed, CancellationToken.None);
-            }
-
-            // Then remove watches that belong to the block is being removing.
+            // Remove watches that belong to the block is being removing.
             if (eventType == BlockEventType.Removing)
             {
                 await this.handler.RemoveUncompletedWatchesAsync(block.GetHash(), CancellationToken.None);

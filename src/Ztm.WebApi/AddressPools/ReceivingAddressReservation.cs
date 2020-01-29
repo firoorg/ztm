@@ -22,8 +22,11 @@ namespace Ztm.WebApi.AddressPools
         }
 
         public ReceivingAddress Address { get; }
+
         public Guid Id { get; }
+
         public DateTime? ReleasedDate { get; }
+
         public DateTime ReservedDate { get; }
     }
 }

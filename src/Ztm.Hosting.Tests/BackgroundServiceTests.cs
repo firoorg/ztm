@@ -65,17 +65,27 @@ namespace Ztm.Hosting.Tests
         }
 
         [Fact]
-        public async Task StartAsync_NotStarted_ShouldStart()
+        public Task StartAsync_NotStarted_ShouldStart()
         {
-            await AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
+            return AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
             {
                 // Act.
                 await this.subject.StartAsync(cancellationToken);
                 await this.subject.StopAsync(CancellationToken.None);
 
                 // Assert.
+                this.subject.StubbedPreExecuteAsync.Verify(
+                    f => f(It.IsNotIn(cancellationToken, CancellationToken.None)),
+                    Times.Once()
+                );
+
                 this.subject.StubbedExecuteAsync.Verify(
-                    f => f(It.Is<CancellationToken>(t => t != cancellationToken)),
+                    f => f(It.IsNotIn(cancellationToken, CancellationToken.None)),
+                    Times.Once()
+                );
+
+                this.subject.StubbedPostExecuteAsync.Verify(
+                    f => f(CancellationToken.None),
                     Times.Once()
                 );
 
@@ -101,13 +111,51 @@ namespace Ztm.Hosting.Tests
         }
 
         [Fact]
-        public async Task StartAsync_WhenBackgroundTaskThrow_ShouldInvokeExceptionHandler()
+        public Task StartAsync_WhenPreExecuteAsyncThrow_ShouldInvokeExceptionHandler()
         {
-            await AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
+            return AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
             {
                 // Arrange.
-                this.subject.StubbedExecuteAsync.Setup(f => f(It.IsAny<CancellationToken>()))
-                                                .Returns(Task.FromException(new Exception()));
+                this.subject.StubbedPreExecuteAsync
+                    .Setup(f => f(It.IsAny<CancellationToken>()))
+                    .ThrowsAsync(new Exception());
+
+                // Act.
+                await this.subject.StartAsync(cancellationToken);
+                await this.subject.StopAsync(CancellationToken.None);
+
+                // Assert.
+                this.subject.StubbedPreExecuteAsync.Verify(
+                    f => f(It.IsNotIn(cancellationToken, CancellationToken.None)),
+                    Times.Once()
+                );
+
+                this.subject.StubbedExecuteAsync.Verify(
+                    f => f(It.IsAny<CancellationToken>()),
+                    Times.Never()
+                );
+
+                this.subject.StubbedPostExecuteAsync.Verify(
+                    f => f(It.IsAny<CancellationToken>()),
+                    Times.Never()
+                );
+
+                this.exceptionHandler.Verify(
+                    h => h.RunAsync(this.subject.GetType(), It.Is<Exception>(ex => ex != null), CancellationToken.None),
+                    Times.Once()
+                );
+            });
+        }
+
+        [Fact]
+        public Task StartAsync_WhenExecuteAsyncThrow_ShouldInvokeExceptionHandler()
+        {
+            return AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
+            {
+                // Arrange.
+                this.subject.StubbedExecuteAsync
+                    .Setup(f => f(It.IsAny<CancellationToken>()))
+                    .ThrowsAsync(new Exception());
 
                 // Act.
                 await this.subject.StartAsync(cancellationToken);
@@ -115,7 +163,39 @@ namespace Ztm.Hosting.Tests
 
                 // Assert.
                 this.subject.StubbedExecuteAsync.Verify(
-                    f => f(It.Is<CancellationToken>(t => t != cancellationToken)),
+                    f => f(It.IsNotIn(cancellationToken, CancellationToken.None)),
+                    Times.Once()
+                );
+
+                this.subject.StubbedPostExecuteAsync.Verify(
+                    f => f(CancellationToken.None),
+                    Times.Once()
+                );
+
+                this.exceptionHandler.Verify(
+                    h => h.RunAsync(this.subject.GetType(), It.Is<Exception>(ex => ex != null), CancellationToken.None),
+                    Times.Once()
+                );
+            });
+        }
+
+        [Fact]
+        public Task StartAsync_WhenPostExecuteAsyncThrow_ShouldInvokeExceptionHandler()
+        {
+            return AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
+            {
+                // Arrange.
+                this.subject.StubbedPostExecuteAsync
+                    .Setup(f => f(It.IsAny<CancellationToken>()))
+                    .ThrowsAsync(new Exception());
+
+                // Act.
+                await this.subject.StartAsync(cancellationToken);
+                await this.subject.StopAsync(CancellationToken.None);
+
+                // Assert.
+                this.subject.StubbedPostExecuteAsync.Verify(
+                    f => f(CancellationToken.None),
                     Times.Once()
                 );
 

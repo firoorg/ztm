@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using NBitcoin;
 using Newtonsoft.Json;
@@ -41,25 +41,26 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
             using (var successReader = new JsonTextReader(new StringReader(rule.SuccessData)))
             using (var timeoutReader = new JsonTextReader(new StringReader(rule.TimeoutData)))
             {
-                return new Rule
-                (
+                return new Rule(
                     rule.Id,
                     rule.TransactionHash,
                     rule.Confirmation,
                     rule.OriginalWaitingTime,
                     serializer.Deserialize<CallbackResult>(successReader),
                     serializer.Deserialize<CallbackResult>(timeoutReader),
-                    callback != null
-                        ? callback
-                        : EntityCallbackRepository.ToDomain(rule.Callback),
-                    DateTime.SpecifyKind(rule.CreatedAt, DateTimeKind.Utc)
-                );
+                    callback ?? EntityCallbackRepository.ToDomain(rule.Callback),
+                    DateTime.SpecifyKind(rule.CreatedAt, DateTimeKind.Utc));
             }
         }
 
         public async Task<Rule> AddAsync(
-            uint256 transaction, int confirmations, TimeSpan waitingTime, CallbackResult successResponse,
-            CallbackResult timeoutResponse, Callback callback, CancellationToken cancellationToken)
+            uint256 transaction,
+            int confirmations,
+            TimeSpan waitingTime,
+            CallbackResult successResponse,
+            CallbackResult timeoutResponse,
+            Callback callback,
+            CancellationToken cancellationToken)
         {
             if (transaction == null)
             {
@@ -93,8 +94,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
 
             using (var db = this.db.CreateDbContext())
             {
-                var watch = await db.TransactionConfirmationWatcherRules.AddAsync
-                (
+                var watch = await db.TransactionConfirmationWatcherRules.AddAsync(
                     new EntityModel
                     {
                         Id = Guid.NewGuid(),
@@ -109,8 +109,7 @@ namespace Ztm.WebApi.Watchers.TransactionConfirmation
                         CurrentWatchId = null,
                         CreatedAt = DateTime.UtcNow,
                     },
-                    cancellationToken
-                );
+                    cancellationToken);
 
                 await db.SaveChangesAsync(cancellationToken);
 

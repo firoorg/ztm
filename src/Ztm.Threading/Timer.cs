@@ -23,6 +23,8 @@ namespace Ztm.Threading
             Scheduler = scheduler ?? DefaultScheduler;
         }
 
+        public event EventHandler<TimerElapsedEventArgs> Elapsed;
+
         public static ITimerScheduler DefaultScheduler { get; } = new ThreadPoolScheduler();
 
         public int ElapsedCount => this.elapsed;
@@ -32,8 +34,6 @@ namespace Ztm.Threading
         public ITimerScheduler Scheduler { get; }
 
         public TimerStatus Status => this.status;
-
-        public event EventHandler<TimerElapsedEventArgs> Elapsed;
 
         public void Start(TimeSpan due, TimeSpan? period, object context)
         {

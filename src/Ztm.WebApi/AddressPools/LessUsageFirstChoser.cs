@@ -18,12 +18,8 @@ namespace Ztm.WebApi.AddressPools
                 throw new ArgumentException("Addresses could not be empty.", nameof(addresses));
             }
 
-            return addresses.Aggregate
-            (
-                (previous, next) => next.Reservations.Count < previous.Reservations.Count
-                    ? next
-                    : previous
-            );
+            return addresses.Aggregate(
+                (previous, next) => next.Reservations.Count < previous.Reservations.Count ? next : previous);
         }
     }
 }
