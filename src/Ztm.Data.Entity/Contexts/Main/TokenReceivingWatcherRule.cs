@@ -6,7 +6,7 @@ namespace Ztm.Data.Entity.Contexts.Main
     public sealed class TokenReceivingWatcherRule
     {
         public Guid Id { get; set; }
-        public Guid CallbackId { get; set; }
+        public Guid? CallbackId { get; set; }
         public long PropertyId { get; set; }
         public Guid AddressReservationId { get; set; }
         public long TargetAmount { get; set; }

@@ -1,11 +1,9 @@
 using System;
 using System.Collections.ObjectModel;
-using System.Net;
 using Xunit;
 using Ztm.Testing;
 using Ztm.Threading;
 using Ztm.WebApi.AddressPools;
-using Ztm.WebApi.Callbacks;
 using Ztm.WebApi.Watchers.TokenReceiving;
 using Ztm.Zcoin.NBitcoin.Exodus;
 
@@ -33,8 +31,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                 new PropertyAmount(100),
                 6,
                 TimeSpan.FromHours(1),
-                "timeout",
-                new Callback(Guid.NewGuid(), IPAddress.Loopback, DateTime.Now, false, new Uri("http://localhost")));
+                null);
 
             this.timer = new Timer();
 

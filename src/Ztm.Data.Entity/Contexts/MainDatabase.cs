@@ -159,14 +159,14 @@ namespace Ztm.Data.Entity.Contexts
         protected virtual void ConfigureTokenReceivingWatcherRule(EntityTypeBuilder<TokenReceivingWatcherRule> builder)
         {
             builder.Property(e => e.Id).IsRequired().ValueGeneratedOnAdd();
-            builder.Property(e => e.CallbackId).IsRequired();
+            builder.Property(e => e.CallbackId);
             builder.Property(e => e.PropertyId).IsRequired();
             builder.Property(e => e.AddressReservationId).IsRequired();
             builder.Property(e => e.TargetAmount).IsRequired();
             builder.Property(e => e.TargetConfirmation).IsRequired();
             builder.Property(e => e.OriginalTimeout).IsRequired();
             builder.Property(e => e.CurrentTimeout).IsRequired();
-            builder.Property(e => e.TimeoutStatus).IsRequired();
+            builder.Property(e => e.TimeoutStatus);
             builder.Property(e => e.Status).IsRequired();
 
             builder.HasKey(e => e.Id);

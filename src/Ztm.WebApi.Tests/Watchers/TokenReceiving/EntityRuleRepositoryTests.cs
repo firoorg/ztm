@@ -18,6 +18,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
 {
     public sealed class EntityRuleRepositoryTests : IDisposable
     {
+        readonly PropertyId property;
         readonly ReceivingAddress address;
         readonly ReceivingAddressReservation reservation;
         readonly Callback callback;
@@ -29,6 +30,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
 
         public EntityRuleRepositoryTests()
         {
+            this.property = new PropertyId(3);
             this.address = new ReceivingAddress(
                 Guid.NewGuid(),
                 TestAddress.Regtest1,
@@ -43,13 +45,12 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                 false,
                 new Uri("http://localhost/a"));
             this.rule = new Rule(
-                new PropertyId(3),
+                this.property,
                 this.reservation,
                 new PropertyAmount(100),
                 6,
                 TimeSpan.FromHours(1),
-                "timeout",
-                this.callback);
+                new TokenReceivingCallback(this.callback, "timeout"));
 
             this.db = new TestMainDatabaseFactory();
 
@@ -113,7 +114,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
         }
 
         [Fact]
-        public async Task AddAsync_WithNonNullRule_ShouldStoreToDatabase()
+        public async Task AddAsync_HaveCallback_StoredRowShouldHaveCallback()
         {
             // Arrange.
             await CreateRequiredDependenciesAsync(this.rule);
@@ -124,14 +125,45 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
             // Assert.
             var row = await LoadRuleAsync(this.rule.Id);
 
-            Assert.Equal(this.rule.Callback.Id, row.CallbackId);
+            Assert.Equal(this.rule.Callback.Callback.Id, row.CallbackId);
             Assert.Equal(this.rule.Property.Value, row.PropertyId);
             Assert.Equal(this.rule.AddressReservation.Id, row.AddressReservationId);
             Assert.Equal(this.rule.TargetAmount.Indivisible, row.TargetAmount);
             Assert.Equal(this.rule.TargetConfirmation, row.TargetConfirmation);
             Assert.Equal(this.rule.OriginalTimeout, row.OriginalTimeout);
             Assert.Equal(this.rule.OriginalTimeout, row.CurrentTimeout);
-            Assert.Equal(this.rule.TimeoutStatus, row.TimeoutStatus);
+            Assert.Equal(this.rule.Callback.TimeoutStatus, row.TimeoutStatus);
+            Assert.Equal(Status.Uncompleted, row.Status);
+        }
+
+        [Fact]
+        public async Task AddAsync_NoCallback_StoredRowShouldHaveNoCallback()
+        {
+            // Arrange.
+            var rule = new Rule(
+                this.property,
+                this.reservation,
+                new PropertyAmount(100),
+                6,
+                TimeSpan.FromHours(1),
+                null);
+
+            await CreateRequiredDependenciesAsync(rule);
+
+            // Act.
+            await this.subject.AddAsync(rule, CancellationToken.None);
+
+            // Assert.
+            var row = await LoadRuleAsync(rule.Id);
+
+            Assert.Null(row.CallbackId);
+            Assert.Equal(rule.Property.Value, row.PropertyId);
+            Assert.Equal(rule.AddressReservation.Id, row.AddressReservationId);
+            Assert.Equal(rule.TargetAmount.Indivisible, row.TargetAmount);
+            Assert.Equal(rule.TargetConfirmation, row.TargetConfirmation);
+            Assert.Equal(rule.OriginalTimeout, row.OriginalTimeout);
+            Assert.Equal(rule.OriginalTimeout, row.CurrentTimeout);
+            Assert.Null(row.TimeoutStatus);
             Assert.Equal(Status.Uncompleted, row.Status);
         }
 
@@ -206,7 +238,12 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
             var result = await this.subject.GetAsync(this.rule.Id, CancellationToken.None);
 
             // Assert.
-            Assert.Equal(this.rule, result);
+            Assert.Equal(this.rule.AddressReservation, result.AddressReservation);
+            Assert.Equal(this.rule.Callback, result.Callback);
+            Assert.Equal(this.rule.OriginalTimeout, result.OriginalTimeout);
+            Assert.Equal(this.rule.Property, result.Property);
+            Assert.Equal(this.rule.TargetAmount, result.TargetAmount);
+            Assert.Equal(this.rule.TargetConfirmation, result.TargetConfirmation);
         }
 
         [Fact]
@@ -261,15 +298,23 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                 true,
                 new Collection<ReceivingAddressReservation>());
 
+            var address3 = new ReceivingAddress(
+                Guid.NewGuid(),
+                TestAddress.Regtest3,
+                true,
+                new Collection<ReceivingAddressReservation>());
+
             var reservation1 = new ReceivingAddressReservation(Guid.NewGuid(), address1, DateTime.Now, null);
             var reservation2 = new ReceivingAddressReservation(Guid.NewGuid(), address2, DateTime.Now, DateTime.Now);
             var reservation3 = new ReceivingAddressReservation(Guid.NewGuid(), address2, DateTime.Now, DateTime.Now);
             var reservation4 = new ReceivingAddressReservation(Guid.NewGuid(), address2, DateTime.Now, null);
+            var reservation5 = new ReceivingAddressReservation(Guid.NewGuid(), address3, DateTime.Now, null);
 
             address1.Reservations.Add(reservation1);
             address2.Reservations.Add(reservation2);
             address2.Reservations.Add(reservation3);
             address2.Reservations.Add(reservation4);
+            address3.Reservations.Add(reservation5);
 
             var callback1 = new Callback(
                 Guid.NewGuid(),
@@ -278,35 +323,13 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                 false,
                 new Uri("http://localhost/a"));
 
-            var callback2 = new Callback(
-                Guid.NewGuid(),
-                IPAddress.Parse("192.168.1.3"),
-                DateTime.Now,
-                true,
-                new Uri("http://localhost/b"));
-
-            var callback3 = new Callback(
-                Guid.NewGuid(),
-                IPAddress.Parse("192.168.1.4"),
-                DateTime.Now,
-                true,
-                new Uri("http://localhost/c"));
-
-            var callback4 = new Callback(
-                Guid.NewGuid(),
-                IPAddress.Parse("192.168.1.5"),
-                DateTime.Now,
-                false,
-                new Uri("http://localhost/d"));
-
             var rule1 = new Rule(
                 property1,
                 reservation1,
                 new PropertyAmount(1),
                 1,
                 TimeSpan.FromMinutes(1),
-                "1",
-                callback1);
+                null);
 
             var rule2 = new Rule(
                 property2,
@@ -314,8 +337,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                 new PropertyAmount(2),
                 2,
                 TimeSpan.FromMinutes(2),
-                "2",
-                callback2);
+                null);
 
             var rule3 = new Rule(
                 property2,
@@ -323,8 +345,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                 new PropertyAmount(3),
                 3,
                 TimeSpan.FromMinutes(3),
-                "3",
-                callback3);
+                null);
 
             var rule4 = new Rule(
                 property2,
@@ -332,26 +353,33 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                 new PropertyAmount(4),
                 4,
                 TimeSpan.FromMinutes(4),
-                "4",
-                callback4);
+                new TokenReceivingCallback(callback1, "1"));
+
+            var rule5 = new Rule(
+                property2,
+                reservation5,
+                new PropertyAmount(5),
+                5,
+                TimeSpan.FromMinutes(5),
+                null);
 
             await CreateAddressAsync(address1);
             await CreateAddressAsync(address2);
+            await CreateAddressAsync(address3);
 
             await CreateAddressReservationAsync(reservation1);
             await CreateAddressReservationAsync(reservation2);
             await CreateAddressReservationAsync(reservation3);
             await CreateAddressReservationAsync(reservation4);
+            await CreateAddressReservationAsync(reservation5);
 
             await CreateCallbackAsync(callback1);
-            await CreateCallbackAsync(callback2);
-            await CreateCallbackAsync(callback3);
-            await CreateCallbackAsync(callback4);
 
             await this.subject.AddAsync(rule1, CancellationToken.None);
             await this.subject.AddAsync(rule2, CancellationToken.None);
             await this.subject.AddAsync(rule3, CancellationToken.None);
             await this.subject.AddAsync(rule4, CancellationToken.None);
+            await this.subject.AddAsync(rule5, CancellationToken.None);
 
             await this.subject.SetSucceededAsync(rule2.Id, CancellationToken.None);
             await this.subject.SetTimedOutAsync(rule3.Id, CancellationToken.None);
@@ -372,36 +400,40 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                 .Setup(r => r.GetReservationAsync(reservation4.Id, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(reservation4);
 
+            this.addresses
+                .Setup(r => r.GetReservationAsync(reservation5.Id, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(reservation5);
+
             this.callbacks
                 .Setup(r => r.GetAsync(callback1.Id, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(callback1);
-
-            this.callbacks
-                .Setup(r => r.GetAsync(callback2.Id, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(callback2);
-
-            this.callbacks
-                .Setup(r => r.GetAsync(callback3.Id, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(callback3);
-
-            this.callbacks
-                .Setup(r => r.GetAsync(callback4.Id, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(callback4);
 
             // Act.
             var result = await this.subject.ListUncompletedAsync(property2, CancellationToken.None);
 
             // Assert.
-            var stored = Assert.Single(result);
-
-            Assert.Equal(rule4.AddressReservation, stored.AddressReservation);
-            Assert.Equal(rule4.Callback, stored.Callback);
-            Assert.Equal(rule4.Id, stored.Id);
-            Assert.Equal(rule4.OriginalTimeout, stored.OriginalTimeout);
-            Assert.Equal(rule4.Property, stored.Property);
-            Assert.Equal(rule4.TargetAmount, stored.TargetAmount);
-            Assert.Equal(rule4.TargetConfirmation, stored.TargetConfirmation);
-            Assert.Equal(rule4.TimeoutStatus, stored.TimeoutStatus);
+            Assert.Collection(
+                result,
+                r =>
+                {
+                    Assert.Equal(rule4.AddressReservation, r.AddressReservation);
+                    Assert.Equal(rule4.Callback, r.Callback);
+                    Assert.Equal(rule4.Id, r.Id);
+                    Assert.Equal(rule4.OriginalTimeout, r.OriginalTimeout);
+                    Assert.Equal(rule4.Property, r.Property);
+                    Assert.Equal(rule4.TargetAmount, r.TargetAmount);
+                    Assert.Equal(rule4.TargetConfirmation, r.TargetConfirmation);
+                },
+                r =>
+                {
+                    Assert.Equal(rule5.AddressReservation, r.AddressReservation);
+                    Assert.Null(r.Callback);
+                    Assert.Equal(rule5.Id, r.Id);
+                    Assert.Equal(rule5.OriginalTimeout, r.OriginalTimeout);
+                    Assert.Equal(rule5.Property, r.Property);
+                    Assert.Equal(rule5.TargetAmount, r.TargetAmount);
+                    Assert.Equal(rule5.TargetConfirmation, r.TargetConfirmation);
+                });
         }
 
         [Fact]
@@ -464,7 +496,11 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
         {
             await CreateAddressAsync(rule.AddressReservation.Address);
             await CreateAddressReservationAsync(rule.AddressReservation);
-            await CreateCallbackAsync(rule.Callback);
+
+            if (rule.Callback != null)
+            {
+                await CreateCallbackAsync(rule.Callback.Callback);
+            }
         }
 
         async Task CreateAddressAsync(ReceivingAddress address)

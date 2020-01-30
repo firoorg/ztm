@@ -33,8 +33,6 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
         readonly ReceivingAddress address2;
         readonly ReceivingAddressReservation reservation1;
         readonly ReceivingAddressReservation reservation2;
-        readonly Callback callback1;
-        readonly Callback callback2;
         readonly Rule rule1;
         readonly Rule rule2;
         readonly DomainModel watch1;
@@ -93,28 +91,20 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
             this.reservation1 = new ReceivingAddressReservation(Guid.NewGuid(), this.address1, DateTime.Now, null);
             this.reservation2 = new ReceivingAddressReservation(Guid.NewGuid(), this.address2, DateTime.Now, null);
 
-            this.callback1 = new Callback(
-                Guid.NewGuid(),
-                IPAddress.Parse("192.168.1.2"),
-                DateTime.Now,
-                false,
-                new Uri("http://localhost/a"));
-
-            this.callback2 = new Callback(
-                Guid.NewGuid(),
-                IPAddress.Parse("192.168.1.3"),
-                DateTime.Now,
-                false,
-                new Uri("http://localhost/b"));
-
             this.rule1 = new Rule(
                 new PropertyId(3),
                 this.reservation1,
                 new PropertyAmount(100),
                 6,
                 TimeSpan.FromHours(1),
-                "timeout",
-                this.callback1);
+                new TokenReceivingCallback(
+                    new Callback(
+                        Guid.NewGuid(),
+                        IPAddress.Parse("192.168.1.2"),
+                        DateTime.Now,
+                        false,
+                        new Uri("http://localhost/a")),
+                    "timeout"));
 
             this.rule2 = new Rule(
                 new PropertyId(4),
@@ -122,8 +112,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                 new PropertyAmount(40),
                 3,
                 TimeSpan.FromMinutes(30),
-                "receive-timeout",
-                this.callback2);
+                null);
 
             this.watch1 = new DomainModel(
                 this.rule1,
@@ -566,15 +555,6 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
 
         async Task StoreRuleAsync(Rule rule)
         {
-            var callback = new Ztm.Data.Entity.Contexts.Main.WebApiCallback()
-            {
-                Id = rule.Callback.Id,
-                RegisteredIp = rule.Callback.RegisteredIp,
-                RegisteredTime = rule.Callback.RegisteredTime,
-                Completed = rule.Callback.Completed,
-                Url = rule.Callback.Url,
-            };
-
             var address = new Ztm.Data.Entity.Contexts.Main.ReceivingAddress()
             {
                 Id = rule.AddressReservation.Address.Id,
@@ -593,20 +573,33 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
             var entity = new Ztm.Data.Entity.Contexts.Main.TokenReceivingWatcherRule()
             {
                 Id = rule.Id,
-                CallbackId = rule.Callback.Id,
+                CallbackId = rule.Callback?.Callback.Id,
                 PropertyId = rule.Property.Value,
                 AddressReservationId = rule.AddressReservation.Id,
                 TargetAmount = rule.TargetAmount.Indivisible,
                 TargetConfirmation = rule.TargetConfirmation,
                 OriginalTimeout = rule.OriginalTimeout,
                 CurrentTimeout = rule.OriginalTimeout,
-                TimeoutStatus = rule.TimeoutStatus,
+                TimeoutStatus = rule.Callback?.TimeoutStatus,
                 Status = Ztm.Data.Entity.Contexts.Main.TokenReceivingWatcherRuleStatus.Uncompleted,
             };
 
             using (var db = this.db.CreateDbContext())
             {
-                await db.WebApiCallbacks.AddAsync(callback);
+                if (rule.Callback != null)
+                {
+                    var callback = rule.Callback.Callback;
+
+                    await db.WebApiCallbacks.AddAsync(new Ztm.Data.Entity.Contexts.Main.WebApiCallback()
+                    {
+                        Id = callback.Id,
+                        RegisteredIp = callback.RegisteredIp,
+                        RegisteredTime = callback.RegisteredTime,
+                        Completed = callback.Completed,
+                        Url = callback.Url,
+                    });
+                }
+
                 await db.ReceivingAddresses.AddAsync(address);
                 await db.ReceivingAddressReservations.AddAsync(reservation);
                 await db.TokenReceivingWatcherRules.AddAsync(entity);

@@ -99,7 +99,7 @@ namespace Ztm.WebApi.Controllers
                 var callback = await this.helper.RegisterCallbackAsync(this, CancellationToken.None);
                 if (callback != null)
                 {
-                    var callbackResult = new {Tx = id};
+                    var callbackResult = new { Tx = id };
 
                     await this.watcher.AddTransactionAsync(
                         id,
@@ -111,7 +111,7 @@ namespace Ztm.WebApi.Controllers
                         CancellationToken.None);
                 }
 
-                return Accepted(new {Tx = id});
+                return Accepted(new { Tx = id });
             }
         }
     }

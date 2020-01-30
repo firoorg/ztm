@@ -1,6 +1,5 @@
 using System;
 using Ztm.WebApi.AddressPools;
-using Ztm.WebApi.Callbacks;
 using Ztm.Zcoin.NBitcoin.Exodus;
 
 namespace Ztm.WebApi.Watchers.TokenReceiving
@@ -13,15 +12,13 @@ namespace Ztm.WebApi.Watchers.TokenReceiving
             PropertyAmount targetAmount,
             int targetConfirmation,
             TimeSpan originalTimeout,
-            string timeoutStatus,
-            Callback callback)
+            TokenReceivingCallback callback)
             : this(
                 property,
                 addressReservation,
                 targetAmount,
                 targetConfirmation,
                 originalTimeout,
-                timeoutStatus,
                 callback,
                 Guid.NewGuid())
         {
@@ -33,8 +30,7 @@ namespace Ztm.WebApi.Watchers.TokenReceiving
             PropertyAmount targetAmount,
             int targetConfirmation,
             TimeSpan originalTimeout,
-            string timeoutStatus,
-            Callback callback,
+            TokenReceivingCallback callback,
             Guid id)
         {
             if (property == null)
@@ -71,29 +67,18 @@ namespace Ztm.WebApi.Watchers.TokenReceiving
                     "The value is not a valid timeout.");
             }
 
-            if (timeoutStatus == null)
-            {
-                throw new ArgumentNullException(nameof(timeoutStatus));
-            }
-
-            if (callback == null)
-            {
-                throw new ArgumentNullException(nameof(callback));
-            }
-
             Property = property;
             AddressReservation = addressReservation;
             TargetAmount = targetAmount;
             TargetConfirmation = targetConfirmation;
             OriginalTimeout = originalTimeout;
-            TimeoutStatus = timeoutStatus;
             Callback = callback;
             Id = id;
         }
 
         public ReceivingAddressReservation AddressReservation { get; }
 
-        public Callback Callback { get; }
+        public TokenReceivingCallback Callback { get; }
 
         public Guid Id { get; }
 
@@ -104,8 +89,6 @@ namespace Ztm.WebApi.Watchers.TokenReceiving
         public PropertyAmount TargetAmount { get; }
 
         public int TargetConfirmation { get; }
-
-        public string TimeoutStatus { get; }
 
         public override bool Equals(object obj)
         {

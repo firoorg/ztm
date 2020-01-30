@@ -153,8 +153,7 @@ namespace Ztm.WebApi.Watchers.TokenReceiving
             PropertyAmount targetAmount,
             int targetConfirmation,
             TimeSpan timeout,
-            string timeoutStatus,
-            Callback callback,
+            TokenReceivingCallback callback,
             CancellationToken cancellationToken)
         {
             Rule rule;
@@ -174,12 +173,7 @@ namespace Ztm.WebApi.Watchers.TokenReceiving
                 throw new ArgumentOutOfRangeException(nameof(timeout), timeout, "The value is not valid.");
             }
 
-            if (callback == null)
-            {
-                throw new ArgumentNullException(nameof(callback));
-            }
-
-            if (callback.Completed)
+            if (callback != null && callback.Completed)
             {
                 throw new ArgumentException("The callback is already completed.", nameof(callback));
             }
@@ -193,14 +187,7 @@ namespace Ztm.WebApi.Watchers.TokenReceiving
                     throw new InvalidOperationException("The watcher is already stopped.");
                 }
 
-                rule = new Rule(
-                    this.property,
-                    address,
-                    targetAmount,
-                    targetConfirmation,
-                    timeout,
-                    timeoutStatus,
-                    callback);
+                rule = new Rule(this.property, address, targetAmount, targetConfirmation, timeout, callback);
 
                 await this.rules.AddAsync(rule, cancellationToken);
 
@@ -296,16 +283,25 @@ namespace Ztm.WebApi.Watchers.TokenReceiving
 
                 // Mark all watches that was created by this rule as timed out and calculate total received amount.
                 var watches = await this.watches.TransitionToTimedOutAsync(rule, CancellationToken.None);
-                var confirmed = watches.Where(p => p.Value > 0).ToDictionary(p => p.Key, p => p.Value);
-                var amount = SumChanges(confirmed, rule.TargetConfirmation);
+                var callback = rule.Callback;
 
                 // Invoke callback.
-                var result = new CallbackData()
+                if (callback != null)
                 {
-                    Received = amount,
-                };
+                    var confirmed = watches.Where(p => p.Value > 0).ToDictionary(p => p.Key, p => p.Value);
+                    var amount = SumChanges(confirmed, rule.TargetConfirmation);
 
-                await InvokeCallbackAsync(rule.Callback, rule.TimeoutStatus, result, CancellationToken.None);
+                    var result = new CallbackData()
+                    {
+                        Received = amount,
+                    };
+
+                    await InvokeCallbackAsync(
+                        callback.Callback,
+                        callback.TimeoutStatus,
+                        result,
+                        CancellationToken.None);
+                }
             }
             catch (Exception ex) // lgtm[cs/catch-of-all-exceptions]
             {
@@ -432,12 +428,21 @@ namespace Ztm.WebApi.Watchers.TokenReceiving
                 await this.addressPool.ReleaseAddressAsync(rule.AddressReservation.Id, CancellationToken.None);
 
                 // Invoke callback.
-                var result = new CallbackData()
-                {
-                    Received = amount,
-                };
+                var callback = rule.Callback;
 
-                await InvokeCallbackAsync(rule.Callback, CallbackResult.StatusSuccess, result, CancellationToken.None);
+                if (callback != null)
+                {
+                    var result = new CallbackData()
+                    {
+                        Received = amount,
+                    };
+
+                    await InvokeCallbackAsync(
+                        callback.Callback,
+                        CallbackResult.StatusSuccess,
+                        result,
+                        CancellationToken.None);
+                }
             }
             finally
             {
