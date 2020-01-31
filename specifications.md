@@ -5,13 +5,16 @@
 - Addresses managed by system:
   - Issuer.
   - Distributor.
-  - Receive addresses.
-- Receive addresses will be in the pool for reuse.
-- The issuer will only create/destroy tokens. When token created it will transfer all created tokens to distributor.
-- The balance will be the smallest unit which is 8 precision (1 mean 0.00000001).
-- Each token transaction will need to pay fee.
-- All fee will be pay in Zcoin balance (XZC). The unit will always in satoshi.
-- All addresses managed by system must have enough Zcoin balance in order to pay fee for token transaction.
+  - Receiving addresses.
+- Receiving addresses will be in the pool for reuse.
+- The issuer will only create/destroy tokens. When tokens are created it will transfer to the distributor.
+- There are 3 types of balance in the system.
+- The balance for a divisible property can have maximum 8 precision (e.g. `0.00000001`).
+- The balance for an indivisible propery will be always integer (e.g. `500`).
+- The balance for Zcoin (XZC) will always be an integer that represents the smallest unit, which is Satoshi.
+- Each token's operation need to pay fee.
+- All fee will be pay in XZC.
+- All addresses that managed by the system must have enough XZC in order to pay fee.
 
 ## REST APIs
 
@@ -135,20 +138,23 @@ Response:
 ### Receive Tokens
 
 ```
-GET /receive-address
+POST /receiving
 ```
 
-Sample request to get an address to send 1,000 tokens to the system:
+Sample request to start receiving 4.9 divisible tokens to the system:
 
-```
-GET /receive-address?target_amount=100000000000
+```json
+{
+  "target_amount": "4.9"
+}
 ```
 
 Response:
 
 ```json
 {
-  "address": "aENPzvNpNHENttzF7yZBmz5d2nAxBVRzXE"
+  "address": "aENPzvNpNHENttzF7yZBmz5d2nAxBVRzXE",
+  "deadline": "2020-01-31T18:25:43.511Z"
 }
 ```
 
@@ -156,7 +162,10 @@ Response:
 
 ```json
 {
-  "received": 102000000000
+  "received": {
+    "confirmed": "5.3000000",
+    "pending": null
+  }
 }
 ```
 
@@ -164,7 +173,10 @@ Response:
 
 ```json
 {
-  "received": 50000000000
+  "received": {
+    "confirmed": "3.50000000",
+    "pending": "1.00000000"
+  }
 }
 ```
 

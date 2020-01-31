@@ -1,11 +1,13 @@
 using System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NBitcoin;
 using NBitcoin.RPC;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Ztm.Configuration;
 using Ztm.Data.Entity.Contexts;
@@ -14,15 +16,13 @@ using Ztm.Hosting.AspNetCore;
 using Ztm.WebApi.AddressPools;
 using Ztm.WebApi.Binders;
 using Ztm.WebApi.Callbacks;
+using Ztm.WebApi.Controllers;
 using Ztm.WebApi.Watchers.TransactionConfirmation;
 using Ztm.Zcoin.NBitcoin;
 using Ztm.Zcoin.NBitcoin.Exodus;
+using Ztm.Zcoin.NBitcoin.Json;
 using Ztm.Zcoin.Rpc;
 using Ztm.Zcoin.Synchronization;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Newtonsoft.Json;
-using Ztm.Zcoin.NBitcoin.Json;
-using Ztm.WebApi.Controllers;
 
 namespace Ztm.WebApi
 {

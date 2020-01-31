@@ -8,8 +8,9 @@ namespace Ztm.WebApi
 {
     public static class ControllerBaseExtensions
     {
-        static readonly string CallbackUrlHeader = "X-Callback-URL";
-        static readonly string CallbackIdHeader = "X-Callback-ID";
+        public const string CallbackIdHeader = "X-Callback-ID";
+
+        public const string CallbackUrlHeader = "X-Callback-URL";
 
         public static AcceptedResult AcceptedWithCallback(this ControllerBase controller, Callback callback)
         {
