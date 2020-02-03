@@ -17,10 +17,10 @@ namespace Ztm.WebApi.Controllers
     {
         public const string TimeoutStatus = "tokens-receive-timeout";
 
+        readonly ApiConfiguration config;
+        readonly ControllerHelper helper;
         readonly IReceivingAddressPool pool;
         readonly ITokenReceivingWatcher watcher;
-        readonly ControllerHelper helper;
-        readonly ApiConfiguration config;
 
         public ReceivingController(
             IConfiguration config,
