@@ -1,3 +1,4 @@
+using System;
 using Xunit;
 using Ztm.WebApi.Validators;
 using Ztm.Zcoin.NBitcoin.Exodus;
@@ -32,11 +33,11 @@ namespace Ztm.WebApi.Tests.Validators
         }
 
         [Fact]
-        public void IsValid_WithZeroPropertyAmount_ShouldReturnTrue()
+        public void IsValid_WithZeroPropertyAmount_ShouldReturnFalse()
         {
             var result = this.subject.IsValid(PropertyAmount.Zero);
 
-            Assert.True(result);
+            Assert.False(result);
         }
 
         [Theory]
@@ -57,11 +58,9 @@ namespace Ztm.WebApi.Tests.Validators
         [InlineData(1)]
         [InlineData(1L)]
         [InlineData("1")]
-        public void IsValid_WithUnsupportedType_ShouldReturnFalse(object value)
+        public void IsValid_WithUnsupportedType_ShouldThrow(object value)
         {
-            var result = this.subject.IsValid(value);
-
-            Assert.False(result);
+            Assert.Throws<ArgumentException>("value", () => this.subject.IsValid(value));
         }
     }
 }

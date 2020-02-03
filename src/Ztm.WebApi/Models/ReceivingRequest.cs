@@ -7,7 +7,6 @@ namespace Ztm.WebApi.Models
     public class ReceivingRequest
     {
         [Required]
-        [NonZero]
         [Positive]
         public PropertyAmount? TargetAmount { get; set; }
     }
