@@ -13,10 +13,13 @@ using Ztm.Configuration;
 using Ztm.Data.Entity.Contexts;
 using Ztm.Data.Entity.Postgres;
 using Ztm.Hosting.AspNetCore;
+using Ztm.Threading;
+using Ztm.Threading.TimerSchedulers;
 using Ztm.WebApi.AddressPools;
 using Ztm.WebApi.Binders;
 using Ztm.WebApi.Callbacks;
 using Ztm.WebApi.Controllers;
+using Ztm.WebApi.Watchers.TokenReceiving;
 using Ztm.WebApi.Watchers.TransactionConfirmation;
 using Ztm.Zcoin.NBitcoin;
 using Ztm.Zcoin.NBitcoin.Exodus;
@@ -42,7 +45,7 @@ namespace Ztm.WebApi
 
         public void ConfigureServices(IServiceCollection services)
         {
-            // ASP.NET Services.
+            // ASP.NET Related Services.
             services.AddMvc(ConfigureMvc)
                     .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
                     .AddJsonOptions(o =>
@@ -58,17 +61,6 @@ namespace Ztm.WebApi
                         o.SerializerSettings.Converters.Add(new UInt256Converter());
                     });
 
-            // Http Client Factory.
-            services.AddHttpClient();
-
-            // Address Pools.
-            services.UseAddressPool();
-
-            // Fundamentals Services.
-            services.AddBackgroundServiceExceptionHandler();
-            services.AddSingleton<Network>(CreateZcoinNetwork);
-            services.AddSingleton<ZcoinConfiguration>(p => this.config.GetZcoinSection());
-
             services.AddSingleton<JsonSerializer>(
                 p =>
                 {
@@ -81,27 +73,36 @@ namespace Ztm.WebApi
                     return serializer;
                 });
 
+            services.AddHttpClient();
+
+            // Application Fundamentals Services.
+            services.AddSingleton<ITimerScheduler, ThreadPoolScheduler>();
+            services.AddBackgroundServiceExceptionHandler();
+            services.AddSingleton<Network>(CreateZcoinNetwork);
+            services.AddSingleton<ZcoinConfiguration>(p => p.GetRequiredService<IConfiguration>().GetZcoinSection());
+            services.AddSingleton<PropertyId>(p => p.GetRequiredService<ZcoinConfiguration>().Property.Id);
+
+            // NBitcoin Services.
+            services.AddNBitcoin();
+
             // Database Services.
             services.AddSingleton<IMainDatabaseFactory, MainDatabaseFactory>();
-
-            // Transaction Confirmation Watcher.
-            services.AddSingleton<ICallbackExecuter, HttpCallbackExecuter>();
-            services.AddSingleton<ICallbackRepository, EntityCallbackRepository>();
-            services.AddSingleton<IRuleRepository, EntityRuleRepository>();
-            services.AddSingleton<IWatchRepository, EntityWatchRepository>();
-            services.AddSingleton<TransactionConfirmationWatcher>();
-            services.AddSingleton<IBlockListener>(p => p.GetRequiredService<TransactionConfirmationWatcher>());
-            services.AddSingleton<IHostedService>(p => p.GetRequiredService<TransactionConfirmationWatcher>());
-            services.AddSingleton<ITransactionConfirmationWatcher>(
-                p => p.GetRequiredService<TransactionConfirmationWatcher>());
 
             // Zcoin Interface Services.
             services.AddSingleton<IRpcFactory>(CreateRpcFactory);
             services.AddTransient<IBlocksRetriever, BlocksRetriever>();
             services.AddSingleton<IBlocksStorage, BlocksStorage>();
 
-            // NBitcoin Services.
-            services.AddNBitcoin();
+            // Callback Services.
+            services.AddSingleton<ICallbackExecuter, HttpCallbackExecuter>();
+            services.AddSingleton<ICallbackRepository, EntityCallbackRepository>();
+
+            // Address Pools.
+            services.UseAddressPool();
+
+            // Watchers.
+            services.AddTokenReceivingWatcher();
+            services.AddTransactionConfirmationWatcher();
 
             // Background Services.
             services.AddHostedService<BlocksSynchronizer>();
