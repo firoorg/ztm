@@ -180,7 +180,7 @@ Response:
 }
 ```
 
-### Get Issuer Information
+### Get Issuer Information [NOT IMPLEMENTED]
 
 ```
 GET /issuer
@@ -195,7 +195,7 @@ Response:
 }
 ```
 
-### Get Distributor Information
+### Get Distributor Information [NOT IMPLEMENTED]
 
 ```
 GET /distributor
@@ -211,10 +211,31 @@ Response:
 }
 ```
 
-### Get Receive Address Information
+### Create A Receiving Address
 
 ```
-GET /receive-addresses
+POST /receiving-addresses
+```
+
+Sample request to create a new receiving address:
+
+```json
+{
+}
+```
+
+Response:
+
+```json
+{
+  "address": "aENPzvNpNHENttzF7yZBmz5d2nAxBVRzXE"
+}
+```
+
+### Get Receiving Addresses Information [NOT IMPLEMENTED]
+
+```
+GET /receiving-addresses
 ```
 
 Response:
