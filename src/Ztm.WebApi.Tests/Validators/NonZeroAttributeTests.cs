@@ -1,3 +1,4 @@
+using System;
 using Xunit;
 using Ztm.WebApi.Validators;
 using Ztm.Zcoin.NBitcoin.Exodus;
@@ -48,11 +49,9 @@ namespace Ztm.WebApi.Tests.Validators
         [InlineData(1)]
         [InlineData(1L)]
         [InlineData("1")]
-        public void IsValid_WithUnsupportedType_ShouldReturnFalse(object value)
+        public void IsValid_WithUnsupportedType_ShouldThrow(object value)
         {
-            var result = this.subject.IsValid(value);
-
-            Assert.False(result);
+            Assert.Throws<ArgumentException>("value", () => this.subject.IsValid(value));
         }
     }
 }
