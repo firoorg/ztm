@@ -29,7 +29,17 @@ namespace Ztm.WebApi.Watchers.TokenReceiving
 
         public static bool operator ==(TokenReceivingCallback left, TokenReceivingCallback right)
         {
-            return ReferenceEquals(left, right) || (!ReferenceEquals(left, null) && left.Equals(right));
+            if (ReferenceEquals(left, right))
+            {
+                return true;
+            }
+
+            if (ReferenceEquals(left, null))
+            {
+                return false;
+            }
+
+            return left.Equals(right);
         }
 
         public static bool operator !=(TokenReceivingCallback left, TokenReceivingCallback right)

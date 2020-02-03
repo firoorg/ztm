@@ -11,7 +11,17 @@ namespace Ztm.WebApi.Watchers.TokenReceiving
 
         public static bool operator ==(CallbackAmount first, CallbackAmount second)
         {
-            return ReferenceEquals(first, second) || (!ReferenceEquals(first, null) && first.Equals(second));
+            if (ReferenceEquals(first, second))
+            {
+                return true;
+            }
+
+            if (ReferenceEquals(first, null))
+            {
+                return false;
+            }
+
+            return first.Equals(second);
         }
 
         public static bool operator !=(CallbackAmount first, CallbackAmount second)
