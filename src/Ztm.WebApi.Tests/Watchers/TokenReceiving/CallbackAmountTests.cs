@@ -19,26 +19,12 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
         }
 
         [Fact]
-        public void Equals_WithEqual_ShouldReturnTrue()
+        public void Equality_WithSameInstance_ShouldReturnTrue()
         {
-            var results = EqualityTesting.TestEquals(
-                this.subject,
-                s => new CallbackAmount() { Confirmed = s.Confirmed, Pending = s.Pending });
+            var left = this.subject;
+            var right = this.subject;
 
-            Assert.DoesNotContain(false, results);
-        }
-
-        [Fact]
-        public void Equals_WithUnequal_ShouldReturnFalse()
-        {
-            var results = EqualityTesting.TestInequal(
-                this.subject,
-                s => new CallbackAmount() { Confirmed = null, Pending = s.Pending },
-                s => new CallbackAmount() { Confirmed = new PropertyAmount(200), Pending = s.Pending },
-                s => new CallbackAmount() { Confirmed = s.Confirmed, Pending = null },
-                s => new CallbackAmount() { Confirmed = s.Confirmed, Pending = new PropertyAmount(100) });
-
-            Assert.DoesNotContain(true, results);
+            Assert.True(left == right);
         }
 
         [Fact]
@@ -55,9 +41,13 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
         [Fact]
         public void Equality_WithLeftNull_ShouldReturnFalse()
         {
-            CallbackAmount left = null;
+            Assert.False(null == this.subject);
+        }
 
-            Assert.False(left == this.subject);
+        [Fact]
+        public void Equality_WithRightNull_ShouldReturnFalse()
+        {
+            Assert.False(this.subject == null);
         }
 
         [Fact]
@@ -84,6 +74,15 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
         }
 
         [Fact]
+        public void Inequality_WithSameInstance_ShouldReturnFalse()
+        {
+            var left = this.subject;
+            var right = this.subject;
+
+            Assert.False(left != right);
+        }
+
+        [Fact]
         public void Inequality_WithBothNull_ShouldReturnFalse()
         {
             CallbackAmount left, right;
@@ -97,9 +96,13 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
         [Fact]
         public void Inequality_WithLeftNull_ShouldReturnTrue()
         {
-            CallbackAmount left = null;
+            Assert.True(null != this.subject);
+        }
 
-            Assert.True(left != this.subject);
+        [Fact]
+        public void Inequality_WithRightNull_ShouldReturnTrue()
+        {
+            Assert.True(this.subject != null);
         }
 
         [Fact]
@@ -123,6 +126,29 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
             Assert.True(this.subject != new CallbackAmount() { Confirmed = s.Pending, Pending = s.Pending });
             Assert.True(this.subject != new CallbackAmount() { Confirmed = s.Confirmed, Pending = null });
             Assert.True(this.subject != new CallbackAmount() { Confirmed = s.Confirmed, Pending = s.Confirmed });
+        }
+
+        [Fact]
+        public void Equals_WithEqual_ShouldReturnTrue()
+        {
+            var results = EqualityTesting.TestEquals(
+                this.subject,
+                s => new CallbackAmount() { Confirmed = s.Confirmed, Pending = s.Pending });
+
+            Assert.DoesNotContain(false, results);
+        }
+
+        [Fact]
+        public void Equals_WithUnequal_ShouldReturnFalse()
+        {
+            var results = EqualityTesting.TestInequal(
+                this.subject,
+                s => new CallbackAmount() { Confirmed = null, Pending = s.Pending },
+                s => new CallbackAmount() { Confirmed = new PropertyAmount(200), Pending = s.Pending },
+                s => new CallbackAmount() { Confirmed = s.Confirmed, Pending = null },
+                s => new CallbackAmount() { Confirmed = s.Confirmed, Pending = new PropertyAmount(100) });
+
+            Assert.DoesNotContain(true, results);
         }
     }
 }
