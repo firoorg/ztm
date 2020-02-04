@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
@@ -350,9 +351,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             await this.subject.AddAsync(block, height, CancellationToken.None);
 
-            await Assert.ThrowsAsync<InvalidBlockException>(
-                () => this.subject.GetAsync(height, CancellationToken.None)
-            );
+            await Assert.ThrowsAsync<ConstraintException>(() => this.subject.GetAsync(height, CancellationToken.None));
         }
 
         [Fact]
@@ -380,9 +379,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
                 await db.SaveChangesAsync();
             }
 
-            await Assert.ThrowsAsync<InvalidBlockException>(
-                () => this.subject.GetAsync(0, CancellationToken.None)
-            );
+            await Assert.ThrowsAsync<ConstraintException>(() => this.subject.GetAsync(0, CancellationToken.None));
         }
 
         [Fact]
