@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Ztm.Zcoin.Synchronization;
-using IWatcher= Ztm.WebApi.Watchers.TransactionConfirmation.ITransactionConfirmationWatcher;
+using IWatcher=Ztm.WebApi.Watchers.TransactionConfirmation.ITransactionConfirmationWatcher;
 
 namespace Ztm.WebApi.Watchers.TransactionConfirmation
 {

@@ -1,4 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Ztm.Zcoin.Synchronization;
 
 namespace Ztm.WebApi.Watchers.TokenReceiving
 {
@@ -9,6 +11,8 @@ namespace Ztm.WebApi.Watchers.TokenReceiving
             services.AddSingleton<IRuleRepository, EntityRuleRepository>();
             services.AddSingleton<IWatchRepository, EntityWatchRepository>();
             services.AddSingleton<TokenReceivingWatcher>();
+            services.AddSingleton<IBlockListener>(p => p.GetRequiredService<TokenReceivingWatcher>());
+            services.AddSingleton<IHostedService>(p => p.GetRequiredService<TokenReceivingWatcher>());
             services.AddSingleton<ITokenReceivingWatcher>(p => p.GetRequiredService<TokenReceivingWatcher>());
         }
     }
