@@ -132,12 +132,12 @@ namespace Ztm.Zcoin.Synchronization
 
                 if (data.Height == 0 && previous != null)
                 {
-                    throw new InvalidBlockException("The previous block of genesis block was found.");
+                    throw new ConstraintException("The database contains a block before the genesis block.");
                 }
 
                 if (data.Height != 0 && previous == null)
                 {
-                    throw new InvalidBlockException("The previous block was not found.");
+                    throw new ConstraintException($"The previous block of block {data.Height} was not found.");
                 }
             }
 

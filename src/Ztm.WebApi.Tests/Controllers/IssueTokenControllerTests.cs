@@ -320,7 +320,7 @@ namespace Ztm.WebApi.Tests.Controllers
                 Amount = amount,
             };
 
-            ControllerTesting.SetHttpContext(this.subject);
+            ControllerTesting<IssueTokenController>.SetHttpContext(this.subject);
 
             // Act.
             var response = await this.subject.PostAsync(req, CancellationToken.None);

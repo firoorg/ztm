@@ -9,6 +9,26 @@ namespace Ztm.WebApi.Watchers.TokenReceiving
 
         public PropertyAmount? Pending { get; set; }
 
+        public static bool operator ==(CallbackAmount first, CallbackAmount second)
+        {
+            if (ReferenceEquals(first, second))
+            {
+                return true;
+            }
+
+            if (ReferenceEquals(first, null))
+            {
+                return false;
+            }
+
+            return first.Equals(second);
+        }
+
+        public static bool operator !=(CallbackAmount first, CallbackAmount second)
+        {
+            return !(first == second);
+        }
+
         public override bool Equals(object obj)
         {
             var other = obj as CallbackAmount;
@@ -24,16 +44,6 @@ namespace Ztm.WebApi.Watchers.TokenReceiving
         public override int GetHashCode()
         {
             return HashCode.Combine(Confirmed, Pending);
-        }
-
-        public static bool operator==(CallbackAmount first, CallbackAmount second)
-        {
-            return ReferenceEquals(first, second) || (!ReferenceEquals(first, null) && first.Equals(second));
-        }
-
-        public static bool operator!=(CallbackAmount first, CallbackAmount second)
-        {
-            return !(first == second);
         }
     }
 }

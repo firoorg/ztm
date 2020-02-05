@@ -1,3 +1,4 @@
 .vscode/
+/src/Ztm.WebApi/appsettings.Development.json
 bin/
 obj/

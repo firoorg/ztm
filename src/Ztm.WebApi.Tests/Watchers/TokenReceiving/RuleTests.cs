@@ -18,8 +18,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
         readonly PropertyAmount targetAmount;
         readonly int targetConfirmation;
         readonly TimeSpan timeout;
-        readonly string timeoutStatus;
-        readonly Callback callback;
+        readonly TokenReceivingCallback callback;
         readonly Guid id;
         readonly Rule subject;
 
@@ -36,13 +35,14 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
             this.targetAmount = new PropertyAmount(100);
             this.targetConfirmation = 6;
             this.timeout = TimeSpan.FromHours(1);
-            this.timeoutStatus = "timeout";
-            this.callback = new Callback(
-                Guid.NewGuid(),
-                IPAddress.Parse("192.168.1.2"),
-                DateTime.Now,
-                false,
-                new Uri("http://localhost"));
+            this.callback = new TokenReceivingCallback(
+                new Callback(
+                    Guid.NewGuid(),
+                    IPAddress.Parse("192.168.1.2"),
+                    DateTime.Now,
+                    false,
+                    new Uri("http://localhost")),
+                "timeout");
             this.id = Guid.NewGuid();
             this.subject = new Rule(
                 this.property,
@@ -50,7 +50,6 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                 this.targetAmount,
                 this.targetConfirmation,
                 this.timeout,
-                this.timeoutStatus,
                 this.callback,
                 this.id);
         }
@@ -66,7 +65,6 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                     this.targetAmount,
                     this.targetConfirmation,
                     this.timeout,
-                    this.timeoutStatus,
                     this.callback));
             Assert.Throws<ArgumentNullException>(
                 "property",
@@ -76,7 +74,6 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                     this.targetAmount,
                     this.targetConfirmation,
                     this.timeout,
-                    this.timeoutStatus,
                     this.callback,
                     this.id));
         }
@@ -92,7 +89,6 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                     this.targetAmount,
                     this.targetConfirmation,
                     this.timeout,
-                    this.timeoutStatus,
                     this.callback));
             Assert.Throws<ArgumentNullException>(
                 "addressReservation",
@@ -102,7 +98,6 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                     this.targetAmount,
                     this.targetConfirmation,
                     this.timeout,
-                    this.timeoutStatus,
                     this.callback,
                     this.id));
         }
@@ -118,7 +113,6 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                     PropertyAmount.MinusOne,
                     this.targetConfirmation,
                     this.timeout,
-                    this.timeoutStatus,
                     this.callback));
             Assert.Throws<ArgumentOutOfRangeException>(
                 "targetAmount",
@@ -128,7 +122,6 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                     PropertyAmount.MinusOne,
                     this.targetConfirmation,
                     this.timeout,
-                    this.timeoutStatus,
                     this.callback,
                     this.id));
         }
@@ -144,7 +137,6 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                     PropertyAmount.Zero,
                     this.targetConfirmation,
                     this.timeout,
-                    this.timeoutStatus,
                     this.callback));
             Assert.Throws<ArgumentOutOfRangeException>(
                 "targetAmount",
@@ -154,7 +146,6 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                     PropertyAmount.Zero,
                     this.targetConfirmation,
                     this.timeout,
-                    this.timeoutStatus,
                     this.callback,
                     this.id));
         }
@@ -172,7 +163,6 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                     this.targetAmount,
                     confirmation,
                     this.timeout,
-                    this.timeoutStatus,
                     this.callback));
             Assert.Throws<ArgumentOutOfRangeException>(
                 "targetConfirmation",
@@ -182,7 +172,6 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                     this.targetAmount,
                     confirmation,
                     this.timeout,
-                    this.timeoutStatus,
                     this.callback,
                     this.id));
         }
@@ -200,7 +189,6 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                     this.targetAmount,
                     this.targetConfirmation,
                     timeout,
-                    this.timeoutStatus,
                     this.callback));
             Assert.Throws<ArgumentOutOfRangeException>(
                 "originalTimeout",
@@ -210,61 +198,32 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                     this.targetAmount,
                     this.targetConfirmation,
                     timeout,
-                    this.timeoutStatus,
                     this.callback,
                     this.id));
         }
 
         [Fact]
-        public void Constructor_WithNullTimeoutStatus_ShouldThrow()
+        public void Constructor_WithNullCallback_ShouldNotThrow()
         {
-            Assert.Throws<ArgumentNullException>(
-                "timeoutStatus",
-                () => new Rule(
-                    this.property,
-                    this.reservation,
-                    this.targetAmount,
-                    this.targetConfirmation,
-                    this.timeout,
-                    null,
-                    this.callback));
-            Assert.Throws<ArgumentNullException>(
-                "timeoutStatus",
-                () => new Rule(
-                    this.property,
-                    this.reservation,
-                    this.targetAmount,
-                    this.targetConfirmation,
-                    this.timeout,
-                    null,
-                    this.callback,
-                    this.id));
-        }
+            var rule1 = new Rule(
+                this.property,
+                this.reservation,
+                this.targetAmount,
+                this.targetConfirmation,
+                this.timeout,
+                null);
 
-        [Fact]
-        public void Constructor_WithNullCallback_ShouldThrow()
-        {
-            Assert.Throws<ArgumentNullException>(
-                "callback",
-                () => new Rule(
-                    this.property,
-                    this.reservation,
-                    this.targetAmount,
-                    this.targetConfirmation,
-                    this.timeout,
-                    this.timeoutStatus,
-                    null));
-            Assert.Throws<ArgumentNullException>(
-                "callback",
-                () => new Rule(
-                    this.property,
-                    this.reservation,
-                    this.targetAmount,
-                    this.targetConfirmation,
-                    this.timeout,
-                    this.timeoutStatus,
-                    null,
-                    this.id));
+            var rule2 = new Rule(
+                this.property,
+                this.reservation,
+                this.targetAmount,
+                this.targetConfirmation,
+                this.timeout,
+                null,
+                this.id);
+
+            Assert.Null(rule1.Callback);
+            Assert.Null(rule2.Callback);
         }
 
         [Fact]
@@ -276,7 +235,6 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                 this.targetAmount,
                 this.targetConfirmation,
                 this.timeout,
-                this.timeoutStatus,
                 this.callback);
 
             Assert.NotEqual(Guid.Empty, subject.Id);
@@ -292,7 +250,6 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
             Assert.Equal(this.property, this.subject.Property);
             Assert.Equal(this.targetAmount, this.subject.TargetAmount);
             Assert.Equal(this.targetConfirmation, this.subject.TargetConfirmation);
-            Assert.Equal(this.timeoutStatus, this.subject.TimeoutStatus);
         }
 
         [Fact]
@@ -306,7 +263,6 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                     s.TargetAmount,
                     s.TargetConfirmation,
                     s.OriginalTimeout,
-                    s.TimeoutStatus,
                     s.Callback,
                     s.Id),
                 s => new Rule(
@@ -315,7 +271,6 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                     s.TargetAmount,
                     s.TargetConfirmation,
                     s.OriginalTimeout,
-                    s.TimeoutStatus,
                     s.Callback,
                     s.Id),
                 s => new Rule(
@@ -324,7 +279,6 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                     new PropertyAmount(50),
                     s.TargetConfirmation,
                     s.OriginalTimeout,
-                    s.TimeoutStatus,
                     s.Callback,
                     s.Id),
                 s => new Rule(
@@ -333,7 +287,6 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                     s.TargetAmount,
                     1,
                     s.OriginalTimeout,
-                    s.TimeoutStatus,
                     s.Callback,
                     s.Id),
                 s => new Rule(
@@ -342,7 +295,6 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                     s.TargetAmount,
                     s.TargetConfirmation,
                     TimeSpan.FromMinutes(30),
-                    s.TimeoutStatus,
                     s.Callback,
                     s.Id),
                 s => new Rule(
@@ -351,7 +303,6 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                     s.TargetAmount,
                     s.TargetConfirmation,
                     s.OriginalTimeout,
-                    "timedout",
                     s.Callback,
                     s.Id),
                 s => new Rule(
@@ -360,8 +311,7 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                     s.TargetAmount,
                     s.TargetConfirmation,
                     s.OriginalTimeout,
-                    s.TimeoutStatus,
-                    new Callback(Guid.NewGuid(), IPAddress.Loopback, DateTime.Now, false, new Uri("http://localhost")),
+                    null,
                     s.Id));
 
             Assert.DoesNotContain(false, results);
@@ -378,7 +328,6 @@ namespace Ztm.WebApi.Tests.Watchers.TokenReceiving
                     s.TargetAmount,
                     s.TargetConfirmation,
                     s.OriginalTimeout,
-                    s.TimeoutStatus,
                     s.Callback,
                     Guid.NewGuid()));
 

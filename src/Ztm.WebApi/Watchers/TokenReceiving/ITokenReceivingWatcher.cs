@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Ztm.WebApi.AddressPools;
-using Ztm.WebApi.Callbacks;
 using Ztm.Zcoin.NBitcoin.Exodus;
 
 namespace Ztm.WebApi.Watchers.TokenReceiving
@@ -14,8 +13,7 @@ namespace Ztm.WebApi.Watchers.TokenReceiving
             PropertyAmount targetAmount,
             int targetConfirmation,
             TimeSpan timeout,
-            string timeoutStatus,
-            Callback callback,
+            TokenReceivingCallback callback,
             CancellationToken cancellationToken);
     }
 }

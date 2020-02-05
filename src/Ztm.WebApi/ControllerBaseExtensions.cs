@@ -8,8 +8,9 @@ namespace Ztm.WebApi
 {
     public static class ControllerBaseExtensions
     {
-        static readonly string CallbackUrlHeader = "X-Callback-URL";
-        static readonly string CallbackIdHeader = "X-Callback-ID";
+        public const string CallbackIdHeader = "X-Callback-ID";
+
+        public const string CallbackUrlHeader = "X-Callback-URL";
 
         public static AcceptedResult AcceptedWithCallback(this ControllerBase controller, Callback callback)
         {
@@ -24,12 +25,14 @@ namespace Ztm.WebApi
 
         public static ObjectResult InsufficientFee(this ControllerBase controller)
         {
-            return controller.StatusCode((int)HttpStatusCode.InternalServerError, new {Message = "Fee is not enough"});
+            return controller.StatusCode(
+                (int)HttpStatusCode.InternalServerError,
+                new { Message = "Fee is not enough" });
         }
 
         public static ConflictObjectResult InsufficientToken(this ControllerBase controller)
         {
-            return controller.Conflict(new {Message = "Token is not enough"});
+            return controller.Conflict(new { Message = "Token is not enough" });
         }
 
         public static void SetCallbackId(this ControllerBase controller, Guid id)

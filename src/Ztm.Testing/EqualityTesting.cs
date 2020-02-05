@@ -14,6 +14,16 @@ namespace Ztm.Testing
 
         public static IEnumerable<bool> TestEquals<T>(T subject, IEnumerable<Func<T, T>> equals)
         {
+            if (equals == null)
+            {
+                throw new ArgumentNullException(nameof(equals));
+            }
+
+            return TestEquals(subject, equals.Select(f => f(subject)));
+        }
+
+        public static IEnumerable<bool> TestEquals<T>(T subject, IEnumerable<T> equals)
+        {
             if (subject == null)
             {
                 throw new ArgumentNullException(nameof(subject));
@@ -27,7 +37,7 @@ namespace Ztm.Testing
             var results = new Collection<bool>();
             var equatable = subject as IEquatable<T>;
 
-            foreach (var v in equals.Select(f => f(subject)))
+            foreach (var v in equals)
             {
                 var inequal = false;
 
@@ -49,25 +59,35 @@ namespace Ztm.Testing
             return TestInequal(subject, inequals.AsEnumerable());
         }
 
-        public static IEnumerable<bool> TestInequal<T>(T subject, IEnumerable<Func<T, T>> inequals)
+        public static IEnumerable<bool> TestInequal<T>(T subject, IEnumerable<Func<T, T>> unequals)
+        {
+            if (unequals == null)
+            {
+                throw new ArgumentNullException(nameof(unequals));
+            }
+
+            return TestInequal(subject, unequals.Select(f => f(subject)));
+        }
+
+        public static IEnumerable<bool> TestInequal<T>(T subject, IEnumerable<T> unequals)
         {
             if (subject == null)
             {
                 throw new ArgumentNullException(nameof(subject));
             }
 
-            if (inequals == null)
+            if (unequals == null)
             {
-                throw new ArgumentNullException(nameof(inequals));
+                throw new ArgumentNullException(nameof(unequals));
             }
 
             var results = new Collection<bool>();
             var equatable = subject as IEquatable<T>;
 
             results.Add(subject.Equals(null)); // lgtm[cs/null-argument-to-equals]
-            results.Add(subject.Equals(new {}));
+            results.Add(subject.Equals(new { }));
 
-            foreach (var v in inequals.Select(f => f(subject)))
+            foreach (var v in unequals)
             {
                 var equal = false;
 

@@ -57,14 +57,14 @@ namespace Ztm.WebApi.Watchers.TokenReceiving
                 var entity = new EntityModel()
                 {
                     Id = rule.Id,
-                    CallbackId = rule.Callback.Id,
+                    CallbackId = rule.Callback?.Callback.Id,
                     PropertyId = rule.Property.Value,
                     AddressReservationId = rule.AddressReservation.Id,
                     TargetAmount = rule.TargetAmount.Indivisible,
                     TargetConfirmation = rule.TargetConfirmation,
                     OriginalTimeout = rule.OriginalTimeout,
                     CurrentTimeout = rule.OriginalTimeout,
-                    TimeoutStatus = rule.TimeoutStatus,
+                    TimeoutStatus = rule.Callback?.TimeoutStatus,
                     Status = Status.Uncompleted,
                 };
 
@@ -114,7 +114,8 @@ namespace Ztm.WebApi.Watchers.TokenReceiving
         {
             using (var db = this.db.CreateDbContext())
             {
-                var entity = await db.TokenReceivingWatcherRules.SingleOrDefaultAsync(e => e.Id == id, cancellationToken);
+                var entity = await db.TokenReceivingWatcherRules
+                    .SingleOrDefaultAsync(e => e.Id == id, cancellationToken);
 
                 if (entity == null)
                 {
@@ -190,19 +191,18 @@ namespace Ztm.WebApi.Watchers.TokenReceiving
 
         async Task<Rule> ToDomainAsync(EntityModel entity, CancellationToken cancellationToken)
         {
-            var reservation = this.addresses.GetReservationAsync(entity.AddressReservationId, cancellationToken);
-            var callback = this.callbacks.GetAsync(entity.CallbackId, cancellationToken);
-
-            await Task.WhenAll(reservation, callback);
+            var reservation = await this.addresses.GetReservationAsync(entity.AddressReservationId, cancellationToken);
+            var callback = entity.CallbackId != null
+                ? await this.callbacks.GetAsync(entity.CallbackId.Value, cancellationToken)
+                : null;
 
             return new Rule(
                 new PropertyId(entity.PropertyId),
-                reservation.Result,
+                reservation,
                 new PropertyAmount(entity.TargetAmount),
                 entity.TargetConfirmation,
                 entity.OriginalTimeout,
-                entity.TimeoutStatus,
-                callback.Result,
+                callback != null ? new TokenReceivingCallback(callback, entity.TimeoutStatus) : null,
                 entity.Id);
         }
     }
