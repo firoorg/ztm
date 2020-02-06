@@ -11,7 +11,7 @@
 - There are 3 types of balance in the system.
 - The balance for a divisible property can have maximum 8 precision (e.g. `0.00000001`).
 - The balance for an indivisible propery will be always integer (e.g. `500`).
-- The balance for Zcoin (XZC) will always be an integer that represents the smallest unit, which is Satoshi.
+- The balance for Zcoin (XZC) will always in a coin unit (e.g. `1` mean 1 XZC) which will can have maximum of 8 precision (e.g. `0.00000001` mean 1 Satoshi).
 - Each token's operation need to pay fee.
 - All fee will be pay in XZC.
 - All addresses that managed by the system must have enough XZC in order to pay fee.

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using NBitcoin;
 using NBitcoin.RPC;
 using Newtonsoft.Json;
@@ -16,22 +17,26 @@ using Ztm.Hosting.AspNetCore;
 using Ztm.Threading;
 using Ztm.Threading.TimerSchedulers;
 using Ztm.WebApi.AddressPools;
-using Ztm.WebApi.Binders;
 using Ztm.WebApi.Callbacks;
 using Ztm.WebApi.Controllers;
+using Ztm.WebApi.Converters;
 using Ztm.WebApi.Watchers.TokenReceiving;
 using Ztm.WebApi.Watchers.TransactionConfirmation;
 using Ztm.Zcoin.NBitcoin;
 using Ztm.Zcoin.NBitcoin.Exodus;
-using Ztm.Zcoin.NBitcoin.Json;
 using Ztm.Zcoin.Rpc;
 using Ztm.Zcoin.Synchronization;
+using PropertyAmountConverter=Ztm.WebApi.Converters.PropertyAmountConverter;
 
 namespace Ztm.WebApi
 {
     public sealed class Startup
     {
-        readonly IConfiguration config;
+        readonly BitcoinAddressConverter bitcoinAddressConverter;
+        readonly MoneyConverter moneyConverter;
+        readonly Network network;
+        readonly PropertyAmountConverter propertyAmountConverter;
+        readonly UInt256Converter uint256Converter;
 
         public Startup(IConfiguration config)
         {
@@ -40,50 +45,63 @@ namespace Ztm.WebApi
                 throw new ArgumentNullException(nameof(config));
             }
 
-            this.config = config;
+            this.network = ZcoinNetworks.Instance.GetNetwork(config.GetZcoinSection().Network.Type);
+            this.bitcoinAddressConverter = new BitcoinAddressConverter(this.network);
+            this.moneyConverter = new MoneyConverter();
+            this.propertyAmountConverter = new PropertyAmountConverter(config.GetZcoinSection().Property.Type);
+            this.uint256Converter = new UInt256Converter();
+        }
+
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        {
+            if (app == null)
+            {
+                throw new ArgumentNullException(nameof(app));
+            }
+
+            if (env == null)
+            {
+                throw new ArgumentNullException(nameof(env));
+            }
+
+            if (env.IsDevelopment())
+            {
+                app.UseExceptionHandler("/error-development");
+            }
+            else
+            {
+                app.UseExceptionHandler("/error");
+            }
+
+            app.UseBackgroundServiceExceptionHandler("/background-service-error");
+            app.UseMvc();
         }
 
         public void ConfigureServices(IServiceCollection services)
         {
+            if (services == null)
+            {
+                throw new ArgumentNullException(nameof(services));
+            }
+
+            // NBitcoin Services.
+            services.AddNBitcoin();
+
             // ASP.NET Related Services.
-            services.AddMvc(ConfigureMvc)
-                    .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
-                    .AddJsonOptions(o =>
-                    {
-                        o.SerializerSettings.ContractResolver = new DefaultContractResolver()
-                        {
-                            NamingStrategy = new SnakeCaseNamingStrategy(),
-                        };
-
-                        var config = this.config.GetZcoinSection();
-                        var network = ZcoinNetworks.Instance.GetNetwork(config.Network.Type);
-                        o.SerializerSettings.Converters.Add(new BitcoinAddressConverter(network));
-                        o.SerializerSettings.Converters.Add(new UInt256Converter());
-                    });
-
-            services.AddSingleton<JsonSerializer>(
-                p =>
-                {
-                    var serializer = new JsonSerializer();
-
-                    var network = p.GetRequiredService<Network>();
-                    serializer.Converters.Add(new BitcoinAddressConverter(network));
-                    serializer.Converters.Add(new UInt256Converter());
-
-                    return serializer;
-                });
+            services
+                .AddMvc(ConfigureMvc)
+                .AddJsonOptions(ConfigureJson)
+                .SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
             services.AddHttpClient();
 
             // Application Fundamentals Services.
-            services.AddSingleton<ITimerScheduler, ThreadPoolScheduler>();
             services.AddBackgroundServiceExceptionHandler();
-            services.AddSingleton<Network>(CreateZcoinNetwork);
+            services.AddSingleton<JsonSerializer>(CreateJsonSerializer);
+            services.AddSingleton<ITimerScheduler, ThreadPoolScheduler>();
+            services.AddSingleton<Network>(this.network);
             services.AddSingleton<ZcoinConfiguration>(p => p.GetRequiredService<IConfiguration>().GetZcoinSection());
             services.AddSingleton<PropertyId>(p => p.GetRequiredService<ZcoinConfiguration>().Property.Id);
-
-            // NBitcoin Services.
-            services.AddNBitcoin();
 
             // Database Services.
             services.AddSingleton<IMainDatabaseFactory, MainDatabaseFactory>();
@@ -111,47 +129,59 @@ namespace Ztm.WebApi
             services.AddSingleton<ControllerHelper>();
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        static JsonSerializer CreateJsonSerializer(IServiceProvider provider)
         {
-            if (env.IsDevelopment())
-            {
-                app.UseExceptionHandler("/error-development");
-            }
-            else
-            {
-                app.UseExceptionHandler("/error");
-            }
+            var options = provider.GetRequiredService<IOptions<MvcJsonOptions>>().Value;
 
-            app.UseBackgroundServiceExceptionHandler("/background-service-error");
-            app.UseMvc();
+            return JsonSerializer.Create(options.SerializerSettings);
         }
 
-        void ConfigureMvc(MvcOptions options)
+        static IRpcFactory CreateRpcFactory(IServiceProvider provider)
         {
-            // Custom Model Binders.
-            options.ModelBinderProviders.Insert(0, new BitcoinAddressModelBinderProvider());
-            options.ModelBinderProviders.Insert(0, new PropertyAmountModelBinderProvider());
-
-            // FIXME: remove this when upgrade to .NET Core version >= 2.2
-            options.ModelMetadataDetailsProviders.Add(new SuppressChildValidationMetadataProvider(typeof(BitcoinAddress)));
-        }
-
-        Network CreateZcoinNetwork(IServiceProvider provider)
-        {
-            var config = this.config.GetZcoinSection();
-
-            return ZcoinNetworks.Instance.GetNetwork(config.Network.Type);
-        }
-
-        IRpcFactory CreateRpcFactory(IServiceProvider provider)
-        {
-            var config = this.config.GetZcoinSection();
+            var config = provider.GetRequiredService<IConfiguration>().GetZcoinSection();
 
             return new RpcFactory(
                 provider.GetRequiredService<Network>(),
                 config.Rpc.Address,
                 RPCCredentialString.Parse($"{config.Rpc.UserName}:{config.Rpc.Password}"),
                 provider.GetRequiredService<ITransactionEncoder>());
+        }
+
+        void ConfigureMvc(MvcOptions options)
+        {
+            // Custom Model Binders.
+            options.ModelBinderProviders.Insert(
+                0,
+                new ModelBinderProvider<BitcoinAddress>(this.bitcoinAddressConverter));
+
+            options.ModelBinderProviders.Insert(
+                0,
+                new ModelBinderProvider<Money>(this.moneyConverter));
+
+            options.ModelBinderProviders.Insert(
+                0,
+                new ModelBinderProvider<PropertyAmount>(this.propertyAmountConverter));
+
+            options.ModelBinderProviders.Insert(
+                0,
+                new ModelBinderProvider<uint256>(this.uint256Converter));
+
+            // FIXME: remove this when upgrade to .NET Core version >= 2.2
+            options.ModelMetadataDetailsProviders.Add(
+                new SuppressChildValidationMetadataProvider(typeof(BitcoinAddress)));
+        }
+
+        void ConfigureJson(MvcJsonOptions options)
+        {
+            options.SerializerSettings.ContractResolver = new DefaultContractResolver()
+            {
+                NamingStrategy = new SnakeCaseNamingStrategy(),
+            };
+
+            options.SerializerSettings.Converters.Add(this.bitcoinAddressConverter);
+            options.SerializerSettings.Converters.Add(this.moneyConverter);
+            options.SerializerSettings.Converters.Add(this.propertyAmountConverter);
+            options.SerializerSettings.Converters.Add(this.uint256Converter);
         }
     }
 }

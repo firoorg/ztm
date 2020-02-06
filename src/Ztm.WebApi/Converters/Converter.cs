@@ -1,24 +1,14 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Microsoft.Extensions.Configuration;
-using Ztm.Configuration;
-using Ztm.Zcoin.NBitcoin.Exodus;
+using Newtonsoft.Json;
 
-namespace Ztm.WebApi.Binders
+namespace Ztm.WebApi.Converters
 {
-    public sealed class PropertyAmountModelBinder : IModelBinder
+    public abstract class Converter<T> : JsonConverter<T>, IModelBinder
     {
-        readonly ZcoinPropertyConfiguration config;
-
-        public PropertyAmountModelBinder(IConfiguration config)
+        protected Converter()
         {
-            if (config == null)
-            {
-                throw new ArgumentNullException(nameof(config));
-            }
-
-            this.config = config.GetZcoinSection().Property;
         }
 
         public Task BindModelAsync(ModelBindingContext bindingContext)
@@ -46,23 +36,12 @@ namespace Ztm.WebApi.Binders
                 return Task.CompletedTask;
             }
 
-            // Convert to domain object. We cannot use TokenAmount.Parse because we want to allow user to specify
-            // integer for divisible.
-            PropertyAmount model;
+            // Convert to domain object.
+            T model;
 
             try
             {
-                switch (this.config.Type)
-                {
-                    case PropertyType.Divisible:
-                        model = PropertyAmount.FromDivisible(decimal.Parse(value));
-                        break;
-                    case PropertyType.Indivisible:
-                        model = new PropertyAmount(long.Parse(value));
-                        break;
-                    default:
-                        throw new InvalidOperationException("The configuration for binder is not valid.");
-                }
+                model = Parse(value);
             }
             catch (Exception ex) // lgtm[cs/catch-of-all-exceptions]
             {
@@ -74,5 +53,7 @@ namespace Ztm.WebApi.Binders
 
             return Task.CompletedTask;
         }
+
+        protected abstract T Parse(string s);
     }
 }
