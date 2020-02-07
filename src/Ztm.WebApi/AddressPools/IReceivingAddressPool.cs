@@ -6,7 +6,7 @@ namespace Ztm.WebApi.AddressPools
 {
     public interface IReceivingAddressPool
     {
-        Task GenerateAddressAsync(CancellationToken cancellationToken);
+        Task<ReceivingAddress> GenerateAddressAsync(CancellationToken cancellationToken);
 
         Task ReleaseAddressAsync(Guid id, CancellationToken cancellationToken);
 

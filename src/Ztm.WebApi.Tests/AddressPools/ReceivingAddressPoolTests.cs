@@ -1,10 +1,9 @@
 using System;
-using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using NBitcoin;
-using NSubstitute;
+using Moq;
 using Xunit;
 using Ztm.Testing;
 using Ztm.WebApi.AddressPools;
@@ -13,21 +12,18 @@ namespace Ztm.WebApi.Tests.AddressPools
 {
     public sealed class ReceivingAddressPoolTests
     {
-        readonly IReceivingAddressRepository repository;
-        readonly IAddressGenerator generator;
-        readonly IAddressChoser choser;
-
+        readonly Mock<IAddressGenerator> generator;
+        readonly Mock<IReceivingAddressRepository> repository;
+        readonly Mock<IAddressChoser> choser;
         readonly ReceivingAddressPool subject;
 
         public ReceivingAddressPoolTests()
         {
-            this.generator = Substitute.For<IAddressGenerator>();
-            this.repository = Substitute.ForPartsOf<FakeReceivingAddressRepository>();
-            this.choser = Substitute.For<IAddressChoser>();
+            this.generator = new Mock<IAddressGenerator>();
+            this.repository = new Mock<IReceivingAddressRepository>();
+            this.choser = new Mock<IAddressChoser>();
 
-            this.subject = new ReceivingAddressPool(this.generator, this.repository, this.choser);
-
-            MockChoser();
+            this.subject = new ReceivingAddressPool(this.generator.Object, this.repository.Object, this.choser.Object);
         }
 
         [Fact]
@@ -35,31 +31,46 @@ namespace Ztm.WebApi.Tests.AddressPools
         {
             Assert.Throws<ArgumentNullException>(
                 "generator",
-                () => new ReceivingAddressPool(null, this.repository, this.choser));
+                () => new ReceivingAddressPool(null, this.repository.Object, this.choser.Object));
 
             Assert.Throws<ArgumentNullException>(
                 "repository",
-                () => new ReceivingAddressPool(this.generator, null, this.choser));
+                () => new ReceivingAddressPool(this.generator.Object, null, this.choser.Object));
 
             Assert.Throws<ArgumentNullException>(
                 "choser",
-                () => new ReceivingAddressPool(this.generator, this.repository, null));
+                () => new ReceivingAddressPool(this.generator.Object, this.repository.Object, null));
         }
 
         [Fact]
-        public async Task GenerateAddressAsync_GenerateAndAddAddressAsyncShouldBeActivate()
+        public Task GenerateAddressAsync_WhenInvoke_ShouldReturnGeneratedAddress()
         {
-            // Arrange.
-            var address = TestAddress.Regtest1;
-            this.generator.GenerateAsync(Arg.Any<CancellationToken>()).Returns(address);
-            var cancellationToken = new CancellationToken(true);
+            return AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
+            {
+                // Arrange.
+                var address = new ReceivingAddress(
+                    Guid.NewGuid(),
+                    TestAddress.Regtest1,
+                    false,
+                    new Collection<ReceivingAddressReservation>());
 
-            // Act.
-            await this.subject.GenerateAddressAsync(cancellationToken);
+                this.generator
+                    .Setup(g => g.GenerateAsync(It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(address.Address);
 
-            // Assert.
-            _ = this.generator.Received(1).GenerateAsync(Arg.Is<CancellationToken>(c => c == cancellationToken));
-            _ = this.repository.Received(1).AddAsync(Arg.Is<BitcoinAddress>(address), Arg.Is<CancellationToken>(c => c == CancellationToken.None));
+                this.repository
+                    .Setup(r => r.AddAsync(address.Address, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(address);
+
+                // Act.
+                var result = await this.subject.GenerateAddressAsync(cancellationToken);
+
+                // Assert.
+                Assert.Same(address, result);
+
+                this.generator.Verify(g => g.GenerateAsync(cancellationToken), Times.Once());
+                this.repository.Verify(r => r.AddAsync(address.Address, CancellationToken.None), Times.Once());
+            });
         }
 
         [Fact]
@@ -76,9 +87,9 @@ namespace Ztm.WebApi.Tests.AddressPools
         public async Task TryLockAddressAsync_AndAllAddressesAreUnavailable_ShouldReturnNull()
         {
             // Arrange.
-            var address = TestAddress.Regtest1;
-            var receivingAddress = await this.repository.AddAsync(address, CancellationToken.None);
-            await this.repository.TryLockAsync(receivingAddress.Id, CancellationToken.None);
+            this.repository
+                .Setup(r => r.ListAsync(AddressFilter.Available, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(Enumerable.Empty<ReceivingAddress>());
 
             // Act.
             var reservation = await this.subject.TryLockAddressAsync(CancellationToken.None);
@@ -88,51 +99,71 @@ namespace Ztm.WebApi.Tests.AddressPools
         }
 
         [Fact]
-        public async Task TryLockAddressAsync_AndHaveAnAvailable_ShouldSuccess()
+        public Task TryLockAddressAsync_AndHaveAnAvailable_ShouldSuccess()
         {
-            // Arrange.
-            var address = TestAddress.Regtest1;
-            var r = await this.repository.AddAsync(address, CancellationToken.None);
-            var cancellationToken = new CancellationToken(true);
+            return AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
+            {
+                // Arrange.
+                var address = new ReceivingAddress(
+                    Guid.NewGuid(),
+                    TestAddress.Regtest1,
+                    false,
+                    new Collection<ReceivingAddressReservation>());
 
-            // Act.
-            var recv = await this.subject.TryLockAddressAsync(cancellationToken);
+                var addresses = new[] { address };
 
-            // Assert.
-            Assert.NotNull(recv);
-            _ = this.repository.Received(1).ListAsync(Arg.Any<AddressFilter>(), Arg.Is<CancellationToken>(c => c == cancellationToken));
-            _ = this.choser.Received(1).Choose(Arg.Is<IEnumerable<ReceivingAddress>>(rs => rs.Any()));
-            _ = this.repository.Received(1).TryLockAsync(Arg.Is<Guid>(id => id == r.Id), Arg.Is<CancellationToken>(c => c == cancellationToken));
+                this.repository
+                    .Setup(r => r.ListAsync(AddressFilter.Available, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(addresses);
+
+                this.choser
+                    .Setup(c => c.Choose(addresses))
+                    .Returns(address);
+
+                this.repository
+                    .Setup(r => r.TryLockAsync(address.Id, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(() =>
+                    {
+                        var reservation = new ReceivingAddressReservation(Guid.NewGuid(), address, DateTime.Now, null);
+
+                        address.Reservations.Add(reservation);
+
+                        return reservation;
+                    });
+
+                // Act.
+                var recv = await this.subject.TryLockAddressAsync(cancellationToken);
+
+                // Assert.
+                Assert.NotNull(recv);
+                Assert.Equal(address, recv.Address);
+                Assert.NotEqual(Guid.Empty, recv.Id);
+                Assert.Null(recv.ReleasedDate);
+                Assert.Equal(DateTime.Now, recv.ReservedDate, TimeSpan.FromSeconds(1));
+
+                this.repository.Verify(
+                    r => r.ListAsync(It.Is<AddressFilter>(f => f.HasFlag(AddressFilter.Available)), cancellationToken),
+                    Times.Once());
+
+                this.choser.Verify(c => c.Choose(addresses), Times.Once());
+                this.repository.Verify(r => r.TryLockAsync(address.Id, cancellationToken), Times.Once());
+            });
         }
 
         [Fact]
-        public async Task ReleaseAddressAsync_ReleaseFunctionInStorageShouldBeCalled()
+        public Task ReleaseAddressAsync_ReleaseFunctionInStorageShouldBeCalled()
         {
-            // Arrange.
-            var id = Guid.NewGuid();
-            this.repository.ReleaseAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
-            var cancellationToken = new CancellationToken(true);
+            return AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
+            {
+                // Arrange.
+                var id = Guid.NewGuid();
 
-            // Act.
-            await this.subject.ReleaseAddressAsync(id, cancellationToken);
+                // Act.
+                await this.subject.ReleaseAddressAsync(id, cancellationToken);
 
-            // Assert.
-            _ = this.repository.Received(1).ReleaseAsync(Arg.Is<Guid>(id), Arg.Is<CancellationToken>(c => c == cancellationToken));
-        }
-
-        void MockChoser()
-        {
-            this.choser.Choose(Arg.Any<IEnumerable<ReceivingAddress>>())
-                .Returns(info => {
-                    var addresses = info.ArgAt<IEnumerable<ReceivingAddress>>(0);
-
-                    if (addresses == null || addresses.Count() == 0)
-                    {
-                        return null;
-                    }
-
-                    return addresses.First();
-                });
+                // Assert.
+                this.repository.Verify(r => r.ReleaseAsync(id, cancellationToken), Times.Once());
+            });
         }
     }
 }

@@ -36,10 +36,11 @@ namespace Ztm.WebApi.AddressPools
             this.choser = choser;
         }
 
-        public async Task GenerateAddressAsync(CancellationToken cancellationToken)
+        public async Task<ReceivingAddress> GenerateAddressAsync(CancellationToken cancellationToken)
         {
             var address = await this.generator.GenerateAsync(cancellationToken);
-            await this.repository.AddAsync(address, CancellationToken.None);
+
+            return await this.repository.AddAsync(address, CancellationToken.None);
         }
 
         public Task ReleaseAddressAsync(Guid id, CancellationToken cancellationToken)

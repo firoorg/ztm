@@ -1,3 +1,5 @@
 ignore:
 - src/*.Tests
 - src/Ztm.Data.Entity.Postgres/Migrations
+- src/Ztm.WebApi/Program.cs
+- src/Ztm.WebApi/Startup.cs
