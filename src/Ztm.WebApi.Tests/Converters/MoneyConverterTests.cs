@@ -19,6 +19,17 @@ namespace Ztm.WebApi.Tests.Converters
             return new MoneyConverter();
         }
 
+        [Theory]
+        [InlineData(typeof(int))]
+        [InlineData(typeof(string))]
+        [InlineData(typeof(DerivedMoney))]
+        public void ReadJson_ToUnsupportedType_ShouldThrow(Type destination)
+        {
+            Assert.Throws<ArgumentException>(
+                "objectType",
+                () => Subject.ReadJson(JsonReader.Object, destination, null, JsonSerializer));
+        }
+
         [Fact]
         public void ReadJson_WithNullToken_ShouldReturnNull()
         {
@@ -26,7 +37,7 @@ namespace Ztm.WebApi.Tests.Converters
             JsonReader.SetupGet(r => r.TokenType).Returns(JsonToken.Null);
 
             // Act.
-            var result = Subject.ReadJson(JsonReader.Object, typeof(Money), null, false, JsonSerializer);
+            var result = Subject.ReadJson(JsonReader.Object, typeof(Money), null, JsonSerializer);
 
             // Assert.
             Assert.Null(result);
@@ -40,7 +51,7 @@ namespace Ztm.WebApi.Tests.Converters
             JsonReader.SetupGet(r => r.Value).Returns("1");
 
             // Act.
-            var result = Subject.ReadJson(JsonReader.Object, typeof(Money), null, false, JsonSerializer);
+            var result = Subject.ReadJson(JsonReader.Object, typeof(Money), null, JsonSerializer);
 
             // Assert.
             Assert.Equal(Money.Coins(1), result);
@@ -55,7 +66,7 @@ namespace Ztm.WebApi.Tests.Converters
 
             // Act.
             Assert.Throws<JsonSerializationException>(
-                () => Subject.ReadJson(JsonReader.Object, typeof(Money), null, false, JsonSerializer));
+                () => Subject.ReadJson(JsonReader.Object, typeof(Money), null, JsonSerializer));
         }
 
         [Fact]
@@ -81,6 +92,14 @@ namespace Ztm.WebApi.Tests.Converters
             // Assert.
             JsonWriter.Verify(w => w.WriteValue("1.00000000"), Times.Once());
             JsonWriter.VerifyNoOtherCalls();
+        }
+
+        public sealed class DerivedMoney : Money
+        {
+            public DerivedMoney(long satoshis)
+                : base(satoshis)
+            {
+            }
         }
     }
 }

@@ -6,16 +6,25 @@ namespace Ztm.WebApi.Converters
 {
     public sealed class UInt256Converter : Converter<uint256>
     {
-        public override uint256 ReadJson(
+        public override object ReadJson(
             JsonReader reader,
             Type objectType,
-            uint256 existingValue,
-            bool hasExistingValue,
+            object existingValue,
             JsonSerializer serializer)
         {
             if (reader == null)
             {
                 throw new ArgumentNullException(nameof(reader));
+            }
+
+            if (objectType == null)
+            {
+                throw new ArgumentNullException(nameof(objectType));
+            }
+
+            if (objectType != typeof(uint256))
+            {
+                throw new ArgumentException("The value is not supported.", nameof(objectType));
             }
 
             switch (reader.TokenType)
@@ -30,7 +39,7 @@ namespace Ztm.WebApi.Converters
             }
         }
 
-        public override void WriteJson(JsonWriter writer, uint256 value, JsonSerializer serializer)
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             if (writer == null)
             {

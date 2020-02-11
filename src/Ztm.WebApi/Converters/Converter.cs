@@ -5,7 +5,14 @@ using Newtonsoft.Json;
 
 namespace Ztm.WebApi.Converters
 {
-    public abstract class Converter<T> : JsonConverter<T>, IModelBinder
+    public abstract class Converter<T> : Converter<T, T>
+    {
+        protected Converter()
+        {
+        }
+    }
+
+    public abstract class Converter<TModel, TNullable> : JsonConverter, IModelBinder
     {
         protected Converter()
         {
@@ -37,7 +44,7 @@ namespace Ztm.WebApi.Converters
             }
 
             // Convert to domain object.
-            T model;
+            TModel model;
 
             try
             {
@@ -54,6 +61,16 @@ namespace Ztm.WebApi.Converters
             return Task.CompletedTask;
         }
 
-        protected abstract T Parse(string s);
+        public override bool CanConvert(Type objectType)
+        {
+            if (objectType == null)
+            {
+                throw new ArgumentNullException(nameof(objectType));
+            }
+
+            return typeof(TNullable).IsAssignableFrom(objectType);
+        }
+
+        protected abstract TModel Parse(string s);
     }
 }

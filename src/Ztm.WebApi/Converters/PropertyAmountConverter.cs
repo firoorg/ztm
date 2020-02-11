@@ -4,7 +4,7 @@ using Ztm.Zcoin.NBitcoin.Exodus;
 
 namespace Ztm.WebApi.Converters
 {
-    public sealed class PropertyAmountConverter : Converter<PropertyAmount>
+    public sealed class PropertyAmountConverter : Converter<PropertyAmount, PropertyAmount?>
     {
         readonly PropertyType type;
 
@@ -13,11 +13,10 @@ namespace Ztm.WebApi.Converters
             this.type = type;
         }
 
-        public override PropertyAmount ReadJson(
+        public override object ReadJson(
             JsonReader reader,
             Type objectType,
-            PropertyAmount existingValue,
-            bool hasExistingValue,
+            object existingValue,
             JsonSerializer serializer)
         {
             if (reader == null)
@@ -25,23 +24,53 @@ namespace Ztm.WebApi.Converters
                 throw new ArgumentNullException(nameof(reader));
             }
 
-            if (reader.TokenType != JsonToken.String)
+            if (objectType == null)
             {
-                throw new JsonSerializationException(
-                    $"Unexpected token {reader.TokenType} when parsing {typeof(PropertyAmount)}.");
+                throw new ArgumentNullException(nameof(objectType));
             }
 
-            return Parse(reader.Value.ToString());
+            if (objectType != typeof(PropertyAmount) && objectType != typeof(PropertyAmount?))
+            {
+                throw new ArgumentException("The value is not supported.", nameof(objectType));
+            }
+
+            switch (reader.TokenType)
+            {
+                case JsonToken.Null:
+                    if (objectType != typeof(PropertyAmount?))
+                    {
+                        goto default;
+                    }
+
+                    return null;
+                case JsonToken.String:
+                    return Parse(reader.Value.ToString());
+                default:
+                    throw new JsonSerializationException(
+                        $"Unexpected token {reader.TokenType} when parsing {objectType}.");
+            }
         }
 
-        public override void WriteJson(JsonWriter writer, PropertyAmount value, JsonSerializer serializer)
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             if (writer == null)
             {
                 throw new ArgumentNullException(nameof(writer));
             }
 
-            writer.WriteValue(value.ToString(this.type));
+            switch (value)
+            {
+                case PropertyAmount a:
+                    writer.WriteValue(a.ToString(this.type));
+                    break;
+                case null:
+                    writer.WriteNull();
+                    break;
+                default:
+                    throw new ArgumentException(
+                        $"The value with type {value.GetType()} is not supported.",
+                        nameof(value));
+            }
         }
 
         protected override PropertyAmount Parse(string s)
