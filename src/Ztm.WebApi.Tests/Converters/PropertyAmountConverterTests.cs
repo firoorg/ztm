@@ -65,6 +65,36 @@ namespace Ztm.WebApi.Tests.Converters
                     default(PropertyAmount),
                     JsonSerializer));
         }
+
+        [Fact]
+        public void WriteJson_WithNullValue_ShouldWriteNull()
+        {
+            // Act.
+            Subject.WriteJson(JsonWriter.Object, null, JsonSerializer);
+
+            // Assert.
+            JsonWriter.Verify(w => w.WriteNull(), Times.Once());
+        }
+
+        [Fact]
+        public void WriteJson_WithNullAmount_ShouldWriteNull()
+        {
+            // Act.
+            Subject.WriteJson(JsonWriter.Object, default(PropertyAmount?), JsonSerializer);
+
+            // Assert.
+            JsonWriter.Verify(w => w.WriteNull(), Times.Once());
+        }
+
+        [Theory]
+        [InlineData(1)]
+        [InlineData("1")]
+        public void WriteJson_WithUnsupportedValue_ShouldThrow(object value)
+        {
+            Assert.Throws<ArgumentException>(
+                "value",
+                () => Subject.WriteJson(JsonWriter.Object, value, JsonSerializer));
+        }
     }
 
     public sealed class DivisiblePropertyAmountConverterTests : PropertyAmountConverterTests
