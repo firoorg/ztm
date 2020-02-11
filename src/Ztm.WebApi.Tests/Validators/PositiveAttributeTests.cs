@@ -1,4 +1,5 @@
 using System;
+using NBitcoin;
 using Xunit;
 using Ztm.WebApi.Validators;
 using Ztm.Zcoin.NBitcoin.Exodus;
@@ -18,6 +19,14 @@ namespace Ztm.WebApi.Tests.Validators
         public void IsValid_WithNull_ShouldReturnTrue()
         {
             var result = this.subject.IsValid(null);
+
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void IsValid_WithNullPropertyAmount_ShouldReturnTrue()
+        {
+            var result = this.subject.IsValid(default(PropertyAmount?));
 
             Assert.True(result);
         }
@@ -46,6 +55,32 @@ namespace Ztm.WebApi.Tests.Validators
         public void IsValid_WithPositivePropertyAmount_ShouldReturnTrue(long amount)
         {
             var result = this.subject.IsValid(new PropertyAmount(amount));
+
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void IsValid_WithNegativeMoney_ShouldReturnFalse()
+        {
+            var result = this.subject.IsValid(new Money(-1L));
+
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void IsValid_WithZeroMoney_ShouldReturnFalse()
+        {
+            var result = this.subject.IsValid(Money.Zero);
+
+            Assert.False(result);
+        }
+
+        [Theory]
+        [InlineData(1L)]
+        [InlineData(long.MaxValue)]
+        public void IsValid_WithPositiveMoney_ShouldReturnTrue(long satoshi)
+        {
+            var result = this.subject.IsValid(new Money(satoshi));
 
             Assert.True(result);
         }
