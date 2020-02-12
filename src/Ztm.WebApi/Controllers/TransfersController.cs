@@ -81,7 +81,7 @@ namespace Ztm.WebApi.Controllers
                         this.zcoinConfiguration.Property.Distributor.Address,
                         req.Destination,
                         new Property(this.zcoinConfiguration.Property.Id, this.zcoinConfiguration.Property.Type),
-                        req.Amount,
+                        req.Amount.Value,
                         req.ReferenceAmount,
                         cancellationToken);
                 }

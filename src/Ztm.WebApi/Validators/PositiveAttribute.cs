@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using NBitcoin;
 using Ztm.Zcoin.NBitcoin.Exodus;
 
 namespace Ztm.WebApi.Validators
@@ -17,6 +18,12 @@ namespace Ztm.WebApi.Validators
             {
                 case PropertyAmount a:
                     if (a <= PropertyAmount.Zero)
+                    {
+                        return false;
+                    }
+                    break;
+                case Money m:
+                    if (m <= Money.Zero)
                     {
                         return false;
                     }
