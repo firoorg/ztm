@@ -4,18 +4,54 @@ using Newtonsoft.Json;
 using Xunit;
 using Ztm.Testing;
 using Ztm.Zcoin.NBitcoin.Exodus;
-using PropertyAmountConverter = Ztm.WebApi.Converters.PropertyAmountConverter;
+using PropertyAmountConverter=Ztm.WebApi.Converters.PropertyAmountConverter;
 
 namespace Ztm.WebApi.Tests.Converters
 {
-    public abstract class PropertyAmountConverterTests : ConverterTesting<PropertyAmountConverter, PropertyAmount>
+    public abstract class PropertyAmountConverterTests :
+        ConverterTesting<PropertyAmountConverter, PropertyAmount, PropertyAmount?>
     {
         protected PropertyAmountConverterTests()
         {
         }
 
         [Theory]
-        [EnumMemberData(typeof(JsonToken), JsonToken.String)]
+        [InlineData(typeof(int))]
+        [InlineData(typeof(long))]
+        [InlineData(typeof(string))]
+        public void ReadJson_ToUnsupportedType_ShouldThrow(Type destination)
+        {
+            Assert.Throws<ArgumentException>(
+                "objectType",
+                () => Subject.ReadJson(JsonReader.Object, destination, null, JsonSerializer));
+        }
+
+        [Fact]
+        public void ReadJson_WithNullTokenOnNonNullable_ShouldThrow()
+        {
+            // Arrange.
+            JsonReader.SetupGet(r => r.TokenType).Returns(JsonToken.Null);
+
+            // Act.
+            Assert.Throws<JsonSerializationException>(
+                () => Subject.ReadJson(JsonReader.Object, typeof(PropertyAmount), null, JsonSerializer));
+        }
+
+        [Fact]
+        public void ReadJson_WithNullTokenOnNullable_ShouldReturnNull()
+        {
+            // Arrange.
+            JsonReader.SetupGet(r => r.TokenType).Returns(JsonToken.Null);
+
+            // Act.
+            var result = Subject.ReadJson(JsonReader.Object, typeof(PropertyAmount?), null, JsonSerializer);
+
+            // Assert.
+            Assert.Null(result);
+        }
+
+        [Theory]
+        [EnumMemberData(typeof(JsonToken), JsonToken.Null, JsonToken.String)]
         public void ReadJson_WithUnsupportedType_ShouldThrow(JsonToken token)
         {
             // Arrange.
@@ -27,8 +63,37 @@ namespace Ztm.WebApi.Tests.Converters
                     JsonReader.Object,
                     typeof(PropertyAmount),
                     default(PropertyAmount),
-                    false,
                     JsonSerializer));
+        }
+
+        [Fact]
+        public void WriteJson_WithNullValue_ShouldWriteNull()
+        {
+            // Act.
+            Subject.WriteJson(JsonWriter.Object, null, JsonSerializer);
+
+            // Assert.
+            JsonWriter.Verify(w => w.WriteNull(), Times.Once());
+        }
+
+        [Fact]
+        public void WriteJson_WithNullAmount_ShouldWriteNull()
+        {
+            // Act.
+            Subject.WriteJson(JsonWriter.Object, default(PropertyAmount?), JsonSerializer);
+
+            // Assert.
+            JsonWriter.Verify(w => w.WriteNull(), Times.Once());
+        }
+
+        [Theory]
+        [InlineData(1)]
+        [InlineData("1")]
+        public void WriteJson_WithUnsupportedValue_ShouldThrow(object value)
+        {
+            Assert.Throws<ArgumentException>(
+                "value",
+                () => Subject.WriteJson(JsonWriter.Object, value, JsonSerializer));
         }
     }
 
@@ -57,7 +122,6 @@ namespace Ztm.WebApi.Tests.Converters
                 JsonReader.Object,
                 typeof(PropertyAmount),
                 default(PropertyAmount),
-                false,
                 JsonSerializer);
 
             // Assert.
@@ -102,7 +166,6 @@ namespace Ztm.WebApi.Tests.Converters
                 JsonReader.Object,
                 typeof(PropertyAmount),
                 default(PropertyAmount),
-                false,
                 JsonSerializer);
 
             // Assert.

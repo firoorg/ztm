@@ -6,11 +6,19 @@ using Moq;
 using Newtonsoft.Json;
 using NSubstitute;
 using Xunit;
-using Ztm.WebApi.Converters;
 
 namespace Ztm.WebApi.Tests.Converters
 {
-    public abstract class ConverterTesting<TConverter, TValue> where TConverter : Converter<TValue>
+    public abstract class ConverterTesting<TConverter, TValue> : ConverterTesting<TConverter, TValue, TValue>
+        where TConverter : Ztm.WebApi.Converters.Converter<TValue>
+    {
+        protected ConverterTesting()
+        {
+        }
+    }
+
+    public abstract class ConverterTesting<TConverter, TValue, TNull>
+        where TConverter : Ztm.WebApi.Converters.Converter<TValue, TNull>
     {
         readonly Lazy<TConverter> subject;
 
@@ -143,11 +151,35 @@ namespace Ztm.WebApi.Tests.Converters
         }
 
         [Fact]
+        public void CanConvert_WithNullObjectType_ShouldThrow()
+        {
+            Assert.Throws<ArgumentNullException>("objectType", () => Subject.CanConvert(null));
+        }
+
+        [Fact]
+        public void CanConvert_WithSupportedType_ShouldReturnTrue()
+        {
+            var result1 = Subject.CanConvert(typeof(TValue));
+            var result2 = Subject.CanConvert(typeof(TNull));
+
+            Assert.True(result1);
+            Assert.True(result2);
+        }
+
+        [Fact]
         public void ReadJson_WithNullReader_ShouldThrow()
         {
             Assert.Throws<ArgumentNullException>(
                 "reader",
                 () => Subject.ReadJson(null, typeof(TValue), null, JsonSerializer));
+        }
+
+        [Fact]
+        public void ReadJson_WithNullObjectType_ShouldThrow()
+        {
+            Assert.Throws<ArgumentNullException>(
+                "objectType",
+                () => Subject.ReadJson(JsonReader.Object, null, null, JsonSerializer));
         }
 
         [Fact]

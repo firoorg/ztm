@@ -27,6 +27,17 @@ namespace Ztm.WebApi.Tests.Converters
             return new UInt256Converter();
         }
 
+        [Theory]
+        [InlineData(typeof(int))]
+        [InlineData(typeof(string))]
+        [InlineData(typeof(byte[]))]
+        public void ReadJson_ToUnsupportedType_ShouldThrow(Type destination)
+        {
+            Assert.Throws<ArgumentException>(
+                "objectType",
+                () => Subject.ReadJson(JsonReader.Object, destination, null, JsonSerializer));
+        }
+
         [Fact]
         public void ReadJson_WithNullToken_ShouldReturnNull()
         {
@@ -34,7 +45,7 @@ namespace Ztm.WebApi.Tests.Converters
             JsonReader.SetupGet(r => r.TokenType).Returns(JsonToken.Null);
 
             // Act.
-            var result = Subject.ReadJson(JsonReader.Object, typeof(uint256), null, false, JsonSerializer);
+            var result = Subject.ReadJson(JsonReader.Object, typeof(uint256), null, JsonSerializer);
 
             // Assert.
             Assert.Null(result);
@@ -50,7 +61,7 @@ namespace Ztm.WebApi.Tests.Converters
             JsonReader.SetupGet(r => r.Value).Returns(s);
 
             // Act.
-            var result = Subject.ReadJson(JsonReader.Object, typeof(uint256), null, false, JsonSerializer);
+            var result = Subject.ReadJson(JsonReader.Object, typeof(uint256), null, JsonSerializer);
 
             // Assert
             Assert.Equal(uint256.Parse(s), result);
@@ -65,7 +76,7 @@ namespace Ztm.WebApi.Tests.Converters
 
             // Act.
             Assert.Throws<JsonSerializationException>(
-                () => Subject.ReadJson(JsonReader.Object, typeof(uint256), null, false, JsonSerializer));
+                () => Subject.ReadJson(JsonReader.Object, typeof(uint256), null, JsonSerializer));
         }
 
         [Fact]

@@ -18,16 +18,25 @@ namespace Ztm.WebApi.Converters
             this.network = network;
         }
 
-        public override BitcoinAddress ReadJson(
+        public override object ReadJson(
             JsonReader reader,
             Type objectType,
-            BitcoinAddress existingValue,
-            bool hasExistingValue,
+            object existingValue,
             JsonSerializer serializer)
         {
             if (reader == null)
             {
                 throw new ArgumentNullException(nameof(reader));
+            }
+
+            if (objectType == null)
+            {
+                throw new ArgumentNullException(nameof(objectType));
+            }
+
+            if (objectType != typeof(BitcoinAddress))
+            {
+                throw new ArgumentException("The value is not supported.", nameof(objectType));
             }
 
             switch (reader.TokenType)
@@ -38,11 +47,11 @@ namespace Ztm.WebApi.Converters
                     return Parse(reader.Value.ToString());
                 default:
                     throw new JsonSerializationException(
-                        $"Unexpected token {reader.TokenType} when parsing {typeof(BitcoinAddress)}.");
+                        $"Unexpected token {reader.TokenType} when parsing {objectType}.");
             }
         }
 
-        public override void WriteJson(JsonWriter writer, BitcoinAddress value, JsonSerializer serializer)
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             if (writer == null)
             {
