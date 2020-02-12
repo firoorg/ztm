@@ -8,6 +8,7 @@ using NBitcoin;
 using NSubstitute;
 using Xunit;
 using Ztm.Hosting;
+using Ztm.Testing;
 using Ztm.Zcoin.NBitcoin;
 
 namespace Ztm.Zcoin.Synchronization.Tests
@@ -17,8 +18,9 @@ namespace Ztm.Zcoin.Synchronization.Tests
         readonly Mock<IBackgroundServiceExceptionHandler> exceptionHandler;
         readonly ILogger<BlocksSynchronizer> logger;
         readonly IBlocksRetriever retriever;
-        readonly IBlocksStorage storage;
-        readonly IBlockListener listener1, listener2;
+        readonly Mock<IBlocksStorage> storage;
+        readonly Mock<IBlockListener> listener1;
+        readonly Mock<IBlockListener> listener2;
         readonly BlocksSynchronizer subject;
 
         public BlocksSynchronizerTests()
@@ -26,16 +28,16 @@ namespace Ztm.Zcoin.Synchronization.Tests
             this.exceptionHandler = new Mock<IBackgroundServiceExceptionHandler>();
             this.logger = Substitute.For<ILogger<BlocksSynchronizer>>();
             this.retriever = Substitute.For<IBlocksRetriever>();
-            this.storage = Substitute.For<IBlocksStorage>();
-            this.listener1 = Substitute.For<IBlockListener>();
-            this.listener2 = Substitute.For<IBlockListener>();
+            this.storage = new Mock<IBlocksStorage>();
+            this.listener1 = new Mock<IBlockListener>();
+            this.listener2 = new Mock<IBlockListener>();
             this.subject = new BlocksSynchronizer(
                 this.exceptionHandler.Object,
                 ZcoinNetworks.Instance.Regtest,
                 this.logger,
                 this.retriever,
-                this.storage,
-                new[] { this.listener1, this.listener2 }
+                this.storage.Object,
+                new[] { this.listener1.Object, this.listener2.Object }
             );
         }
 
@@ -49,7 +51,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
                     null,
                     this.logger,
                     this.retriever,
-                    this.storage,
+                    this.storage.Object,
                     Enumerable.Empty<IBlockListener>()
                 )
             );
@@ -65,7 +67,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
                     ZcoinNetworks.Instance.Regtest,
                     null,
                     this.retriever,
-                    this.storage,
+                    this.storage.Object,
                     Enumerable.Empty<IBlockListener>()
                 )
             );
@@ -81,7 +83,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
                     ZcoinNetworks.Instance.Regtest,
                     this.logger,
                     null,
-                    this.storage,
+                    this.storage.Object,
                     Enumerable.Empty<IBlockListener>()
                 )
             );
@@ -113,38 +115,88 @@ namespace Ztm.Zcoin.Synchronization.Tests
                     ZcoinNetworks.Instance.Regtest,
                     this.logger,
                     this.retriever,
-                    this.storage,
+                    this.storage.Object,
                     null
                 )
             );
         }
 
         [Fact]
-        public async Task GetBlockHintAsync_NoLocalBlocks_ShouldReturnZero()
+        public Task DiscardBlocksAsync_LocalBlockHigherThanStartBlock_ShouldRemoveLatestBlockUntilHeightIsStartBlock()
+        {
+            return AsynchronousTesting.WithCancellationTokenAsync(async cancellationToken =>
+            {
+                // Arrange.
+                this.storage
+                    .SetupSequence(s => s.GetLastAsync(It.IsAny<CancellationToken>()))
+                    .ReturnsAsync((TestBlock.Regtest1, 1))
+                    .ReturnsAsync((TestBlock.Regtest0, 0))
+                    .ReturnsAsync((null, -1));
+
+                // Act.
+                await InvokeDiscardBlocksAsync(0, cancellationToken);
+
+                // Assert.
+                this.storage.Verify(
+                    s => s.GetLastAsync(cancellationToken),
+                    Times.Once());
+
+                this.storage.Verify(
+                    s => s.GetLastAsync(CancellationToken.None),
+                    Times.Exactly(2));
+
+                this.listener1.Verify(
+                    l => l.BlockRemovingAsync(TestBlock.Regtest1, 1, CancellationToken.None),
+                    Times.Once());
+
+                this.listener2.Verify(
+                    l => l.BlockRemovingAsync(TestBlock.Regtest1, 1, CancellationToken.None),
+                    Times.Once());
+
+                this.listener1.Verify(
+                    l => l.BlockRemovingAsync(TestBlock.Regtest0, 0, CancellationToken.None),
+                    Times.Once());
+
+                this.listener2.Verify(
+                    l => l.BlockRemovingAsync(TestBlock.Regtest0, 0, CancellationToken.None),
+                    Times.Once());
+
+                this.storage.Verify(
+                    s => s.RemoveLastAsync(CancellationToken.None),
+                    Times.Exactly(2));
+            });
+        }
+
+        [Fact]
+        public async Task GetStartBlockAsync_NoLocalBlocks_ShouldReturnZero()
         {
             // Arrange.
             var subject = this.subject as IBlocksRetrieverHandler;
 
-            this.storage.GetLastAsync(Arg.Any<CancellationToken>()).Returns((null, 0));
+            this.storage
+                .Setup(s => s.GetLastAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync((null, -1));
 
             // Act.
-            var height = await subject.GetBlockHintAsync(CancellationToken.None);
+            var height = await subject.GetStartBlockAsync(CancellationToken.None);
 
             // Assert.
             Assert.Equal(0, height);
         }
 
         [Fact]
-        public async Task GetBlockHintAsync_HaveLocalBlocks_ShouldReturnNextHeight()
+        public async Task GetStartBlockAsync_HaveLocalBlocks_ShouldReturnNextHeight()
         {
             // Arrange.
             var subject = this.subject as IBlocksRetrieverHandler;
             var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
 
-            this.storage.GetLastAsync(Arg.Any<CancellationToken>()).Returns((block, 0));
+            this.storage
+                .Setup(s => s.GetLastAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync((block, 0));
 
             // Act.
-            var height = await subject.GetBlockHintAsync(CancellationToken.None);
+            var height = await subject.GetStartBlockAsync(CancellationToken.None);
 
             // Assert.
             Assert.Equal(1, height);
@@ -157,7 +209,9 @@ namespace Ztm.Zcoin.Synchronization.Tests
             var subject = this.subject as IBlocksRetrieverHandler;
             var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
 
-            this.storage.GetLastAsync(Arg.Any<CancellationToken>()).Returns((null, 0));
+            this.storage
+                .Setup(s => s.GetLastAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync((null, -1));
 
             // Act.
             var height = await subject.ProcessBlockAsync(block, 1, CancellationToken.None);
@@ -173,7 +227,9 @@ namespace Ztm.Zcoin.Synchronization.Tests
             var subject = this.subject as IBlocksRetrieverHandler;
             var block = Block.CreateBlock(ZcoinNetworks.Instance.Regtest);
 
-            this.storage.GetLastAsync(Arg.Any<CancellationToken>()).Returns((null, 0));
+            this.storage
+                .Setup(s => s.GetLastAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync((null, -1));
 
             // Act.
             await Assert.ThrowsAsync<ArgumentException>(
@@ -189,8 +245,9 @@ namespace Ztm.Zcoin.Synchronization.Tests
             var subject = this.subject as IBlocksRetrieverHandler;
             var block = ZcoinNetworks.Instance.Regtest.GetGenesis();
 
-            this.storage.GetLastAsync(Arg.Any<CancellationToken>()).Returns((null, 0));
-            this.storage.AddAsync(block, 0, Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+            this.storage
+                .Setup(s => s.GetLastAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync((null, -1));
 
             // Act.
             using (var cancellationSource = new CancellationTokenSource())
@@ -198,9 +255,9 @@ namespace Ztm.Zcoin.Synchronization.Tests
                 var height = await subject.ProcessBlockAsync(block, 0, cancellationSource.Token);
 
                 // Assert.
-                _ = this.storage.Received(1).AddAsync(block, 0, cancellationSource.Token);
-                _ = this.listener1.Received(1).BlockAddedAsync(block, 0, CancellationToken.None);
-                _ = this.listener2.Received(1).BlockAddedAsync(block, 0, CancellationToken.None);
+                this.storage.Verify(s => s.AddAsync(block, 0, cancellationSource.Token), Times.Once());
+                this.listener1.Verify(l => l.BlockAddedAsync(block, 0, CancellationToken.None), Times.Once());
+                this.listener2.Verify(l => l.BlockAddedAsync(block, 0, CancellationToken.None), Times.Once());
 
                 Assert.Equal(1, height);
             }
@@ -221,7 +278,9 @@ namespace Ztm.Zcoin.Synchronization.Tests
                 2
             );
 
-            this.storage.GetLastAsync(Arg.Any<CancellationToken>()).Returns((genesis, 0));
+            this.storage
+                .Setup(s => s.GetLastAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync((genesis, 0));
 
             // Act.
             var height = await subject.ProcessBlockAsync(block2, 2, CancellationToken.None);
@@ -245,16 +304,17 @@ namespace Ztm.Zcoin.Synchronization.Tests
                 2
             );
 
-            this.storage.GetLastAsync(Arg.Any<CancellationToken>()).Returns((genesis, 0));
-            this.storage.RemoveLastAsync(Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+            this.storage
+                .Setup(s => s.GetLastAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync((genesis, 0));
 
             // Act.
             var height = await subject.ProcessBlockAsync(block2, 1, CancellationToken.None);
 
             // Assert.
-            _ = this.storage.Received(1).RemoveLastAsync(CancellationToken.None);
-            _ = this.listener1.Received(1).BlockRemovingAsync(genesis, 0, CancellationToken.None);
-            _ = this.listener2.Received(1).BlockRemovingAsync(genesis, 0, CancellationToken.None);
+            this.storage.Verify(s => s.RemoveLastAsync(CancellationToken.None), Times.Once());
+            this.listener1.Verify(l => l.BlockRemovingAsync(genesis, 0, CancellationToken.None), Times.Once());
+            this.listener2.Verify(l => l.BlockRemovingAsync(genesis, 0, CancellationToken.None), Times.Once());
 
             Assert.Equal(0, height);
         }
@@ -270,8 +330,9 @@ namespace Ztm.Zcoin.Synchronization.Tests
                 1
             );
 
-            this.storage.GetLastAsync(Arg.Any<CancellationToken>()).Returns((genesis, 0));
-            this.storage.AddAsync(block1, 1, Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+            this.storage
+                .Setup(s => s.GetLastAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync((genesis, 0));
 
             // Act.
             using (var cancellationSource = new CancellationTokenSource())
@@ -279,12 +340,17 @@ namespace Ztm.Zcoin.Synchronization.Tests
                 var height = await subject.ProcessBlockAsync(block1, 1, cancellationSource.Token);
 
                 // Assert.
-                _ = this.storage.Received(1).AddAsync(block1, 1, cancellationSource.Token);
-                _ = this.listener1.Received(1).BlockAddedAsync(block1, 1, CancellationToken.None);
-                _ = this.listener2.Received(1).BlockAddedAsync(block1, 1, CancellationToken.None);
+                this.storage.Verify(s => s.AddAsync(block1, 1, cancellationSource.Token), Times.Once());
+                this.listener1.Verify(l => l.BlockAddedAsync(block1, 1, CancellationToken.None), Times.Once());
+                this.listener2.Verify(l => l.BlockAddedAsync(block1, 1, CancellationToken.None), Times.Once());
 
                 Assert.Equal(2, height);
             }
+        }
+
+        Task InvokeDiscardBlocksAsync(int start, CancellationToken cancellationToken)
+        {
+            return (this.subject as IBlocksRetrieverHandler).DiscardBlocksAsync(start, cancellationToken);
         }
     }
 }

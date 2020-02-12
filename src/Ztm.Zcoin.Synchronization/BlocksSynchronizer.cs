@@ -22,7 +22,8 @@ namespace Ztm.Zcoin.Synchronization
             ILogger<BlocksSynchronizer> logger,
             IBlocksRetriever retriever,
             IBlocksStorage storage,
-            IEnumerable<IBlockListener> listeners) : base(exceptionHandler)
+            IEnumerable<IBlockListener> listeners)
+            : base(exceptionHandler)
         {
             if (network == null)
             {
@@ -74,7 +75,54 @@ namespace Ztm.Zcoin.Synchronization
             }
         }
 
-        async Task<int> IBlocksRetrieverHandler.GetBlockHintAsync(CancellationToken cancellationToken)
+        async Task AddBlockAsync(Block block, int height, CancellationToken cancellationToken)
+        {
+            this.logger.LogInformation("Adding block {Height}:{Hash}", height, block.GetHash());
+
+            await this.storage.AddAsync(block, height, cancellationToken);
+
+            foreach (var listener in this.listeners)
+            {
+                // Don't allow to cancel here due to we don't want the first listener sucess but the next one get
+                // cancelled.
+                await listener.BlockAddedAsync(block, height, CancellationToken.None);
+            }
+        }
+
+        async Task RemoveLastBlockAsync(Block block, int height, CancellationToken cancellationToken)
+        {
+            if (block == null)
+            {
+                (block, height) = await this.storage.GetLastAsync(cancellationToken);
+            }
+
+            this.logger.LogInformation("Removing block {Height}:{Hash}", height, block.GetHash());
+
+            foreach (var listener in this.listeners)
+            {
+                // Don't allow to cancel here due to we don't want the first listener sucess but the next one
+                // get cancelled.
+                await listener.BlockRemovingAsync(block, height, CancellationToken.None);
+            }
+
+            await this.storage.RemoveLastAsync(CancellationToken.None);
+        }
+
+        async Task IBlocksRetrieverHandler.DiscardBlocksAsync(int start, CancellationToken cancellationToken)
+        {
+            var (block, height) = await this.storage.GetLastAsync(cancellationToken);
+
+            this.logger.LogInformation("Re-organize occurred, start re-organize at our side");
+
+            while (height >= start)
+            {
+                await RemoveLastBlockAsync(block, height, CancellationToken.None);
+
+                (block, height) = await this.storage.GetLastAsync(CancellationToken.None);
+            }
+        }
+
+        async Task<int> IBlocksRetrieverHandler.GetStartBlockAsync(CancellationToken cancellationToken)
         {
             var (last, height) = await this.storage.GetLastAsync(cancellationToken);
 
@@ -112,41 +160,20 @@ namespace Ztm.Zcoin.Synchronization
 
                 if (block.Header.HashPrevBlock != localBlock.GetHash())
                 {
-                    // Our latest block is not what expected (e.g. chain already switched)
-                    // so we need to reload it.
+                    // Our latest block is not what expected (e.g. chain already switched) so we need to reload it.
                     this.logger.LogInformation(
-                        "Block {DaemonHeight}:{DaemonHash} from daemon is not on our chain, discarding our last block ({LocalHeight}:{LocalHash})",
+                        "The new block {Height}:{Hash} is depend on {Previous} but we did not have it, start re-organize",
                         height,
                         block.GetHash(),
-                        localHeight,
-                        localBlock.GetHash()
-                    );
+                        block.Header.HashPrevBlock);
 
-                    foreach (var listener in this.listeners)
-                    {
-                        // Don't allow to cancel here due to we don't want the first listener sucess but the next one
-                        // get cancelled.
-                        await listener.BlockRemovingAsync(localBlock, localHeight, CancellationToken.None);
-                    }
-
-                    await this.storage.RemoveLastAsync(CancellationToken.None);
+                    await RemoveLastBlockAsync(localBlock, localHeight, cancellationToken);
 
                     return localHeight;
                 }
             }
 
-            // Store block.
-            this.logger.LogInformation("Adding block {Height}:{Hash}", height, block.GetHash());
-
-            await this.storage.AddAsync(block, height, cancellationToken);
-
-            // Raise event.
-            foreach (var listener in this.listeners)
-            {
-                // Don't allow to cancel here due to we don't want the first listener sucess but the next one get
-                // cancelled.
-                await listener.BlockAddedAsync(block, height, CancellationToken.None);
-            }
+            await AddBlockAsync(block, height, cancellationToken);
 
             return height + 1;
         }

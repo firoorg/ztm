@@ -503,7 +503,7 @@ namespace Ztm.Zcoin.Synchronization.Tests
 
             // Assert.
             Assert.Null(saved);
-            Assert.Equal(0, height);
+            Assert.Equal(-1, height);
         }
 
         [Fact]

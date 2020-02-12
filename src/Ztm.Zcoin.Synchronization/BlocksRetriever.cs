@@ -158,7 +158,7 @@ namespace Ztm.Zcoin.Synchronization
         async Task RetrieveBlocks(IBlocksRetrieverHandler handler)
         {
             var cancellationToken = this.retrieveBlocksCancelSource.Token;
-            var height = await handler.GetBlockHintAsync(cancellationToken);
+            var height = await handler.GetStartBlockAsync(cancellationToken);
 
             while (true)
             {
@@ -171,10 +171,27 @@ namespace Ztm.Zcoin.Synchronization
                     {
                         block = await rpc.GetBlockAsync(height, cancellationToken);
                     }
-                    catch (RPCException ex) when (ex.RPCCode == RPCErrorCode.RPC_INVALID_PARAMETER)
+                    catch (RPCException ex) when (ex.RPCCode == RPCErrorCode.RPC_INVALID_PARAMETER) // Invalid height.
                     {
-                        // Invalid block height.
-                        await WaitNewBlockAsync(cancellationToken);
+                        var info = await rpc.GetChainInfoAsync(cancellationToken);
+                        var blocks = (int)info.Blocks;
+
+                        if (blocks >= height)
+                        {
+                            // There is a new block already.
+                            continue;
+                        }
+
+                        if (blocks == height - 1)
+                        {
+                            // A block of the target height is not available right now.
+                            await WaitNewBlockAsync(cancellationToken);
+                            continue;
+                        }
+
+                        // There is a re-org happened.
+                        await handler.DiscardBlocksAsync(blocks, cancellationToken);
+                        height = blocks;
                         continue;
                     }
                 }
