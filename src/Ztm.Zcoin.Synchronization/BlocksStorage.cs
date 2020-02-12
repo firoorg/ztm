@@ -265,14 +265,16 @@ namespace Ztm.Zcoin.Synchronization
                 {
                     throw new ArgumentException(
                         "The data is MTP-enabled but the consensus not activated for this data.",
-                        nameof(data));
+                        nameof(data)
+                    );
                 }
 
                 if (data.MtpHashValue == null || data.Reserved1 == null || data.Reserved2 == null)
                 {
                     throw new ArgumentException(
                         "The data has MtpVersion but some other required properties is null.",
-                        nameof(data));
+                        nameof(data)
+                    );
                 }
 
                 block.Header.SetMtpVersion(data.MtpVersion.Value);
@@ -314,7 +316,8 @@ namespace Ztm.Zcoin.Synchronization
                 domain.Inputs.Add(
                     outpoint: new OutPoint(input.OutputHash, (uint)input.OutputIndex),
                     scriptSig: input.Script,
-                    sequence: (uint)input.Sequence);
+                    sequence: (uint)input.Sequence
+                );
             }
 
             if (entity.ExodusPayload != null)
@@ -345,7 +348,7 @@ namespace Ztm.Zcoin.Synchronization
                 Bits = header.Bits,
                 Nonce = header.Nonce,
                 Time = header.BlockTime.UtcDateTime,
-                MerkleRoot = header.HashMerkleRoot,
+                MerkleRoot = header.HashMerkleRoot
             };
 
             if (header.IsMtp())
@@ -354,7 +357,8 @@ namespace Ztm.Zcoin.Synchronization
                 {
                     throw new ArgumentException(
                         "Block is MTP-enabled but some required fields is null.",
-                        nameof(block));
+                        nameof(block)
+                    );
                 }
 
                 entity.MtpVersion = header.GetMtpVersion();
@@ -378,7 +382,7 @@ namespace Ztm.Zcoin.Synchronization
                     BlockHash = block.GetHash(),
                     TransactionHash = hash,
                     Index = i,
-                    Block = entity,
+                    Block = entity
                 };
 
                 if (!transactions.TryGetValue(hash, out tx))
@@ -402,7 +406,7 @@ namespace Ztm.Zcoin.Synchronization
             {
                 Hash = tx.GetHash(),
                 Version = tx.Version,
-                LockTime = tx.LockTime,
+                LockTime = tx.LockTime
             };
 
             // Outputs.
@@ -414,7 +418,7 @@ namespace Ztm.Zcoin.Synchronization
                     Index = i,
                     Value = tx.Outputs[i].Value,
                     Script = tx.Outputs[i].ScriptPubKey,
-                    Transaction = entity,
+                    Transaction = entity
                 };
 
                 entity.Outputs.Add(output);
@@ -431,7 +435,7 @@ namespace Ztm.Zcoin.Synchronization
                     OutputIndex = tx.Inputs[i].PrevOut.N,
                     Script = tx.Inputs[i].ScriptSig,
                     Sequence = tx.Inputs[i].Sequence,
-                    Transaction = entity,
+                    Transaction = entity
                 };
 
                 entity.Inputs.Add(input);
@@ -446,7 +450,7 @@ namespace Ztm.Zcoin.Synchronization
                     TransactionHash = tx.GetHash(),
                     Receiver = exodusTx.Receiver.ToString(),
                     Sender = exodusTx.Sender.ToString(),
-                    Data = this.exodusEncoder.Encode(exodusTx),
+                    Data = this.exodusEncoder.Encode(exodusTx)
                 };
             }
 

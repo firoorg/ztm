@@ -91,11 +91,6 @@ namespace Ztm.Zcoin.Synchronization
 
         async Task RemoveLastBlockAsync(Block block, int height, CancellationToken cancellationToken)
         {
-            if (block == null)
-            {
-                (block, height) = await this.storage.GetLastAsync(cancellationToken);
-            }
-
             this.logger.LogInformation("Removing block {Height}:{Hash}", height, block.GetHash());
 
             foreach (var listener in this.listeners)
