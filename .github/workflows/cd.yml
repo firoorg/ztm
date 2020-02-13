@@ -2,68 +2,44 @@ name: Continuous Delivery
 on:
   push:
     tags:
-    - 'v*'
+    - *
 jobs:
-  build:
-    name: Build
-    runs-on: windows-latest
+  docker:
+    name: Build Docker Image
+    runs-on: ubuntu-18.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v1
+      uses: actions/checkout@v2
     - name: Setup .NET Core 2.1
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: '2.1.607'
-    - name: Install EF CLI
-      shell: cmd
-      run: dotnet.exe tool install --global dotnet-ef --version 3.0.0
-    - name: Create Release
-      shell: cmd
-      run: dotnet.exe publish -o "%GITHUB_WORKSPACE%\release" -r linux-musl-x64 -c Release src\Ztm.WebApi
-    - name: Create Migration Scripts for Main Database
-      shell: cmd
-      env:
-        ZTM_MAIN_DATABASE: Host=127.0.0.1;Database=postgres;Username=postgres
-      run: dotnet.exe ef migrations script -o "%GITHUB_WORKSPACE%\migration\migration.sql" -i -p src\Ztm.Data.Entity.Postgres
-    - name: Archive Release Artifact
-      uses: actions/upload-artifact@v1
-      with:
-        name: release
-        path: release
-    - name: Archive Migration Artifact
-      uses: actions/upload-artifact@v1
-      with:
-        name: migration
-        path: migration
-    - name: Archive Dockerfile Artifact
-      uses: actions/upload-artifact@v1
-      with:
-        name: dockerfile
-        path: src\Ztm.WebApi\Dockerfile
-  docker:
-    name: Build Docker Image
-    needs: build
+        dotnet-version: 2.1.803
+    - name: Build
+      run: dotnet publish -o "$GITHUB_WORKSPACE/release" -r linux-musl-x64 -c Release src\Ztm.WebApi
+    - name: Login Docker
+      run: docker login -u ${{ github.repository }} -p ${{ secrets.GITHUB_TOKEN }} docker.pkg.github.com
+    - name: Build Image
+      run: docker build -t docker.pkg.github.com/zcoinofficial/ztm/ztm:${GITHUB_REF##*/} -f src/Ztm.WebApi/Dockerfile release
+    - name: Publish Image
+      run: docker push docker.pkg.github.com/zcoinofficial/ztm/ztm:${GITHUB_REF##*/}
+  ef-migration:
+    name: Build EF Migration Scripts
     runs-on: ubuntu-18.04
     steps:
-    - name: Get Release Artifact
-      uses: actions/download-artifact@v1
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Setup .NET Core 2.1
+      uses: actions/setup-dotnet@v1
       with:
-        name: release
-        path: release
-    - name: Get Dockerfile Artifact
-      uses: actions/download-artifact@v1
+        dotnet-version: 2.1.803
+    - name: Install EF CLI
+      run: dotnet tool install --global dotnet-ef --version 3.1.0
+    - name: Create PostgreSQL Script for Main Database
+      env:
+        ZTM_MAIN_DATABASE: Host=127.0.0.1;Database=postgres;Username=postgres
+      run: dotnet ef migrations script -o "$GITHUB_WORKSPACE/migrations/main-postgres.sql" -i -c Ztm.Data.Entity.Postgres.MainDatabase -p src/Ztm.Data.Entity.Postgres
+    - name: Archive Migrations
+      uses: actions/upload-artifact@v1
       with:
-        name: dockerfile
-        path: dockerfile
-    - name: Fix File Permission
-      run: chmod +x release/Ztm.WebApi
-    - name: Login Docker
-      uses: azure/docker-login@v1
-      with:
-        login-server: docker.pkg.github.com
-        username: ${{ github.repository }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    - name: Build Image
-      run: docker build -t docker.pkg.github.com/zcoinofficial/ztm/ztm:${GITHUB_REF##*/} -f dockerfile/Dockerfile release
-    - name: Push Image
-      run: docker push docker.pkg.github.com/zcoinofficial/ztm/ztm:${GITHUB_REF##*/}
+        name: migrations
+        path: migrations
