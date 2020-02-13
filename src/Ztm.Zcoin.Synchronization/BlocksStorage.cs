@@ -175,7 +175,7 @@ namespace Ztm.Zcoin.Synchronization
 
                 if (rows.Length == 0)
                 {
-                    return (block: null, height: 0);
+                    return (block: null, height: -1);
                 }
 
                 data = rows[0];
