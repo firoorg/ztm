@@ -4,7 +4,7 @@ This is a documentation for the user of ZTM. It will be hosted at https://readth
 
 ## Development
 
-First, you need to install [Sphinx](https://www.sphinx-doc.org). Then run the follow command:
+First, you need to install [Sphinx](https://www.sphinx-doc.org) and it [theme](https://github.com/readthedocs/sphinx_rtd_theme). Then run the follow command:
 
 ```sh
 make html
