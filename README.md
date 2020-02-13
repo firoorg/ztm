@@ -1,5 +1,6 @@
 # Zcoin Tokens Manager
 ![Continuous Integration](https://github.com/zcoinofficial/ztm/workflows/Continuous%20Integration/badge.svg)
+[![Documentation Status](https://readthedocs.org/projects/ztm/badge/?version=latest)](https://ztm.readthedocs.io/en/latest/?badge=latest)
 [![codecov](https://codecov.io/gh/zcoinofficial/ztm/branch/master/graph/badge.svg)](https://codecov.io/gh/zcoinofficial/ztm)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/zcoinofficial/ztm.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/zcoinofficial/ztm/alerts/)
 [![Language grade: C#](https://img.shields.io/lgtm/grade/csharp/g/zcoinofficial/ztm.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/zcoinofficial/ztm/context:csharp)
