@@ -15,7 +15,7 @@ jobs:
       with:
         dotnet-version: 2.1.803
     - name: Build
-      run: dotnet publish -o "$GITHUB_WORKSPACE/release" -r linux-musl-x64 -c Release src\Ztm.WebApi
+      run: dotnet publish -o "$GITHUB_WORKSPACE/release" -r linux-musl-x64 -c Release src/Ztm.WebApi
     - name: Login Docker
       run: docker login -u ${{ github.repository }} -p ${{ secrets.GITHUB_TOKEN }} docker.pkg.github.com
     - name: Build Image
@@ -33,7 +33,7 @@ jobs:
       with:
         dotnet-version: 2.1.803
     - name: Install EF CLI
-      run: dotnet tool install --global dotnet-ef --version 3.1.0
+      run: dotnet tool install --global dotnet-ef --version 3.0.0
     - name: Create PostgreSQL Script for Main Database
       env:
         ZTM_MAIN_DATABASE: Host=127.0.0.1;Database=postgres;Username=postgres
