@@ -1,3 +1,6 @@
 version: 2
 sphinx:
   configuration: share/ztm/docs/source/conf.py
+python:
+  install:
+  - requirements: share/ztm/docs/requirements.txt
