@@ -33,11 +33,11 @@ jobs:
       with:
         dotnet-version: 2.1.803
     - name: Install EF CLI
-      run: dotnet tool install --global dotnet-ef --version 3.0.0
+      run: dotnet tool install --global dotnet-ef --version 2.1.14
     - name: Create PostgreSQL Script for Main Database
       env:
         ZTM_MAIN_DATABASE: Host=127.0.0.1;Database=postgres;Username=postgres
-      run: dotnet ef migrations script -o "$GITHUB_WORKSPACE/migrations/main-postgres.sql" -i -c Ztm.Data.Entity.Postgres.MainDatabase -p src/Ztm.Data.Entity.Postgres
+      run: dotnet ef migrations script -o "$GITHUB_WORKSPACE/migrations/main-postgres.sql" -i -c Ztm.Data.Entity.Postgres.MainDatabase -p src/Ztm.Data.Entity.Postgres -s src/Ztm.Data.Entity.Postgres
     - name: Archive Migrations
       uses: actions/upload-artifact@v1
       with:
