@@ -1,0 +1,9 @@
+query-filters:
+  - exclude:
+      id: cs/class-name-matches-base-class
+  - exclude:
+      id: cs/linq/missed-where
+  - exclude:
+      id: cs/misleading-indentation
+  - exclude:
+      id: cs/useless-gethashcode-call
